@@ -10,7 +10,11 @@ pretrained文件夹
 
 uvr5_weights文件夹
 
-文件太大，去huggingface上下https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main
+文件太大github传不动，去huggingface上下https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main
 
-UP传代码中，别催，快了快了
+按照requirements.txt用pip装好环境，python infer-web.py就能用了
+
+根据经验，librosa numpy和numba三个包最好写死版本否则容易有坑，其他的包版本不太重要
+
+宣传视频：https://www.bilibili.com/video/BV1pm4y1z7Gm/
 
