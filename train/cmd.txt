@@ -1,0 +1,1 @@
+python train_nsf_sim_cache_sid.py -c configs/mi_mix40k_nsf_co256_cs1sid_ms2048.json -m ft-mi
