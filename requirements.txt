@@ -70,14 +70,6 @@ Jinja2==3.1.2
 joblib==1.1.0
 json5==0.9.8
 jsonschema==4.6.0
-jupyter-client==7.3.4
-jupyter-core==4.10.0
-jupyter-server==1.17.1
-jupyterlab==3.4.3
-jupyterlab-language-pack-zh-CN==3.4.post1
-jupyterlab-pygments==0.2.2
-jupyterlab-server==2.14.0
-jupyterlab-widgets==1.1.0
 kiwisolver==1.4.3
 lazy-loader==0.1
 librosa==0.9.2
