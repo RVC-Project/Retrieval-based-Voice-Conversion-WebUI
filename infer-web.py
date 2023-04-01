@@ -182,6 +182,7 @@ def get_vc(sid):
     return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 def change_choices():
+    names=[]
     for name in os.listdir(weight_root):
         if name.endswith(".pth"): names.append(name)
     return {"choices": sorted(names), "__type__": "update"}
