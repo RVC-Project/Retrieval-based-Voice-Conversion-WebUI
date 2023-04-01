@@ -9,9 +9,7 @@ import torch
 import torch.nn.functional as F
 import soundfile as sf
 import numpy as np
-import joblib
 from fairseq import checkpoint_utils
-import pdb
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 f = open("%s/extract_f0_feature.log"%exp_dir, "a+")
