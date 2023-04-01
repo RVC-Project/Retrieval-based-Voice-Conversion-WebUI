@@ -1,4 +1,5 @@
-import ffmpeg,numpy as np
+import ffmpeg
+import numpy as np
 def load_audio(file,sr):
     try:
         # https://github.com/openai/whisper/blob/main/whisper/audio.py#L26

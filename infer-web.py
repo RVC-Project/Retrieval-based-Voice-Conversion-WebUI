@@ -64,9 +64,11 @@ def load_hubert():
 weight_root="weights"
 weight_uvr5_root="uvr5_weights"
 names=[]
-for name in os.listdir(weight_root):names.append(name)
+for name in os.listdir(weight_root):
+    if name.endswith(".pt"): names.append(name)
 uvr5_names=[]
-for name in os.listdir(weight_uvr5_root):uvr5_names.append(name.replace(".pth",""))
+for name in os.listdir(weight_uvr5_root):
+    if name.endswith(".pth"): uvr5_names.append(name.replace(".pth",""))
 
 def vc_single(sid,input_audio,f0_up_key,f0_file,f0_method,file_index,file_big_npy,index_rate):#spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr,net_g,vc,hubert_model
@@ -180,7 +182,10 @@ def get_vc(sid):
     n_spk=cpt["config"][-3]
     return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
-def change_choices():return {"choices": sorted(list(os.listdir(weight_root))), "__type__": "update"}
+def change_choices():
+    for name in os.listdir(weight_root):
+        if name.endswith(".pt"): names.append(name)
+    return {"choices": sorted(name), "__type__": "update"}
 def clean():return {"value": "", "__type__": "update"}
 def change_f0(if_f0_3,sr2):#np7, f0method8,pretrained_G14,pretrained_D15
     if(if_f0_3=="是"):return {"visible": True, "__type__": "update"},{"visible": True, "__type__": "update"},"pretrained/f0G%s.pth"%sr2,"pretrained/f0D%s.pth"%sr2
@@ -443,7 +448,7 @@ with gr.Blocks() as app:
     with gr.Tabs():
         with gr.TabItem("模型推理"):
             with gr.Row():
-                sid0 = gr.Dropdown(label="推理音色", choices=names)
+                sid0 = gr.Dropdown(label="推理音色", choices=sorted(names))
                 refresh_button = gr.Button("刷新音色列表", variant="primary")
                 refresh_button.click(
                     fn=change_choices,
@@ -625,6 +630,11 @@ with gr.Blocks() as app:
         with gr.TabItem("点击查看交流、问题反馈群号"):
             gr.Markdown(value="""xxxxx""")
 
-    # app.launch(server_name="0.0.0.0",server_port=7860)
-    # app.queue(concurrency_count=511, max_size=1022).launch(server_name="127.0.0.1",inbrowser=True,server_port=7861,quiet=True)
-    app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=7865,quiet=True)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--colab", type=bool, default=False, help="Launch in colab")
+    cmd_opts = parser.parse_args()
+    if cmd_opts.colab:
+        app.launch(share=True)
+    else:
+        app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=7865,quiet=True)
