@@ -1,9 +1,14 @@
 import os,sys,traceback
-n_part=int(sys.argv[1])
-i_part=int(sys.argv[2])
-i_gpu=sys.argv[3]
-exp_dir=sys.argv[4]
-os.environ["CUDA_VISIBLE_DEVICES"]=str(i_gpu)
+if len(sys.argv) == 4:
+    n_part=int(sys.argv[1])
+    i_part=int(sys.argv[2])
+    exp_dir=sys.argv[3]
+else:
+    n_part=int(sys.argv[1])
+    i_part=int(sys.argv[2])
+    i_gpu=sys.argv[3]
+    exp_dir=sys.argv[4]
+    os.environ["CUDA_VISIBLE_DEVICES"]=str(i_gpu)
 
 import torch
 import torch.nn.functional as F
