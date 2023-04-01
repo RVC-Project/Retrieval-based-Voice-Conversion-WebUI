@@ -64,7 +64,7 @@ weight_root="weights"
 weight_uvr5_root="uvr5_weights"
 names=[]
 for name in os.listdir(weight_root):
-    if name.endswith(".pt"): names.append(name)
+    if name.endswith(".pth"): names.append(name)
 uvr5_names=[]
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth"): uvr5_names.append(name.replace(".pth",""))
@@ -183,8 +183,8 @@ def get_vc(sid):
 
 def change_choices():
     for name in os.listdir(weight_root):
-        if name.endswith(".pt"): names.append(name)
-    return {"choices": sorted(name), "__type__": "update"}
+        if name.endswith(".pth"): names.append(name)
+    return {"choices": sorted(names), "__type__": "update"}
 def clean():return {"value": "", "__type__": "update"}
 def change_f0(if_f0_3,sr2):#np7, f0method8,pretrained_G14,pretrained_D15
     if(if_f0_3=="是"):return {"visible": True, "__type__": "update"},{"visible": True, "__type__": "update"},"pretrained/f0G%s.pth"%sr2,"pretrained/f0D%s.pth"%sr2
