@@ -635,6 +635,6 @@ with gr.Blocks() as app:
     parser.add_argument("--colab", action='store_true', help="Launch in colab")
     cmd_opts = parser.parse_args()
     if cmd_opts.colab:
-        app.launch(share=True)
+        app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
         app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=7865,quiet=True)
