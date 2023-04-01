@@ -38,7 +38,7 @@ fairseq==0.12.2
 faiss-gpu==1.7.2
 fastapi==0.92.0
 fastjsonschema==2.15.3
-ffmpeg==1.4
+ffmpeg-python
 ffmpy==0.3.0
 filelock==3.9.0
 fonttools==4.33.3
