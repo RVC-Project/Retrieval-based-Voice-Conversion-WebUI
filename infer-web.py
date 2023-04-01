@@ -305,7 +305,11 @@ def click_train(exp_dir1,sr2,if_f0_3,spk_id5,save_epoch10,total_epoch11,batch_si
     print("write filelist done")
     #生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
-    cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    print("use gpus:",gpus16)
+    if gpus16:
+        cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    else:
+        cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
     print(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
@@ -398,7 +402,10 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
             opt.append("%s/%s.wav|%s/%s.npy|%s"%(gt_wavs_dir.replace("\\","\\\\"),name,co256_dir.replace("\\","\\\\"),name,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     yield get_info_str("write filelist done")
-    cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    if gpus16:
+        cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    else:
+        cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
