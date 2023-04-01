@@ -10,10 +10,7 @@ def load_audio(file,sr):
             .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
             .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
         )
-    except ffmpeg.Error as e:
-        raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
+    except Exception as e:
+        raise RuntimeError(f"Failed to load audio: {e}")
 
     return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
-
-if __name__=='__main__' :
-    print(load_audio(r"C:\CloudMusic\宮野幸子,森下唯 - 月夜に謳う君 -LUNA-.mp3",16000).shape)

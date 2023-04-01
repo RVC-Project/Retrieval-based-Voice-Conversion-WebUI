@@ -1,9 +1,10 @@
 from multiprocessing import cpu_count
 import threading
 from time import sleep
-from subprocess import Popen,PIPE,run as runn
+from subprocess import Popen
 from time import sleep
-import torch, pdb, os,traceback,sys,warnings,shutil,numpy as np,faiss
+import torch, os,traceback,sys,warnings,shutil,numpy as np
+import faiss
 #判断是否有能用来训练和加速推理的N卡
 ncpu=cpu_count()
 ngpu=torch.cuda.device_count()
@@ -33,11 +34,9 @@ from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFs
 from scipy.io import wavfile
 from fairseq import checkpoint_utils
 import gradio as gr
-import librosa
 import logging
 from vc_infer_pipeline import VC
-import soundfile as sf
-from config import is_half,device,is_half
+from config import is_half,device,is_half,python_cmd,listen_port,iscolab,noparallel
 from infer_uvr5 import _audio_pre_
 from my_utils import load_audio
 from train.process_ckpt import show_info,change_info,merge,extract_small_model
@@ -222,7 +221,7 @@ def preprocess_dataset(trainset_dir,exp_dir,sr,n_p=ncpu):
     os.makedirs("%s/logs/%s"%(now_dir,exp_dir),exist_ok=True)
     f = open("%s/logs/%s/preprocess.log"%(now_dir,exp_dir), "w")
     f.close()
-    cmd="python trainset_preprocess_pipeline_print.py %s %s %s %s/logs/%s"%(trainset_dir,sr,n_p,now_dir,exp_dir)
+    cmd=python_cmd + " trainset_preprocess_pipeline_print.py %s %s %s %s/logs/%s "%(trainset_dir,sr,n_p,now_dir,exp_dir)+str(noparallel)
     print(cmd)
     p = Popen(cmd, shell=True)#, stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
     ###煞笔gr，popen read都非得全跑完了再一次性读取，不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
@@ -242,7 +241,7 @@ def extract_f0_feature(gpus,n_p,f0method,if_f0,exp_dir):
     f = open("%s/logs/%s/extract_f0_feature.log"%(now_dir,exp_dir), "w")
     f.close()
     if(if_f0=="是"):
-        cmd="python extract_f0_print.py %s/logs/%s %s %s"%(now_dir,exp_dir,n_p,f0method)
+        cmd=python_cmd + " extract_f0_print.py %s/logs/%s %s %s"%(now_dir,exp_dir,n_p,f0method)
         print(cmd)
         p = Popen(cmd, shell=True,cwd=now_dir)#, stdin=PIPE, stdout=PIPE,stderr=PIPE
         ###煞笔gr，popen read都非得全跑完了再一次性读取，不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
@@ -266,7 +265,7 @@ def extract_f0_feature(gpus,n_p,f0method,if_f0,exp_dir):
     leng=len(gpus)
     ps=[]
     for idx,n_g in enumerate(gpus):
-        cmd="python extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir)
+        cmd=python_cmd + " extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir)
         print(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)#, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
         ps.append(p)
@@ -305,8 +304,8 @@ def click_train(exp_dir1,sr2,if_f0_3,spk_id5,save_epoch10,total_epoch11,batch_si
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     print("write filelist done")
     #生成config#无需生成config
-    # cmd = "python train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
-    cmd = "python train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
+    cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
     print(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
@@ -351,7 +350,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     os.makedirs("%s/logs/%s"%(now_dir,exp_dir1),exist_ok=True)
     #########step1:处理数据
     open("%s/logs/%s/preprocess.log"%(now_dir,exp_dir1), "w").close()
-    cmd="python trainset_preprocess_pipeline_print.py %s %s %s %s/logs/%s"%(trainset_dir4,sr_dict[sr2],ncpu,now_dir,exp_dir1)
+    cmd=python_cmd + " trainset_preprocess_pipeline_print.py %s %s %s %s/logs/%s "%(trainset_dir4,sr_dict[sr2],ncpu,now_dir,exp_dir1)+str(noparallel)
     yield get_info_str("step1:正在处理数据")
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True)
@@ -361,7 +360,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "w")
     if(if_f0_3=="是"):
         yield get_info_str("step2a:正在提取音高")
-        cmd="python extract_f0_print.py %s/logs/%s %s %s"%(now_dir,exp_dir1,np7,f0method8)
+        cmd=python_cmd + " extract_f0_print.py %s/logs/%s %s %s"%(now_dir,exp_dir1,np7,f0method8)
         yield get_info_str(cmd)
         p = Popen(cmd, shell=True,cwd=now_dir)
         p.wait()
@@ -373,7 +372,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     leng=len(gpus)
     ps=[]
     for idx,n_g in enumerate(gpus):
-        cmd="python extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir1)
+        cmd=python_cmd + " extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir1)
         yield get_info_str(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)#, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
         ps.append(p)
@@ -399,7 +398,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
             opt.append("%s/%s.wav|%s/%s.npy|%s"%(gt_wavs_dir.replace("\\","\\\\"),name,co256_dir.replace("\\","\\\\"),name,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     yield get_info_str("write filelist done")
-    cmd = "python train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
+    cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s" % (exp_dir1,sr2,1 if if_f0_3=="是"else 0,batch_size12,gpus16,total_epoch11,save_epoch10,pretrained_G14,pretrained_D15,1 if if_save_latest13=="是"else 0,1 if if_cache_gpu17=="是"else 0)
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
@@ -630,11 +629,7 @@ with gr.Blocks() as app:
         with gr.TabItem("点击查看交流、问题反馈群号"):
             gr.Markdown(value="""xxxxx""")
 
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--colab", action='store_true', help="Launch in colab")
-    cmd_opts = parser.parse_args()
-    if cmd_opts.colab:
+    if iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
-        app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=7865,quiet=True)
+        app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=listen_port,quiet=True)

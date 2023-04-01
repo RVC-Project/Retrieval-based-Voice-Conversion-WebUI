@@ -4,7 +4,6 @@ import numpy as np
 # This function is obtained from librosa.
 def get_rms(
     y,
-    *,
     frame_length=2048,
     hop_length=512,
     pad_mode="constant",

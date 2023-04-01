@@ -3,3 +3,4 @@ __pycache__
 /TEMP
 *.pyd
 hubert_base.pt
+/logs
