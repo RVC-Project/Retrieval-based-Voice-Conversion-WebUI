@@ -1,17 +1,20 @@
 import os,sys,traceback
-n_part=int(sys.argv[1])
-i_part=int(sys.argv[2])
-i_gpu=sys.argv[3]
-exp_dir=sys.argv[4]
-os.environ["CUDA_VISIBLE_DEVICES"]=str(i_gpu)
+if len(sys.argv) == 4:
+    n_part=int(sys.argv[1])
+    i_part=int(sys.argv[2])
+    exp_dir=sys.argv[3]
+else:
+    n_part=int(sys.argv[1])
+    i_part=int(sys.argv[2])
+    i_gpu=sys.argv[3]
+    exp_dir=sys.argv[4]
+    os.environ["CUDA_VISIBLE_DEVICES"]=str(i_gpu)
 
 import torch
 import torch.nn.functional as F
 import soundfile as sf
 import numpy as np
-import joblib
 from fairseq import checkpoint_utils
-import pdb
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 f = open("%s/extract_f0_feature.log"%exp_dir, "a+")
@@ -48,7 +51,8 @@ models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
 )
 model = models[0]
 model = model.to(device)
-model = model.half()
+if torch.cuda.is_available():
+    model = model.half()
 model.eval()
 
 todo=sorted(list(os.listdir(wavPath)))[i_part::n_part]
@@ -67,7 +71,7 @@ else:
                 feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
-                    "source": feats.half().to(device),
+                    "source": feats.half().to(device) if torch.cuda.is_available() else feats.to(device),
                     "padding_mask": padding_mask.to(device),
                     "output_layer": 9,  # layer 9
                 }

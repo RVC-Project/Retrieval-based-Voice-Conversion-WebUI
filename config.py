@@ -1,3 +1,10 @@
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", type=int, default=7865, help="Listen port")
+parser.add_argument("--pycmd", type=str, default="python", help="Python command")
+parser.add_argument("--colab", action='store_true', help="Launch in colab")
+parser.add_argument("--noparallel", action='store_true', help="Disable parallel processing")
+cmd_opts = parser.parse_args()
 ############离线VC参数
 inp_root=r"白鹭霜华长条"#对输入目录下所有音频进行转换，别放非音频文件
 opt_root=r"opt"#输出目录
@@ -7,10 +14,15 @@ person=r"weights\洛天依v3.pt"#目前只有洛天依v3
 device = "cuda:0"#填写cuda:x或cpu，x指代第几张卡，只支持N卡加速
 is_half=True#9-10-20-30-40系显卡无脑True，不影响质量，>=20显卡开启有加速
 n_cpu=0#默认0用上所有线程，写数字限制CPU资源使用
+############python命令路径
+python_cmd=cmd_opts.pycmd
+listen_port=cmd_opts.port
+iscolab=cmd_opts.colab
+noparallel=cmd_opts.noparallel
 ############下头别动
 import torch
 if(torch.cuda.is_available()==False):
-    print("没有发现支持的N卡，使用CPU进行推理")
+    print("没有发现支持的N卡, 使用CPU进行推理")
     device="cpu"
     is_half=False
 if(device!="cpu"):
