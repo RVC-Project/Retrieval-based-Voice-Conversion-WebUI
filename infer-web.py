@@ -632,7 +632,7 @@ with gr.Blocks() as app:
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--colab", type=bool, default=False, help="Launch in colab")
+    parser.add_argument("--colab", action='store_true', help="Launch in colab")
     cmd_opts = parser.parse_args()
     if cmd_opts.colab:
         app.launch(share=True)
