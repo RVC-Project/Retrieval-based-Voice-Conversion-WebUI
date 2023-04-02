@@ -35,7 +35,7 @@ defusedxml==0.7.1
 entrypoints==0.4
 executing==0.8.3
 fairseq==0.12.2
-faiss-gpu==1.7.2
+faiss-cpu==1.7.2
 fastapi==0.92.0
 fastjsonschema==2.15.3
 ffmpeg-python
@@ -173,7 +173,7 @@ torchvision==0.15.1+cu117
 tornado==6.1
 tqdm
 traitlets==5.3.0
-triton==2.0.0
+triton
 typing-extensions==4.2.0
 uc-micro-py==1.0.1
 urllib3==1.26.13
