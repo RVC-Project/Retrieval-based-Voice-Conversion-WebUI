@@ -149,7 +149,7 @@ def get_vc(sid):
     if(sid==[]):
         global hubert_model
         print("clean_empty_cache")
-        del net_g, n_spk, vc, hubert_model,tgt_sr#,cpt
+        del n_spk, vc, hubert_model,tgt_sr#,cpt
         hubert_model = net_g=n_spk=vc=hubert_model=tgt_sr=None
         torch.cuda.empty_cache()
         ###楼下不这么折腾清理不干净
