@@ -146,7 +146,7 @@ def uvr(model_name,inp_root,save_root_vocal,paths,save_root_ins):
 #一个选项卡全局只能有一个音色
 def get_vc(sid):
     global n_spk,tgt_sr,net_g,vc,cpt
-    if(sid==""):
+    if(sid==[]):
         global hubert_model
         print("clean_empty_cache")
         del net_g, n_spk, vc, hubert_model,tgt_sr#,cpt
