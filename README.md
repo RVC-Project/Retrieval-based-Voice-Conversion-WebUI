@@ -23,3 +23,10 @@ uvr5_weights文件夹
 宣传视频：https://www.bilibili.com/video/BV1pm4y1z7Gm/
 
 教程见小白简易教程.doc
+
+We will develop an English version windows WebUI APP in 2 weeks.
+
+
+### Realtime Voice Conversion Software using RVC
+
+https://github.com/w-okada/voice-changer
