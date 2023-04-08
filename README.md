@@ -31,6 +31,9 @@
 # 参考自: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
+如果是win系统+30系显卡，根据https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21的经验，需要指定pytorch对应的cuda版本
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+
 # 安装 Poetry 依赖管理工具, 若已安装则跳过
 # 参考自: https://python-poetry.org/docs/#installation
 curl -sSL https://install.python-poetry.org | python3 -
