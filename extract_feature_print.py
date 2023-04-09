@@ -23,7 +23,6 @@ def printt(strr):
     f.write("%s\n" % strr)
     f.flush()
 printt(sys.argv)
-# model_path = "/bili-coeus/jupyter/jupyterhub-liujing04/speech/pretrain/ContentVec_legacy500.pt"
 model_path = "hubert_base.pt"
 
 printt(exp_dir)
