@@ -121,7 +121,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None,load_opt=1):
 
 
 def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path):
-  logger.info("Saving model and optimizer state at iteration {} to {}".format(
+  logger.info("Saving model and optimizer state at epoch {} to {}".format(
     iteration, checkpoint_path))
   if hasattr(model, 'module'):
     state_dict = model.module.state_dict()
@@ -132,7 +132,7 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
               'optimizer': optimizer.state_dict(),
               'learning_rate': learning_rate}, checkpoint_path)
 def save_checkpoint_d(combd, sbd, optimizer, learning_rate, iteration, checkpoint_path):
-  logger.info("Saving model and optimizer state at iteration {} to {}".format(
+  logger.info("Saving model and optimizer state at epoch {} to {}".format(
     iteration, checkpoint_path))
   if hasattr(combd, 'module'): state_dict_combd = combd.module.state_dict()
   else:state_dict_combd = combd.state_dict()
