@@ -88,8 +88,8 @@ def vc_single(sid,input_audio,f0_up_key,f0_file,f0_method,file_index,file_big_np
 
 def vc_multi(sid,dir_path,opt_root,paths,f0_up_key,f0_method,file_index,file_big_npy,index_rate):
     try:
-        dir_path=dir_path.strip(" ")#防止小白拷路径头尾带了空格
-        opt_root=opt_root.strip(" ")
+        dir_path=dir_path.strip(" ").strip('"').strip("\n").strip('"').strip(" ")#防止小白拷路径头尾带了空格和"和回车
+        opt_root=opt_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         os.makedirs(opt_root, exist_ok=True)
         try:
             if(dir_path!=""):paths=[os.path.join(dir_path,name)for name in os.listdir(dir_path)]
@@ -115,9 +115,9 @@ def vc_multi(sid,dir_path,opt_root,paths,f0_up_key,f0_method,file_index,file_big
 def uvr(model_name,inp_root,save_root_vocal,paths,save_root_ins):
     infos = []
     try:
-        inp_root = inp_root.strip(" ").strip("\n")
-        save_root_vocal = save_root_vocal.strip(" ").strip("\n")
-        save_root_ins = save_root_ins.strip(" ").strip("\n")
+        inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        save_root_vocal = save_root_vocal.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        save_root_ins = save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         pre_fun = _audio_pre_(model_path=os.path.join(weight_uvr5_root,model_name+".pth"), device=device, is_half=is_half)
         if (inp_root != ""):paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:paths = [path.name for path in paths]
@@ -569,8 +569,8 @@ with gr.Blocks() as app:
                     """)
                 with gr.Row():
                     save_epoch10 = gr.Slider(minimum=0, maximum=50, step=1, label='保存频率save_every_epoch', value=5,interactive=True)
-                    total_epoch11 = gr.Slider(minimum=0, maximum=100, step=1, label='总训练轮数total_epoch', value=10,interactive=True)
-                    batch_size12 = gr.Slider(minimum=0, maximum=32, step=1, label='batch_size', value=4,interactive=True)
+                    total_epoch11 = gr.Slider(minimum=0, maximum=1000, step=1, label='总训练轮数total_epoch', value=20,interactive=True)
+                    batch_size12 = gr.Slider(minimum=0, maximum=32, step=1, label='每张显卡的batch_size', value=4,interactive=True)
                     if_save_latest13 = gr.Radio(label="是否仅保存最新的ckpt文件以节省硬盘空间", choices=["是", "否"], value="否", interactive=True)
                     if_cache_gpu17 = gr.Radio(label="是否缓存所有训练集至显存。10min以下小数据可缓存以加速训练，大数据缓存会炸显存也加不了多少速", choices=["是", "否"], value="否", interactive=True)
                 with gr.Row():
