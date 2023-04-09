@@ -80,8 +80,10 @@ else:
                     feats = model.final_proj(logits[0])
 
                 feats = feats.squeeze(0).float().cpu().numpy()
-                # feats = np.repeat(feats, 2,0) # 20ms -> 10ms
-                np.save(out_path, feats, allow_pickle=False)
+                if(np.isnan(feats).sum()==0):
+                    np.save(out_path, feats, allow_pickle=False)
+                else:
+                    printt("%s-contains nan"%file)
                 if (idx % n == 0):printt("now-%s,all-%s,%s,%s"%(len(todo),idx,file,feats.shape))
         except:
             printt(traceback.format_exc())
