@@ -9,7 +9,9 @@
 ### 使用了RVC的实时语音转换 : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 ------
 
-一个基于VITS的简单易用的SVC框架。
+一个基于VITS的简单易用的语音转换（变声器）框架。
+
+[**更新日志**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
 [**English**](./README_en.md) | [**中文简体**](./README.md)
 
@@ -22,6 +24,7 @@
 + 可以通过模型融合来改变音色;
 + 简单易用的WebUI界面;
 + 可调用UVR5模型来快速分离人声和伴奏。
++ 底模训练集使用接近50小时的高质量VCTK开源，后续会陆续加入高质量有授权歌声训练集供大家放心使用。
 ## 环境配置
 我们推荐你使用poetry来配置环境。
 
@@ -32,6 +35,7 @@
 pip install torch torchvision torchaudio
 
 如果是win系统+30系显卡，根据https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21的经验，需要指定pytorch对应的cuda版本
+
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 # 安装 Poetry 依赖管理工具, 若已安装则跳过
