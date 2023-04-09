@@ -41,7 +41,7 @@ def extract_small_model(path,name,sr,if_f0,info):
         if(info==""):info="Extracted model."
         opt["info"] = info
         opt["sr"] = sr
-        opt["f0"] =if_f0
+        opt["f0"] =int(if_f0)
         torch.save(opt, "weights/%s.pth"%name)
         return "Success."
     except:
