@@ -68,7 +68,7 @@ def run(rank, n_gpus, hps):
     else:train_dataset = TextAudioLoader(hps.data.training_files, hps.data)
     train_sampler = DistributedBucketSampler(
         train_dataset,
-        hps.train.batch_size,
+        hps.train.batch_size*n_gpus,
         # [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200,1400],  # 16s
         [100, 200, 300, 400, 500, 600, 700, 800, 900],  # 16s
         num_replicas=n_gpus,
