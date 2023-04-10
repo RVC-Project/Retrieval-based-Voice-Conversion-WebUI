@@ -22,6 +22,7 @@ This repository has the following features:
 + Supporting model fusion to change timbres;
 + Easy-to-use Webui interface;
 + Use the UVR5 model to quickly separate vocals and instruments.
++ The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source, and high quality licensed song datasets will be added one after another for your use, without worrying about copyright infringement.
 ## Preparing the environment
 We recommend you install the dependencies through poetry.
 
@@ -30,6 +31,10 @@ The following commands need to be executed in the environment of Python version 
 # Install PyTorch-related core dependencies, skip if installed
 # Reference: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
+
+#For Windows + 30-series Nvidia cards, you need to specify the cuda version corresponding to pytorch according to the experience of https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21
+
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 # Install the Poetry dependency management tool, skip if installed
 # Reference: https://python-poetry.org/docs/#installation
