@@ -1,21 +1,28 @@
-# Retrieval-based-Voice-Conversion-WebUI
+<div align="center">
+
+<h1>Retrieval-based-Voice-Conversion-WebUI</h1>
+一个基于VITS的简单易用的语音转换（变声器）框架<br><br>
 
 [![madewithlove](https://forthebadge.com/images/badges/built-with-love.svg)](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI)
+
+<img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
 [![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/github/license/liujing04/Retrieval-based-Voice-Conversion-WebUI?style=for-the-badge)](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/%E4%BD%BF%E7%94%A8%E9%9C%80%E9%81%B5%E5%AE%88%E7%9A%84%E5%8D%8F%E8%AE%AE-LICENSE.txt)
 [![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-blue.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-### 使用了RVC的实时语音转换 : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
-------
+</div>
 
-一个基于VITS的简单易用的语音转换（变声器）框架。
+------
 
 [**更新日志**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
 [**English**](./README_en.md) | [**中文简体**](./README.md)
 
 > 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
+
+> 使用了RVC的实时语音转换: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
+
 ## 简介
 本仓库具有以下特点:
 + 使用top1特征模型检索来杜绝音色泄漏；
@@ -47,9 +54,13 @@ poetry install
 ```
 
 你也可以通过pip来安装依赖：
+
+**注意**: `MacOS`下`faiss 1.7.2`版本会导致抛出段错误，请将`requirements.txt`的对应条目改为`faiss-cpu==1.7.0`
+
 ```bash
 pip install -r requirements.txt
 ```
+
 ## 其他预模型准备
 RVC需要其他的一些预模型来推理和训练。
 
