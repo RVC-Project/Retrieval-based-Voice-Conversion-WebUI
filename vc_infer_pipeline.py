@@ -72,7 +72,6 @@ class VC(object):
             "output_layer": 9,  # layer 9
         }
         t0 = ttime()
-        print("vc npy start time:", t0)
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats  = model.final_proj(logits[0])
@@ -87,7 +86,6 @@ class VC(object):
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t1 = ttime()
-        print("vc infer start time:", t1)
         p_len = audio0.shape[0]//self.window
         if(feats.shape[1]<p_len):
             p_len=feats.shape[1]
@@ -103,7 +101,6 @@ class VC(object):
         del feats,p_len,padding_mask
         if torch.cuda.is_available(): torch.cuda.empty_cache()
         t2 = ttime()
-        print("vc infer end time:", t2)
         times[0] += (t1 - t0)
         times[2] += (t2 - t1)
         return audio1
@@ -128,7 +125,6 @@ class VC(object):
         audio_opt=[]
         t=None
         t1=ttime()
-        print("f0 start time:", t1)
         audio_pad = np.pad(audio, (self.t_pad, self.t_pad), mode='reflect')
         p_len=audio_pad.shape[0]//self.window
         inp_f0=None
@@ -150,7 +146,6 @@ class VC(object):
             pitch = torch.tensor(pitch,device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf,device=self.device).unsqueeze(0).float()
         t2=ttime()
-        print("f0 end time:", t2)
         times[1] += (t2 - t1)
         for t in opt_ts:
             t=t//self.window*self.window

@@ -79,7 +79,7 @@ def vc_single(sid,input_audio,f0_up_key,f0_file,f0_method,file_index,file_big_np
         if(hubert_model==None):load_hubert()
         if_f0 = cpt.get("f0", 1)
         audio_opt=vc.pipeline(hubert_model,net_g,sid,audio,times,f0_up_key,f0_method,file_index,file_big_npy,index_rate,if_f0,f0_file=f0_file)
-        print(times)
+        print("npy: ", times[0], "s, f0:", times[1], "s, infer: ", times[2], "s", sep='')
         return "Success", (tgt_sr, audio_opt)
     except:
         info=traceback.format_exc()
