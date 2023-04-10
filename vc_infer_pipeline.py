@@ -79,7 +79,7 @@ class VC(object):
         if(isinstance(index,type(None))==False and isinstance(big_npy,type(None))==False and index_rate!=0):
             npy = feats[0].cpu().numpy()
             if(self.is_half==True):npy=npy.astype("float32")
-            D, I = index.search(npy, 1)
+            _, I = index.search(npy, 1)
             npy=big_npy[I.squeeze()]
             if(self.is_half==True):npy=npy.astype("float16")
             feats = torch.from_numpy(npy).unsqueeze(0).to(self.device)*index_rate + (1-index_rate)*feats
@@ -99,7 +99,7 @@ class VC(object):
             else:
                 audio1 = (net_g.infer(feats, p_len, sid)[0][0, 0] * 32768).data.cpu().float().numpy().astype(np.int16)
         del feats,p_len,padding_mask
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
         t2 = ttime()
         times[0] += (t1 - t0)
         times[2] += (t2 - t1)
@@ -160,5 +160,5 @@ class VC(object):
             audio_opt.append(self.vc(model,net_g,sid,audio_pad[t:],None,None,times,index,big_npy,index_rate)[self.t_pad_tgt:-self.t_pad_tgt])
         audio_opt=np.concatenate(audio_opt)
         del pitch,pitchf,sid
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
         return audio_opt
