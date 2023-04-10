@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-一个基于VITS的简单易用的语音转换（变声器）框架。<br><br>
+一个基于VITS的简单易用的语音转换（变声器）框架<br><br>
 
 [![madewithlove](https://forthebadge.com/images/badges/built-with-love.svg)](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI)
 
