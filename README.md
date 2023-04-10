@@ -47,9 +47,13 @@ poetry install
 ```
 
 你也可以通过pip来安装依赖：
+
+**注意**: `MacOS`下`faiss 1.7.2`版本会导致抛出段错误，请将`requirements.txt`的对应条目改为`faiss-cpu==1.7.0`
+
 ```bash
 pip install -r requirements.txt
 ```
+
 ## 其他预模型准备
 RVC需要其他的一些预模型来推理和训练。
 
