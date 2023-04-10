@@ -32,7 +32,7 @@ The following commands need to be executed in the environment of Python version 
 # Reference: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
-#For Win + 30-series Nvidia cards, you need to specify the cuda version corresponding to pytorch according to the experience of https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21
+#For Windows + 30-series Nvidia cards, you need to specify the cuda version corresponding to pytorch according to the experience of https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21
 
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
