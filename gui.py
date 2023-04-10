@@ -160,17 +160,17 @@ class GUI:
         input_devices,output_devices,_, _=self.get_devices()
         layout=[
             [
-                sg.Frame(title='加载模型',layout=[
-                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse('选择pth文件')],
-                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse('选择index文件')],
-                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse('选择npy文件')]
+                sg.Frame(title='加载模型/Load Model',layout=[
+                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse('选择.pth文件/.pth File')],
+                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse('选择.index文件/.index File')],
+                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse('选择.npy文件/.npy File')]
                 ])
             ],
             [
                 sg.Frame(layout=[
                     [sg.Text("输入设备/Input Device"),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
                     [sg.Text("输出设备/Output Device"),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
-                ],title='音频设备(请使用同种类驱动)')
+                ],title='音频设备(请使用同种类驱动)/Audio Devices')
             ],
             [
                 sg.Frame(layout=[
