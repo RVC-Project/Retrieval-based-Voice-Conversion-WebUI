@@ -104,7 +104,7 @@ for idx,name in enumerate(["冬之花clip1.wav",]):##
         "padding_mask": padding_mask.to(device),
         "output_layer": 9,  # layer 9
     }
-    torch.cuda.synchronize()
+    if torch.cuda.is_available(): torch.cuda.synchronize()
     t0=ttime()
     with torch.no_grad():
         logits = model.extract_features(**inputs)
@@ -116,13 +116,13 @@ for idx,name in enumerate(["冬之花clip1.wav",]):##
     feats = torch.from_numpy(big_npy[I.squeeze()].astype("float16")).unsqueeze(0).to(device)
 
     feats=F.interpolate(feats.permute(0,2,1),scale_factor=2).permute(0,2,1)
-    torch.cuda.synchronize()
+    if torch.cuda.is_available(): torch.cuda.synchronize()
     t1=ttime()
     # p_len = min(feats.shape[1],10000,pitch.shape[0])#太大了爆显存
     p_len = min(feats.shape[1],10000)#
     pitch, pitchf = get_f0(audio, p_len,f0_up_key)
     p_len = min(feats.shape[1],10000,pitch.shape[0])#太大了爆显存
-    torch.cuda.synchronize()
+    if torch.cuda.is_available(): torch.cuda.synchronize()
     t2=ttime()
     feats = feats[:,:p_len, :]
     pitch = pitch[:p_len]
@@ -133,7 +133,7 @@ for idx,name in enumerate(["冬之花clip1.wav",]):##
     pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
     with torch.no_grad():
         audio = net_g.infer(feats, p_len,pitch,pitchf,sid)[0][0, 0].data.cpu().float().numpy()#nsf
-    torch.cuda.synchronize()
+    if torch.cuda.is_available(): torch.cuda.synchronize()
     t3=ttime()
     ta0+=(t1-t0)
     ta1+=(t2-t1)

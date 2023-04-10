@@ -9,7 +9,7 @@ import faiss
 ncpu=cpu_count()
 ngpu=torch.cuda.device_count()
 gpu_infos=[]
-if(torch.cuda.is_available()==False or ngpu==0):if_gpu_ok=False
+if((not torch.cuda.is_available()) or ngpu==0):if_gpu_ok=False
 else:
     if_gpu_ok = False
     for i in range(ngpu):
@@ -140,7 +140,7 @@ def uvr(model_name,inp_root,save_root_vocal,paths,save_root_ins):
         except:
             traceback.print_exc()
         print("clean_empty_cache")
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
     yield "\n".join(infos)
 
 #一个选项卡全局只能有一个音色
@@ -152,7 +152,7 @@ def get_vc(sid):
             print("clean_empty_cache")
             del net_g, n_spk, vc, hubert_model,tgt_sr#,cpt
             hubert_model = net_g=n_spk=vc=hubert_model=tgt_sr=None
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available(): torch.cuda.empty_cache()
             ###楼下不这么折腾清理不干净
             if_f0 = cpt.get("f0", 1)
             if (if_f0 == 1):
@@ -160,7 +160,7 @@ def get_vc(sid):
             else:
                 net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
             del net_g,cpt
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available(): torch.cuda.empty_cache()
             cpt=None
         return {"visible": False, "__type__": "update"}
     person = "%s/%s" % (weight_root, sid)
