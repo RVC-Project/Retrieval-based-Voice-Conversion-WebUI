@@ -2,7 +2,7 @@ import json
 import re
 
 # Define regular expression patterns
-pattern = r'i18n\("([^"]+)"\)'
+pattern = r'i18n\([^)]*\)'
 
 # Initialize the dictionary to store key-value pairs
 data = {}
