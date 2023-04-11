@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 #import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
-
+from language import language_gui
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -160,31 +160,31 @@ class GUI:
         input_devices,output_devices,_, _=self.get_devices()
         layout=[
             [
-                sg.Frame(title='加载模型/Load Model',layout=[
-                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse('选择.pth文件/.pth File')],
-                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse('选择.index文件/.index File')],
-                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse('选择.npy文件/.npy File')]
+                sg.Frame(title=i18n('加载模型/Load Model'),layout=[
+                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse(i18n('选择.pth文件/.pth File'))],
+                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse(i18n('选择.index文件/.index File'))],
+                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse(i18n('选择.npy文件/.npy File'))]
                 ])
             ],
             [
                 sg.Frame(layout=[
-                    [sg.Text("输入设备/Input Device"),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
-                    [sg.Text("输出设备/Output Device"),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
-                ],title='音频设备(请使用同种类驱动)/Audio Devices')
+                    [sg.Text(i18n("输入设备/Input Device")),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
+                    [sg.Text(i18n("输出设备/Output Device")),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
+                ],title=i18n('音频设备(请使用同种类驱动)/Audio Devices'))
             ],
             [
                 sg.Frame(layout=[
-                    [sg.Text('响应阈值/Silence Threhold'),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
-                    [sg.Text("音调设置/Pitch Offset"),sg.Slider(range=(-24,24),key='pitch',resolution=1,orientation='h',default_value=12)]
+                    [sg.Text(i18n('响应阈值/Silence Threhold')),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
+                    [sg.Text(i18n("音调设置/Pitch Offset")),sg.Slider(range=(-24,24),key='pitch',resolution=1,orientation='h',default_value=12)]
                     
-                ],title='常规设置/Common'),
+                ],title=i18n('常规设置/Common')),
                 sg.Frame(layout=[
-                    [sg.Text('采样长度/Sample Length'),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
-                    [sg.Text('淡入淡出长度/Crossfade Length'),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
-                    [sg.Text('额外推理时长/Extra Length'),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
-                ],title='性能设置/Performance')
+                    [sg.Text(i18n('采样长度/Sample Length')),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
+                    [sg.Text(i18n('淡入淡出长度/Crossfade Length')),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
+                    [sg.Text(i18n('额外推理时长/Extra Length')),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
+                ],title=i18n('性能设置/Performance'))
             ],
-            [sg.Button('开始音频转换',key='start_vc'),sg.Button('停止音频转换',key='stop_vc')]
+            [sg.Button(i18n('开始音频转换'),key='start_vc'),sg.Button(i18n('停止音频转换'),key='stop_vc')]
         ]
         
         self.window=sg.Window('RVC - GUI',layout=layout)
@@ -326,5 +326,5 @@ class GUI:
         sd.default.device[1]=output_device_indices[output_devices.index(output_device)]
         print("input device:"+str(sd.default.device[0])+":"+str(input_device))
         print("output device:"+str(sd.default.device[1])+":"+str(output_device))
-
+i18n = language_gui.I18nAuto()
 gui=GUI()
