@@ -58,7 +58,7 @@ class VC(object):
 
     def vc(self,model,net_g,sid,audio0,pitch,pitchf,times,index,big_npy,index_rate):#,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
-        if(self.is_half==True):feats=feats.half()
+        if(self.is_half):feats=feats.half()
         else:feats=feats.float()
         if feats.dim() == 2:  # double channels
             feats = feats.mean(-1)
@@ -78,10 +78,10 @@ class VC(object):
 
         if(isinstance(index,type(None))==False and isinstance(big_npy,type(None))==False and index_rate!=0):
             npy = feats[0].cpu().numpy()
-            if(self.is_half==True):npy=npy.astype("float32")
+            if(self.is_half):npy=npy.astype("float32")
             _, I = index.search(npy, 1)
             npy=big_npy[I.squeeze()]
-            if(self.is_half==True):npy=npy.astype("float16")
+            if(self.is_half):npy=npy.astype("float16")
             feats = torch.from_numpy(npy).unsqueeze(0).to(self.device)*index_rate + (1-index_rate)*feats
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)

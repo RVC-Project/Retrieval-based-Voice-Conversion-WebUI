@@ -36,7 +36,7 @@ from fairseq import checkpoint_utils
 import gradio as gr
 import logging
 from vc_infer_pipeline import VC
-from config import is_half,device,is_half,python_cmd,listen_port,iscolab,noparallel
+from config import is_half,device,python_cmd,listen_port,iscolab,noparallel
 from infer_uvr5 import _audio_pre_
 from my_utils import load_audio
 from train.process_ckpt import show_info,change_info,merge,extract_small_model
@@ -53,7 +53,7 @@ class ToolButton(gr.Button, gr.components.FormComponent):
 hubert_model=None
 def load_hubert():
     global hubert_model
-    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(["hubert_base.pt"],suffix="",)
+    models, _, _ = checkpoint_utils.load_model_ensemble_and_task(["hubert_base.pt"],suffix="",)
     hubert_model = models[0]
     hubert_model = hubert_model.to(device)
     if(is_half):hubert_model = hubert_model.half()
@@ -79,7 +79,7 @@ def vc_single(sid,input_audio,f0_up_key,f0_file,f0_method,file_index,file_big_np
         if(hubert_model==None):load_hubert()
         if_f0 = cpt.get("f0", 1)
         audio_opt=vc.pipeline(hubert_model,net_g,sid,audio,times,f0_up_key,f0_method,file_index,file_big_npy,index_rate,if_f0,f0_file=f0_file)
-        print("npy: ", times[0], "s, f0:", times[1], "s, infer: ", times[2], "s", sep='')
+        print("npy: ", times[0], "s, f0: ", times[1], "s, infer: ", times[2], "s", sep='')
         return "Success", (tgt_sr, audio_opt)
     except:
         info=traceback.format_exc()
@@ -267,7 +267,7 @@ def extract_f0_feature(gpus,n_p,f0method,if_f0,exp_dir):
     leng=len(gpus)
     ps=[]
     for idx,n_g in enumerate(gpus):
-        cmd=python_cmd + " extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir)
+        cmd=python_cmd + " extract_feature_print.py %s %s %s %s %s/logs/%s"%(device,leng,idx,n_g,now_dir,exp_dir)
         print(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)#, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
         ps.append(p)
@@ -382,7 +382,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     leng=len(gpus)
     ps=[]
     for idx,n_g in enumerate(gpus):
-        cmd=python_cmd + " extract_feature_print.py %s %s %s %s/logs/%s"%(leng,idx,n_g,now_dir,exp_dir1)
+        cmd=python_cmd + " extract_feature_print.py %s %s %s %s %s/logs/%s"%(device,leng,idx,n_g,now_dir,exp_dir1)
         yield get_info_str(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)#, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
         ps.append(p)

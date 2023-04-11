@@ -345,7 +345,7 @@ class SourceModuleHnNSF(torch.nn.Module):
 
     def forward(self, x,upp=None):
         sine_wavs, uv, _ = self.l_sin_gen(x,upp)
-        if(self.is_half==True):sine_wavs=sine_wavs.half()
+        if(self.is_half):sine_wavs=sine_wavs.half()
         sine_merge = self.l_tanh(self.l_linear(sine_wavs))
         return sine_merge,None,None# noise, uv
 class GeneratorNSF(torch.nn.Module):

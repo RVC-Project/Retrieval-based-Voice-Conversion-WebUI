@@ -40,7 +40,7 @@ class PreProcess():
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
         os.makedirs(self.wavs16k_dir,exist_ok=True)
 
-    def print(self, strr):
+    def println(self, strr):
         mutex.acquire()
         print(strr)
         self.f.write("%s\n" % strr)
@@ -70,9 +70,9 @@ class PreProcess():
                         tmp_audio = audio[start:]
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            self.print("%s->Suc."%path)
+            self.println("%s->Suc."%path)
         except:
-            self.print("%s->%s"%(path,traceback.format_exc()))
+            self.println("%s->%s"%(path,traceback.format_exc()))
 
     def pipeline_mp(self,infos):
         for path, idx0 in infos:
@@ -91,14 +91,14 @@ class PreProcess():
                     ps.append(p)
                     for p in ps:p.join()
         except:
-            self.print("Fail. %s"%traceback.format_exc())
+            self.println("Fail. %s"%traceback.format_exc())
 
 def preprocess_trainset(inp_root, sr, n_p, exp_dir):
     pp=PreProcess(sr,exp_dir)
-    pp.print("start preprocess")
-    pp.print(sys.argv)
+    pp.println("start preprocess")
+    pp.println(sys.argv)
     pp.pipeline_mp_inp_dir(inp_root,n_p)
-    pp.print("end preprocess")
+    pp.println("end preprocess")
 
 if __name__=='__main__':
     preprocess_trainset(inp_root, sr, n_p, exp_dir)

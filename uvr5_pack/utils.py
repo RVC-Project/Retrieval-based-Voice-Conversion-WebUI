@@ -27,7 +27,7 @@ def inference(X_spec, device, model, aggressiveness,data):
                 start = i * roi_size
                 X_mag_window = X_mag_pad[None, :, :, start:start + data['window_size']]
                 X_mag_window = torch.from_numpy(X_mag_window)
-                if(is_half==True):X_mag_window=X_mag_window.half()
+                if(is_half):X_mag_window=X_mag_window.half()
                 X_mag_window=X_mag_window.to(device)
 
                 pred = model.predict(X_mag_window, aggressiveness)
