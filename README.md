@@ -64,7 +64,7 @@ pip install -r requirements.txt
 ## 其他预模型准备
 RVC需要其他的一些预模型来推理和训练。
 
-你可以从我们的[Huggingface space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。
+你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。
 
 以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称:
 ```bash
