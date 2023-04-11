@@ -39,7 +39,7 @@ class  _audio_pre_():
         cpk = torch.load( model_path , map_location='cpu')  
         model.load_state_dict(cpk)
         model.eval()
-        if(is_half==True):model = model.half().to(device)
+        if(is_half):model = model.half().to(device)
         else:model = model.to(device)
 
         self.mp = mp
