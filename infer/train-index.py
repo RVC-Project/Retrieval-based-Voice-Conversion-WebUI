@@ -16,10 +16,8 @@ np.save("infer/big_src_feature_mi.npy",big_npy)
 ##################train+add
 # big_npy=np.load("/bili-coeus/jupyter/jupyterhub-liujing04/vits_ch/inference_f0/big_src_feature_mi.npy")
 print(big_npy.shape)
-index = faiss.index_factory(256, "IVF512,Flat")#mi
+index = faiss.index_factory(256, "IVF512,PQ128x4fs,RFlat")#mi
 print("training")
-index_ivf = faiss.extract_index_ivf(index)#
-index_ivf.nprobe = 9
 index.train(big_npy)
 faiss.write_index(index, 'infer/trained_IVF512_Flat_mi_baseline_src_feat.index')
 print("adding")
