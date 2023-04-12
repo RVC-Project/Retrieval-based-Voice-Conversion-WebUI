@@ -1,0 +1,28 @@
+name: unitest
+on: [ push, pull_request ]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+        os: [ubuntu-latest]
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade setuptools
+        python -m pip install --upgrade wheel
+        pip install -r requirements.txt
+    - name: Test step 1 & 2
+      run: |
+        python trainset_preprocess_pipeline_print.py logs/mute/0_gt_wavs 48000 8 logs/mi-test True
+        python extract_f0_print.py logs/mi-test $(nproc) pm
+        python extract_feature_print.py cpu 1 0 0 logs/mi-test
