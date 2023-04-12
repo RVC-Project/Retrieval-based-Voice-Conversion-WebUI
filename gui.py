@@ -5,10 +5,10 @@ import numpy as np
 from fairseq import checkpoint_utils
 import librosa,torch,parselmouth,faiss,time,threading
 import torch.nn.functional as F
-
 #import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
-from language import language_gui
+from webui_locale import I18nAuto
+i18n = I18nAuto()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -170,24 +170,24 @@ class GUI:
                 sg.Frame(layout=[
                     [sg.Text(i18n("输入设备/Input Device")),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
                     [sg.Text(i18n("输出设备/Output Device")),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
-                ],title=i18n('音频设备(请使用同种类驱动)/Audio Devices'))
+                ],title=i18n("音频设备(请使用同种类驱动)/Audio Devices"))
             ],
             [
                 sg.Frame(layout=[
-                    [sg.Text(i18n('响应阈值/Silence Threhold')),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
+                    [sg.Text(i18n("响应阈值/Silence Threhold")),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
                     [sg.Text(i18n("音调设置/Pitch Offset")),sg.Slider(range=(-24,24),key='pitch',resolution=1,orientation='h',default_value=12)]
                     
-                ],title=i18n('常规设置/Common')),
+                ],title=i18n("常规设置/Common")),
                 sg.Frame(layout=[
-                    [sg.Text(i18n('采样长度/Sample Length')),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
-                    [sg.Text(i18n('淡入淡出长度/Crossfade Length')),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
-                    [sg.Text(i18n('额外推理时长/Extra Length')),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
-                ],title=i18n('性能设置/Performance'))
+                    [sg.Text(i18n("采样长度/Sample Length")),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
+                    [sg.Text(i18n("淡入淡出长度/Crossfade Length")),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
+                    [sg.Text(i18n("额外推理时长/Extra Length")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
+                ],title=i18n("性能设置/Performance"))
             ],
-            [sg.Button(i18n('开始音频转换'),key='start_vc'),sg.Button(i18n('停止音频转换'),key='stop_vc')]
+            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc')]
         ]
         
-        self.window=sg.Window('RVC - GUI',layout=layout)
+        self.window=sg.Window("RVC - GUI",layout=layout)
         self.event_handler()
     
     def event_handler(self):
@@ -326,5 +326,3 @@ class GUI:
         sd.default.device[1]=output_device_indices[output_devices.index(output_device)]
         print("input device:"+str(sd.default.device[0])+":"+str(input_device))
         print("output device:"+str(sd.default.device[1])+":"+str(output_device))
-i18n = language_gui.I18nAuto()
-gui=GUI()
