@@ -95,7 +95,7 @@ WebUIの英語版は2週間ほどで公開する予定です。
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
-## コントリビュータの皆様の努力に感謝します
+## コントリビュータの皆様の尽力に感謝します
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=liujing04/Retrieval-based-Voice-Conversion-WebUI" />
 </a>
