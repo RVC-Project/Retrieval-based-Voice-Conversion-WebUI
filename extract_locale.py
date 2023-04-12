@@ -7,21 +7,21 @@ pattern = r"""i18n\((["'][^"']+["'])\)"""
 # Initialize the dictionary to store key-value pairs
 data = {}
 
-# Extract labels from infer-webui.py
-with open('infer-web.py', 'r', encoding='utf-8') as f:
-    contents = f.read()
-    matches = re.findall(pattern, contents)
-    for key in matches:
-        key = eval(key)
-        data[key] = key
+def process(fn: str):
+    global data
+    with open(fn, 'r', encoding='utf-8') as f:
+        contents = f.read()
+        matches = re.findall(pattern, contents)
+        for key in matches:
+            key = eval(key)
+            print("extract:", key)
+            data[key] = key
 
-# Extract labels from gui.py
-with open('gui.py', 'r', encoding='utf-8') as f:
-    contents = f.read()
-    matches = re.findall(pattern, contents)
-    for key in matches:
-        key = eval(key)
-        data[key] = key
+print("processing infer-web.py")
+process('infer-web.py')
+
+print("processing gui.py")
+process('gui.py')
 
 # Save as a JSON file
 with open('./locale/zh_CN.json', 'w', encoding='utf-8') as f:
