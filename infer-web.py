@@ -483,12 +483,10 @@ with gr.Blocks() as app:
                     outputs=[spk_item],
                 )
             with gr.Group():
-                gr.Markdown(value=i18n("""
-                    男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. 
-                    """))
+                gr.Markdown(value=i18n("男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. "))
                 with gr.Row():
                     with gr.Column():
-                        vc_transform0 = gr.Number(label=i18n("变调（整数, 半音数量, 升八度12降八度-12）"), value=0)
+                        vc_transform0 = gr.Number(label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"), value=0)
                         input_audio0 = gr.Textbox(label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),value="E:\codes\py39\\vits_vc_gpu_train\\todo-songs\冬之花clip1.wav")
                         f0method0=gr.Radio(label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"), choices=["pm","harvest"],value="pm", interactive=True)
                     with gr.Column():
@@ -502,12 +500,10 @@ with gr.Blocks() as app:
                         vc_output2 = gr.Audio(label=i18n("输出音频(右下角三个点,点了可以下载)"))
                     but0.click(vc_single, [spk_item, input_audio0, vc_transform0,f0_file,f0method0,file_index1,file_big_npy1,index_rate1], [vc_output1, vc_output2])
             with gr.Group():
-                gr.Markdown(value=i18n("""
-                    批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹（默认opt）下输出转换的音频. 
-                    """))
+                gr.Markdown(value=i18n("批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. "))
                 with gr.Row():
                     with gr.Column():
-                        vc_transform1 = gr.Number(label=i18n("变调（整数, 半音数量, 升八度12降八度-12）"), value=0)
+                        vc_transform1 = gr.Number(label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"), value=0)
                         opt_input = gr.Textbox(label=i18n("指定输出文件夹"),value="opt")
                         f0method1=gr.Radio(label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"), choices=["pm","harvest"],value="pm", interactive=True)
                     with gr.Column():
@@ -522,14 +518,10 @@ with gr.Blocks() as app:
                     but1.click(vc_multi, [spk_item, dir_input,opt_input,inputs, vc_transform1,f0method1,file_index2,file_big_npy2,index_rate2], [vc_output3])
         with gr.TabItem(i18n("伴奏人声分离")):
             with gr.Group():
-                gr.Markdown(value=i18n("""
-                    人声伴奏分离批量处理, 使用UVR5模型. <br>
-                    不带和声用HP2, 带和声且提取的人声不需要和声用HP5<br>
-                    合格的文件夹路径格式举例：E:\codes\py39\\vits_vc_gpu\白鹭霜华测试样例（去文件管理器地址栏拷就行了）
-                    """))
+                gr.Markdown(value=i18n("人声伴奏分离批量处理, 使用UVR5模型. <br>不带和声用HP2, 带和声且提取的人声不需要和声用HP5<br>合格的文件夹路径格式举例: E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)"))
                 with gr.Row():
                     with gr.Column():
-                        dir_wav_input = gr.Textbox(label=i18n("输入待处理音频文件夹路径"),value="E:\codes\py39\\vits_vc_gpu_train\\todo-songs")
+                        dir_wav_input = gr.Textbox(label=i18n("输入待处理音频文件夹路径"),value="E:\\codes\\py39\\vits_vc_gpu_train\\todo-songs")
                         wav_inputs = gr.File(file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹"))
                     with gr.Column():
                         model_choose = gr.Dropdown(label=i18n("模型"), choices=uvr5_names)
@@ -539,17 +531,13 @@ with gr.Blocks() as app:
                     vc_output4 = gr.Textbox(label=i18n("输出信息"))
                     but2.click(uvr, [model_choose, dir_wav_input,opt_vocal_root,wav_inputs,opt_ins_root], [vc_output4])
         with gr.TabItem(i18n("训练")):
-            gr.Markdown(value=i18n("""
-                step1：填写实验配置. 实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件. 
-                """))
+            gr.Markdown(value=i18n("step1: 填写实验配置. 实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件. "))
             with gr.Row():
                 exp_dir1 = gr.Textbox(label=i18n("输入实验名"),value="mi-test")
                 sr2 = gr.Radio(label=i18n("目标采样率"), choices=["32k","40k","48k"],value="40k", interactive=True)
                 if_f0_3 = gr.Radio(label=i18n("模型是否带音高指导(唱歌一定要, 语音可以不要)"), choices=["是","否"],value="是", interactive=True)
             with gr.Group():#暂时单人的, 后面支持最多4人的#数据处理
-                gr.Markdown(value=i18n("""
-                    step2a：自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹；暂时只支持单人训练. 
-                    """))
+                gr.Markdown(value=i18n("step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. "))
                 with gr.Row():
                     trainset_dir4 = gr.Textbox(label=i18n("输入训练文件夹路径"),value="E:\语音音频+标注\米津玄师\src")
                     spk_id5 = gr.Slider(minimum=0, maximum=4, step=1, label=i18n("请指定说话人id"), value=0,interactive=True)
@@ -557,9 +545,7 @@ with gr.Blocks() as app:
                     info1=gr.Textbox(label=i18n("输出信息"),value="")
                     but1.click(preprocess_dataset,[trainset_dir4,exp_dir1,sr2],[info1])
             with gr.Group():
-                gr.Markdown(value=i18n("""
-                    step2b：使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)
-                    """))
+                gr.Markdown(value=i18n("step2b: 使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)"))
                 with gr.Row():
                     with gr.Column():
                         gpus6 = gr.Textbox(label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),value=gpus,interactive=True)
@@ -571,9 +557,7 @@ with gr.Blocks() as app:
                     info2=gr.Textbox(label=i18n("输出信息"),value="",max_lines=8)
                     but2.click(extract_f0_feature,[gpus6,np7,f0method8,if_f0_3,exp_dir1],[info2])
             with gr.Group():
-                gr.Markdown(value=i18n("""
-                    step3：填写训练设置, 开始训练模型和索引
-                    """))
+                gr.Markdown(value=i18n("step3: 填写训练设置, 开始训练模型和索引"))
                 with gr.Row():
                     save_epoch10 = gr.Slider(minimum=0, maximum=50, step=1, label=i18n("保存频率save_every_epoch"), value=5,interactive=True)
                     total_epoch11 = gr.Slider(minimum=0, maximum=1000, step=1, label=i18n("总训练轮数total_epoch"), value=20,interactive=True)
@@ -596,7 +580,7 @@ with gr.Blocks() as app:
 
         with gr.TabItem(i18n("ckpt处理")):
             with gr.Group():
-                gr.Markdown(value=i18n("""模型融合, 可用于测试音色融合"""))
+                gr.Markdown(value=i18n("模型融合, 可用于测试音色融合"))
                 with gr.Row():
                     ckpt_a = gr.Textbox(label=i18n("A模型路径"), value="", interactive=True)
                     ckpt_b = gr.Textbox(label=i18n("B模型路径"), value="", interactive=True)
@@ -641,9 +625,9 @@ with gr.Blocks() as app:
                 but9.click(extract_small_model, [ckpt_path2,save_name,sr__,if_f0__,info___], info7)
 
         with gr.TabItem(i18n("招募音高曲线前端编辑器")):
-            gr.Markdown(value=i18n("""加开发群联系我xxxxx"""))
+            gr.Markdown(value=i18n("加开发群联系我xxxxx"))
         with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
-            gr.Markdown(value=i18n("""xxxxx"""))
+            gr.Markdown(value=i18n("xxxxx"))
 
     if iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
