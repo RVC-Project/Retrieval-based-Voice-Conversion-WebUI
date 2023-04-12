@@ -25,3 +25,4 @@ wave
 PySimpleGUI
 sounddevice
 gradio
+noisereduce
