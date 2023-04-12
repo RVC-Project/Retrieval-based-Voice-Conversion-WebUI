@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 import sounddevice as sd
-#import noisereduce as nr
+import noisereduce as nr
 import numpy as np
 from fairseq import checkpoint_utils
 import librosa,torch,parselmouth,faiss,time,threading
@@ -147,6 +147,7 @@ class Config:
         self.threhold:int=-30
         self.crossfade_time:float=0.08
         self.extra_time:float=0.04
+        self.noise_reduce=False
 
 class GUI:
     def __init__(self) -> None:
@@ -181,7 +182,8 @@ class GUI:
                 sg.Frame(layout=[
                     [sg.Text(i18n("采样长度/Sample Length")),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
                     [sg.Text(i18n("淡入淡出长度/Crossfade Length")),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
-                    [sg.Text(i18n("额外推理时长/Extra Length")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
+                    [sg.Text(i18n("额外推理时长/Extra Length")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)],
+                    [sg.Checkbox(i18n('输出降噪/Output Noisereduce'),key='noise_reduce')]
                 ],title=i18n("性能设置/Performance"))
             ],
             [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc')]
@@ -217,7 +219,7 @@ class GUI:
         self.config.block_time=values['block_time']
         self.config.crossfade_time=values['crossfade_length']
         self.config.extra_time=values['extra_time']
-
+        self.config.noise_reduce=values['noise_reduce']
    
     def start_vc(self):
         torch.cuda.empty_cache()
@@ -290,6 +292,9 @@ class GUI:
         else:
             self.sola_buffer[:] = infer_wav[- self.crossfade_frame :]* self.fade_out_window
         
+        if self.config.noise_reduce:
+            self.output_wav[:]=nr.reduce_noise(y=self.output_wav,sr=self.config.samplerate)
+        
         outdata[:]=np.array([self.output_wav,self.output_wav]).T
         print('infer time:'+str(time.perf_counter()-start_time))
         
@@ -326,3 +331,5 @@ class GUI:
         sd.default.device[1]=output_device_indices[output_devices.index(output_device)]
         print("input device:"+str(sd.default.device[0])+":"+str(input_device))
         print("output device:"+str(sd.default.device[1])+":"+str(output_device))
+        
+gui=GUI()
