@@ -38,7 +38,7 @@ from fairseq import checkpoint_utils
 import gradio as gr
 import logging
 from vc_infer_pipeline import VC
-from config import is_half,device,python_cmd,listen_port,iscolab,noparallel
+from config import is_half,device,python_cmd,listen_port,iscolab,noparallel,noautoopen
 from infer_uvr5 import _audio_pre_
 from my_utils import load_audio
 from train.process_ckpt import show_info,change_info,merge,extract_small_model
@@ -651,4 +651,4 @@ with gr.Blocks() as app:
     if iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
-        app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=True,server_port=listen_port,quiet=True)
+        app.queue(concurrency_count=511, max_size=1022).launch(server_name="0.0.0.0",inbrowser=not noautoopen,server_port=listen_port,quiet=True)
