@@ -17,6 +17,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        sudo apt update
+        sudo apt install -y ffmpeg
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools
         python -m pip install --upgrade wheel
