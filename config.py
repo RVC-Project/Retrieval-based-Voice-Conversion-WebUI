@@ -21,12 +21,14 @@ parser.add_argument("--port", type=int, default=7865, help="Listen port")
 parser.add_argument("--pycmd", type=str, default="python", help="Python command")
 parser.add_argument("--colab", action='store_true', help="Launch in colab")
 parser.add_argument("--noparallel", action='store_true', help="Disable parallel processing")
+parser.add_argument("--noautoopen", action='store_true', help="Do not open in browser automatically")
 cmd_opts = parser.parse_args()
 
 python_cmd=cmd_opts.pycmd
 listen_port=cmd_opts.port
 iscolab=cmd_opts.colab
 noparallel=cmd_opts.noparallel
+noautoopen=cmd_opts.noautoopen
 ########################命令行参数########################
 
 import sys
