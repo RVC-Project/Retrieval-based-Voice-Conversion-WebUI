@@ -1,14 +1,14 @@
 import PySimpleGUI as sg
 import sounddevice as sd
-#import noisereduce as nr
+import noisereduce as nr
 import numpy as np
 from fairseq import checkpoint_utils
 import librosa,torch,parselmouth,faiss,time,threading
 import torch.nn.functional as F
-
 #import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
-
+from webui_locale import I18nAuto
+i18n = I18nAuto()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -147,6 +147,7 @@ class Config:
         self.threhold:int=-30
         self.crossfade_time:float=0.08
         self.extra_time:float=0.04
+        self.noise_reduce=False
 
 class GUI:
     def __init__(self) -> None:
@@ -160,34 +161,35 @@ class GUI:
         input_devices,output_devices,_, _=self.get_devices()
         layout=[
             [
-                sg.Frame(title='加载模型/Load Model',layout=[
-                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse('选择.pth文件/.pth File')],
-                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse('选择.index文件/.index File')],
-                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse('选择.npy文件/.npy File')]
+                sg.Frame(title=i18n('加载模型/Load Model'),layout=[
+                    [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse(i18n('选择.pth文件/.pth File'))],
+                    [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse(i18n('选择.index文件/.index File'))],
+                    [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse(i18n('选择.npy文件/.npy File'))]
                 ])
             ],
             [
                 sg.Frame(layout=[
-                    [sg.Text("输入设备/Input Device"),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
-                    [sg.Text("输出设备/Output Device"),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
-                ],title='音频设备(请使用同种类驱动)/Audio Devices')
+                    [sg.Text(i18n("输入设备/Input Device")),sg.Combo(input_devices,key='sg_input_device',default_value=input_devices[sd.default.device[0]])],
+                    [sg.Text(i18n("输出设备/Output Device")),sg.Combo(output_devices,key='sg_output_device',default_value=output_devices[sd.default.device[1]])]
+                ],title=i18n("音频设备(请使用同种类驱动)/Audio Devices"))
             ],
             [
                 sg.Frame(layout=[
-                    [sg.Text('响应阈值/Silence Threhold'),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
-                    [sg.Text("音调设置/Pitch Offset"),sg.Slider(range=(-24,24),key='pitch',resolution=1,orientation='h',default_value=12)]
+                    [sg.Text(i18n("响应阈值/Silence Threhold")),sg.Slider(range=(-60,0),key='threhold',resolution=1,orientation='h',default_value=-30)],
+                    [sg.Text(i18n("音调设置/Pitch Offset")),sg.Slider(range=(-24,24),key='pitch',resolution=1,orientation='h',default_value=12)]
                     
-                ],title='常规设置/Common'),
+                ],title=i18n("常规设置/Common")),
                 sg.Frame(layout=[
-                    [sg.Text('采样长度/Sample Length'),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
-                    [sg.Text('淡入淡出长度/Crossfade Length'),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
-                    [sg.Text('额外推理时长/Extra Length'),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)]
-                ],title='性能设置/Performance')
+                    [sg.Text(i18n("采样长度/Sample Length")),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
+                    [sg.Text(i18n("淡入淡出长度/Crossfade Length")),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
+                    [sg.Text(i18n("额外推理时长/Extra Length")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)],
+                    [sg.Checkbox(i18n('输出降噪/Output Noisereduce'),key='noise_reduce')]
+                ],title=i18n("性能设置/Performance"))
             ],
-            [sg.Button('开始音频转换',key='start_vc'),sg.Button('停止音频转换',key='stop_vc')]
+            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc')]
         ]
         
-        self.window=sg.Window('RVC - GUI',layout=layout)
+        self.window=sg.Window("RVC - GUI",layout=layout)
         self.event_handler()
     
     def event_handler(self):
@@ -217,7 +219,7 @@ class GUI:
         self.config.block_time=values['block_time']
         self.config.crossfade_time=values['crossfade_length']
         self.config.extra_time=values['extra_time']
-
+        self.config.noise_reduce=values['noise_reduce']
    
     def start_vc(self):
         torch.cuda.empty_cache()
@@ -290,6 +292,9 @@ class GUI:
         else:
             self.sola_buffer[:] = infer_wav[- self.crossfade_frame :]* self.fade_out_window
         
+        if self.config.noise_reduce:
+            self.output_wav[:]=nr.reduce_noise(y=self.output_wav,sr=self.config.samplerate)
+        
         outdata[:]=np.array([self.output_wav,self.output_wav]).T
         print('infer time:'+str(time.perf_counter()-start_time))
         
@@ -326,5 +331,5 @@ class GUI:
         sd.default.device[1]=output_device_indices[output_devices.index(output_device)]
         print("input device:"+str(sd.default.device[0])+":"+str(input_device))
         print("output device:"+str(sd.default.device[1])+":"+str(output_device))
-
+        
 gui=GUI()
