@@ -24,13 +24,13 @@ An easy-to-use SVC framework based on VITS.<br><br>
 
 ## Summary
 This repository has the following features:
-+ Using top1 feature model retrieval to reduce tone leakage;
++ Reduce tone leakage by replacing source feature to training-set feature using top1 retrieval;
 + Easy and fast training, even on relatively poor graphics cards;
-+ Training with a small amount of data also obtains relatively good results;
-+ Supporting model fusion to change timbres;
++ Training with a small amount of data also obtains relatively good results (>=10min low noise speech recommended);
++ Supporting model fusion to change timbres (using ckpt processing tab->ckpt merge);
 + Easy-to-use Webui interface;
 + Use the UVR5 model to quickly separate vocals and instruments.
-+ The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source, and high quality licensed song datasets will be added one after another for your use, without worrying about copyright infringement.
++ The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source dataset, and high quality licensed song datasets will be added to training-set one after another for your use, without worrying about copyright infringement.
 ## Preparing the environment
 We recommend you install the dependencies through poetry.
 
