@@ -12,7 +12,7 @@ with open('infer-web.py', 'r', encoding='utf-8') as f:
     contents = f.read()
     matches = re.findall(pattern, contents)
     for match in matches:
-        key = match.strip('()"')
+        key = match.strip('i18n()"\'')
         data[key] = key
 
 # Extract labels from gui.py
@@ -20,7 +20,7 @@ with open('gui.py', 'r', encoding='utf-8') as f:
     contents = f.read()
     matches = re.findall(pattern, contents)
     for match in matches:
-        key = match.strip('()"')
+        key = match.strip('i18n()"\'')
         data[key] = key
 
 # Save as a JSON file
