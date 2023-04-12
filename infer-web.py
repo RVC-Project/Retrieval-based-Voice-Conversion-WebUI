@@ -487,11 +487,11 @@ with gr.Blocks() as app:
                 with gr.Row():
                     with gr.Column():
                         vc_transform0 = gr.Number(label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"), value=0)
-                        input_audio0 = gr.Textbox(label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),value="E:\codes\py39\\vits_vc_gpu_train\\todo-songs\冬之花clip1.wav")
+                        input_audio0 = gr.Textbox(label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),value="E:\\codes\\py39\\vits_vc_gpu_train\\todo-songs\\冬之花clip1.wav")
                         f0method0=gr.Radio(label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"), choices=["pm","harvest"],value="pm", interactive=True)
                     with gr.Column():
-                        file_index1 = gr.Textbox(label=i18n("特征检索库文件路径"),value="E:\codes\py39\\vits_vc_gpu_train\logs\mi-test-1key\\added_IVF677_Flat_nprobe_7.index", interactive=True)
-                        file_big_npy1 = gr.Textbox(label=i18n("特征文件路径"),value="E:\codes\py39\\vits_vc_gpu_train\logs\mi-test-1key\\total_fea.npy", interactive=True)
+                        file_index1 = gr.Textbox(label=i18n("特征检索库文件路径"),value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index", interactive=True)
+                        file_big_npy1 = gr.Textbox(label=i18n("特征文件路径"),value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy", interactive=True)
                         index_rate1 =  gr.Slider(minimum=0, maximum=1,label='检索特征占比', value=1,interactive=True)
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
                     but0=gr.Button(i18n("转换"), variant="primary")
@@ -507,8 +507,8 @@ with gr.Blocks() as app:
                         opt_input = gr.Textbox(label=i18n("指定输出文件夹"),value="opt")
                         f0method1=gr.Radio(label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"), choices=["pm","harvest"],value="pm", interactive=True)
                     with gr.Column():
-                        file_index2 = gr.Textbox(label=i18n("特征检索库文件路径"),value="E:\codes\py39\\vits_vc_gpu_train\logs\mi-test-1key\\added_IVF677_Flat_nprobe_7.index", interactive=True)
-                        file_big_npy2 = gr.Textbox(label=i18n("特征文件路径"),value="E:\codes\py39\\vits_vc_gpu_train\logs\mi-test-1key\\total_fea.npy", interactive=True)
+                        file_index2 = gr.Textbox(label=i18n("特征检索库文件路径"),value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index", interactive=True)
+                        file_big_npy2 = gr.Textbox(label=i18n("特征文件路径"),value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy", interactive=True)
                         index_rate2 =  gr.Slider(minimum=0, maximum=1,label=i18n("检索特征占比"), value=1,interactive=True)
                     with gr.Column():
                         dir_input = gr.Textbox(label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),value="E:\codes\py39\\vits_vc_gpu_train\\todo-songs")
@@ -539,7 +539,7 @@ with gr.Blocks() as app:
             with gr.Group():#暂时单人的, 后面支持最多4人的#数据处理
                 gr.Markdown(value=i18n("step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. "))
                 with gr.Row():
-                    trainset_dir4 = gr.Textbox(label=i18n("输入训练文件夹路径"),value="E:\语音音频+标注\米津玄师\src")
+                    trainset_dir4 = gr.Textbox(label=i18n("输入训练文件夹路径"),value="E:\\语音音频+标注\\米津玄师\\src")
                     spk_id5 = gr.Slider(minimum=0, maximum=4, step=1, label=i18n("请指定说话人id"), value=0,interactive=True)
                     but1=gr.Button(i18n("处理数据"), variant="primary")
                     info1=gr.Textbox(label=i18n("输出信息"),value="")
@@ -614,7 +614,7 @@ with gr.Blocks() as app:
             with gr.Group():
                 gr.Markdown(value=i18n("模型提取(输入logs文件夹下大文件模型路径),适用于训一半不想训了模型没有自动提取保存小文件模型,或者想测试中间模型的情况"))
                 with gr.Row():
-                    ckpt_path2 = gr.Textbox(label=i18n("模型路径"), value="E:\codes\py39\logs\mi-test_f0_48k\\G_23333.pth", interactive=True)
+                    ckpt_path2 = gr.Textbox(label=i18n("模型路径"), value="E:\\codes\\py39\\logs\\mi-test_f0_48k\\G_23333.pth", interactive=True)
                     save_name = gr.Textbox(label=i18n("保存名"), value="", interactive=True)
                     sr__ = gr.Radio(label=i18n("目标采样率"), choices=["32k","40k","48k"],value="40k", interactive=True)
                     if_f0__ = gr.Radio(label=i18n("模型是否带音高指导,1是0否"), choices=["1","0"],value="1", interactive=True)
