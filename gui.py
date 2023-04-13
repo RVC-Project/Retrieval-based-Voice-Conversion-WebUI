@@ -3,8 +3,10 @@ import sounddevice as sd
 import noisereduce as nr
 import numpy as np
 from fairseq import checkpoint_utils
-import librosa,torch,parselmouth,faiss,time,threading
+import librosa,torch,parselmouth,faiss,time,threading,math
 import torch.nn.functional as F
+import torchaudio.transforms as tat
+
 #import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
 from webui_locale import I18nAuto
@@ -85,7 +87,7 @@ class RVC:
             audio = librosa.to_mono(audio.transpose(1, 0))
         if sampling_rate != 16000:
             audio = librosa.resample(audio, orig_sr=sampling_rate, target_sr=16000)
-            print('test:audio:'+str(audio.shape))
+            #print('test:audio:'+str(audio.shape))
         '''padding'''
         
         
@@ -147,7 +149,8 @@ class Config:
         self.threhold:int=-30
         self.crossfade_time:float=0.08
         self.extra_time:float=0.04
-        self.noise_reduce=False
+        self.I_noise_reduce=False
+        self.O_noise_reduce=False
 
 class GUI:
     def __init__(self) -> None:
@@ -162,6 +165,7 @@ class GUI:
         layout=[
             [
                 sg.Frame(title=i18n('加载模型'),layout=[
+                    [sg.Input(default_text='TEMP\\hubert_base.pt',key='hubert_path'),sg.FileBrowse(i18n('Hubert模型'))],
                     [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse(i18n('选择.pth文件'))],
                     [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse(i18n('选择.index文件'))],
                     [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse(i18n('选择.npy文件'))]
@@ -183,10 +187,10 @@ class GUI:
                     [sg.Text(i18n("采样长度")),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
                     [sg.Text(i18n("淡入淡出长度")),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
                     [sg.Text(i18n("额外推理时长")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)],
-                    [sg.Checkbox(i18n('输出降噪/Output Noisereduce'),key='noise_reduce')]
+                    [sg.Checkbox(i18n('输入降噪'),key='I_noise_reduce'),sg.Checkbox(i18n('输出降噪'),key='O_noise_reduce')]
                 ],title=i18n("性能设置"))
             ],
-            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc')]
+            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc'),sg.Text(i18n("推理时间(ms):")),sg.Text("0",key='infer_time')]
         ]
         
         self.window=sg.Window("RVC - GUI",layout=layout)
@@ -219,11 +223,13 @@ class GUI:
         self.config.block_time=values['block_time']
         self.config.crossfade_time=values['crossfade_length']
         self.config.extra_time=values['extra_time']
-        self.config.noise_reduce=values['noise_reduce']
+        self.config.I_noise_reduce=values['I_noise_reduce']
+        self.config.O_noise_reduce=values['O_noise_reduce']
    
     def start_vc(self):
         torch.cuda.empty_cache()
         self.flag_vc=True
+        self.RMS_threhold=math.e**(float(self.config.threhold)/10)
         self.block_frame=int(self.config.block_time*self.config.samplerate)
         self.crossfade_frame=int(self.config.crossfade_time*self.config.samplerate)
         self.sola_search_frame=int(0.012*self.config.samplerate)
@@ -231,11 +237,15 @@ class GUI:
         self.extra_frame=int(self.config.extra_time*self.config.samplerate)#往后预留0.04s
         self.rvc=None
         self.rvc=RVC(self.config.pitch,self.config.pth_path,self.config.index_path,self.config.npy_path)
-        self.input_wav:np.ndarray=np.zeros(self.extra_frame+self.crossfade_frame+self.sola_search_frame+self.block_frame)
-        self.output_wav:np.ndarray=np.zeros(self.block_frame)
-        self.sola_buffer:np.ndarray=np.zeros(self.crossfade_frame,dtype='float32')
-        self.fade_in_window:np.ndarray = np.linspace(0, 1, self.crossfade_frame)
-        self.fade_out_window:np.ndarray = 1 - self.fade_in_window
+        self.input_wav:np.ndarray=np.zeros(self.extra_frame+self.crossfade_frame+self.sola_search_frame+self.block_frame,dtype='float32')
+        self.output_wav:torch.Tensor=torch.zeros(self.block_frame,device=device,dtype=torch.float32)
+        #self.sola_buffer:np.ndarray=np.zeros(self.crossfade_frame,dtype='float32')
+        self.sola_buffer:torch.Tensor=torch.zeros(self.crossfade_frame,device=device,dtype=torch.float32)
+        #self.fade_in_window:np.ndarray = np.linspace(0, 1, self.crossfade_frame)
+        self.fade_in_window:torch.Tensor=torch.linspace(0.0,1.0,steps=self.crossfade_frame,device=device,dtype=torch.float32)
+        self.fade_out_window:torch.Tensor = 1 - self.fade_in_window
+        self.resampler=tat.Resample(orig_freq=40000,new_freq=self.config.samplerate,dtype=torch.float32)
+        self.RMS=lambda y:torch.sqrt(torch.mean(torch.square(y))).item()#RMS calculator
         thread_vc=threading.Thread(target=self.soundinput)
         thread_vc.start()
 
@@ -257,46 +267,48 @@ class GUI:
         '''
         start_time=time.perf_counter()
         indata=librosa.to_mono(indata.T)
-        self.input_wav[:]=np.roll(self.input_wav,-self.block_frame)
-        
-        #TODO:Convert all numpy calculation to torch
+        if self.config.I_noise_reduce:
+            indata[:]=nr.reduce_noise(y=indata,sr=self.config.samplerate)
+             
         '''noise gate'''
-        frame_length=1024
-        hop_length=512
+        frame_length=2048
+        hop_length=1024
         rms=librosa.feature.rms(y=indata,frame_length=frame_length,hop_length=hop_length)
         db_threhold=librosa.amplitude_to_db(rms,ref=1.0)[0]<self.config.threhold
         #print(rms.shape,db.shape,db)
         for i in range(db_threhold.shape[0]):
             if db_threhold[i]:
                 indata[i*hop_length:(i+1)*hop_length]=0
-        self.input_wav[-self.block_frame:]=indata[:]
+        self.input_wav[:]=np.append(self.input_wav[self.block_frame:],indata)
         
         #infer
         print('input_wav:'+str(self.input_wav.shape))
-        infer_wav=librosa.resample(y=self.rvc.infer(self.input_wav[:],self.config.samplerate),orig_sr=40000,target_sr=self.config.samplerate)[-self.crossfade_frame-self.sola_search_frame-self.block_frame:]
-        print('infered_wav:'+str(infer_wav.shape))
-                
+        #print('infered_wav:'+str(infer_wav.shape))
+        infer_wav:torch.Tensor=self.resampler(torch.from_numpy(self.rvc.infer(self.input_wav,self.config.samplerate)))[-self.crossfade_frame-self.sola_search_frame-self.block_frame:].to(device)
+        print('infer_wav:'+str(infer_wav.shape))
+        
         # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
-        cor_nom = np.convolve(infer_wav[ : self.crossfade_frame + self.sola_search_frame], np.flip(self.sola_buffer), 'valid')
-        cor_den = np.sqrt(np.convolve(infer_wav[ : self.crossfade_frame + self.sola_search_frame] ** 2, np.ones(self.crossfade_frame), 'valid') + 1e-3)
-        sola_offset = np.argmax( cor_nom / cor_den)
-        print('sola offset: ' + str(sola_offset))
+        cor_nom=F.conv1d(infer_wav[None,None,:self.crossfade_frame + self.sola_search_frame],self.sola_buffer[None,None,:])
+        cor_den=torch.sqrt(F.conv1d(infer_wav[None,None,:self.crossfade_frame + self.sola_search_frame]**2,torch.ones(1, 1,self.crossfade_frame,device=device))+1e-8)
+        sola_offset = torch.argmax( cor_nom[0, 0] / cor_den[0, 0])
+        print('sola offset: ' + str(int(sola_offset)))
         
         # crossfade
         self.output_wav[:]=infer_wav[sola_offset : sola_offset + self.block_frame]
         self.output_wav[:self.crossfade_frame] *= self.fade_in_window
         self.output_wav[:self.crossfade_frame] += self.sola_buffer[:] 
-        
         if sola_offset < self.sola_search_frame:
             self.sola_buffer[:] = infer_wav[-self.sola_search_frame - self.crossfade_frame + sola_offset: -self.sola_search_frame + sola_offset]* self.fade_out_window
         else:
             self.sola_buffer[:] = infer_wav[- self.crossfade_frame :]* self.fade_out_window
         
-        if self.config.noise_reduce:
-            self.output_wav[:]=nr.reduce_noise(y=self.output_wav,sr=self.config.samplerate)
-        
-        outdata[:]=np.array([self.output_wav,self.output_wav]).T
-        print('infer time:'+str(time.perf_counter()-start_time))
+        if self.config.O_noise_reduce:
+            outdata[:]=np.tile(nr.reduce_noise(y=self.output_wav[:].cpu().numpy(),sr=self.config.samplerate),(2,1)).T
+        else:
+            outdata[:]=self.output_wav[:].repeat(2, 1).t().cpu().numpy()
+        total_time=time.perf_counter()-start_time
+        print('infer time:'+str(total_time))
+        self.window['infer_time'].update(int(total_time*1000))
         
     def get_devices(self,update: bool = True):
         '''获取设备列表'''

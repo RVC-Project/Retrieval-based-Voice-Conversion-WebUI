@@ -17,7 +17,7 @@
 
 [**更新日志**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
-[**English**](./README_en.md) | [**中文简体**](./README.md)
+[**English**](./README.en.md) | [**中文简体**](./README.md) | [**日本語**](./README.ja.md)
 
 > 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
@@ -41,7 +41,7 @@
 # 参考自: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
-如果是win系统+30系显卡，根据https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21的经验，需要指定pytorch对应的cuda版本
+#如果是win系统+Nvidia Ampere架构(RTX30xx)，根据https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21的经验，需要指定pytorch对应的cuda版本
 
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
