@@ -15,7 +15,7 @@ i18n = I18nAuto()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class RVC:
-    def __init__(self,key,pth_path,index_path,npy_path) -> None:
+    def __init__(self,key,hubert_path,pth_path,index_path,npy_path) -> None:
         '''
         初始化
         '''
@@ -27,7 +27,7 @@ class RVC:
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
         self.index=faiss.read_index(index_path)
         self.big_npy=np.load(npy_path)
-        model_path = "TEMP\\hubert_base.pt"
+        model_path = hubert_path
         print("load model(s) from {}".format(model_path))
         models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
             [model_path],
@@ -139,6 +139,7 @@ class RVC:
 
 class Config:
     def __init__(self) -> None:
+        self.hubert_path:str=''
         self.pth_path:str=''
         self.index_path:str=''
         self.npy_path:str=''
@@ -215,6 +216,7 @@ class GUI:
 
     def set_values(self,values):
         self.set_devices(values["sg_input_device"],values['sg_output_device'])
+        self.config.hubert_path=values['hubert_path']
         self.config.pth_path=values['pth_path']
         self.config.index_path=values['index_path']
         self.config.npy_path=values['npy_path']
@@ -236,7 +238,7 @@ class GUI:
         self.delay_frame=int(0.02*self.config.samplerate)#往前预留0.02s
         self.extra_frame=int(self.config.extra_time*self.config.samplerate)#往后预留0.04s
         self.rvc=None
-        self.rvc=RVC(self.config.pitch,self.config.pth_path,self.config.index_path,self.config.npy_path)
+        self.rvc=RVC(self.config.pitch,self.config.hubert_path,self.config.pth_path,self.config.index_path,self.config.npy_path)
         self.input_wav:np.ndarray=np.zeros(self.extra_frame+self.crossfade_frame+self.sola_search_frame+self.block_frame,dtype='float32')
         self.output_wav:torch.Tensor=torch.zeros(self.block_frame,device=device,dtype=torch.float32)
         #self.sola_buffer:np.ndarray=np.zeros(self.crossfade_frame,dtype='float32')
