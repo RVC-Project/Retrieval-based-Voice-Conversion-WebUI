@@ -334,15 +334,13 @@ def train_index(exp_dir1):
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
     np.save("%s/total_fea.npy"%exp_dir, big_npy)
-    n_ivf = big_npy.shape[0] // 39
+    n_ivf = min(big_npy.shape[0]//16, 512)  # FastScan make k=16 cluster for each ivf cluster https://mti-lab.github.io/blog/2021/06/21/4bitpq.html
     infos=[]
     infos.append("%s,%s"%(big_npy.shape,n_ivf))
     yield "\n".join(infos)
-    index = faiss.index_factory(256, "IVF%s,Flat"%n_ivf)
+    index = faiss.index_factory(256, "IVF%s,PQ128x4fs,RFlat"%n_ivf)  # FastScan: https://github.com/facebookresearch/faiss/wiki/Fast-accumulation-of-PQ-and-AQ-codes-(FastScan)
     infos.append("training")
     yield "\n".join(infos)
-    index_ivf = faiss.extract_index_ivf(index)  #
-    index_ivf.nprobe = int(np.power(n_ivf,0.3))
     index.train(big_npy)
     faiss.write_index(index, '%s/trained_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
     infos.append("adding")
@@ -429,12 +427,10 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
     np.save("%s/total_fea.npy"%exp_dir, big_npy)
-    n_ivf = big_npy.shape[0] // 39
+    n_ivf = min(big_npy.shape[0]//16, 512)  # FastScan make k=16 cluster for each ivf cluster https://mti-lab.github.io/blog/2021/06/21/4bitpq.html
     yield get_info_str("%s,%s"%(big_npy.shape,n_ivf))
-    index = faiss.index_factory(256, "IVF%s,Flat"%n_ivf)
+    index = faiss.index_factory(256, "IVF%s,PQ128x4fs,RFlat"%n_ivf) # FastScan: https://github.com/facebookresearch/faiss/wiki/Fast-accumulation-of-PQ-and-AQ-codes-(FastScan)
     yield get_info_str("training index")
-    index_ivf = faiss.extract_index_ivf(index)  #
-    index_ivf.nprobe = int(np.power(n_ivf,0.3))
     index.train(big_npy)
     faiss.write_index(index, '%s/trained_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
     yield get_info_str("adding index")
