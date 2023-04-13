@@ -8,11 +8,11 @@ jobs:
       - name: Check out
         uses: actions/checkout@master
 
-      - name: Extract i18n
-        run: python3 extract_locale.py
-
-      - name: Sync i18n to zh_CN.json
-        python3 "./locale/locale_diff.py"
+      - name: Run locale generation
+        run: |
+          python3 extract_locale.py
+          cd locale
+          python3 locale_diff.py
 
       - name: Commit back
         if: ${{ !github.head_ref }}
@@ -20,10 +20,5 @@ jobs:
         run: |
           git config --local user.name 'github-actions[bot]'
           git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m "🎨 Update i18n(更新本地化)"
-      - name: push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          git add --all
+          git commit -m "🎨 同步 locale"
