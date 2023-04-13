@@ -308,7 +308,7 @@ def click_train(exp_dir1,sr2,if_f0_3,spk_id5,save_epoch10,total_epoch11,batch_si
     if (if_f0_3 == "是"):
         opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,now_dir,now_dir,spk_id5))
     else:
-        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.wav.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
+        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     print("write filelist done")
     #生成config#无需生成config
@@ -411,7 +411,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     if (if_f0_3 == "是"):
         opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,now_dir,now_dir,spk_id5))
     else:
-        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.wav.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
+        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     yield get_info_str("write filelist done")
     if gpus16:
