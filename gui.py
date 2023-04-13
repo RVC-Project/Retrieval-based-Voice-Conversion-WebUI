@@ -3,7 +3,7 @@ import sounddevice as sd
 import noisereduce as nr
 import numpy as np
 from fairseq import checkpoint_utils
-import librosa,torch,parselmouth,faiss,time,threading,math
+import librosa,torch,parselmouth,faiss,time,threading
 import torch.nn.functional as F
 import torchaudio.transforms as tat
 
@@ -25,8 +25,9 @@ class RVC:
         self.f0_max = 1100
         self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
-        self.index=faiss.read_index(index_path)
-        self.big_npy=np.load(npy_path)
+        #self.index=faiss.read_index(index_path)
+        '''NOT YET USED'''
+        #self.big_npy=np.load(npy_path)
         model_path = hubert_path
         print("load model(s) from {}".format(model_path))
         models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
@@ -87,7 +88,6 @@ class RVC:
             audio = librosa.to_mono(audio.transpose(1, 0))
         if sampling_rate != 16000:
             audio = librosa.resample(audio, orig_sr=sampling_rate, target_sr=16000)
-            #print('test:audio:'+str(audio.shape))
         '''padding'''
         
         
@@ -109,7 +109,8 @@ class RVC:
 
         ####索引优化
         npy = feats[0].cpu().numpy().astype("float32")
-        D, I = self.index.search(npy, 1)
+        #D, I = self.index.search(npy, 1)  
+        '''NOT YET USED'''
         # feats = torch.from_numpy(big_npy[I.squeeze()].astype("float16")).unsqueeze(0).to(device)
         index_rate=0.5
         feats = torch.from_numpy(npy).unsqueeze(0).to(device) * index_rate + (1 - index_rate) * feats
@@ -231,7 +232,6 @@ class GUI:
     def start_vc(self):
         torch.cuda.empty_cache()
         self.flag_vc=True
-        self.RMS_threhold=math.e**(float(self.config.threhold)/10)
         self.block_frame=int(self.config.block_time*self.config.samplerate)
         self.crossfade_frame=int(self.config.crossfade_time*self.config.samplerate)
         self.sola_search_frame=int(0.012*self.config.samplerate)
@@ -241,9 +241,7 @@ class GUI:
         self.rvc=RVC(self.config.pitch,self.config.hubert_path,self.config.pth_path,self.config.index_path,self.config.npy_path)
         self.input_wav:np.ndarray=np.zeros(self.extra_frame+self.crossfade_frame+self.sola_search_frame+self.block_frame,dtype='float32')
         self.output_wav:torch.Tensor=torch.zeros(self.block_frame,device=device,dtype=torch.float32)
-        #self.sola_buffer:np.ndarray=np.zeros(self.crossfade_frame,dtype='float32')
         self.sola_buffer:torch.Tensor=torch.zeros(self.crossfade_frame,device=device,dtype=torch.float32)
-        #self.fade_in_window:np.ndarray = np.linspace(0, 1, self.crossfade_frame)
         self.fade_in_window:torch.Tensor=torch.linspace(0.0,1.0,steps=self.crossfade_frame,device=device,dtype=torch.float32)
         self.fade_out_window:torch.Tensor = 1 - self.fade_in_window
         self.resampler=tat.Resample(orig_freq=40000,new_freq=self.config.samplerate,dtype=torch.float32)
