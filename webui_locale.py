@@ -13,7 +13,7 @@ class I18nAuto:
         if language == 'auto':
             language = locale.getdefaultlocale()[0]
         self.language = language
-        print("Use Languane:", language)
+        print("Use Language:", language)
         self.language_map = load_language_list(language)
 
     def __call__(self, key):
