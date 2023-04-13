@@ -1,5 +1,8 @@
 name: genlocale
-on: [ push ]
+on:
+  push:
+    branches:
+      - main
 jobs:
   golangci:
     name: genlocale
@@ -24,6 +27,7 @@ jobs:
           git commit -m "🎨 同步 locale"
 
       - name: Push changes
+        if: ${{ !github.head_ref }}
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
