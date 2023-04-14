@@ -26,9 +26,8 @@ jobs:
           git add --all
           git commit -m "🎨 同步 locale"
 
-      - name: Push changes
+      - name: Create Pull Request
         if: ${{ !github.head_ref }}
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v4
+  
