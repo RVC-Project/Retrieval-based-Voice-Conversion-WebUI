@@ -42,7 +42,7 @@ class PreProcess():
         os.makedirs(self.wavs16k_dir,exist_ok=True)
 
     def __enter__(self):
-        self.f = open("%s/preprocess.log"%exp_dir, "a+")
+        self.f = open("%s/preprocess.log"%self.exp_dir, "a+")
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
