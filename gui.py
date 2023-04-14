@@ -155,7 +155,7 @@ class GUI:
         layout=[
             [
                 sg.Frame(title=i18n('加载模型'),layout=[
-                    [sg.Input(default_text='TEMP\\hubert_base.pt',key='hubert_path'),sg.FileBrowse(i18n('Hubert File'))],
+                    [sg.Input(default_text='TEMP\\hubert_base.pt',key='hubert_path'),sg.FileBrowse(i18n('Hubert模型'))],
                     [sg.Input(default_text='TEMP\\atri.pth',key='pth_path'),sg.FileBrowse(i18n('选择.pth文件'))],
                     [sg.Input(default_text='TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index',key='index_path'),sg.FileBrowse(i18n('选择.index文件'))],
                     [sg.Input(default_text='TEMP\\big_src_feature_atri.npy',key='npy_path'),sg.FileBrowse(i18n('选择.npy文件'))]
@@ -177,10 +177,10 @@ class GUI:
                     [sg.Text(i18n("采样长度")),sg.Slider(range=(0.1,3.0),key='block_time',resolution=0.1,orientation='h',default_value=1.0)],
                     [sg.Text(i18n("淡入淡出长度")),sg.Slider(range=(0.01,0.15),key='crossfade_length',resolution=0.01,orientation='h',default_value=0.08)],
                     [sg.Text(i18n("额外推理时长")),sg.Slider(range=(0.05,3.00),key='extra_time',resolution=0.01,orientation='h',default_value=0.05)],
-                    [sg.Checkbox(i18n('Input Noisereduce'),key='I_noise_reduce'),sg.Checkbox(i18n('Output Noisereduce'),key='O_noise_reduce')]
+                    [sg.Checkbox(i18n('输入降噪'),key='I_noise_reduce'),sg.Checkbox(i18n('输出降噪'),key='O_noise_reduce')]
                 ],title=i18n("性能设置"))
             ],
-            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc'),sg.Text(i18n("Infer Time(ms):")),sg.Text("0",key='infer_time')]
+            [sg.Button(i18n("开始音频转换"),key='start_vc'),sg.Button(i18n("停止音频转换"),key='stop_vc'),sg.Text(i18n("推理时间(ms):")),sg.Text("0",key='infer_time')]
         ]
         
         self.window=sg.Window("RVC - GUI",layout=layout)

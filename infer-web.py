@@ -5,6 +5,16 @@ from subprocess import Popen
 from time import sleep
 import torch, os,traceback,sys,warnings,shutil,numpy as np
 import faiss
+now_dir=os.getcwd()
+sys.path.append(now_dir)
+tmp=os.path.join(now_dir,"TEMP")
+shutil.rmtree(tmp,ignore_errors=True)
+os.makedirs(tmp,exist_ok=True)
+os.makedirs(os.path.join(now_dir,"logs"),exist_ok=True)
+os.makedirs(os.path.join(now_dir,"weights"),exist_ok=True)
+os.environ["TEMP"]=tmp
+warnings.filterwarnings("ignore")
+torch.manual_seed(114514)
 from webui_locale import I18nAuto
 i18n = I18nAuto()
 #判断是否有能用来训练和加速推理的N卡
@@ -22,16 +32,6 @@ else:
             gpu_infos.append("%s\t%s"%(i,gpu_name))
 gpu_info="\n".join(gpu_infos)if if_gpu_ok==True and len(gpu_infos)>0 else "很遗憾您这没有能用的显卡来支持您训练"
 gpus="-".join([i[0]for i in gpu_infos])
-now_dir=os.getcwd()
-sys.path.append(now_dir)
-tmp=os.path.join(now_dir,"TEMP")
-shutil.rmtree(tmp,ignore_errors=True)
-os.makedirs(tmp,exist_ok=True)
-os.makedirs(os.path.join(now_dir,"logs"),exist_ok=True)
-os.makedirs(os.path.join(now_dir,"weights"),exist_ok=True)
-os.environ["TEMP"]=tmp
-warnings.filterwarnings("ignore")
-torch.manual_seed(114514)
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
 from scipy.io import wavfile
 from fairseq import checkpoint_utils
@@ -308,7 +308,7 @@ def click_train(exp_dir1,sr2,if_f0_3,spk_id5,save_epoch10,total_epoch11,batch_si
     if (if_f0_3 == "是"):
         opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,now_dir,now_dir,spk_id5))
     else:
-        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
+        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     print("write filelist done")
     #生成config#无需生成config
@@ -411,7 +411,7 @@ def train1key(exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0meth
     if (if_f0_3 == "是"):
         opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,now_dir,now_dir,spk_id5))
     else:
-        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
+        opt.append("%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"%(now_dir,sr2,now_dir,spk_id5))
     with open("%s/filelist.txt"%exp_dir,"w")as f:f.write("\n".join(opt))
     yield get_info_str("write filelist done")
     if gpus16:
@@ -563,7 +563,7 @@ with gr.Blocks() as app:
                     total_epoch11 = gr.Slider(minimum=0, maximum=1000, step=1, label=i18n("总训练轮数total_epoch"), value=20,interactive=True)
                     batch_size12 = gr.Slider(minimum=0, maximum=32, step=1, label='每张显卡的batch_size', value=4,interactive=True)
                     if_save_latest13 = gr.Radio(label=i18n("是否仅保存最新的ckpt文件以节省硬盘空间"), choices=["是", "否"], value="否", interactive=True)
-                    if_cache_gpu17 = gr.Radio(label=i18n("是否缓存所有训练集至显存. 10min以下小数据可缓存以加速训练, 大数据缓存会炸显存也加不了多少速"), choices=["是", "否"], value="否", interactive=True)
+                    if_cache_gpu17 = gr.Radio(label=i18n("是否缓存所有训练集至显存. 10min以下小数据可缓存以加速训练, 大数据缓存会炸显存也加不了多少速"), choices=["是", "否"], value="是", interactive=True)
                 with gr.Row():
                     pretrained_G14 = gr.Textbox(label=i18n("加载预训练底模G路径"), value="pretrained/f0G40k.pth",interactive=True)
                     pretrained_D15 = gr.Textbox(label=i18n("加载预训练底模D路径"), value="pretrained/f0D40k.pth",interactive=True)
@@ -624,10 +624,10 @@ with gr.Blocks() as app:
                     ckpt_path2.change(change_info_,[ckpt_path2],[sr__,if_f0__])
                 but9.click(extract_small_model, [ckpt_path2,save_name,sr__,if_f0__,info___], info7)
 
-        with gr.TabItem(i18n("招募音高曲线前端编辑器")):
-            gr.Markdown(value=i18n("加开发群联系我xxxxx"))
-        with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
-            gr.Markdown(value=i18n("xxxxx"))
+        # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
+        #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
+        # with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
+        #     gr.Markdown(value=i18n("xxxxx"))
 
     if iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)

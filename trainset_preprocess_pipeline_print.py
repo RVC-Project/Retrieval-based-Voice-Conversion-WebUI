@@ -15,6 +15,13 @@ import multiprocessing
 from my_utils import load_audio
 
 mutex = multiprocessing.Lock()
+f = open("%s/preprocess.log"%exp_dir, "a+")
+def println(strr):
+    mutex.acquire()
+    print(strr)
+    f.write("%s\n" % strr)
+    f.flush()
+    mutex.release()
 
 class PreProcess():
     def __init__(self,sr,exp_dir):
@@ -35,17 +42,9 @@ class PreProcess():
         self.exp_dir=exp_dir
         self.gt_wavs_dir="%s/0_gt_wavs"%exp_dir
         self.wavs16k_dir="%s/1_16k_wavs"%exp_dir
-        self.f = open("%s/preprocess.log"%exp_dir, "a+")
         os.makedirs(self.exp_dir,exist_ok=True)
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
         os.makedirs(self.wavs16k_dir,exist_ok=True)
-
-    def println(self, strr):
-        mutex.acquire()
-        print(strr)
-        self.f.write("%s\n" % strr)
-        self.f.flush()
-        mutex.release()
 
     def norm_write(self,tmp_audio,idx0,idx1):
         tmp_audio = (tmp_audio / np.abs(tmp_audio).max() * (self.max * self.alpha)) + (1 - self.alpha) * tmp_audio
@@ -70,9 +69,9 @@ class PreProcess():
                         tmp_audio = audio[start:]
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            self.println("%s->Suc."%path)
+            println("%s->Suc."%path)
         except:
-            self.println("%s->%s"%(path,traceback.format_exc()))
+            println("%s->%s"%(path,traceback.format_exc()))
 
     def pipeline_mp(self,infos):
         for path, idx0 in infos:
@@ -91,14 +90,14 @@ class PreProcess():
                     ps.append(p)
                     for p in ps:p.join()
         except:
-            self.println("Fail. %s"%traceback.format_exc())
+            println("Fail. %s"%traceback.format_exc())
 
 def preprocess_trainset(inp_root, sr, n_p, exp_dir):
     pp=PreProcess(sr,exp_dir)
-    pp.println("start preprocess")
-    pp.println(sys.argv)
+    println("start preprocess")
+    println(sys.argv)
     pp.pipeline_mp_inp_dir(inp_root,n_p)
-    pp.println("end preprocess")
+    println("end preprocess")
 
 if __name__=='__main__':
     preprocess_trainset(inp_root, sr, n_p, exp_dir)

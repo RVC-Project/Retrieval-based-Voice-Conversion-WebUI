@@ -35,6 +35,7 @@ class VC(object):
                 x.astype(np.double),
                 fs=self.sr,
                 f0_ceil=f0_max,
+                f0_floor=f0_min,
                 frame_period=10,
             )
             f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.sr)
