@@ -1,21 +1,14 @@
-import sys,os,multiprocessing
-now_dir=os.getcwd()
-sys.path.append(now_dir)
-
-inp_root = sys.argv[1]
-sr = int(sys.argv[2])
-n_p = int(sys.argv[3])
-exp_dir = sys.argv[4]
-noparallel = sys.argv[5] == "True"
-import numpy as np,os,traceback
+import multiprocessing
+import numpy as np
 from slicer2 import Slicer
-import librosa,traceback
-from  scipy.io import wavfile
+import librosa
+import traceback
+from scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
 
 class PreProcess():
-    def __init__(self,sr,exp_dir):
+    def __init__(self,sr,exp_dir,noparallel):
         self.slicer = Slicer(
             sr=sr,
             threshold=-32,
@@ -33,6 +26,7 @@ class PreProcess():
         self.exp_dir=exp_dir
         self.gt_wavs_dir="%s/0_gt_wavs"%exp_dir
         self.wavs16k_dir="%s/1_16k_wavs"%exp_dir
+        self.noparallel=noparallel
         self.mutex = multiprocessing.Lock()
         os.makedirs(self.exp_dir,exist_ok=True)
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
@@ -87,7 +81,7 @@ class PreProcess():
     def pipeline_mp_inp_dir(self,inp_root,n_p):
         try:
             infos = [("%s/%s" % (inp_root, name), idx) for idx, name in enumerate(sorted(list(os.listdir(inp_root))))]
-            if noparallel:
+            if self.noparallel:
                 for i in range(n_p): self.pipeline_mp(infos[i::n_p])
             else:
                 ps=[]
@@ -99,12 +93,21 @@ class PreProcess():
         except:
             self.println("Fail. %s"%traceback.format_exc())
 
-def preprocess_trainset(inp_root, sr, n_p, exp_dir):
-    with PreProcess(sr,exp_dir) as pp:
+def preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel):
+    with PreProcess(sr,exp_dir,noparallel) as pp:
         pp.println("start preprocess")
         pp.println(sys.argv)
         pp.pipeline_mp_inp_dir(inp_root,n_p)
         pp.println("end preprocess")
 
 if __name__=='__main__':
-    preprocess_trainset(inp_root, sr, n_p, exp_dir)
+    import sys, os
+    now_dir=os.getcwd()
+    sys.path.append(now_dir)
+
+    inp_root = sys.argv[1]
+    sr = int(sys.argv[2])
+    n_p = int(sys.argv[3])
+    exp_dir = sys.argv[4]
+    noparallel = sys.argv[5] == "True"
+    preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel)
