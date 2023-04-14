@@ -1,3 +1,6 @@
+import sys, os
+now_dir=os.getcwd()
+sys.path.append(now_dir)
 import multiprocessing
 import numpy as np
 from slicer2 import Slicer
@@ -101,10 +104,6 @@ def preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel):
         pp.println("end preprocess")
 
 if __name__=='__main__':
-    import sys, os
-    now_dir=os.getcwd()
-    sys.path.append(now_dir)
-
     inp_root = sys.argv[1]
     sr = int(sys.argv[2])
     n_p = int(sys.argv[3])
