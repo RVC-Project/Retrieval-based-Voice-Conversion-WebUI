@@ -1,5 +1,5 @@
 import os,sys,traceback
-# device=sys.argv[1]
+device=sys.argv[1]
 n_part=int(sys.argv[2])
 i_part=int(sys.argv[3])
 if len(sys.argv) == 5:
@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import soundfile as sf
 import numpy as np
 from fairseq import checkpoint_utils
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(device)
 
 f = open("%s/extract_f0_feature.log"%exp_dir, "a+")
 def printt(strr):

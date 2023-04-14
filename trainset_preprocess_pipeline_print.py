@@ -15,13 +15,6 @@ import multiprocessing
 from my_utils import load_audio
 
 mutex = multiprocessing.Lock()
-f = open("%s/preprocess.log"%exp_dir, "a+")
-def println(strr):
-    mutex.acquire()
-    print(strr)
-    f.write("%s\n" % strr)
-    f.flush()
-    mutex.release()
 
 class PreProcess():
     def __init__(self,sr,exp_dir):
@@ -46,6 +39,20 @@ class PreProcess():
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
         os.makedirs(self.wavs16k_dir,exist_ok=True)
 
+    def __enter__(self):
+        self.f = open("%s/preprocess.log"%exp_dir, "a+")
+
+    def __exit__(self):
+        self.println("close file.")
+        self.f.close()
+
+    def println(self, strr):
+        mutex.acquire()
+        print(strr)
+        self.f.write("%s\n" % strr)
+        self.f.flush()
+        mutex.release()
+
     def norm_write(self,tmp_audio,idx0,idx1):
         tmp_audio = (tmp_audio / np.abs(tmp_audio).max() * (self.max * self.alpha)) + (1 - self.alpha) * tmp_audio
         wavfile.write("%s/%s_%s.wav" % (self.gt_wavs_dir, idx0, idx1), self.sr, (tmp_audio*32768).astype(np.int16))
@@ -69,9 +76,9 @@ class PreProcess():
                         tmp_audio = audio[start:]
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            println("%s->Suc."%path)
+            self.println("%s->Suc."%path)
         except:
-            println("%s->%s"%(path,traceback.format_exc()))
+            self.println("%s->%s"%(path,traceback.format_exc()))
 
     def pipeline_mp(self,infos):
         for path, idx0 in infos:
@@ -90,14 +97,14 @@ class PreProcess():
                     ps.append(p)
                     for p in ps:p.join()
         except:
-            println("Fail. %s"%traceback.format_exc())
+            self.println("Fail. %s"%traceback.format_exc())
 
 def preprocess_trainset(inp_root, sr, n_p, exp_dir):
-    pp=PreProcess(sr,exp_dir)
-    println("start preprocess")
-    println(sys.argv)
-    pp.pipeline_mp_inp_dir(inp_root,n_p)
-    println("end preprocess")
+    with PreProcess(sr,exp_dir) as pp:
+        pp.println("start preprocess")
+        pp.println(sys.argv)
+        pp.pipeline_mp_inp_dir(inp_root,n_p)
+        pp.println("end preprocess")
 
 if __name__=='__main__':
     preprocess_trainset(inp_root, sr, n_p, exp_dir)
