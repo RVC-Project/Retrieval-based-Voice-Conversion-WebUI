@@ -2,22 +2,29 @@ import sys,os,multiprocessing
 now_dir=os.getcwd()
 sys.path.append(now_dir)
 
-if __name__=='__main__':
-    inp_root = sys.argv[1]
-    sr = int(sys.argv[2])
-    n_p = int(sys.argv[3])
-    exp_dir = sys.argv[4]
-    noparallel = sys.argv[5] == "True"
-
-import numpy as np
+inp_root = sys.argv[1]
+sr = int(sys.argv[2])
+n_p = int(sys.argv[3])
+exp_dir = sys.argv[4]
+noparallel = sys.argv[5] == "True"
+import numpy as np,os,traceback
 from slicer2 import Slicer
 import librosa,traceback
 from  scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
 
+mutex = multiprocessing.Lock()
+f = open("%s/preprocess.log"%exp_dir, "a+")
+def println(strr):
+    mutex.acquire()
+    print(strr)
+    f.write("%s\n" % strr)
+    f.flush()
+    mutex.release()
+
 class PreProcess():
-    def __init__(self,sr,exp_dir,noparallel):
+    def __init__(self,sr,exp_dir):
         self.slicer = Slicer(
             sr=sr,
             threshold=-32,
@@ -35,26 +42,9 @@ class PreProcess():
         self.exp_dir=exp_dir
         self.gt_wavs_dir="%s/0_gt_wavs"%exp_dir
         self.wavs16k_dir="%s/1_16k_wavs"%exp_dir
-        self.noparallel=noparallel
-        self.mutex = multiprocessing.Lock()
         os.makedirs(self.exp_dir,exist_ok=True)
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
         os.makedirs(self.wavs16k_dir,exist_ok=True)
-
-    def __enter__(self):
-        self.f = open("%s/preprocess.log"%self.exp_dir, "a+")
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.println("close file.")
-        self.f.close()
-
-    def println(self, strr):
-        self.mutex.acquire()
-        print(strr)
-        self.f.write("%s\n" % strr)
-        self.f.flush()
-        self.mutex.release()
 
     def norm_write(self,tmp_audio,idx0,idx1):
         tmp_audio = (tmp_audio / np.abs(tmp_audio).max() * (self.max * self.alpha)) + (1 - self.alpha) * tmp_audio
@@ -79,9 +69,9 @@ class PreProcess():
                         tmp_audio = audio[start:]
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            self.println("%s->Suc."%path)
+            println("%s->Suc."%path)
         except:
-            self.println("%s->%s"%(path,traceback.format_exc()))
+            println("%s->%s"%(path,traceback.format_exc()))
 
     def pipeline_mp(self,infos):
         for path, idx0 in infos:
@@ -90,7 +80,7 @@ class PreProcess():
     def pipeline_mp_inp_dir(self,inp_root,n_p):
         try:
             infos = [("%s/%s" % (inp_root, name), idx) for idx, name in enumerate(sorted(list(os.listdir(inp_root))))]
-            if self.noparallel:
+            if noparallel:
                 for i in range(n_p): self.pipeline_mp(infos[i::n_p])
             else:
                 ps=[]
@@ -100,14 +90,14 @@ class PreProcess():
                     ps.append(p)
                     for p in ps:p.join()
         except:
-            self.println("Fail. %s"%traceback.format_exc())
+            println("Fail. %s"%traceback.format_exc())
 
-def preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel):
-    with PreProcess(sr,exp_dir,noparallel) as pp:
-        pp.println("start preprocess")
-        if __name__=='__main__': pp.println(sys.argv)
-        pp.pipeline_mp_inp_dir(inp_root,n_p)
-        pp.println("end preprocess")
+def preprocess_trainset(inp_root, sr, n_p, exp_dir):
+    pp=PreProcess(sr,exp_dir)
+    println("start preprocess")
+    println(sys.argv)
+    pp.pipeline_mp_inp_dir(inp_root,n_p)
+    println("end preprocess")
 
 if __name__=='__main__':
-    preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel)
+    preprocess_trainset(inp_root, sr, n_p, exp_dir)
