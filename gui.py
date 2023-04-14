@@ -96,11 +96,11 @@ class RVC:
             feats = self.model.final_proj(logits[0])
 
         ####索引优化
-        '''if(isinstance(self.index,type(None))==False and isinstance(self.big_npy,type(None))==False and self.index_rate!=0):
+        if(isinstance(self.index,type(None))==False and isinstance(self.big_npy,type(None))==False and self.index_rate!=0):
             npy = feats[0].cpu().numpy().astype("float32")
             _, I = self.index.search(npy, 1)
             npy=self.big_npy[I.squeeze()].astype("float16")
-            feats = torch.from_numpy(npy).unsqueeze(0).to(device)*self.index_rate + (1-self.index_rate)*feats'''
+            feats = torch.from_numpy(npy).unsqueeze(0).to(device)*self.index_rate + (1-self.index_rate)*feats
 
         feats=F.interpolate(feats.permute(0,2,1),scale_factor=2).permute(0,2,1)
         torch.cuda.synchronize()
