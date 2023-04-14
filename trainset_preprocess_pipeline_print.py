@@ -96,7 +96,7 @@ class PreProcess():
 def preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel):
     with PreProcess(sr,exp_dir,noparallel) as pp:
         pp.println("start preprocess")
-        pp.println(sys.argv)
+        if __name__=='__main__': pp.println(sys.argv)
         pp.pipeline_mp_inp_dir(inp_root,n_p)
         pp.println("end preprocess")
 
