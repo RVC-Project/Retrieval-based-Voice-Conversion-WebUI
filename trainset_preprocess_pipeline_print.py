@@ -1,12 +1,18 @@
-import sys, os
+import sys,os,multiprocessing
 now_dir=os.getcwd()
 sys.path.append(now_dir)
-import multiprocessing
+
+if __name__=='__main__':
+    inp_root = sys.argv[1]
+    sr = int(sys.argv[2])
+    n_p = int(sys.argv[3])
+    exp_dir = sys.argv[4]
+    noparallel = sys.argv[5] == "True"
+
 import numpy as np
 from slicer2 import Slicer
-import librosa
-import traceback
-from scipy.io import wavfile
+import librosa,traceback
+from  scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
 
@@ -104,9 +110,4 @@ def preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel):
         pp.println("end preprocess")
 
 if __name__=='__main__':
-    inp_root = sys.argv[1]
-    sr = int(sys.argv[2])
-    n_p = int(sys.argv[3])
-    exp_dir = sys.argv[4]
-    noparallel = sys.argv[5] == "True"
     preprocess_trainset(inp_root, sr, n_p, exp_dir, noparallel)
