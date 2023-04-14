@@ -47,8 +47,7 @@ poetryで依存関係をinstallすることをお勧めします。
 pip install torch torchvision torchaudio
 
 #Windows＋ Nvidia Ampere Architecture(RTX30xx)の場合、 #21 に従い、pytorchに対応するcuda versionを指定する必要があります。
-
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+#pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 # PyTorch関連の依存関係をinstall。install済の場合はskip
 # 参照先: https://python-poetry.org/docs/#installation
