@@ -14,8 +14,6 @@ from  scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
 
-mutex = multiprocessing.Lock()
-
 class PreProcess():
     def __init__(self,sr,exp_dir):
         self.slicer = Slicer(
@@ -35,6 +33,7 @@ class PreProcess():
         self.exp_dir=exp_dir
         self.gt_wavs_dir="%s/0_gt_wavs"%exp_dir
         self.wavs16k_dir="%s/1_16k_wavs"%exp_dir
+        self.mutex = multiprocessing.Lock()
         os.makedirs(self.exp_dir,exist_ok=True)
         os.makedirs(self.gt_wavs_dir,exist_ok=True)
         os.makedirs(self.wavs16k_dir,exist_ok=True)
@@ -48,11 +47,11 @@ class PreProcess():
         self.f.close()
 
     def println(self, strr):
-        mutex.acquire()
+        self.mutex.acquire()
         print(strr)
         self.f.write("%s\n" % strr)
         self.f.flush()
-        mutex.release()
+        self.mutex.release()
 
     def norm_write(self,tmp_audio,idx0,idx1):
         tmp_audio = (tmp_audio / np.abs(tmp_audio).max() * (self.max * self.alpha)) + (1 - self.alpha) * tmp_audio
