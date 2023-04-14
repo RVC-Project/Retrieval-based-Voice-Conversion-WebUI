@@ -41,6 +41,7 @@ class PreProcess():
 
     def __enter__(self):
         self.f = open("%s/preprocess.log"%exp_dir, "a+")
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.println("close file.")
