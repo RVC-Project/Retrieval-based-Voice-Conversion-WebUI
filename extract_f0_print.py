@@ -45,7 +45,8 @@ class FeatureInput(object):
             f0, t = pyworld.harvest(
                 x.astype(np.double),
                 fs=sr,
-                f0_ceil=1100,
+                f0_ceil=self.f0_max,
+                f0_floor=self.f0_min,
                 frame_period=1000 * self.hop / sr,
             )
             f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
@@ -53,7 +54,8 @@ class FeatureInput(object):
             f0, t = pyworld.dio(
                 x.astype(np.double),
                 fs=sr,
-                f0_ceil=1100,
+                f0_ceil=self.f0_max,
+                f0_floor=self.f0_min,
                 frame_period=1000 * self.hop / sr,
             )
             f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
