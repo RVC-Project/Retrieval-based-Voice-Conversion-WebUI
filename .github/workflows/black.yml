@@ -19,7 +19,8 @@ jobs:
       - name: Install black
         run: pip install black
       - name: run black
-        run: black $(git ls-files '*.py')
+        # run: black $(git ls-files '*.py')
+        run: black .
       - name: AutoCommit
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
