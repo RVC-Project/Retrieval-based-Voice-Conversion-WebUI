@@ -7,9 +7,10 @@ pattern = r"""i18n\((["'][^"']+["'])\)"""
 # Initialize the dictionary to store key-value pairs
 data = {}
 
+
 def process(fn: str):
     global data
-    with open(fn, 'r', encoding='utf-8') as f:
+    with open(fn, "r", encoding="utf-8") as f:
         contents = f.read()
         matches = re.findall(pattern, contents)
         for key in matches:
@@ -17,12 +18,13 @@ def process(fn: str):
             print("extract:", key)
             data[key] = key
 
+
 print("processing infer-web.py")
-process('infer-web.py')
+process("infer-web.py")
 
 print("processing gui.py")
-process('gui.py')
+process("gui.py")
 
 # Save as a JSON file
-with open('./locale/zh_CN.json', 'w', encoding='utf-8') as f:
+with open("./locale/zh_CN.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
