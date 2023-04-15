@@ -5,7 +5,7 @@ from collections import OrderedDict
 standard_file = "zh_CN.json"
 
 # Define the list of supported languages
-languages = ["ja_JP.json", "en_US.json"]
+languages = ["zh_TW.json", "ja_JP.json", "en_US.json"]
 
 # Load the standard file
 with open(standard_file, "r", encoding="utf-8") as f:
@@ -31,7 +31,8 @@ for lang_file in languages:
         del lang_data[key]
 
     # Sort the keys of the language file to match the order of the standard file
-    lang_data = OrderedDict(sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0])))
+    lang_data = OrderedDict(
+        sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0])))
 
     # Save the updated language file
     with open(lang_file, "w", encoding="utf-8") as f:
