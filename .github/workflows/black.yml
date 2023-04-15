@@ -1,0 +1,26 @@
+name: Black
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    permissions:
+      actions: write
+      checks: write
+      contents: write
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install black
+        run: pip install black
+      - name: run black
+        run: black $(git ls-files '*.py')
+      - name: AutoCommit
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Apply Code Formatter Change
