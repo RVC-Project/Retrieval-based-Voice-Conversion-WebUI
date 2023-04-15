@@ -16,7 +16,7 @@ os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
-from webui_locale import I18nAuto
+from i18n import I18nAuto
 
 i18n = I18nAuto()
 # 判断是否有能用来训练和加速推理的N卡
