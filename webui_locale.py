@@ -1,5 +1,6 @@
 import locale
 import json
+import os
 
 
 def load_language_list(language):
@@ -14,6 +15,8 @@ class I18nAuto:
             language = "auto"
         if language == "auto":
             language = locale.getdefaultlocale()[0]
+        if not os.path.exists(f"./locale/{language}.json"):
+            language = "en_US"
         self.language = language
         print("Use Language:", language)
         self.language_map = load_language_list(language)
