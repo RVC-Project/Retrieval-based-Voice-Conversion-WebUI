@@ -31,7 +31,9 @@ for lang_file in languages:
         del lang_data[key]
 
     # Sort the keys of the language file to match the order of the standard file
-    lang_data = OrderedDict(sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0])))
+    lang_data = OrderedDict(
+        sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0]))
+    )
 
     # Save the updated language file
     with open(lang_file, "w", encoding="utf-8") as f:

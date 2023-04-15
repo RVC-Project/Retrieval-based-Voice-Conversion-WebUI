@@ -7,7 +7,6 @@ from uvr5_pack.lib_v5 import layers_537238KB as layers
 
 
 class BaseASPPNet(nn.Module):
-
     def __init__(self, nin, ch, dilations=(4, 8, 16)):
         super(BaseASPPNet, self).__init__()
         self.enc1 = layers.Encoder(nin, ch, 3, 2, 1)
@@ -39,7 +38,6 @@ class BaseASPPNet(nn.Module):
 
 
 class CascadedASPPNet(nn.Module):
-
     def __init__(self, n_fft):
         super(CascadedASPPNet, self).__init__()
         self.stg1_low_band_net = BaseASPPNet(2, 64)
@@ -64,13 +62,16 @@ class CascadedASPPNet(nn.Module):
         mix = x.detach()
         x = x.clone()
 
-        x = x[:, :, :self.max_bin]
+        x = x[:, :, : self.max_bin]
 
         bandw = x.size()[2] // 2
-        aux1 = torch.cat([
-            self.stg1_low_band_net(x[:, :, :bandw]),
-            self.stg1_high_band_net(x[:, :, bandw:])
-        ], dim=2)
+        aux1 = torch.cat(
+            [
+                self.stg1_low_band_net(x[:, :, :bandw]),
+                self.stg1_high_band_net(x[:, :, bandw:]),
+            ],
+            dim=2,
+        )
 
         h = torch.cat([x, aux1], dim=1)
         aux2 = self.stg2_full_band_net(self.stg2_bridge(h))
@@ -82,24 +83,33 @@ class CascadedASPPNet(nn.Module):
         mask = F.pad(
             input=mask,
             pad=(0, 0, 0, self.output_bin - mask.size()[2]),
-            mode='replicate')
- 
+            mode="replicate",
+        )
+
         if self.training:
             aux1 = torch.sigmoid(self.aux1_out(aux1))
             aux1 = F.pad(
                 input=aux1,
                 pad=(0, 0, 0, self.output_bin - aux1.size()[2]),
-                mode='replicate')
+                mode="replicate",
+            )
             aux2 = torch.sigmoid(self.aux2_out(aux2))
             aux2 = F.pad(
                 input=aux2,
                 pad=(0, 0, 0, self.output_bin - aux2.size()[2]),
-                mode='replicate')
+                mode="replicate",
+            )
             return mask * mix, aux1 * mix, aux2 * mix
         else:
             if aggressiveness:
-                mask[:, :, :aggressiveness['split_bin']] = torch.pow(mask[:, :, :aggressiveness['split_bin']], 1 + aggressiveness['value'] / 3)
-                mask[:, :, aggressiveness['split_bin']:] = torch.pow(mask[:, :, aggressiveness['split_bin']:], 1 + aggressiveness['value'])
+                mask[:, :, : aggressiveness["split_bin"]] = torch.pow(
+                    mask[:, :, : aggressiveness["split_bin"]],
+                    1 + aggressiveness["value"] / 3,
+                )
+                mask[:, :, aggressiveness["split_bin"] :] = torch.pow(
+                    mask[:, :, aggressiveness["split_bin"] :],
+                    1 + aggressiveness["value"],
+                )
 
             return mask * mix
 
@@ -107,7 +117,7 @@ class CascadedASPPNet(nn.Module):
         h = self.forward(x_mag, aggressiveness)
 
         if self.offset > 0:
-            h = h[:, :, :, self.offset:-self.offset]
+            h = h[:, :, :, self.offset : -self.offset]
             assert h.size()[3] > 0
 
         return h
