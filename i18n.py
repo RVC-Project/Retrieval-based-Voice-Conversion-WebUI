@@ -4,9 +4,10 @@ import os
 
 
 def load_language_list(language):
-    with open(f"./i18n/{language}.json", "r", encoding="utf-8") as f:
+    with open(f"./locale/{language}.json", "r", encoding="utf-8") as f:
         language_list = json.load(f)
     return language_list
+
 
 class I18nAuto:
     def __init__(self, language=None):
