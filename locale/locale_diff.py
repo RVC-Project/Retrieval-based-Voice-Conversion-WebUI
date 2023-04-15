@@ -5,6 +5,8 @@ from collections import OrderedDict
 standard_file = "zh_CN.json"
 
 # Define the list of supported languages
+# zh_HK.json and zh_SG.json is not included in the list
+# because they are symbolinks to zh_TW.json
 languages = ["zh_TW.json", "ja_JP.json", "en_US.json"]
 
 # Load the standard file
