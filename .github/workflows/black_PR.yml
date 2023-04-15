@@ -1,9 +1,9 @@
-name: Black
+name: pull format
 
 on: [pull_request]
 
 jobs:
-  format:
+  pull_format:
     permissions:
       actions: write
       checks: write
