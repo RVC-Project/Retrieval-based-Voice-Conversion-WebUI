@@ -21,7 +21,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
 from infer_pack import commons
-
+from time import sleep
 from time import time as ttime
 from data_utils import (
     TextAudioLoaderMultiNSFsid,
@@ -45,7 +45,7 @@ global_step = 0
 def main():
     # n_gpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "5555"
+    os.environ["MASTER_PORT"] = "51515"
 
     mp.spawn(
         run,
@@ -676,6 +676,7 @@ def train_and_evaluate(
             "saving final ckpt:%s"
             % (savee(ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch))
         )
+        sleep(1)
         os._exit(2333333)
 
 

@@ -1,4 +1,5 @@
 import sys, os, multiprocessing
+from scipy import signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -38,6 +39,7 @@ class PreProcess:
             max_sil_kept=150,
         )
         self.sr = sr
+        self.bh, self.ah = signal.butter(N=5, Wn=48, btype='high', fs=self.sr)
         self.per = 3.7
         self.overlap = 0.3
         self.tail = self.per + self.overlap
@@ -69,6 +71,7 @@ class PreProcess:
     def pipeline(self, path, idx0):
         try:
             audio = load_audio(path, self.sr)
+            audio = signal.filtfilt(self.bh, self.ah, audio)
             idx1 = 0
             for audio in self.slicer.slice(audio):
                 i = 0
