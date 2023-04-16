@@ -18,7 +18,7 @@ An easy-to-use SVC framework based on VITS.<br><br>
 ------
 [**Changelog**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
-[**English**](./README.en.md) | [**中文简体**](./README.md) | [**日本語**](./README.ja.md)
+[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md)
 
 > Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
 

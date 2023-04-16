@@ -9,7 +9,7 @@ import torchaudio.transforms as tat
 
 # import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
-from webui_locale import I18nAuto
+from i18n import I18nAuto
 
 i18n = I18nAuto()
 

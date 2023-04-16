@@ -19,21 +19,21 @@ VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
 
 [**更新日誌**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
-[**English**](./README.en.md) | [**中文简体**](./README.md) | [**日本語**](./README.ja.md)
+[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md)
 
-> demo動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧してくでさい
+> デモ動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧ください
 
-> RVCによる実時間音声変換: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
+> RVCによるリアルタイム音声変換: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> 基底modelを訓練（training）したのは、約50時間の高品質開源（open source）資料集（dataset）VCTK。著作権侵害を心配することなく使用できるように。
+> 基底modelを訓練(training)したのは、約50時間の高品質なオープンソースのデータセット。著作権侵害を心配することなく使用できるように。
 
 > 今後は次々と使用許可のある高品質歌声資料集を追加し、基底modelを訓練する。
 
 ## はじめに
-本repoは下記の特性があります
+本repoは下記の特徴があります
 
-+ 調子（tone）の漏洩が下がれるためtop1検索で源特徴量を訓練集特徴量に置換
-+ 古い又は安いGPUにでも高速に訓練できる
++ 調子(tone)の漏洩が下がれるためtop1検索で源特徴量を訓練集特徴量に置換
++ 古い又は安いGPUでも高速に訓練できる
 + 小さい訓練集でもかなりいいmodelを得られる(10分以上の低noise音声を推奨)
 + modelを融合し音色をmergeできる(ckpt processing->ckpt mergeで使用)
 + 使いやすいWebUI
@@ -68,9 +68,9 @@ pip install -r requirements.txt
 ```
 
 ## 基底modelsを準備
-RVCは推理・訓練のために色んな事前訓練した基底modelsが必要。
+RVCは推論/訓練のために、様々な事前訓練を行った基底modelsが必要です。
 
-modelsは[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)からdownloadできる。
+modelsは[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)からダウンロードできます。
 
 以下は、RVCに必要な基底modelsやその他のfilesの一覧です。
 ```bash
@@ -87,11 +87,11 @@ hubert_base.pt
 ```bash
 python infer-web.py
 ```
-Windowsをお使いの方は、直接に`RVC-beta.7z`をdownload・解凍して、`go-web.bat`をclickでWebUIを起動できる。
+Windowsをお使いの方は、直接に`RVC-beta.7z`をダウンロード後に展開し、`go-web.bat`をclickでWebUIを起動。(7zipが必要です)
 
 また、repoに[小白简易教程.doc](./小白简易教程.doc)がありますので、参考にしてください（中国語版のみ）。
 
-## 参考したprojects
+## 参考プロジェクト
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)
 + [HIFIGAN](https://github.com/jik876/hifi-gan)
@@ -100,7 +100,7 @@ Windowsをお使いの方は、直接に`RVC-beta.7z`をdownload・解凍して�
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 
-## 貢献者（contributer）皆様のご協力を感謝して致します
+## 貢献者(contributer)の皆様の尽力に感謝します
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=liujing04/Retrieval-based-Voice-Conversion-WebUI" />
 </a>
