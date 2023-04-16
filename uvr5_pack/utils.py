@@ -4,7 +4,7 @@ from tqdm import tqdm
 import json
 
 
-def load_data(file_name: str = "./uvr5_pack/data.json") -> dict:
+def load_data(file_name: str = "./uvr5_pack/name_params.json") -> dict:
     with open(file_name, "r") as f:
         data = json.load(f)
 
