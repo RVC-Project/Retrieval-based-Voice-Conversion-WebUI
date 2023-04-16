@@ -2,12 +2,12 @@ name: pull format
 
 on: [pull_request]
 
+permissions:
+  contents: write
+  actions: write
+  checks: write
 jobs:
   pull_format:
-    permissions:
-      actions: write
-      checks: write
-      contents: write
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
