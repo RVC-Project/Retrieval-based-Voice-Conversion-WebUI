@@ -5,7 +5,9 @@ from config import x_pad, x_query, x_center, x_max
 import scipy.signal as signal
 import pyworld, os, traceback, faiss
 from scipy import signal
-bh, ah = signal.butter(N=5, Wn=48, btype='high', fs=16000)
+
+bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
+
 
 class VC(object):
     def __init__(self, tgt_sr, device, is_half):
