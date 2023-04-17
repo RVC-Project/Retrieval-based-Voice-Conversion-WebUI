@@ -4,8 +4,6 @@ on: [pull_request]
 
 permissions:
   contents: write
-  actions: write
-  checks: write
 jobs:
   pull_format:
     runs-on: ubuntu-latest
