@@ -139,8 +139,17 @@ def vc_single(
         if hubert_model == None:
             load_hubert()
         if_f0 = cpt.get("f0", 1)
-        file_index = file_index.strip(" ").strip('"').strip("\n").strip('"').strip(" ").replace("trained","added")#防止小白写错，自动帮他替换掉
-        file_big_npy = file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        file_index = (
+            file_index.strip(" ")
+            .strip('"')
+            .strip("\n")
+            .strip('"')
+            .strip(" ")
+            .replace("trained", "added")
+        )  # 防止小白写错，自动帮他替换掉
+        file_big_npy = (
+            file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        )
         audio_opt = vc.pipeline(
             hubert_model,
             net_g,
