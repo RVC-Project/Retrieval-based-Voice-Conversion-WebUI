@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout
+        continue-on-error: true
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.head_ref }}
       
