@@ -42,3 +42,4 @@ for lang_file in languages:
     # Save the updated language file
     with open(lang_file, "w", encoding="utf-8") as f:
         json.dump(lang_data, f, ensure_ascii=False, indent=4)
+        f.write('\n')
