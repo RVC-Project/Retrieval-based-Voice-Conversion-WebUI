@@ -61,7 +61,6 @@ poetry install
 
 pipでも依存関係のinstallが可能です:
 
-**注意**:`faiss 1.7.2`は`macOS`で`Segmentation Fault: 11`を起こすので、`requirements.txt`の該当行を `faiss-cpu==1.7.0`に変更してください。
 
 ```bash
 pip install -r requirements.txt
