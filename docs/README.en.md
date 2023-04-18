@@ -55,8 +55,6 @@ poetry install
 ```
 You can also use pip to install the dependencies
 
-**Notice**: `faiss 1.7.2` will raise Segmentation Fault: 11 under `MacOS`, please change corresponding line in `requirements.txt` to `faiss-cpu==1.7.0`
-
 ```bash
 pip install -r requirements.txt
 ```
