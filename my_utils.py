@@ -12,10 +12,10 @@ def load_audio(file, sr):
         )  # 防止小白拷路径头尾带了空格和"和回车
         out, _ = (
             ffmpeg.input(file, threads=0)
-            .output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=sr)
+            .output("-", format="f32le", acodec="pcm_f32le", ac=1, ar=sr)
             .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
         )
     except Exception as e:
         raise RuntimeError(f"Failed to load audio: {e}")
 
-    return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
+    return np.frombuffer(out, np.float32).flatten()

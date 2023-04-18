@@ -33,7 +33,9 @@ class FeatureInput(object):
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
 
     def compute_f0(self, path, f0_method):
-        x, sr = librosa.load(path, self.fs)
+        # default resample type of librosa.resample is "soxr_hq".
+        # Quality: soxr_vhq > soxr_hq
+        x, sr = librosa.load(path, self.fs, res_type='soxr_vhq')
         p_len = x.shape[0] // self.hop
         assert sr == self.fs
         if f0_method == "pm":
