@@ -39,7 +39,7 @@ class PreProcess:
             max_sil_kept=150,
         )
         self.sr = sr
-        self.bh, self.ah = signal.butter(N=5, Wn=48, btype='high', fs=self.sr)
+        self.bh, self.ah = signal.butter(N=5, Wn=48, btype="high", fs=self.sr)
         self.per = 3.7
         self.overlap = 0.3
         self.tail = self.per + self.overlap

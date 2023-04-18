@@ -28,3 +28,4 @@ process("gui.py")
 # Save as a JSON file
 with open("./i18n/zh_CN.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
+    f.write("\n")

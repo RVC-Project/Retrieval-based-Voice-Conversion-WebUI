@@ -1,4 +1,5 @@
-import os,sys
+import os, sys
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import PySimpleGUI as sg
@@ -15,7 +16,6 @@ from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFs
 from i18n import I18nAuto
 
 i18n = I18nAuto()
-print(i18n.language_map)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -32,10 +32,11 @@ class RVC:
         self.f0_max = 1100
         self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
-        self.index = faiss.read_index(index_path)
+        if index_rate != 0:
+            self.index = faiss.read_index(index_path)
+            self.big_npy = np.load(npy_path)
+            print("index search enabled")
         self.index_rate = index_rate
-        """NOT YET USED"""
-        self.big_npy = np.load(npy_path)
         model_path = hubert_path
         print("load model(s) from {}".format(model_path))
         models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
@@ -110,11 +111,7 @@ class RVC:
             feats = self.model.final_proj(logits[0])
 
         ####索引优化
-        if (
-            isinstance(self.index, type(None)) == False
-            and isinstance(self.big_npy, type(None)) == False
-            and self.index_rate != 0
-        ):
+        if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
             npy = feats[0].cpu().numpy().astype("float32")
             _, I = self.index.search(npy, 1)
             npy = self.big_npy[I.squeeze()].astype("float16")
@@ -122,6 +119,8 @@ class RVC:
                 torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
                 + (1 - self.index_rate) * feats
             )
+        else:
+            print("index search FAIL or disabled")
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         torch.cuda.synchronize()
