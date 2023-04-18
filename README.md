@@ -60,7 +60,7 @@ poetry install
 
 你也可以通过pip来安装依赖：
 
-**注意**: 用pip手动安装时，使用 `pip install faiss==1.7.0`，因为MacOS上的 "faiss 1.7.2 "版本会导致分段错误。 
+**注意**: 用pip手动安装时，使用 `pip install faiss==1.7.0`，因为MacOS上的 `faiss 1.7.2 `版本会导致分段错误。 
 
 ```bash
 pip install -r requirements.txt
