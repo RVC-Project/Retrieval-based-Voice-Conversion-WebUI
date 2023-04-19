@@ -4,7 +4,8 @@ scipy==1.9.3
 librosa==0.9.2
 llvmlite==0.39.0
 fairseq==0.12.2
-faiss-cpu==1.7.2
+faiss-cpu==1.7.0; sys_platform == "darwin"
+faiss-cpu==1.7.2; sys_platform != "darwin"
 gradio
 Cython
 future>=0.18.3
