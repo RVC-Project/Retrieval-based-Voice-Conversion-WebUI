@@ -103,3 +103,44 @@ https://github.com/facebookresearch/faiss/wiki/Fast-accumulation-of-PQ-and-AQ-co
 ## RFlat
 RFlatはFastScanで計算した大まかな距離を、index factoryの第三引数で指定した正確な距離で再計算する指示です。
 k個の近傍を取得する際は、k*k_factor個の点について再計算が行われます。
+
+# Embeddingに関するテクニック
+## alpha query expansion
+クエリ拡張は検索で使われるテクニックで、例えば全文検索では入力された検索文に単語を幾つか追加することで検索精度を上げることがあります。ベクトル検索にもいくつか提唱されていて、その内追加の学習がいらず効果が高い手法としてα-query expansionが知られています。論文では[Attention-Based Query Expansion Learning](https://arxiv.org/abs/2007.08019)などで紹介されていて、[kaggleのshopeeコンペの2位の解法](https://www.kaggle.com/code/lyakaap/2nd-place-solution/notebook)にも用いられていました。
+
+α-query expansionはあるベクトルに対し、近傍のベクトルを類似度のα乗した重みで足し合わせることでできます。いかにコードの例を張ります。big_npyをα query expansionしたものに置き換えます。
+
+```python
+alpha = 3.
+index = faiss.index_factory(256, "IVF512,PQ128x4fs,RFlat")
+original_norm = np.maximum(np.linalg.norm(big_npy, ord=2, axis=1, keepdims=True), 1e-9)
+big_npy /= original_norm
+index.train(big_npy)
+index.add(big_npy)
+dist, neighbor = index.search(big_npy, num_expand)
+
+expand_arrays = []
+ixs = np.arange(big_npy.shape[0])
+for i in range(-(-big_npy.shape[0]//batch_size)):
+    ix = ixs[i*batch_size:(i+1)*batch_size]
+    weight = np.power(np.einsum("nd,nmd->nm", big_npy[ix], big_npy[neighbor[ix]]), alpha)
+    expand_arrays.append(np.sum(big_npy[neighbor[ix]] * np.expand_dims(weight, axis=2),axis=1))
+big_npy = np.concatenate(expand_arrays, axis=0)
+
+# normalize index version
+big_npy = big_npy / np.maximum(np.linalg.norm(big_npy, ord=2, axis=1, keepdims=True), 1e-9)
+```
+
+これは、検索を行うクエリにも、検索対象のDBにも適応可能なテクニックです。
+
+## MiniBatch KMeansによるembeddingの圧縮
+total_fea.npyが大きすぎる場合、KMeansを用いてベクトルを小さくすることが可能です。
+以下のコードで、embeddingの圧縮が可能です。n_clustersは圧縮したい大きさを指定し、batch_sizeは256 * CPUのコア数を指定することでCPUの並列化の恩恵を十分に得ることができます。
+
+```python
+import multiprocessing
+from sklearn.cluster import MiniBatchKMeans
+kmeans = MiniBatchKMeans(n_clusters=10000, batch_size=256 * multiprocessing.cpu_count(), init="random")
+kmeans.fit(big_npy)
+sample_npy = kmeans.cluster_centers_
+```
