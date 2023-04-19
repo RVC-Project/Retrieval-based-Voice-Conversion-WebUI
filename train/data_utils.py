@@ -98,6 +98,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
                     sampling_rate, self.sampling_rate
                 )
             )
+        audio_norm = audio
 #        audio_norm = audio / self.max_wav_value
 #        audio_norm = audio / np.abs(audio).max()
 
@@ -289,6 +290,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
                     sampling_rate, self.sampling_rate
                 )
             )
+        audio_norm = audio
 #        audio_norm = audio / self.max_wav_value
 #        audio_norm = audio / np.abs(audio).max()
 
