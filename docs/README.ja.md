@@ -100,7 +100,7 @@ Windowsをお使いの方は、直接`RVC-beta.7z`をダウンロード後に展
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 
-## 貢献者(contributer)の皆様の尽力に感謝します
+## 貢献者(contributor)の皆様の尽力に感謝します
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=liujing04/Retrieval-based-Voice-Conversion-WebUI" />
 </a>
