@@ -87,6 +87,7 @@ class PreProcess:
                         idx1 += 1
                     else:
                         tmp_audio = audio[start:]
+                        idx1 += 1
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
             println("%s->Suc." % path)
