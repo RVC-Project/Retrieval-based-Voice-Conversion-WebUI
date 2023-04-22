@@ -51,7 +51,7 @@
     "训练模型": "Train model.",
     "训练特征索引": "Train feature index.",
     "一键训练": "One-click training.",
-    "ckpt处理": "Ckpt processing.",
+    "ckpt处理": "Ckpt processing",
     "模型融合, 可用于测试音色融合": "Model fusion, can be used for merging diffrent voices",
     "A模型路径": "A model path.",
     "B模型路径": "B model path.",
