@@ -87,7 +87,14 @@ If you are using Windows, you can download and extract `RVC-beta.7z` to use RVC 
 There's also a tutorial on RVC in Chinese and you can check it out if needed.
 
 ## Credits
-
++ [ContentVec](https://github.com/auspicious3000/contentvec/)
++ [VITS](https://github.com/jaywalnut310/vits)
++ [HIFIGAN](https://github.com/jik876/hifi-gan)
++ [Gradio](https://github.com/gradio-app/gradio)
++ [FFmpeg](https://github.com/FFmpeg/FFmpeg)
++ [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [audio-slicer](https://github.com/openvpi/audio-slicer)
++ 
 ## Thanks to all contributors for their efforts
 
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
