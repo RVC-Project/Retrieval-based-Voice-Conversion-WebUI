@@ -94,7 +94,6 @@ There's also a tutorial on RVC in Chinese and you can check it out if needed.
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
-+ 
 ## Thanks to all contributors for their efforts
 
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
