@@ -59,7 +59,7 @@ class PreProcess:
         wavfile.write(
             "%s/%s_%s.wav" % (self.gt_wavs_dir, idx0, idx1),
             self.sr,
-            (tmp_audio * 1).astype(np.float32),
+            tmp_audio.astype(np.float32),
         )
 
         # default resample type of librosa.resample is "soxr_hq".
@@ -71,13 +71,13 @@ class PreProcess:
         wavfile.write(
             "%s/%s_%s.wav" % (self.gt_wavs_dir, idx0, idx1),
             self.sr,
-            (tmp_audio * 1).astype(np.float32),
+            tmp_audio.astype(np.float32),
         )
 
         wavfile.write(
             "%s/%s_%s.wav" % (self.wavs16k_dir, idx0, idx1),
             16000,
-            (tmp_audio * 1).astype(np.float32),
+            tmp_audio.astype(np.float32),
         )
 
     def pipeline(self, path, idx0):
