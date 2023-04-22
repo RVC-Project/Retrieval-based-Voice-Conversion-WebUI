@@ -54,8 +54,8 @@ class RVC:
             cpt = torch.load(pth_path, map_location="cpu")
             tgt_sr = cpt["config"][-1]
             cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-            if_f0 = cpt.get("f0", 1)
-            if if_f0 == 1:
+            self.if_f0 = cpt.get("f0", 1)
+            if self.if_f0 == 1:
                 self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=True)
             else:
                 self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
@@ -136,27 +136,37 @@ class RVC:
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         torch.cuda.synchronize()
-        # p_len = min(feats.shape[1],10000,pitch.shape[0])#太大了爆显存
-        p_len = min(feats.shape[1], 12000)  #
         print(feats.shape)
-        pitch, pitchf = self.get_f0(audio, self.f0_up_key)
-        p_len = min(feats.shape[1], 12000, pitch.shape[0])  # 太大了爆显存
+        if(self.if_f0==1):
+            pitch, pitchf = self.get_f0(audio, self.f0_up_key)
+            p_len = min(feats.shape[1], 13000, pitch.shape[0])  # 太大了爆显存
+        else:
+            pitch, pitchf = None, None
+            p_len = min(feats.shape[1], 13000)  # 太大了爆显存
         torch.cuda.synchronize()
         # print(feats.shape,pitch.shape)
         feats = feats[:, :p_len, :]
-        pitch = pitch[:p_len]
-        pitchf = pitchf[:p_len]
+        if(self.if_f0==1):
+            pitch = pitch[:p_len]
+            pitchf = pitchf[:p_len]
+            pitch = torch.LongTensor(pitch).unsqueeze(0).to(device)
+            pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
         p_len = torch.LongTensor([p_len]).to(device)
-        pitch = torch.LongTensor(pitch).unsqueeze(0).to(device)
-        pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
         ii = 0  # sid
         sid = torch.LongTensor([ii]).to(device)
         with torch.no_grad():
-            infered_audio = (
-                self.net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
-                .data.cpu()
-                .float()
-            )  # nsf
+            if(self.if_f0==1):
+                infered_audio = (
+                    self.net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
+                    .data.cpu()
+                    .float()
+                )
+            else:
+                 infered_audio = (
+                    self.net_g.infer(feats, p_len, sid)[0][0, 0]
+                    .data.cpu()
+                    .float()
+                )
         torch.cuda.synchronize()
         return infered_audio
 
