@@ -30,7 +30,7 @@ parser.add_argument(
 cmd_opts = parser.parse_args()
 
 python_cmd = cmd_opts.pycmd
-listen_port = cmd_opts.port
+listen_port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
 iscolab = cmd_opts.colab
 noparallel = cmd_opts.noparallel
 noautoopen = cmd_opts.noautoopen
