@@ -1,17 +1,7 @@
-import math
-import os
-import random
 import torch
-from torch import nn
-import torch.nn.functional as F
 import torch.utils.data
-import numpy as np
-import librosa
-import librosa.util as librosa_util
-from librosa.util import normalize, pad_center, tiny
-from scipy.signal import get_window
-from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
+
 
 MAX_WAV_VALUE = 32768.0
 
@@ -35,13 +25,11 @@ def dynamic_range_decompression_torch(x, C=1):
 
 
 def spectral_normalize_torch(magnitudes):
-    output = dynamic_range_compression_torch(magnitudes)
-    return output
+    return dynamic_range_compression_torch(magnitudes)
 
 
 def spectral_de_normalize_torch(magnitudes):
-    output = dynamic_range_decompression_torch(magnitudes)
-    return output
+    return dynamic_range_decompression_torch(magnitudes)
 
 
 # Reusable banks
@@ -116,12 +104,14 @@ def spec_to_mel_torch(spec, n_fft, num_mels, sampling_rate, fmin, fmax):
         )
 
     # Mel-frequency Log-amplitude spectrogram :: (B, Freq=num_mels, Frame)
-    spec = torch.matmul(mel_basis[fmax_dtype_device], spec)
-    spec = spectral_normalize_torch(spec)
-    return spec
+    melspec = torch.matmul(mel_basis[fmax_dtype_device], spec)
+    melspec = spectral_normalize_torch(melspec)
+    return melspec
 
 
-def mel_spectrogram_torch(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False):
+def mel_spectrogram_torch(
+    y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False
+):
     """Convert waveform into Mel-frequency Log-amplitude spectrogram.
 
     Args:
