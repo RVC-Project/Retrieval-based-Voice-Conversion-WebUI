@@ -95,5 +95,10 @@
     "性能设置": "Performance settings",
     "开始音频转换": "Start Audio Conversion",
     "停止音频转换": "Stop Audio Conversion",
-    "推理时间(ms):": "Infer Time(ms):"
+    "推理时间(ms):": "Infer Time(ms):",
+    "Onnx导出": "Onnx",
+    "RVC模型路径": "RVC Path",
+    "Onnx输出路径": "Onnx Export Path",
+    "导出Onnx模型": "Export Onnx Model",
+    "MoeVS模型": "MoeSS?"
 }
