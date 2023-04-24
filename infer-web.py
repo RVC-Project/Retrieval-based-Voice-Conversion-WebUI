@@ -119,6 +119,7 @@ for name in os.listdir(weight_uvr5_root):
         uvr5_names.append(name.replace(".pth", ""))
 
 
+
 def vc_single(
     sid,
     input_audio,
@@ -885,6 +886,83 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}
 
 
+from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsidM
+from infer_pack.models_onnx import SynthesizerTrnMs256NSFsidO
+def export_onnx(ModelPath, ExportedPath, MoeVS=True):
+    hidden_channels = 256                                              # hidden_channels，为768Vec做准备
+    cpt = torch.load(ModelPath, map_location="cpu")                   
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]         # n_spk
+    print(*cpt["config"])
+
+    test_phone = torch.rand(1, 200, hidden_channels)                   # hidden unit
+    test_phone_lengths = torch.tensor([200]).long()                    # hidden unit 长度（貌似没啥用）
+    test_pitch = torch.randint(size=(1, 200), low=5, high=255)         # 基频（单位赫兹）
+    test_pitchf = torch.rand(1, 200)                                   # nsf基频
+    test_ds = torch.LongTensor([0])                                    # 说话人ID
+    test_rnd = torch.rand(1, 192, 200)                                 # 噪声（加入随机因子）
+
+    device = "cpu"  #导出时设备（不影响使用模型）
+
+    if MoeVS:
+        net_g = SynthesizerTrnMs256NSFsidM(*cpt["config"], is_half=False)   # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
+        net_g.load_state_dict(cpt["weight"], strict=False)
+        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
+        output_names = [
+            "audio",
+        ]
+        torch.onnx.export(
+            net_g,
+            (
+                test_phone.to(device),
+                test_phone_lengths.to(device),
+                test_pitch.to(device),
+                test_pitchf.to(device),
+                test_ds.to(device),
+                test_rnd.to(device),
+            ),
+            ExportedPath,
+            dynamic_axes={
+                "phone": [1],
+                "pitch": [1],
+                "pitchf": [1],
+                "rnd": [2],
+            },
+            do_constant_folding=False,
+            opset_version=16,
+            verbose=False,
+            input_names=input_names,
+            output_names=output_names,
+        )
+    else:
+        net_g = SynthesizerTrnMs256NSFsidO(*cpt["config"], is_half=False)   # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
+        net_g.load_state_dict(cpt["weight"], strict=False)
+        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds"]
+        output_names = [
+            "audio",
+        ]
+        torch.onnx.export(
+            net_g,
+            (
+                test_phone.to(device),
+                test_phone_lengths.to(device),
+                test_pitch.to(device),
+                test_pitchf.to(device),
+                test_ds.to(device),
+            ),
+            ExportedPath,
+            dynamic_axes={
+                "phone": [1],
+                "pitch": [1],
+                "pitchf": [1],
+            },
+            do_constant_folding=False,
+            opset_version=16,
+            verbose=False,
+            input_names=input_names,
+            output_names=output_names,
+        )
+    return "Finished"
+
 with gr.Blocks() as app:
     gr.Markdown(
         value=i18n(
@@ -1360,6 +1438,18 @@ with gr.Blocks() as app:
                     [ckpt_path2, save_name, sr__, if_f0__, info___],
                     info7,
                 )
+
+        with gr.TabItem(i18n("Onnx导出")):
+            with gr.Row():
+                ckpt_dir = gr.Textbox(label=i18n("RVC模型路径"), value="", interactive=True)
+            with gr.Row():
+                onnx_dir = gr.Textbox(label=i18n("Onnx输出路径"), value="", interactive=True)
+            with gr.Row():
+                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=True)
+                infoOnnx = gr.Label(label="Null")
+            with gr.Row():
+                butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
+            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
 
         # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
         #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
