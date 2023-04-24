@@ -1,4 +1,4 @@
-from infer_pack.models_onnx_old import SynthesizerTrnMs256NSFsid
+from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsid
 import torch
 
 person = "Shiroha/shiroha.pth"
