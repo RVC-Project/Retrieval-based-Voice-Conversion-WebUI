@@ -35,7 +35,7 @@ class FeatureInput(object):
     def compute_f0(self, path, f0_method):
         # default resample type of librosa.resample is "soxr_hq".
         # Quality: soxr_vhq > soxr_hq
-        x, sr = librosa.load(path, self.fs)#, res_type='soxr_vhq'
+        x, sr = librosa.load(path, self.fs)  # , res_type='soxr_vhq'
         p_len = x.shape[0] // self.hop
         assert sr == self.fs
         if f0_method == "pm":
