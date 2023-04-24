@@ -1,4 +1,4 @@
-from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsid
+from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsidM
 import torch
 
 person = "Shiroha/shiroha.pth"
@@ -8,7 +8,7 @@ exported_path = "model.onnx"
 cpt = torch.load(person, map_location="cpu")
 cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
 print(*cpt["config"])
-net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=False)
+net_g = SynthesizerTrnMs256NSFsidM(*cpt["config"], is_half=False)
 net_g.load_state_dict(cpt["weight"], strict=False)
 
 test_phone = torch.rand(1, 200, 256)
