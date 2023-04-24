@@ -67,7 +67,7 @@ class RVC:
             print(e)
 
     def get_f0(self, x, f0_up_key, inp_f0=None):
-        x_pad=1
+        x_pad = 1
         f0_min = 50
         f0_max = 1100
         f0_mel_min = 1127 * np.log(1 + f0_min / 700)
@@ -137,7 +137,7 @@ class RVC:
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         torch.cuda.synchronize()
         print(feats.shape)
-        if(self.if_f0==1):
+        if self.if_f0 == 1:
             pitch, pitchf = self.get_f0(audio, self.f0_up_key)
             p_len = min(feats.shape[1], 13000, pitch.shape[0])  # 太大了爆显存
         else:
@@ -146,7 +146,7 @@ class RVC:
         torch.cuda.synchronize()
         # print(feats.shape,pitch.shape)
         feats = feats[:, :p_len, :]
-        if(self.if_f0==1):
+        if self.if_f0 == 1:
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
             pitch = torch.LongTensor(pitch).unsqueeze(0).to(device)
@@ -155,17 +155,15 @@ class RVC:
         ii = 0  # sid
         sid = torch.LongTensor([ii]).to(device)
         with torch.no_grad():
-            if(self.if_f0==1):
+            if self.if_f0 == 1:
                 infered_audio = (
                     self.net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
                     .data.cpu()
                     .float()
                 )
             else:
-                 infered_audio = (
-                    self.net_g.infer(feats, p_len, sid)[0][0, 0]
-                    .data.cpu()
-                    .float()
+                infered_audio = (
+                    self.net_g.infer(feats, p_len, sid)[0][0, 0].data.cpu().float()
                 )
         torch.cuda.synchronize()
         return infered_audio
@@ -387,7 +385,7 @@ class GUI:
             self.config.pth_path,
             self.config.index_path,
             self.config.npy_path,
-            self.config.index_rate
+            self.config.index_rate,
         )
         self.input_wav: np.ndarray = np.zeros(
             self.extra_frame
@@ -511,7 +509,6 @@ class GUI:
         total_time = time.perf_counter() - start_time
         self.window["infer_time"].update(int(total_time * 1000))
         print("infer time:" + str(total_time))
-        
 
     def get_devices(self, update: bool = True):
         """获取设备列表"""
