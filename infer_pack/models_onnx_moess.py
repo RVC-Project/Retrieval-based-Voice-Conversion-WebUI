@@ -527,7 +527,7 @@ sr2sr = {
 }
 
 
-class SynthesizerTrnMs256NSFsid(nn.Module):
+class SynthesizerTrnMs256NSFsidM(nn.Module):
     def __init__(
         self,
         spec_channels,
