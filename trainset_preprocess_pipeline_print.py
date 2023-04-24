@@ -1,4 +1,5 @@
 import sys, os, multiprocessing
+from scipy import signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -31,13 +32,14 @@ class PreProcess:
     def __init__(self, sr, exp_dir):
         self.slicer = Slicer(
             sr=sr,
-            threshold=-32,
+            threshold=-40,
             min_length=800,
             min_interval=400,
             hop_size=15,
             max_sil_kept=150,
         )
         self.sr = sr
+        self.bh, self.ah = signal.butter(N=5, Wn=48, btype="high", fs=self.sr)
         self.per = 3.7
         self.overlap = 0.3
         self.tail = self.per + self.overlap
@@ -57,18 +59,22 @@ class PreProcess:
         wavfile.write(
             "%s/%s_%s.wav" % (self.gt_wavs_dir, idx0, idx1),
             self.sr,
-            (tmp_audio * 32768).astype(np.int16),
+            tmp_audio.astype(np.float32),
         )
-        tmp_audio = librosa.resample(tmp_audio, orig_sr=self.sr, target_sr=16000)
+        tmp_audio = librosa.resample(tmp_audio, orig_sr=self.sr, target_sr=16000)#, res_type="soxr_vhq"
         wavfile.write(
             "%s/%s_%s.wav" % (self.wavs16k_dir, idx0, idx1),
             16000,
-            (tmp_audio * 32768).astype(np.int16),
+            tmp_audio.astype(np.float32),
         )
 
     def pipeline(self, path, idx0):
         try:
             audio = load_audio(path, self.sr)
+            # zero phased digital filter cause pre-ringing noise...
+            # audio = signal.filtfilt(self.bh, self.ah, audio) 
+            audio = signal.lfilter(self.bh, self.ah, audio)
+
             idx1 = 0
             for audio in self.slicer.slice(audio):
                 i = 0
@@ -81,6 +87,7 @@ class PreProcess:
                         idx1 += 1
                     else:
                         tmp_audio = audio[start:]
+                        idx1 += 1
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
             println("%s->Suc." % path)

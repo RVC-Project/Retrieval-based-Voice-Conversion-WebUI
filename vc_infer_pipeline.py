@@ -4,6 +4,9 @@ import torch.nn.functional as F
 from config import x_pad, x_query, x_center, x_max
 import scipy.signal as signal
 import pyworld, os, traceback, faiss
+from scipy import signal
+
+bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 
 class VC(object):
@@ -189,6 +192,7 @@ class VC(object):
                 index = big_npy = None
         else:
             index = big_npy = None
+        audio = signal.filtfilt(bh, ah, audio)
         audio_pad = np.pad(audio, (self.window // 2, self.window // 2), mode="reflect")
         opt_ts = []
         if audio_pad.shape[0] > self.t_max:

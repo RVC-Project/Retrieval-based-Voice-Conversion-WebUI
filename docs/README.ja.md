@@ -21,58 +21,58 @@ VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
 
 [**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md)
 
-> デモ動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧ください
+> デモ動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧ください。
 
 > RVCによるリアルタイム音声変換: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> 基底modelを訓練(training)したのは、約50時間の高品質なオープンソースのデータセット。著作権侵害を心配することなく使用できるように。
+> 著作権侵害を心配することなく使用できるように、基底モデルは約50時間の高品質なオープンソースデータセットで訓練されています。
 
-> 今後は次々と使用許可のある高品質歌声資料集を追加し、基底modelを訓練する。
+> 今後も、次々と使用許可のある高品質な歌声の資料集を追加し、基底モデルを訓練する予定です。
 
 ## はじめに
-本repoは下記の特徴があります
+本リポジトリには下記の特徴があります。
 
-+ 調子(tone)の漏洩が下がれるためtop1検索で源特徴量を訓練集特徴量に置換
-+ 古い又は安いGPUでも高速に訓練できる
-+ 小さい訓練集でもかなりいいmodelを得られる(10分以上の低noise音声を推奨)
-+ modelを融合し音色をmergeできる(ckpt processing->ckpt mergeで使用)
-+ 使いやすいWebUI
-+ UVR5 Modelも含めるため人声とBGMを素早く分離できる
++ Top1検索を用いることで、生の特徴量を訓練用データセット特徴量に変換し、トーンリーケージを削減します。
++ 比較的貧弱なGPUでも、高速かつ簡単に訓練できます。
++ 少量のデータセットからでも、比較的良い結果を得ることができます。（10分以上のノイズの少ない音声を推奨します。）
++ モデルを融合することで、音声を混ぜることができます。（ckpt processingタブの、ckpt mergeを使用します。）
++ 使いやすいWebUI。
++ UVR5 Modelも含んでいるため、人の声とBGMを素早く分離できます。
 
 ## 環境構築
-poetryで依存関係をinstallすることをお勧めします。
+Poetryで依存関係をインストールすることをお勧めします。
 
-下記のcommandsは、Python3.8以上の環境で実行する必要があります:
+下記のコマンドは、Python3.8以上の環境で実行する必要があります:
 ```bash
-# PyTorch関連の依存関係をinstall。install済の場合はskip
+# PyTorch関連の依存関係をインストール。インストール済の場合は省略。
 # 参照先: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
 #Windows＋ Nvidia Ampere Architecture(RTX30xx)の場合、 #21 に従い、pytorchに対応するcuda versionを指定する必要があります。
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
-# PyTorch関連の依存関係をinstall。install済の場合はskip
+# PyTorch関連の依存関係をインストール。インストール済の場合は省略。
 # 参照先: https://python-poetry.org/docs/#installation
 curl -sSL https://install.python-poetry.org | python3 -
 
-# Poetry経由で依存関係をinstall
+# Poetry経由で依存関係をインストール
 poetry install
 ```
 
-pipでも依存関係のinstallが可能です:
+pipでも依存関係のインストールが可能です:
 
-**注意**:`faiss 1.7.2`は`macOS`で`Segmentation Fault: 11`を起こすので、`requirements.txt`の該当行を `faiss-cpu==1.7.0`に変更してください。
+**注意**:`faiss 1.7.2`は`macOS`で`Segmentation Fault: 11`を起こすので、マニュアルインストールする場合は、 `pip install faiss-cpu==1.7.0`を実行してください。
 
 ```bash
 pip install -r requirements.txt
 ```
 
 ## 基底modelsを準備
-RVCは推論/訓練のために、様々な事前訓練を行った基底modelsが必要です。
+RVCは推論/訓練のために、様々な事前訓練を行った基底モデルを必要とします。
 
 modelsは[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)からダウンロードできます。
 
-以下は、RVCに必要な基底modelsやその他のfilesの一覧です。
+以下は、RVCに必要な基底モデルやその他のファイルの一覧です。
 ```bash
 hubert_base.pt
 
@@ -80,16 +80,16 @@ hubert_base.pt
 
 ./uvr5_weights
 
-# ffmpegがすでにinstallされている場合はskip
+# ffmpegがすでにinstallされている場合は省略
 ./ffmpeg
 ```
-その後、下記のcommandでWebUIを起動
+その後、下記のコマンドでWebUIを起動します。
 ```bash
 python infer-web.py
 ```
-Windowsをお使いの方は、直接に`RVC-beta.7z`をダウンロード後に展開し、`go-web.bat`をclickでWebUIを起動。(7zipが必要です)
+Windowsをお使いの方は、直接`RVC-beta.7z`をダウンロード後に展開し、`go-web.bat`をクリックすることで、WebUIを起動することができます。(7zipが必要です。)
 
-また、repoに[小白简易教程.doc](./小白简易教程.doc)がありますので、参考にしてください（中国語版のみ）。
+また、リポジトリに[小白简易教程.doc](./小白简易教程.doc)がありますので、参考にしてください（中国語版のみ）。
 
 ## 参考プロジェクト
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
@@ -100,7 +100,7 @@ Windowsをお使いの方は、直接に`RVC-beta.7z`をダウンロード後に
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 
-## 貢献者(contributer)の皆様の尽力に感謝します
+## 貢献者(contributor)の皆様の尽力に感謝します
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=liujing04/Retrieval-based-Voice-Conversion-WebUI" />
 </a>

@@ -1,18 +1,22 @@
+import os, sys
+
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 import PySimpleGUI as sg
 import sounddevice as sd
 import noisereduce as nr
 import numpy as np
 from fairseq import checkpoint_utils
-import librosa, torch, parselmouth, faiss, time, threading
+import librosa, torch, pyworld, faiss, time, threading
 import torch.nn.functional as F
 import torchaudio.transforms as tat
+import scipy.signal as signal
 
 # import matplotlib.pyplot as plt
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
 from i18n import I18nAuto
 
 i18n = I18nAuto()
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -23,70 +27,82 @@ class RVC:
         """
         初始化
         """
-        self.f0_up_key = key
-        self.time_step = 160 / 16000 * 1000
-        self.f0_min = 50
-        self.f0_max = 1100
-        self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
-        self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
-        self.index = faiss.read_index(index_path)
-        self.index_rate = index_rate
-        """NOT YET USED"""
-        self.big_npy = np.load(npy_path)
-        model_path = hubert_path
-        print("load model(s) from {}".format(model_path))
-        models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
-            [model_path],
-            suffix="",
-        )
-        self.model = models[0]
-        self.model = self.model.to(device)
-        self.model = self.model.half()
-        self.model.eval()
-        cpt = torch.load(pth_path, map_location="cpu")
-        tgt_sr = cpt["config"][-1]
-        cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-        if_f0 = cpt.get("f0", 1)
-        if if_f0 == 1:
-            self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=True)
-        else:
-            self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
-        del self.net_g.enc_q
-        print(self.net_g.load_state_dict(cpt["weight"], strict=False))
-        self.net_g.eval().to(device)
-        self.net_g.half()
+        try:
+            self.f0_up_key = key
+            self.time_step = 160 / 16000 * 1000
+            self.f0_min = 50
+            self.f0_max = 1100
+            self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
+            self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
+            self.sr = 16000
+            self.window = 160
+            if index_rate != 0:
+                self.index = faiss.read_index(index_path)
+                self.big_npy = np.load(npy_path)
+                print("index search enabled")
+            self.index_rate = index_rate
+            model_path = hubert_path
+            print("load model(s) from {}".format(model_path))
+            models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
+                [model_path],
+                suffix="",
+            )
+            self.model = models[0]
+            self.model = self.model.to(device)
+            self.model = self.model.half()
+            self.model.eval()
+            cpt = torch.load(pth_path, map_location="cpu")
+            tgt_sr = cpt["config"][-1]
+            cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
+            self.if_f0 = cpt.get("f0", 1)
+            if self.if_f0 == 1:
+                self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=True)
+            else:
+                self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+            del self.net_g.enc_q
+            print(self.net_g.load_state_dict(cpt["weight"], strict=False))
+            self.net_g.eval().to(device)
+            self.net_g.half()
+        except Exception as e:
+            print(e)
 
-    def get_f0_coarse(self, f0):
+    def get_f0(self, x, f0_up_key, inp_f0=None):
+        x_pad=1
+        f0_min = 50
+        f0_max = 1100
+        f0_mel_min = 1127 * np.log(1 + f0_min / 700)
+        f0_mel_max = 1127 * np.log(1 + f0_max / 700)
+        f0, t = pyworld.harvest(
+            x.astype(np.double),
+            fs=self.sr,
+            f0_ceil=f0_max,
+            f0_floor=f0_min,
+            frame_period=10,
+        )
+        f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.sr)
+        f0 = signal.medfilt(f0, 3)
+        f0 *= pow(2, f0_up_key / 12)
+        # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
+        tf0 = self.sr // self.window  # 每秒f0点数
+        if inp_f0 is not None:
+            delta_t = np.round(
+                (inp_f0[:, 0].max() - inp_f0[:, 0].min()) * tf0 + 1
+            ).astype("int16")
+            replace_f0 = np.interp(
+                list(range(delta_t)), inp_f0[:, 0] * 100, inp_f0[:, 1]
+            )
+            shape = f0[x_pad * tf0 : x_pad * tf0 + len(replace_f0)].shape[0]
+            f0[x_pad * tf0 : x_pad * tf0 + len(replace_f0)] = replace_f0[:shape]
+        # with open("test_opt.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
+        f0bak = f0.copy()
         f0_mel = 1127 * np.log(1 + f0 / 700)
-        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
-            self.f0_mel_max - self.f0_mel_min
+        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (
+            f0_mel_max - f0_mel_min
         ) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
-        # f0_mel[f0_mel > 188] = 188
         f0_coarse = np.rint(f0_mel).astype(np.int)
-        return f0_coarse
-
-    def get_f0(self, x, p_len, f0_up_key=0):
-        f0 = (
-            parselmouth.Sound(x, 16000)
-            .to_pitch_ac(
-                time_step=self.time_step / 1000,
-                voicing_threshold=0.6,
-                pitch_floor=self.f0_min,
-                pitch_ceiling=self.f0_max,
-            )
-            .selected_array["frequency"]
-        )
-
-        pad_size = (p_len - len(f0) + 1) // 2
-        if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-            f0 = np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant")
-        f0 *= pow(2, f0_up_key / 12)
-        # f0=suofang(f0)
-        f0bak = f0.copy()
-        f0_coarse = self.get_f0_coarse(f0)
-        return f0_coarse, f0bak
+        return f0_coarse, f0bak  # 1-0
 
     def infer(self, feats: torch.Tensor) -> np.ndarray:
         """
@@ -107,11 +123,7 @@ class RVC:
             feats = self.model.final_proj(logits[0])
 
         ####索引优化
-        if (
-            isinstance(self.index, type(None)) == False
-            and isinstance(self.big_npy, type(None)) == False
-            and self.index_rate != 0
-        ):
+        if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
             npy = feats[0].cpu().numpy().astype("float32")
             _, I = self.index.search(npy, 1)
             npy = self.big_npy[I.squeeze()].astype("float16")
@@ -119,30 +131,42 @@ class RVC:
                 torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
                 + (1 - self.index_rate) * feats
             )
+        else:
+            print("index search FAIL or disabled")
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         torch.cuda.synchronize()
-        # p_len = min(feats.shape[1],10000,pitch.shape[0])#太大了爆显存
-        p_len = min(feats.shape[1], 12000)  #
         print(feats.shape)
-        pitch, pitchf = self.get_f0(audio, p_len, self.f0_up_key)
-        p_len = min(feats.shape[1], 12000, pitch.shape[0])  # 太大了爆显存
+        if(self.if_f0==1):
+            pitch, pitchf = self.get_f0(audio, self.f0_up_key)
+            p_len = min(feats.shape[1], 13000, pitch.shape[0])  # 太大了爆显存
+        else:
+            pitch, pitchf = None, None
+            p_len = min(feats.shape[1], 13000)  # 太大了爆显存
         torch.cuda.synchronize()
         # print(feats.shape,pitch.shape)
         feats = feats[:, :p_len, :]
-        pitch = pitch[:p_len]
-        pitchf = pitchf[:p_len]
+        if(self.if_f0==1):
+            pitch = pitch[:p_len]
+            pitchf = pitchf[:p_len]
+            pitch = torch.LongTensor(pitch).unsqueeze(0).to(device)
+            pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
         p_len = torch.LongTensor([p_len]).to(device)
-        pitch = torch.LongTensor(pitch).unsqueeze(0).to(device)
-        pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
         ii = 0  # sid
         sid = torch.LongTensor([ii]).to(device)
         with torch.no_grad():
-            infered_audio = (
-                self.net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
-                .data.cpu()
-                .float()
-            )  # nsf
+            if(self.if_f0==1):
+                infered_audio = (
+                    self.net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
+                    .data.cpu()
+                    .float()
+                )
+            else:
+                 infered_audio = (
+                    self.net_g.infer(feats, p_len, sid)[0][0, 0]
+                    .data.cpu()
+                    .float()
+                )
         torch.cuda.synchronize()
         return infered_audio
 
@@ -363,7 +387,7 @@ class GUI:
             self.config.pth_path,
             self.config.index_path,
             self.config.npy_path,
-            self.config.index_rate,
+            self.config.index_rate
         )
         self.input_wav: np.ndarray = np.zeros(
             self.extra_frame
@@ -485,8 +509,9 @@ class GUI:
         else:
             outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
         total_time = time.perf_counter() - start_time
-        print("infer time:" + str(total_time))
         self.window["infer_time"].update(int(total_time * 1000))
+        print("infer time:" + str(total_time))
+        
 
     def get_devices(self, update: bool = True):
         """获取设备列表"""

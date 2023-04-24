@@ -24,6 +24,9 @@ An easy-to-use SVC framework based on VITS.<br><br>
 
 > Realtime Voice Conversion Software using RVC : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
+> The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source dataset.
+
+> High quality licensed song datasets will be added to training-set one after another for your use, without worrying about copyright infringement.
 ## Summary
 This repository has the following features:
 + Reduce tone leakage by replacing source feature to training-set feature using top1 retrieval;
@@ -32,7 +35,6 @@ This repository has the following features:
 + Supporting model fusion to change timbres (using ckpt processing tab->ckpt merge);
 + Easy-to-use Webui interface;
 + Use the UVR5 model to quickly separate vocals and instruments.
-+ The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source dataset, and high quality licensed song datasets will be added to training-set one after another for your use, without worrying about copyright infringement.
 ## Preparing the environment
 We recommend you install the dependencies through poetry.
 
@@ -43,8 +45,7 @@ The following commands need to be executed in the environment of Python version 
 pip install torch torchvision torchaudio
 
 #For Windows + Nvidia Ampere Architecture(RTX30xx), you need to specify the cuda version corresponding to pytorch according to the experience of https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21
-
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+#pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 # Install the Poetry dependency management tool, skip if installed
 # Reference: https://python-poetry.org/docs/#installation
@@ -55,7 +56,7 @@ poetry install
 ```
 You can also use pip to install the dependencies
 
-**Notice**: `faiss 1.7.2` will raise Segmentation Fault: 11 under `MacOS`, please change corresponding line in `requirements.txt` to `faiss-cpu==1.7.0`
+**Notice**: `faiss 1.7.2` will raise Segmentation Fault: 11 under `MacOS`, please use `pip install faiss-cpu==1.7.0` if you use pip to install it manually.
 
 ```bash
 pip install -r requirements.txt
@@ -83,12 +84,16 @@ python infer-web.py
 ```
 If you are using Windows, you can download and extract `RVC-beta.7z` to use RVC directly and use `go-web.bat` to start Webui.
 
-We will develop an English version of the WebUI in 2 weeks.
-
 There's also a tutorial on RVC in Chinese and you can check it out if needed.
 
 ## Credits
-
++ [ContentVec](https://github.com/auspicious3000/contentvec/)
++ [VITS](https://github.com/jaywalnut310/vits)
++ [HIFIGAN](https://github.com/jik876/hifi-gan)
++ [Gradio](https://github.com/gradio-app/gradio)
++ [FFmpeg](https://github.com/FFmpeg/FFmpeg)
++ [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [audio-slicer](https://github.com/openvpi/audio-slicer)
 ## Thanks to all contributors for their efforts
 
 <a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">

@@ -1,0 +1,46 @@
+name: push format
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  push_format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{github.ref_name}}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Black
+        run: pip install black
+
+      - name: Run Black
+        # run: black $(git ls-files '*.py')
+        run: black .
+
+      - name: Commit Back
+        continue-on-error: true
+        id: commitback
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add --all
+          git commit -m "Format code"
+      
+      - name: Create Pull Request
+        if: steps.commitback.outcome == 'success'
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v4
+        with:
+          body: Apply Code Formatter Change
+          commit-message: Automatic code format
