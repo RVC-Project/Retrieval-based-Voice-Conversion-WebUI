@@ -19,7 +19,7 @@ VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
 
 [**更新日誌**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
-[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md)
+[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md)
 
 > デモ動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧ください。
 
