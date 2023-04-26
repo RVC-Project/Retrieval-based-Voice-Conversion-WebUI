@@ -126,7 +126,7 @@ def vc_single(
     f0_file,
     f0_method,
     file_index,
-    file_big_npy,
+    # file_big_npy,
     index_rate,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model
@@ -147,9 +147,9 @@ def vc_single(
             .strip(" ")
             .replace("trained", "added")
         )  # 防止小白写错，自动帮他替换掉
-        file_big_npy = (
-            file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-        )
+        # file_big_npy = (
+        #     file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        # )
         audio_opt = vc.pipeline(
             hubert_model,
             net_g,
@@ -159,7 +159,7 @@ def vc_single(
             f0_up_key,
             f0_method,
             file_index,
-            file_big_npy,
+            # file_big_npy,
             index_rate,
             if_f0,
             f0_file=f0_file,
@@ -182,7 +182,7 @@ def vc_multi(
     f0_up_key,
     f0_method,
     file_index,
-    file_big_npy,
+    # file_big_npy,
     index_rate,
 ):
     try:
@@ -200,6 +200,14 @@ def vc_multi(
             traceback.print_exc()
             paths = [path.name for path in paths]
         infos = []
+        file_index = (
+            file_index.strip(" ")
+            .strip('"')
+            .strip("\n")
+            .strip('"')
+            .strip(" ")
+            .replace("trained", "added")
+        )  # 防止小白写错，自动帮他替换掉
         for path in paths:
             info, opt = vc_single(
                 sid,
@@ -208,7 +216,7 @@ def vc_multi(
                 None,
                 f0_method,
                 file_index,
-                file_big_npy,
+                # file_big_npy,
                 index_rate,
             )
             if info == "Success":
@@ -629,29 +637,29 @@ def train_index(exp_dir1):
         phone = np.load("%s/%s" % (feature_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
-    np.save("%s/total_fea.npy" % exp_dir, big_npy)
-    n_ivf = big_npy.shape[0] // 39
-    infos = []
-    infos.append("%s,%s" % (big_npy.shape, n_ivf))
+    # np.save("%s/total_fea.npy" % exp_dir, big_npy)
+    # n_ivf =  big_npy.shape[0] // 39
+    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])),big_npy.shape[0]// 39)
+    infos=[]
+    infos.append("%s,%s"%(big_npy.shape,n_ivf))
     yield "\n".join(infos)
-    index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
+    index = faiss.index_factory(256, "IVF%s,Flat"%n_ivf)
+    # index = faiss.index_factory(256, "IVF%s,PQ128x4fs,RFlat"%n_ivf)
     infos.append("training")
     yield "\n".join(infos)
     index_ivf = faiss.extract_index_ivf(index)  #
-    index_ivf.nprobe = int(np.power(n_ivf, 0.3))
+    # index_ivf.nprobe = int(np.power(n_ivf,0.3))
+    index_ivf.nprobe = 1
     index.train(big_npy)
-    faiss.write_index(
-        index,
-        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
-    )
+    faiss.write_index(index, '%s/trained_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
+    # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
     infos.append("adding")
     yield "\n".join(infos)
     index.add(big_npy)
-    faiss.write_index(
-        index,
-        "%s/added_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
-    )
-    infos.append("成功构建索引, added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe))
+    faiss.write_index(index, '%s/added_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
+    infos.append("成功构建索引，added_IVF%s_Flat_nprobe_%s.index"%(n_ivf,index_ivf.nprobe))
+    # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
+    # infos.append("成功构建索引，added_IVF%s_Flat_FastScan.index"%(n_ivf))
     yield "\n".join(infos)
 
 
@@ -842,13 +850,15 @@ def train1key(
         phone = np.load("%s/%s" % (feature_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
-    np.save("%s/total_fea.npy" % exp_dir, big_npy)
-    n_ivf = big_npy.shape[0] // 39
+    # np.save("%s/total_fea.npy" % exp_dir, big_npy)
+    # n_ivf =  big_npy.shape[0] // 39
+    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])),big_npy.shape[0]// 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
     index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
     yield get_info_str("training index")
     index_ivf = faiss.extract_index_ivf(index)  #
-    index_ivf.nprobe = int(np.power(n_ivf, 0.3))
+    # index_ivf.nprobe = int(np.power(n_ivf,0.3))
+    index_ivf.nprobe = 1
     index.train(big_npy)
     faiss.write_index(
         index,
@@ -1022,16 +1032,16 @@ with gr.Blocks() as app:
                             value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
                             interactive=True,
                         )
-                        file_big_npy1 = gr.Textbox(
-                            label=i18n("特征文件路径"),
-                            value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                            interactive=True,
-                        )
+                        # file_big_npy1 = gr.Textbox(
+                        #     label=i18n("特征文件路径"),
+                        #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
+                        #     interactive=True,
+                        # )
                         index_rate1 = gr.Slider(
                             minimum=0,
                             maximum=1,
                             label="检索特征占比",
-                            value=0.6,
+                            value=0.65,
                             interactive=True,
                         )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
@@ -1048,7 +1058,7 @@ with gr.Blocks() as app:
                             f0_file,
                             f0method0,
                             file_index1,
-                            file_big_npy1,
+                            # file_big_npy1,
                             index_rate1,
                         ],
                         [vc_output1, vc_output2],
@@ -1075,11 +1085,11 @@ with gr.Blocks() as app:
                             value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
                             interactive=True,
                         )
-                        file_big_npy2 = gr.Textbox(
-                            label=i18n("特征文件路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                            interactive=True,
-                        )
+                        # file_big_npy2 = gr.Textbox(
+                        #     label=i18n("特征文件路径"),
+                        #     value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
+                        #     interactive=True,
+                        # )
                         index_rate2 = gr.Slider(
                             minimum=0,
                             maximum=1,
@@ -1107,7 +1117,7 @@ with gr.Blocks() as app:
                             vc_transform1,
                             f0method1,
                             file_index2,
-                            file_big_npy2,
+                            # file_big_npy2,
                             index_rate2,
                         ],
                         [vc_output3],
