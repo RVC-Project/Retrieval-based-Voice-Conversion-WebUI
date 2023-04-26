@@ -5,7 +5,7 @@ from subprocess import Popen
 from time import sleep
 import torch, os, traceback, sys, warnings, shutil, numpy as np
 import faiss
-
+from random import shuffle
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
@@ -23,6 +23,7 @@ i18n = I18nAuto()
 ncpu = cpu_count()
 ngpu = torch.cuda.device_count()
 gpu_infos = []
+mem=[]
 if (not torch.cuda.is_available()) or ngpu == 0:
     if_gpu_ok = False
 else:
@@ -48,11 +49,13 @@ else:
         ):  # A10#A100#V100#A40#P40#M40#K80#A4500
             if_gpu_ok = True  # 至少有一张能用的N卡
             gpu_infos.append("%s\t%s" % (i, gpu_name))
-gpu_info = (
-    "\n".join(gpu_infos)
-    if if_gpu_ok == True and len(gpu_infos) > 0
-    else "很遗憾您这没有能用的显卡来支持您训练"
-)
+            mem.append(int(torch.cuda.get_device_properties(i).total_memory/1024/1024/1024+0.4))
+if if_gpu_ok == True and len(gpu_infos) > 0:
+    gpu_info ="\n".join(gpu_infos)
+    default_batch_size=min(mem)//2
+else:
+    gpu_info = "很遗憾您这没有能用的显卡来支持您训练"
+    default_batch_size=1
 gpus = "-".join([i[0] for i in gpu_infos])
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
 from scipy.io import wavfile
@@ -564,15 +567,18 @@ def click_train(
                 )
             )
     if if_f0_3 == "是":
-        opt.append(
-            "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-            % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
-        )
+        for _ in range(2):
+            opt.append(
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
+            )
     else:
-        opt.append(
-            "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
-            % (now_dir, sr2, now_dir, spk_id5)
-        )
+        for _ in range(2):
+            opt.append(
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
+                % (now_dir, sr2, now_dir, spk_id5)
+            )
+    shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
     print("write filelist done")
@@ -789,15 +795,18 @@ def train1key(
                 )
             )
     if if_f0_3 == "是":
-        opt.append(
-            "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-            % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
-        )
+        for _ in range(2):
+            opt.append(
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
+            )
     else:
-        opt.append(
-            "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
-            % (now_dir, sr2, now_dir, spk_id5)
-        )
+        for _ in range(2):
+            opt.append(
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
+                % (now_dir, sr2, now_dir, spk_id5)
+            )
+    shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
     yield get_info_str("write filelist done")
@@ -1039,7 +1048,7 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label="检索特征占比",
-                            value=0.65,
+                            value=0.76,
                             interactive=True,
                         )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
@@ -1253,10 +1262,10 @@ with gr.Blocks() as app:
                     )
                     batch_size12 = gr.Slider(
                         minimum=0,
-                        maximum=32,
+                        maximum=40,
                         step=1,
                         label="每张显卡的batch_size",
-                        value=4,
+                        value=default_batch_size,
                         interactive=True,
                     )
                     if_save_latest13 = gr.Radio(
@@ -1270,7 +1279,7 @@ with gr.Blocks() as app:
                             "是否缓存所有训练集至显存. 10min以下小数据可缓存以加速训练, 大数据缓存会炸显存也加不了多少速"
                         ),
                         choices=["是", "否"],
-                        value="是",
+                        value="否",
                         interactive=True,
                     )
                 with gr.Row():
