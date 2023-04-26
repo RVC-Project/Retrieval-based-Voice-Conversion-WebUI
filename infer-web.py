@@ -29,8 +29,6 @@ else:
     if_gpu_ok = False
     for i in range(ngpu):
         gpu_name = torch.cuda.get_device_name(i)
-        if ("16" in gpu_name and "V100" not in gpu_name) or "MX" in gpu_name:
-            continue
         if (
             "10" in gpu_name
             or "20" in gpu_name
@@ -44,10 +42,10 @@ else:
             or "70" in gpu_name
             or "80" in gpu_name
             or "90" in gpu_name
-            or "M4" in gpu_name
-            or "T4" in gpu_name
+            or "M4" in gpu_name.upper()
+            or "T4" in gpu_name.upper()
             or "TITAN" in gpu_name.upper()
-        ):  # A10#A100#V100#A40#P40#M40#K80
+        ):  # A10#A100#V100#A40#P40#M40#K80#A4500
             if_gpu_ok = True  # 至少有一张能用的N卡
             gpu_infos.append("%s\t%s" % (i, gpu_name))
 gpu_info = (
