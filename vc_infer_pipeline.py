@@ -119,8 +119,15 @@ class VC(object):
             npy = feats[0].cpu().numpy()
             if self.is_half:
                 npy = npy.astype("float32")
-            _, I = index.search(npy, 1)
-            npy = big_npy[I.squeeze()]
+
+            # _, I = index.search(npy, 1)
+            # npy = big_npy[I.squeeze()]
+
+            score, ix = index.search(npy, k=8)
+            weight = np.square(1 / score)
+            weight /= weight.sum(axis=1, keepdims=True)
+            npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
+
             if self.is_half:
                 npy = npy.astype("float16")
             feats = (
@@ -172,21 +179,23 @@ class VC(object):
         f0_up_key,
         f0_method,
         file_index,
-        file_big_npy,
+        # file_big_npy,
         index_rate,
         if_f0,
         f0_file=None,
     ):
+        print(file_index!= "",os.path.exists(file_index) == True,index_rate != 0)
         if (
-            file_big_npy != ""
-            and file_index != ""
-            and os.path.exists(file_big_npy) == True
+            file_index != ""
+            # and file_big_npy != ""
+            # and os.path.exists(file_big_npy) == True
             and os.path.exists(file_index) == True
             and index_rate != 0
         ):
             try:
                 index = faiss.read_index(file_index)
-                big_npy = np.load(file_big_npy)
+                # big_npy = np.load(file_big_npy)
+                big_npy = index.reconstruct_n(0, index.ntotal)
             except:
                 traceback.print_exc()
                 index = big_npy = None
