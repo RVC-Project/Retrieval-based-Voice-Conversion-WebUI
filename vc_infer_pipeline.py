@@ -185,7 +185,6 @@ class VC(object):
         if_f0,
         f0_file=None,
     ):
-        print(file_index!= "",os.path.exists(file_index) == True,index_rate != 0)
         if (
             file_index != ""
             # and file_big_npy != ""
