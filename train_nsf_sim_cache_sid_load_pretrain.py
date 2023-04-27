@@ -45,7 +45,7 @@ global_step = 0
 def main():
     # n_gpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "51515"
+    os.environ["MASTER_PORT"] = "51545"
 
     mp.spawn(
         run,

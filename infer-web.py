@@ -1,5 +1,5 @@
 from multiprocessing import cpu_count
-import threading
+import threading,pdb,librosa
 from time import sleep
 from subprocess import Popen
 from time import sleep
@@ -17,6 +17,7 @@ os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 from i18n import I18nAuto
+import ffmpeg
 
 i18n = I18nAuto()
 # 判断是否有能用来训练和加速推理的N卡
@@ -235,7 +236,7 @@ def vc_multi(
         yield traceback.format_exc()
 
 
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins):
+def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins,agg):
     infos = []
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -246,6 +247,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins):
             save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
         pre_fun = _audio_pre_(
+            agg=int(agg),
             model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
             device=device,
             is_half=is_half,
@@ -254,10 +256,25 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins):
             paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:
             paths = [path.name for path in paths]
-        for name in paths:
-            inp_path = os.path.join(inp_root, name)
+        for path in paths:
+            inp_path = os.path.join(inp_root, path)
+            need_reformat=1
+            done=0
             try:
-                pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                info = ffmpeg.probe(inp_path, cmd="ffprobe")
+                if(info["streams"][0]["channels"]==2 and info["streams"][0]["sample_rate"]=="44100"):
+                    need_reformat=0
+                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                    done=1
+            except:
+                need_reformat = 1
+                traceback.print_exc()
+            if(need_reformat==1):
+                tmp_path="%s/%s.reformatted.wav"%(tmp,os.path.basename(inp_path))
+                os.system("ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"%(inp_path,tmp_path))
+                inp_path=tmp_path
+            try:
+                if(done==0):pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
@@ -1147,6 +1164,15 @@ with gr.Blocks() as app:
                         )
                     with gr.Column():
                         model_choose = gr.Dropdown(label=i18n("模型"), choices=uvr5_names)
+                        agg = gr.Slider(
+                            minimum=0,
+                            maximum=20,
+                            step=1,
+                            label="人声提取激进程度",
+                            value=10,
+                            interactive=True,
+                            visible=False#先不开放调整
+                        )
                         opt_vocal_root = gr.Textbox(
                             label=i18n("指定输出人声文件夹"), value="opt"
                         )
@@ -1161,6 +1187,7 @@ with gr.Blocks() as app:
                             opt_vocal_root,
                             wav_inputs,
                             opt_ins_root,
+                            agg
                         ],
                         [vc_output4],
                     )
@@ -1246,7 +1273,7 @@ with gr.Blocks() as app:
                 with gr.Row():
                     save_epoch10 = gr.Slider(
                         minimum=0,
-                        maximum=200,
+                        maximum=50,
                         step=1,
                         label=i18n("保存频率save_every_epoch"),
                         value=5,

@@ -123,7 +123,6 @@ class VC(object):
             # _, I = index.search(npy, 1)
             # npy = big_npy[I.squeeze()]
 
-            #by github @nadare881
             score, ix = index.search(npy, k=8)
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
