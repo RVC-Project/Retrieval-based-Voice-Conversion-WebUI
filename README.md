@@ -80,8 +80,10 @@ hubert_base.pt
 
 ./uvr5_weights
 
-#如果你正在使用Windows，则你可能需要这个文件，若ffmpeg已安装则跳过
+#如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库
 ./ffmpeg
+
+./ffprobe
 ```
 之后使用以下指令来启动WebUI:
 ```bash
