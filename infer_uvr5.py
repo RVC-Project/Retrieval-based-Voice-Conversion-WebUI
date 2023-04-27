@@ -13,7 +13,7 @@ from scipy.io import wavfile
 
 
 class _audio_pre_:
-    def __init__(self, agg,model_path, device, is_half):
+    def __init__(self, agg, model_path, device, is_half):
         self.model_path = model_path
         self.device = device
         self.data = {
@@ -139,7 +139,9 @@ class _audio_pre_:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             print("%s instruments done" % name)
             wavfile.write(
-                os.path.join(ins_root, "instrument_{}_{}.wav".format(name,self.data["agg"])),
+                os.path.join(
+                    ins_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
+                ),
                 self.mp.param["sr"],
                 (np.array(wav_instrument) * 32768).astype("int16"),
             )  #
@@ -155,7 +157,9 @@ class _audio_pre_:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             print("%s vocals done" % name)
             wavfile.write(
-                os.path.join(vocal_root, "vocal_{}_{}.wav".format(name,self.data["agg"])),
+                os.path.join(
+                    vocal_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
+                ),
                 self.mp.param["sr"],
                 (np.array(wav_vocals) * 32768).astype("int16"),
             )

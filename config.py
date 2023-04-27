@@ -64,25 +64,43 @@ if not torch.cuda.is_available():
         device = "cpu"
         is_half = False
 
-gpu_mem=None
+gpu_mem = None
 if device not in ["cpu", "mps"]:
-    i_device=int(device.split(":")[-1])
+    i_device = int(device.split(":")[-1])
     gpu_name = torch.cuda.get_device_name(i_device)
-    if "16" in gpu_name or "P40"in gpu_name.upper() or "1070"in gpu_name or "1080"in gpu_name:
+    if (
+        "16" in gpu_name
+        or "P40" in gpu_name.upper()
+        or "1070" in gpu_name
+        or "1080" in gpu_name
+    ):
         print("16系显卡强制单精度")
         is_half = False
-        with open("configs/32k.json","r")as f:strr=f.read().replace("true","false")
-        with open("configs/32k.json","w")as f:f.write(strr)
-        with open("configs/40k.json","r")as f:strr=f.read().replace("true","false")
-        with open("configs/40k.json","w")as f:f.write(strr)
-        with open("configs/48k.json","r")as f:strr=f.read().replace("true","false")
-        with open("configs/48k.json","w")as f:f.write(strr)
-        with open("trainset_preprocess_pipeline_print.py","r")as f:strr=f.read().replace("3.7","3.0")
-        with open("trainset_preprocess_pipeline_print.py","w")as f:f.write(strr)
-    gpu_mem=int(torch.cuda.get_device_properties(i_device).total_memory/1024/1024/1024+0.4)
-    if(gpu_mem<=4):
-        with open("trainset_preprocess_pipeline_print.py","r")as f:strr=f.read().replace("3.7","3.0")
-        with open("trainset_preprocess_pipeline_print.py","w")as f:f.write(strr)
+        with open("configs/32k.json", "r") as f:
+            strr = f.read().replace("true", "false")
+        with open("configs/32k.json", "w") as f:
+            f.write(strr)
+        with open("configs/40k.json", "r") as f:
+            strr = f.read().replace("true", "false")
+        with open("configs/40k.json", "w") as f:
+            f.write(strr)
+        with open("configs/48k.json", "r") as f:
+            strr = f.read().replace("true", "false")
+        with open("configs/48k.json", "w") as f:
+            f.write(strr)
+        with open("trainset_preprocess_pipeline_print.py", "r") as f:
+            strr = f.read().replace("3.7", "3.0")
+        with open("trainset_preprocess_pipeline_print.py", "w") as f:
+            f.write(strr)
+    gpu_mem = int(
+        torch.cuda.get_device_properties(i_device).total_memory / 1024 / 1024 / 1024
+        + 0.4
+    )
+    if gpu_mem <= 4:
+        with open("trainset_preprocess_pipeline_print.py", "r") as f:
+            strr = f.read().replace("3.7", "3.0")
+        with open("trainset_preprocess_pipeline_print.py", "w") as f:
+            f.write(strr)
 from multiprocessing import cpu_count
 
 if n_cpu == 0:
@@ -99,7 +117,7 @@ else:
     x_query = 6
     x_center = 38
     x_max = 41
-if(gpu_mem!=None and gpu_mem<=4):
+if gpu_mem != None and gpu_mem <= 4:
     x_pad = 1
     x_query = 5
     x_center = 30
