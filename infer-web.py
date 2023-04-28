@@ -34,6 +34,7 @@ else:
         gpu_name = torch.cuda.get_device_name(i)
         if (
             "10" in gpu_name
+            or "16" in gpu_name
             or "20" in gpu_name
             or "30" in gpu_name
             or "40" in gpu_name
