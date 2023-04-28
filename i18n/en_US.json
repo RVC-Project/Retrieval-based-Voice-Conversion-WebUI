@@ -2,7 +2,6 @@
     "很遗憾您这没有能用的显卡来支持您训练": "Unfortunately, you don't have a GPU to help you train",
     "是": "yes",
     "step1:正在处理数据": "step 1: processing data",
-    "step2a:正在提取音高": "step 2a: extracting pitch",
     "step2a:无需提取音高": "step 2a: skipped extracting pitch",
     "step2b:正在提取特征": "step 2b: extracting features",
     "step3a:正在训练模型": "step 3a: training the model",
