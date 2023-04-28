@@ -18,7 +18,7 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 ------
 [**업데이트 로그**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
 
-[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md)
+[**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md) ([**韓國語**](./README.ko.han.md))
 
 > [데모 영상](https://www.bilibili.com/video/BV1pm4y1z7Gm/)을 확인해 보세요!
 
@@ -30,7 +30,7 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 ## 소개
 본 Repo는 다음과 같은 특징을 가지고 있습니다:
-+ top1 검색을 이용하여 입력 소스 기능을 훈련 세트 기능으로 대체하여 음색의 누출을 방지;
++ top1 검색을 이용하여 입력 음색 특징을 훈련 세트 음색 특징으로 대체하여 음색의 누출을 방지;
 + 상대적으로 낮은 성능의 GPU에서도 빠른 훈련 가능;
 + 적은 양의 데이터로 훈련해도 좋은 결과를 얻을 수 있음 (최소 10분 이상의 저잡음 음성 데이터를 사용하는 것을 권장);
 + 모델 융합을 통한 음색의 변조 가능 (ckpt 처리 탭->ckpt 병합 선택);
@@ -86,9 +86,7 @@ python infer-web.py
 ```
 Windows를 사용하는 경우 `RVC-beta.7z`를 다운로드 및 압축 해제하여 RVC를 직접 사용하거나 `go-web.bat`을 사용하여 WebUi를 시작할 수 있습니다.
 
-중국어로 된 RVC에 대한 튜토리얼도 있으니 필요하다면 확인할 수 있습니다.
-
-## 크레딧
+## 참고
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)
 + [HIFIGAN](https://github.com/jik876/hifi-gan)
