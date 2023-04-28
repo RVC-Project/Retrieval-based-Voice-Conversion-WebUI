@@ -65,7 +65,7 @@ if if_gpu_ok == True and len(gpu_infos) > 0:
     gpu_info = "\n".join(gpu_infos)
     default_batch_size = min(mem) // 2
 else:
-    gpu_info = "很遗憾您这没有能用的显卡来支持您训练"
+    gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
@@ -366,7 +366,7 @@ def clean():
 
 
 def change_f0(if_f0_3, sr2):  # np7, f0method8,pretrained_G14,pretrained_D15
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         return (
             {"visible": True, "__type__": "update"},
             {"visible": True, "__type__": "update"},
@@ -452,7 +452,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
     f.close()
-    if if_f0 == "是":
+    if if_f0 == i18n("是"):
         cmd = config.python_cmd + " extract_f0_print.py %s/logs/%s %s %s" % (
             now_dir,
             exp_dir,
@@ -528,7 +528,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
 
 
 def change_sr2(sr2, if_f0_3):
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         return "pretrained/f0G%s.pth" % sr2, "pretrained/f0D%s.pth" % sr2
     else:
         return "pretrained/G%s.pth" % sr2, "pretrained/D%s.pth" % sr2
@@ -554,7 +554,7 @@ def click_train(
     os.makedirs(exp_dir, exist_ok=True)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
     co256_dir = "%s/3_feature256" % (exp_dir)
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
         names = (
@@ -569,7 +569,7 @@ def click_train(
         )
     opt = []
     for name in names:
-        if if_f0_3 == "是":
+        if if_f0_3 == i18n("是"):
             opt.append(
                 "%s/%s.wav|%s/%s.npy|%s/%s.wav.npy|%s/%s.wav.npy|%s"
                 % (
@@ -595,7 +595,7 @@ def click_train(
                     spk_id5,
                 )
             )
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         for _ in range(2):
             opt.append(
                 "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
@@ -621,15 +621,15 @@ def click_train(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == "是" else 0,
+                1 if if_f0_3 == i18n("是") else 0,
                 batch_size12,
                 gpus16,
                 total_epoch11,
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == "是" else 0,
-                1 if if_cache_gpu17 == "是" else 0,
+                1 if if_save_latest13 == i18n("是") else 0,
+                1 if if_cache_gpu17 == i18n("是") else 0,
             )
         )
     else:
@@ -639,14 +639,14 @@ def click_train(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == "是" else 0,
+                1 if if_f0_3 == i18n("是") else 0,
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == "是" else 0,
-                1 if if_cache_gpu17 == "是" else 0,
+                1 if if_save_latest13 == i18n("是") else 0,
+                1 if if_cache_gpu17 == i18n("是") else 0,
             )
         )
     print(cmd)
@@ -736,7 +736,7 @@ def train1key(
         % (trainset_dir4, sr_dict[sr2], ncpu, now_dir, exp_dir1)
         + str(config.noparallel)
     )
-    yield get_info_str("step1:正在处理数据")
+    yield get_info_str(i18n("step1:正在处理数据"))
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True)
     p.wait()
@@ -744,7 +744,7 @@ def train1key(
         print(f.read())
     #########step2a:提取音高
     open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "w")
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         yield get_info_str("step2a:正在提取音高")
         cmd = config.python_cmd + " extract_f0_print.py %s/logs/%s %s %s" % (
             now_dir,
@@ -758,9 +758,9 @@ def train1key(
         with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "r") as f:
             print(f.read())
     else:
-        yield get_info_str("step2a:无需提取音高")
+        yield get_info_str(i18n("step2a:无需提取音高"))
     #######step2b:提取特征
-    yield get_info_str("step2b:正在提取特征")
+    yield get_info_str(i18n("step2b:正在提取特征"))
     gpus = gpus16.split("-")
     leng = len(gpus)
     ps = []
@@ -783,12 +783,12 @@ def train1key(
     with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "r") as f:
         print(f.read())
     #######step3a:训练模型
-    yield get_info_str("step3a:正在训练模型")
+    yield get_info_str(i18n("step3a:正在训练模型"))
     # 生成filelist
     exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
     co256_dir = "%s/3_feature256" % (exp_dir)
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
         names = (
@@ -803,7 +803,7 @@ def train1key(
         )
     opt = []
     for name in names:
-        if if_f0_3 == "是":
+        if if_f0_3 == i18n("是"):
             opt.append(
                 "%s/%s.wav|%s/%s.npy|%s/%s.wav.npy|%s/%s.wav.npy|%s"
                 % (
@@ -829,7 +829,7 @@ def train1key(
                     spk_id5,
                 )
             )
-    if if_f0_3 == "是":
+    if if_f0_3 == i18n("是"):
         for _ in range(2):
             opt.append(
                 "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
@@ -852,15 +852,15 @@ def train1key(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == "是" else 0,
+                1 if if_f0_3 == i18n("是") else 0,
                 batch_size12,
                 gpus16,
                 total_epoch11,
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == "是" else 0,
-                1 if if_cache_gpu17 == "是" else 0,
+                1 if if_save_latest13 == i18n("是") else 0,
+                1 if if_cache_gpu17 == i18n("是") else 0,
             )
         )
     else:
@@ -870,20 +870,20 @@ def train1key(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == "是" else 0,
+                1 if if_f0_3 == i18n("是") else 0,
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == "是" else 0,
-                1 if if_cache_gpu17 == "是" else 0,
+                1 if if_save_latest13 == i18n("是") else 0,
+                1 if if_cache_gpu17 == i18n("是") else 0,
             )
         )
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
-    yield get_info_str("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log")
+    yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
     #######step3b:训练索引
     feature_dir = "%s/3_feature256" % (exp_dir)
     npys = []
@@ -915,7 +915,7 @@ def train1key(
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe)
     )
-    yield get_info_str("全流程结束！")
+    yield get_info_str(i18n("全流程结束！"))
 
 
 #                    ckpt_path2.change(change_info_,[ckpt_path2],[sr__,if_f0__])
@@ -1082,7 +1082,7 @@ with gr.Blocks() as app:
                         index_rate1 = gr.Slider(
                             minimum=0,
                             maximum=1,
-                            label="检索特征占比",
+                            label=i18n("检索特征占比"),
                             value=0.76,
                             interactive=True,
                         )
@@ -1186,7 +1186,7 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=20,
                             step=1,
-                            label="人声提取激进程度",
+                            label=i18n("人声提取激进程度"),
                             value=10,
                             interactive=True,
                             visible=False,  # 先不开放调整
@@ -1225,8 +1225,8 @@ with gr.Blocks() as app:
                 )
                 if_f0_3 = gr.Radio(
                     label=i18n("模型是否带音高指导(唱歌一定要, 语音可以不要)"),
-                    choices=["是", "否"],
-                    value="是",
+                    choices=[i18n("是"), i18n("否")],
+                    value=i18n("是"),
                     interactive=True,
                 )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
@@ -1309,22 +1309,22 @@ with gr.Blocks() as app:
                         minimum=0,
                         maximum=40,
                         step=1,
-                        label="每张显卡的batch_size",
+                        label=i18n("每张显卡的batch_size"),
                         value=default_batch_size,
                         interactive=True,
                     )
                     if_save_latest13 = gr.Radio(
                         label=i18n("是否仅保存最新的ckpt文件以节省硬盘空间"),
-                        choices=["是", "否"],
-                        value="否",
+                        choices=[i18n("是"), i18n("否")],
+                        value=i18n("否"),
                         interactive=True,
                     )
                     if_cache_gpu17 = gr.Radio(
                         label=i18n(
                             "是否缓存所有训练集至显存. 10min以下小数据可缓存以加速训练, 大数据缓存会炸显存也加不了多少速"
                         ),
-                        choices=["是", "否"],
-                        value="否",
+                        choices=[i18n("是"), i18n("否")],
+                        value=i18n("否"),
                         interactive=True,
                     )
                 with gr.Row():
@@ -1419,8 +1419,8 @@ with gr.Blocks() as app:
                     )
                     if_f0_ = gr.Radio(
                         label=i18n("模型是否带音高指导"),
-                        choices=["是", "否"],
-                        value="是",
+                        choices=[i18n("是"), i18n("否")],
+                        value=i18n("是"),
                         interactive=True,
                     )
                     info__ = gr.Textbox(
