@@ -375,9 +375,7 @@ class GUI:
         self.crossfade_frame = int(self.config.crossfade_time * self.config.samplerate)
         self.sola_search_frame = int(0.012 * self.config.samplerate)
         self.delay_frame = int(0.01 * self.config.samplerate)  # 往前预留0.02s
-        self.extra_frame = int(
-            self.config.extra_time * self.config.samplerate
-        )  
+        self.extra_frame = int(self.config.extra_time * self.config.samplerate)
         self.rvc = None
         self.rvc = RVC(
             self.config.pitch,
@@ -408,7 +406,9 @@ class GUI:
             orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
         )
         self.resampler2 = tat.Resample(
-            orig_freq=self.rvc.tgt_sr, new_freq=self.config.samplerate, dtype=torch.float32
+            orig_freq=self.rvc.tgt_sr,
+            new_freq=self.config.samplerate,
+            dtype=torch.float32,
         )
         thread_vc = threading.Thread(target=self.soundinput)
         thread_vc.start()

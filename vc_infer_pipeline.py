@@ -1,7 +1,6 @@
 import numpy as np, parselmouth, torch, pdb
 from time import time as ttime
 import torch.nn.functional as F
-from config import x_pad, x_query, x_center, x_max
 import scipy.signal as signal
 import pyworld, os, traceback, faiss
 from scipy import signal
@@ -10,17 +9,22 @@ bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 
 class VC(object):
-    def __init__(self, tgt_sr, device, is_half):
+    def __init__(self, tgt_sr, config):
+        self.x_pad, self.x_query, self.x_center, self.x_max = (
+            config.x_pad,
+            config.x_query,
+            config.x_center,
+            config.x_max,
+        )
         self.sr = 16000  # hubert输入采样率
         self.window = 160  # 每帧点数
-        self.t_pad = self.sr * x_pad  # 每条前后pad时间
-        self.t_pad_tgt = tgt_sr * x_pad
+        self.t_pad = self.sr * self.x_pad  # 每条前后pad时间
+        self.t_pad_tgt = tgt_sr * self.x_pad
         self.t_pad2 = self.t_pad * 2
-        self.t_query = self.sr * x_query  # 查询切点前后查询时间
-        self.t_center = self.sr * x_center  # 查询切点位置
-        self.t_max = self.sr * x_max  # 免查询时长阈值
-        self.device = device
-        self.is_half = is_half
+        self.t_query = self.sr * self.x_query  # 查询切点前后查询时间
+        self.t_center = self.sr * self.x_center  # 查询切点位置
+        self.t_max = self.sr * self.x_max  # 免查询时长阈值
+        self.device = config.device
 
     def get_f0(self, x, p_len, f0_up_key, f0_method, inp_f0=None):
         time_step = self.window / self.sr * 1000
@@ -64,8 +68,10 @@ class VC(object):
             replace_f0 = np.interp(
                 list(range(delta_t)), inp_f0[:, 0] * 100, inp_f0[:, 1]
             )
-            shape = f0[x_pad * tf0 : x_pad * tf0 + len(replace_f0)].shape[0]
-            f0[x_pad * tf0 : x_pad * tf0 + len(replace_f0)] = replace_f0[:shape]
+            shape = f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)].shape[0]
+            f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)] = replace_f0[
+                :shape
+            ]
         # with open("test_opt.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         f0bak = f0.copy()
         f0_mel = 1127 * np.log(1 + f0 / 700)
