@@ -1,11 +1,12 @@
 from multiprocessing import cpu_count
-import threading,pdb,librosa
+import threading, pdb, librosa
 from time import sleep
 from subprocess import Popen
 from time import sleep
 import torch, os, traceback, sys, warnings, shutil, numpy as np
 import faiss
 from random import shuffle
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
@@ -24,7 +25,7 @@ i18n = I18nAuto()
 ncpu = cpu_count()
 ngpu = torch.cuda.device_count()
 gpu_infos = []
-mem=[]
+mem = []
 if (not torch.cuda.is_available()) or ngpu == 0:
     if_gpu_ok = False
 else:
@@ -50,13 +51,21 @@ else:
         ):  # A10#A100#V100#A40#P40#M40#K80#A4500
             if_gpu_ok = True  # 至少有一张能用的N卡
             gpu_infos.append("%s\t%s" % (i, gpu_name))
-            mem.append(int(torch.cuda.get_device_properties(i).total_memory/1024/1024/1024+0.4))
+            mem.append(
+                int(
+                    torch.cuda.get_device_properties(i).total_memory
+                    / 1024
+                    / 1024
+                    / 1024
+                    + 0.4
+                )
+            )
 if if_gpu_ok == True and len(gpu_infos) > 0:
-    gpu_info ="\n".join(gpu_infos)
-    default_batch_size=min(mem)//2
+    gpu_info = "\n".join(gpu_infos)
+    default_batch_size = min(mem) // 2
 else:
     gpu_info = "很遗憾您这没有能用的显卡来支持您训练"
-    default_batch_size=1
+    default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
 from scipy.io import wavfile
@@ -236,7 +245,7 @@ def vc_multi(
         yield traceback.format_exc()
 
 
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins,agg):
+def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
     infos = []
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -258,23 +267,30 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins,agg):
             paths = [path.name for path in paths]
         for path in paths:
             inp_path = os.path.join(inp_root, path)
-            need_reformat=1
-            done=0
+            need_reformat = 1
+            done = 0
             try:
                 info = ffmpeg.probe(inp_path, cmd="ffprobe")
-                if(info["streams"][0]["channels"]==2 and info["streams"][0]["sample_rate"]=="44100"):
-                    need_reformat=0
+                if (
+                    info["streams"][0]["channels"] == 2
+                    and info["streams"][0]["sample_rate"] == "44100"
+                ):
+                    need_reformat = 0
                     pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
-                    done=1
+                    done = 1
             except:
                 need_reformat = 1
                 traceback.print_exc()
-            if(need_reformat==1):
-                tmp_path="%s/%s.reformatted.wav"%(tmp,os.path.basename(inp_path))
-                os.system("ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"%(inp_path,tmp_path))
-                inp_path=tmp_path
+            if need_reformat == 1:
+                tmp_path = "%s/%s.reformatted.wav" % (tmp, os.path.basename(inp_path))
+                os.system(
+                    "ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"
+                    % (inp_path, tmp_path)
+                )
+                inp_path = tmp_path
             try:
-                if(done==0):pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                if done == 0:
+                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
@@ -660,11 +676,11 @@ def train_index(exp_dir1):
     big_npy = np.concatenate(npys, 0)
     # np.save("%s/total_fea.npy" % exp_dir, big_npy)
     # n_ivf =  big_npy.shape[0] // 39
-    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])),big_npy.shape[0]// 39)
-    infos=[]
-    infos.append("%s,%s"%(big_npy.shape,n_ivf))
+    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
+    infos = []
+    infos.append("%s,%s" % (big_npy.shape, n_ivf))
     yield "\n".join(infos)
-    index = faiss.index_factory(256, "IVF%s,Flat"%n_ivf)
+    index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
     # index = faiss.index_factory(256, "IVF%s,PQ128x4fs,RFlat"%n_ivf)
     infos.append("training")
     yield "\n".join(infos)
@@ -672,13 +688,19 @@ def train_index(exp_dir1):
     # index_ivf.nprobe = int(np.power(n_ivf,0.3))
     index_ivf.nprobe = 1
     index.train(big_npy)
-    faiss.write_index(index, '%s/trained_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
+    faiss.write_index(
+        index,
+        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
+    )
     # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
     infos.append("adding")
     yield "\n".join(infos)
     index.add(big_npy)
-    faiss.write_index(index, '%s/added_IVF%s_Flat_nprobe_%s.index'%(exp_dir,n_ivf,index_ivf.nprobe))
-    infos.append("成功构建索引，added_IVF%s_Flat_nprobe_%s.index"%(n_ivf,index_ivf.nprobe))
+    faiss.write_index(
+        index,
+        "%s/added_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
+    )
+    infos.append("成功构建索引，added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe))
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan.index"%(n_ivf))
     yield "\n".join(infos)
@@ -876,7 +898,7 @@ def train1key(
     big_npy = np.concatenate(npys, 0)
     # np.save("%s/total_fea.npy" % exp_dir, big_npy)
     # n_ivf =  big_npy.shape[0] // 39
-    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])),big_npy.shape[0]// 39)
+    n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
     index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
     yield get_info_str("training index")
@@ -1171,7 +1193,7 @@ with gr.Blocks() as app:
                             label="人声提取激进程度",
                             value=10,
                             interactive=True,
-                            visible=False#先不开放调整
+                            visible=False,  # 先不开放调整
                         )
                         opt_vocal_root = gr.Textbox(
                             label=i18n("指定输出人声文件夹"), value="opt"
@@ -1187,7 +1209,7 @@ with gr.Blocks() as app:
                             opt_vocal_root,
                             wav_inputs,
                             opt_ins_root,
-                            agg
+                            agg,
                         ],
                         [vc_output4],
                     )
