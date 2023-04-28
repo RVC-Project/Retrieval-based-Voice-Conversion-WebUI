@@ -15,7 +15,7 @@ class VC(object):
             config.x_query,
             config.x_center,
             config.x_max,
-            config.is_half
+            config.is_half,
         )
         self.sr = 16000  # hubert输入采样率
         self.window = 160  # 每帧点数
