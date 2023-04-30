@@ -12,10 +12,7 @@ In '/logs/your-experiment/3_feature256' where the model is located, features ext
 From here we read the npy files in order sorted by filename and concatenate the vectors to create big_npy. (This vector has shape [N, 256].)
 After saving big_npy as /logs/your-experiment/total_fea.npy, train it with faiss.
 
-As of 2023/04/18, IVF based on L2 distance is used using the index factory function of faiss.
-The number of IVF divisions (n_ivf) is N//39, and n_probe uses int(np.power(n_ivf, 0.3)). (Look around train_index in infer-web.py.)
-
-In this article, I will first explain the meaning of these parameters, and then write advice for developers to create a better index.
+In this article, I will explain the meaning of these parameters.
 
 # Explanation of the method
 ## index factory
@@ -103,44 +100,3 @@ https://github.com/facebookresearch/faiss/wiki/Fast-accumulation-of-PQ-and-AQ-co
 ## RFlat
 RFlat is an instruction to recalculate the rough distance calculated by FastScan with the exact distance specified by the third argument of index factory.
 When getting k neighbors, k*k_factor points are recalculated.
-
-# Techniques for embedding
-## alpha query expansion
-Query expansion is a technique used in searches, for example in full-text searches, where a few words are added to the entered search sentence to improve search accuracy. Several methods have also been proposed for vector search, among which α-query expansion is known as a highly effective method that does not require additional learning. In the paper, it is introduced in [Attention-Based Query Expansion Learning](https://arxiv.org/abs/2007.08019), etc., and [2nd place solution of kaggle shopee competition](https://www.kaggle.com/code/lyakaap/2nd-place-solution/notebook).
-
-α-query expansion can be done by summing a vector with neighboring vectors with weights raised to the power of similarity. How to paste the code example. Replace big_npy with α query expansion.
-
-```python
-alpha = 3.
-index = faiss.index_factory(256, "IVF512,PQ128x4fs,RFlat")
-original_norm = np.maximum(np.linalg.norm(big_npy, ord=2, axis=1, keepdims=True), 1e-9)
-big_npy /= original_norm
-index.train(big_npy)
-index.add(big_npy)
-dist, neighbor = index.search(big_npy, num_expand)
-
-expand_arrays = []
-ixs = np.arange(big_npy.shape[0])
-for i in range(-(-big_npy.shape[0]//batch_size)):
-    ix = ixs[i*batch_size:(i+1)*batch_size]
-    weight = np.power(np.einsum("nd,nmd->nm", big_npy[ix], big_npy[neighbor[ix]]), alpha)
-    expand_arrays.append(np.sum(big_npy[neighbor[ix]] * np.expand_dims(weight, axis=2),axis=1))
-big_npy = np.concatenate(expand_arrays, axis=0)
-
-# normalize index version
-big_npy = big_npy / np.maximum(np.linalg.norm(big_npy, ord=2, axis=1, keepdims=True), 1e-9)
-```
-
-This is a technique that can be applied both to the query that does the search and to the DB being searched.
-
-## Compress embedding with MiniBatch KMeans
-If total_fea.npy is too large, it is possible to shrink the vector using KMeans.
-Compression of embedding is possible with the following code. Specify the size you want to compress for n_clusters, and specify 256 * number of CPU cores for batch_size to fully benefit from CPU parallelization.
-
-```python
-import multiprocessing
-from sklearn.cluster import MiniBatchKMeans
-kmeans = MiniBatchKMeans(n_clusters=10000, batch_size=256 * multiprocessing.cpu_count(), init="random")
-kmeans.fit(big_npy)
-sample_npy = kmeans.cluster_centers_
-```
