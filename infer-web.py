@@ -670,7 +670,7 @@ def train_index(exp_dir1):
         phone = np.load("%s/%s" % (feature_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
-    # np.save("%s/total_fea.npy" % exp_dir, big_npy)
+    np.save("%s/total_fea.npy" % exp_dir, big_npy)
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     infos = []
@@ -892,7 +892,7 @@ def train1key(
         phone = np.load("%s/%s" % (feature_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
-    # np.save("%s/total_fea.npy" % exp_dir, big_npy)
+    np.save("%s/total_fea.npy" % exp_dir, big_npy)
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
