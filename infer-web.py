@@ -1,5 +1,5 @@
 from multiprocessing import cpu_count
-import threading, pdb, librosa
+import threading
 from time import sleep
 from subprocess import Popen
 from time import sleep
@@ -709,7 +709,6 @@ def train1key(
     if_f0_3,
     trainset_dir4,
     spk_id5,
-    gpus6,
     np7,
     f0method8,
     save_epoch10,
@@ -727,35 +726,40 @@ def train1key(
         infos.append(strr)
         return "\n".join(infos)
 
-    os.makedirs("%s/logs/%s" % (now_dir, exp_dir1), exist_ok=True)
+    model_log_dir = "%s/logs/%s" % (now_dir, exp_dir1)
+    preprocess_log_path = "%s/preprocess.log" % model_log_dir
+    extract_f0_feature_log_path = "%s/extract_f0_feature.log" % model_log_dir
+    gt_wavs_dir = "%s/0_gt_wavs" % model_log_dir
+    feature256_dir = "%s/3_feature256" % model_log_dir
+
+    os.makedirs(model_log_dir, exist_ok=True)
     #########step1:处理数据
-    open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir1), "w").close()
+    open(preprocess_log_path, "w").close()
     cmd = (
         config.python_cmd
-        + " trainset_preprocess_pipeline_print.py %s %s %s %s/logs/%s "
-        % (trainset_dir4, sr_dict[sr2], ncpu, now_dir, exp_dir1)
+        + " trainset_preprocess_pipeline_print.py %s %s %s %s "
+        % (trainset_dir4, sr_dict[sr2], ncpu, model_log_dir)
         + str(config.noparallel)
     )
     yield get_info_str(i18n("step1:正在处理数据"))
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True)
     p.wait()
-    with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir1), "r") as f:
+    with open(preprocess_log_path, "r") as f:
         print(f.read())
     #########step2a:提取音高
-    open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "w")
+    open(extract_f0_feature_log_path, "w")
     if if_f0_3 == i18n("是"):
         yield get_info_str("step2a:正在提取音高")
-        cmd = config.python_cmd + " extract_f0_print.py %s/logs/%s %s %s" % (
-            now_dir,
-            exp_dir1,
+        cmd = config.python_cmd + " extract_f0_print.py %s %s %s" % (
+            model_log_dir,
             np7,
             f0method8,
         )
         yield get_info_str(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)
         p.wait()
-        with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "r") as f:
+        with open(extract_f0_feature_log_path, "r") as f:
             print(f.read())
     else:
         yield get_info_str(i18n("step2a:无需提取音高"))
@@ -765,13 +769,12 @@ def train1key(
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = config.python_cmd + " extract_feature_print.py %s %s %s %s %s/logs/%s" % (
+        cmd = config.python_cmd + " extract_feature_print.py %s %s %s %s %s" % (
             config.device,
             leng,
             idx,
             n_g,
-            now_dir,
-            exp_dir1,
+            model_log_dir
         )
         yield get_info_str(cmd)
         p = Popen(
@@ -780,26 +783,23 @@ def train1key(
         ps.append(p)
     for p in ps:
         p.wait()
-    with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir1), "r") as f:
+    with open(extract_f0_feature_log_path, "r") as f:
         print(f.read())
     #######step3a:训练模型
     yield get_info_str(i18n("step3a:正在训练模型"))
     # 生成filelist
-    exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
-    gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
-    co256_dir = "%s/3_feature256" % (exp_dir)
     if if_f0_3 == i18n("是"):
-        f0_dir = "%s/2a_f0" % (exp_dir)
-        f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
+        f0_dir = "%s/2a_f0" % model_log_dir
+        f0nsf_dir = "%s/2b-f0nsf" % model_log_dir
         names = (
             set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
-            & set([name.split(".")[0] for name in os.listdir(co256_dir)])
+            & set([name.split(".")[0] for name in os.listdir(feature256_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
         )
     else:
         names = set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)]) & set(
-            [name.split(".")[0] for name in os.listdir(co256_dir)]
+            [name.split(".")[0] for name in os.listdir(feature256_dir)]
         )
     opt = []
     for name in names:
@@ -809,7 +809,7 @@ def train1key(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    co256_dir.replace("\\", "\\\\"),
+                    feature256_dir.replace("\\", "\\\\"),
                     name,
                     f0_dir.replace("\\", "\\\\"),
                     name,
@@ -824,7 +824,7 @@ def train1key(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    co256_dir.replace("\\", "\\\\"),
+                    feature256_dir.replace("\\", "\\\\"),
                     name,
                     spk_id5,
                 )
@@ -842,7 +842,7 @@ def train1key(
                 % (now_dir, sr2, now_dir, spk_id5)
             )
     shuffle(opt)
-    with open("%s/filelist.txt" % exp_dir, "w") as f:
+    with open("%s/filelist.txt" % model_log_dir, "w") as f:
         f.write("\n".join(opt))
     yield get_info_str("write filelist done")
     if gpus16:
@@ -885,14 +885,13 @@ def train1key(
     p.wait()
     yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
     #######step3b:训练索引
-    feature_dir = "%s/3_feature256" % (exp_dir)
     npys = []
-    listdir_res = list(os.listdir(feature_dir))
+    listdir_res = list(os.listdir(feature256_dir))
     for name in sorted(listdir_res):
-        phone = np.load("%s/%s" % (feature_dir, name))
+        phone = np.load("%s/%s" % (feature256_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
-    np.save("%s/total_fea.npy" % exp_dir, big_npy)
+    np.save("%s/total_fea.npy" % model_log_dir, big_npy)
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
@@ -904,13 +903,13 @@ def train1key(
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
+        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (model_log_dir, n_ivf, index_ivf.nprobe),
     )
     yield get_info_str("adding index")
     index.add(big_npy)
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
+        "%s/added_IVF%s_Flat_nprobe_%s.index" % (model_log_dir, n_ivf, index_ivf.nprobe),
     )
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe)
@@ -1382,7 +1381,6 @@ with gr.Blocks() as app:
                             if_f0_3,
                             trainset_dir4,
                             spk_id5,
-                            gpus6,
                             np7,
                             f0method8,
                             save_epoch10,
