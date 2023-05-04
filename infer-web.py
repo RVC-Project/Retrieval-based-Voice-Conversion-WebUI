@@ -1312,7 +1312,7 @@ with gr.Blocks() as app:
                         interactive=True,
                     )
                     batch_size12 = gr.Slider(
-                        minimum=0,
+                        minimum=1,
                         maximum=40,
                         step=1,
                         label=i18n("每张显卡的batch_size"),
