@@ -779,7 +779,7 @@ def train1key(
             leng,
             idx,
             n_g,
-            model_log_dir
+            model_log_dir,
         )
         yield get_info_str(cmd)
         p = Popen(
@@ -901,7 +901,7 @@ def train1key(
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
     np.save("%s/total_fea.npy" % model_log_dir, big_npy)
-    
+
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
@@ -913,7 +913,8 @@ def train1key(
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (model_log_dir, n_ivf, index_ivf.nprobe),
+        "%s/trained_IVF%s_Flat_nprobe_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -921,7 +922,8 @@ def train1key(
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s.index" % (model_log_dir, n_ivf, index_ivf.nprobe),
+        "%s/added_IVF%s_Flat_nprobe_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe),
     )
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe)
