@@ -19,7 +19,8 @@ class Config:
         ) = self.arg_parse()
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
-    def arg_parse(self) -> tuple:
+    @staticmethod
+    def arg_parse() -> tuple:
         parser = argparse.ArgumentParser()
         parser.add_argument("--port", type=int, default=7865, help="Listen port")
         parser.add_argument(
