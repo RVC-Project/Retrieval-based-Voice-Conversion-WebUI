@@ -22,4 +22,4 @@ class I18nAuto:
         self.language_map = load_language_list(language)
 
     def __call__(self, key):
-        return self.language_map[key]
+        return self.language_map.get(key, key)

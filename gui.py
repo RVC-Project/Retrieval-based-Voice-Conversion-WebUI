@@ -38,7 +38,8 @@ class RVC:
             self.window = 160
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
-                self.big_npy = np.load(npy_path)
+                # self.big_npy = np.load(npy_path)
+                self.big_npy = index.reconstruct_n(0, self.index.ntotal)
                 print("index search enabled")
             self.index_rate = index_rate
             model_path = hubert_path
@@ -125,8 +126,17 @@ class RVC:
         ####索引优化
         if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
             npy = feats[0].cpu().numpy().astype("float32")
-            _, I = self.index.search(npy, 1)
-            npy = self.big_npy[I.squeeze()].astype("float16")
+
+            # _, I = self.index.search(npy, 1)
+            # npy = self.big_npy[I.squeeze()].astype("float16")
+
+            score, ix = index.search(npy, k=8)
+            weight = np.square(1 / score)
+            weight /= weight.sum(axis=1, keepdims=True)
+            npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1).astype(
+                "float16"
+            )
+
             feats = (
                 torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
                 + (1 - self.index_rate) * feats
@@ -203,9 +213,7 @@ class GUI:
                     title=i18n("加载模型"),
                     layout=[
                         [
-                            sg.Input(
-                                default_text="TEMP\\hubert_base.pt", key="hubert_path"
-                            ),
+                            sg.Input(default_text="hubert_base.pt", key="hubert_path"),
                             sg.FileBrowse(i18n("Hubert模型")),
                         ],
                         [
@@ -221,7 +229,7 @@ class GUI:
                         ],
                         [
                             sg.Input(
-                                default_text="TEMP\\big_src_feature_atri.npy",
+                                default_text="你不需要填写这个You don't need write this.",
                                 key="npy_path",
                             ),
                             sg.FileBrowse(i18n("选择.npy文件")),

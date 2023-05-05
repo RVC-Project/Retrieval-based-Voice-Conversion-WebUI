@@ -53,10 +53,11 @@ class Config:
             if (
                 ("16" in self.gpu_name and "V100" not in self.gpu_name.upper())
                 or "P40" in self.gpu_name.upper()
+                or "1060" in self.gpu_name
                 or "1070" in self.gpu_name
                 or "1080" in self.gpu_name
             ):
-                print("16系显卡强制单精度")
+                print("16系/10系显卡和P40强制单精度")
                 self.is_half = False
                 for config_file in ["32k.json", "40k.json", "48k.json"]:
                     with open(f"configs/{config_file}", "r") as f:
