@@ -1136,11 +1136,7 @@ with gr.Blocks() as app:
                             interactive=True,
                         )
                     with gr.Column():
-                        file_index2 = gr.Textbox(
-                            label=i18n("特征检索库文件路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
-                            interactive=True,
-                        )
+                        file_index2 = gr.Dropdown(label=i18n("特征检索库文件路径"), choices=sorted(indexes))
                         # file_big_npy2 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
