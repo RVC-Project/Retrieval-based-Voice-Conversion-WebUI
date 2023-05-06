@@ -113,11 +113,16 @@ def load_hubert():
 
 
 weight_root = "weights"
+index_root = "indexes"
 weight_uvr5_root = "uvr5_weights"
 names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
+indexes = []
+for index in os.listdir(index_root):
+    if index.endswith(".index"):
+        indexes.append(index)
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth"):
@@ -144,7 +149,7 @@ def vc_single(
         if hubert_model == None:
             load_hubert()
         if_f0 = cpt.get("f0", 1)
-        file_index = (
+        file_index = index_root + "\\" + (
             file_index.strip(" ")
             .strip('"')
             .strip("\n")
@@ -1082,11 +1087,7 @@ with gr.Blocks() as app:
                             interactive=True,
                         )
                     with gr.Column():
-                        file_index1 = gr.Textbox(
-                            label=i18n("特征检索库文件路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
-                            interactive=True,
-                        )
+                        file_index1 = gr.Dropdown(label=i18n("特征检索库文件路径"), choices=sorted(indexes))
                         # file_big_npy1 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
