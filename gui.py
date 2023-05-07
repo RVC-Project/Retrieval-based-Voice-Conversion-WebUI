@@ -1,4 +1,4 @@
-import os, sys
+import os, sys,traceback
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -39,7 +39,7 @@ class RVC:
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 # self.big_npy = np.load(npy_path)
-                self.big_npy = index.reconstruct_n(0, self.index.ntotal)
+                self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
                 print("index search enabled")
             self.index_rate = index_rate
             model_path = hubert_path
@@ -64,8 +64,8 @@ class RVC:
             print(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
             self.net_g.half()
-        except Exception as e:
-            print(e)
+        except:
+            print(traceback.format_exc())
 
     def get_f0(self, x, f0_up_key, inp_f0=None):
         x_pad = 1
