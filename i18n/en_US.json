@@ -32,7 +32,6 @@
     "人声伴奏分离批量处理, 使用UVR5模型. <br>不带和声用HP2, 带和声且提取的人声不需要和声用HP5<br>合格的文件夹路径格式举例: E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)": "Batch processing of vocal accompaniment separation, using UVR5 model. <br>Without harmony, use HP2, with harmony and extracted vocals do not need harmony, use HP5<br>Example of qualified folder path format: E:\\ codes\\py39\\vits_vc_gpu\\Egret Shuanghua test sample (just go to the address bar of the file manager and copy it)",
     "输入待处理音频文件夹路径": "Input audio folder path",
     "模型": "Model",
-    "人声提取激进程度": "vocal extraction aggressiveness",
     "指定输出人声文件夹": "Specify vocals output folder",
     "指定输出乐器文件夹": "Specify instrumentals output folder",
     "训练": "Train",
