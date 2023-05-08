@@ -62,6 +62,11 @@ poetry install
 你也可以通过pip来安装依赖：
 
 **注意**: `MacOS`下`faiss 1.7.2`版本会导致抛出段错误，在手动安装时请使用命令`pip install faiss-cpu==1.7.0`指定使用`1.7.0`版本
+ `MacOS`下可通过`brew`安装`Swig`
+
+ ```bash
+ brew install swig
+ ```
 
 ```bash
 pip install -r requirements.txt
