@@ -366,7 +366,7 @@ def clean():
 
 
 def change_f0(if_f0_3, sr2):  # np7, f0method8,pretrained_G14,pretrained_D15
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
             {"visible": True, "__type__": "update"},
@@ -452,7 +452,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
     f.close()
-    if if_f0 == i18n("是"):
+    if if_f0:
         cmd = config.python_cmd + " extract_f0_print.py %s/logs/%s %s %s" % (
             now_dir,
             exp_dir,
@@ -528,7 +528,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
 
 
 def change_sr2(sr2, if_f0_3):
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         return "pretrained/f0G%s.pth" % sr2, "pretrained/f0D%s.pth" % sr2
     else:
         return "pretrained/G%s.pth" % sr2, "pretrained/D%s.pth" % sr2
@@ -554,7 +554,7 @@ def click_train(
     os.makedirs(exp_dir, exist_ok=True)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
     co256_dir = "%s/3_feature256" % (exp_dir)
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
         names = (
@@ -569,7 +569,7 @@ def click_train(
         )
     opt = []
     for name in names:
-        if if_f0_3 == i18n("是"):
+        if if_f0_3:
             opt.append(
                 "%s/%s.wav|%s/%s.npy|%s/%s.wav.npy|%s/%s.wav.npy|%s"
                 % (
@@ -595,7 +595,7 @@ def click_train(
                     spk_id5,
                 )
             )
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         for _ in range(2):
             opt.append(
                 "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
@@ -621,7 +621,7 @@ def click_train(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == i18n("是") else 0,
+                1 if if_f0_3 else 0,
                 batch_size12,
                 gpus16,
                 total_epoch11,
@@ -639,7 +639,7 @@ def click_train(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == i18n("是") else 0,
+                1 if if_f0_3 else 0,
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
@@ -754,7 +754,7 @@ def train1key(
         print(f.read())
     #########step2a:提取音高
     open(extract_f0_feature_log_path, "w")
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         yield get_info_str("step2a:正在提取音高")
         cmd = config.python_cmd + " extract_f0_print.py %s %s %s" % (
             model_log_dir,
@@ -793,7 +793,7 @@ def train1key(
     #######step3a:训练模型
     yield get_info_str(i18n("step3a:正在训练模型"))
     # 生成filelist
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         f0_dir = "%s/2a_f0" % model_log_dir
         f0nsf_dir = "%s/2b-f0nsf" % model_log_dir
         names = (
@@ -808,7 +808,7 @@ def train1key(
         )
     opt = []
     for name in names:
-        if if_f0_3 == i18n("是"):
+        if if_f0_3:
             opt.append(
                 "%s/%s.wav|%s/%s.npy|%s/%s.wav.npy|%s/%s.wav.npy|%s"
                 % (
@@ -834,7 +834,7 @@ def train1key(
                     spk_id5,
                 )
             )
-    if if_f0_3 == i18n("是"):
+    if if_f0_3:
         for _ in range(2):
             opt.append(
                 "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
@@ -857,7 +857,7 @@ def train1key(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == i18n("是") else 0,
+                1 if if_f0_3 else 0,
                 batch_size12,
                 gpus16,
                 total_epoch11,
@@ -875,7 +875,7 @@ def train1key(
             % (
                 exp_dir1,
                 sr2,
-                1 if if_f0_3 == i18n("是") else 0,
+                1 if if_f0_3 else 0,
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
@@ -1233,13 +1233,13 @@ with gr.Blocks() as app:
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
                     choices=["32k", "40k", "48k"],
-                    value="40k",
+                    value="48k",
                     interactive=True,
                 )
                 if_f0_3 = gr.Radio(
                     label=i18n("模型是否带音高指导(唱歌一定要, 语音可以不要)"),
-                    choices=[i18n("是"), i18n("否")],
-                    value=i18n("是"),
+                    choices=[True, False],
+                    value=True,
                     interactive=True,
                 )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
