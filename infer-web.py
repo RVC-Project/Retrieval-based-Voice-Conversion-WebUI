@@ -310,7 +310,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
 # 一个选项卡全局只能有一个音色
 def get_vc(sid):
     global n_spk, tgt_sr, net_g, vc, cpt
-    if sid == []:
+    if sid == "":
         global hubert_model
         if hubert_model != None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
             print("clean_empty_cache")
@@ -1233,7 +1233,7 @@ with gr.Blocks() as app:
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
                     choices=["32k", "40k", "48k"],
-                    value="48k",
+                    value="40k",
                     interactive=True,
                 )
                 if_f0_3 = gr.Radio(
