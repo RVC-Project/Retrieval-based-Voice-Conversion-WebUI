@@ -117,8 +117,8 @@ class PreProcess:
                     )
                     p.start()
                     ps.append(p)
-                    for p in ps:
-                        p.join()
+                for p in ps:
+                    p.join()
         except:
             println("Fail. %s" % traceback.format_exc())
 
