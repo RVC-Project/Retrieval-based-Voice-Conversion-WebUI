@@ -90,7 +90,7 @@ class Config:
         else:
             print("没有发现支持的N卡, 使用CPU进行推理")
             self.device = "cpu"
-            self.is_half = True
+            self.is_half = False
 
         if self.n_cpu == 0:
             self.n_cpu = cpu_count()
