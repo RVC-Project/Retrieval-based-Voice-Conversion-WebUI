@@ -133,7 +133,7 @@ class RVC:
             score, ix = self.index.search(npy, k=8)
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
-            npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1).astype(
+            npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1).astype(
                 "float16"
             )
 
