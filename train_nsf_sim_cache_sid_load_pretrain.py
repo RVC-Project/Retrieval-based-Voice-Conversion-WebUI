@@ -41,6 +41,18 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 
 global_step = 0
 
+import datetime
+class EpochRecorder:
+    def __init__(self):
+        self.last_time = ttime()
+    
+
+    def record(self):
+        now_time = ttime()
+        elapsed_time = now_time - self.last_time
+        hr_and_min: str = str(datetime.timedelta(seconds=elapsed_time))
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return f"[{current_time}] | ({hr_and_min})"
 
 def main():
     # n_gpus = torch.cuda.device_count()
@@ -314,6 +326,7 @@ def train_and_evaluate(
         data_iterator = enumerate(train_loader)
 
     # Run steps
+    epoch_recorder = EpochRecorder()
     for batch_idx, info in data_iterator:
         # Data
         ## Unpack
@@ -513,7 +526,7 @@ def train_and_evaluate(
             )
 
     if rank == 0:
-        logger.info("====> Epoch: {}".format(epoch))
+        logger.info("====> Epoch: {} {}".format(epoch, epoch_recorder.record()))
     if epoch >= hps.total_epoch and rank == 0:
         logger.info("Training is done. The program is closed.")
         from process_ckpt import savee  # def savee(ckpt,sr,if_f0,name,epoch):
