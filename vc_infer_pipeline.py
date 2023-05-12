@@ -2,11 +2,25 @@ import numpy as np, parselmouth, torch, pdb
 from time import time as ttime
 import torch.nn.functional as F
 import scipy.signal as signal
-import pyworld, os, traceback, faiss
+import pyworld, os, traceback, faiss,librosa
 from scipy import signal
+from functools import lru_cache
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
+input_audio_path2wav={}
+@lru_cache
+def cache_harvest_f0(input_audio_path,fs,f0max,f0min,frame_period):
+    audio=input_audio_path2wav[input_audio_path]
+    f0, t = pyworld.harvest(
+        audio,
+        fs=fs,
+        f0_ceil=f0max,
+        f0_floor=f0min,
+        frame_period=frame_period,
+    )
+    f0 = pyworld.stonemask(audio, f0, t, fs)
+    return f0
 
 class VC(object):
     def __init__(self, tgt_sr, config):
@@ -27,7 +41,8 @@ class VC(object):
         self.t_max = self.sr * self.x_max  # 免查询时长阈值
         self.device = config.device
 
-    def get_f0(self, x, p_len, f0_up_key, f0_method, inp_f0=None):
+    def get_f0(self, input_audio_path,x, p_len, f0_up_key, f0_method,filter_radius, inp_f0=None):
+        global input_audio_path2wav
         time_step = self.window / self.sr * 1000
         f0_min = 50
         f0_max = 1100
@@ -49,16 +64,11 @@ class VC(object):
                 f0 = np.pad(
                     f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
                 )
-        else:
-            f0, t = pyworld.harvest(
-                x.astype(np.double),
-                fs=self.sr,
-                f0_ceil=f0_max,
-                f0_floor=f0_min,
-                frame_period=10,
-            )
-            f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.sr)
-            f0 = signal.medfilt(f0, 3)
+        elif f0_method == "harvest":
+            input_audio_path2wav[input_audio_path]=x.astype(np.double)
+            f0=cache_harvest_f0(input_audio_path,self.sr,f0_max,f0_min,10)
+            if(filter_radius>2):
+                f0 = signal.medfilt(f0, 3)
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         tf0 = self.sr // self.window  # 每秒f0点数
@@ -158,7 +168,6 @@ class VC(object):
                     .data.cpu()
                     .float()
                     .numpy()
-                    .astype(np.int16)
                 )
             else:
                 audio1 = (
@@ -166,7 +175,6 @@ class VC(object):
                     .data.cpu()
                     .float()
                     .numpy()
-                    .astype(np.int16)
                 )
         del feats, p_len, padding_mask
         if torch.cuda.is_available():
@@ -182,6 +190,7 @@ class VC(object):
         net_g,
         sid,
         audio,
+        input_audio_path,
         times,
         f0_up_key,
         f0_method,
@@ -189,6 +198,9 @@ class VC(object):
         # file_big_npy,
         index_rate,
         if_f0,
+        filter_radius,
+        tgt_sr,
+        resample_sr,
         f0_file=None,
     ):
         if (
@@ -243,7 +255,7 @@ class VC(object):
         sid = torch.tensor(sid, device=self.device).unsqueeze(0).long()
         pitch, pitchf = None, None
         if if_f0 == 1:
-            pitch, pitchf = self.get_f0(audio_pad, p_len, f0_up_key, f0_method, inp_f0)
+            pitch, pitchf = self.get_f0(input_audio_path,audio_pad, p_len, f0_up_key, f0_method,filter_radius, inp_f0)
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
             if self.device == "mps":
@@ -316,6 +328,11 @@ class VC(object):
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)
+        if(resample_sr>=16000 and tgt_sr!=resample_sr):
+            audio_opt = librosa.resample(
+                audio_opt, orig_sr=tgt_sr, target_sr=resample_sr
+            )
+        audio_opt=audio_opt.astype(np.int16)
         del pitch, pitchf, sid
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

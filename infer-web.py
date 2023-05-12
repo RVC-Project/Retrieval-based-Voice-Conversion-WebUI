@@ -11,6 +11,8 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack"%(now_dir), ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack"%(now_dir) , ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
@@ -114,10 +116,16 @@ def load_hubert():
 
 weight_root = "weights"
 weight_uvr5_root = "uvr5_weights"
+index_root = "logs"
 names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
+index_paths=[]
+for root, dirs, files in os.walk(index_root, topdown=False):
+    for name in files:
+        if name.endswith(".index") and "trained" not in name:
+            index_paths.append("%s/%s"%(root,name))
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth"):
@@ -126,20 +134,23 @@ for name in os.listdir(weight_uvr5_root):
 
 def vc_single(
     sid,
-    input_audio,
+    input_audio_path,
     f0_up_key,
     f0_file,
     f0_method,
     file_index,
+    file_index2,
     # file_big_npy,
     index_rate,
+    filter_radius,
+    resample_sr,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model
-    if input_audio is None:
+    if input_audio_path is None:
         return "You need to upload an audio", None
     f0_up_key = int(f0_up_key)
     try:
-        audio = load_audio(input_audio, 16000)
+        audio = load_audio(input_audio_path, 16000)
         times = [0, 0, 0]
         if hubert_model == None:
             load_hubert()
@@ -151,7 +162,7 @@ def vc_single(
             .strip('"')
             .strip(" ")
             .replace("trained", "added")
-        )  # 防止小白写错，自动帮他替换掉
+        )if file_index!=""else file_index2  # 防止小白写错，自动帮他替换掉
         # file_big_npy = (
         #     file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         # )
@@ -160,6 +171,7 @@ def vc_single(
             net_g,
             sid,
             audio,
+            input_audio_path,
             times,
             f0_up_key,
             f0_method,
@@ -167,12 +179,15 @@ def vc_single(
             # file_big_npy,
             index_rate,
             if_f0,
+            filter_radius,
+            tgt_sr,
+            resample_sr,
             f0_file=f0_file,
         )
-        print(
-            "npy: ", times[0], "s, f0: ", times[1], "s, infer: ", times[2], "s", sep=""
-        )
-        return "Success", (tgt_sr, audio_opt)
+        if(resample_sr>=16000 and tgt_sr!=resample_sr):
+            tgt_sr=resample_sr
+        index_info="Using index:%s."%file_index if os.path.exists(file_index)else"Index not used."
+        return "Success.\n %s\nTime:\n npy:%ss, f0:%ss, infer:%ss"%(index_info,times[0],times[1],times[2]), (tgt_sr, audio_opt)
     except:
         info = traceback.format_exc()
         print(info)
@@ -187,8 +202,11 @@ def vc_multi(
     f0_up_key,
     f0_method,
     file_index,
+    file_index2,
     # file_big_npy,
     index_rate,
+    filter_radius,
+    resample_sr,
 ):
     try:
         dir_path = (
@@ -205,14 +223,6 @@ def vc_multi(
             traceback.print_exc()
             paths = [path.name for path in paths]
         infos = []
-        file_index = (
-            file_index.strip(" ")
-            .strip('"')
-            .strip("\n")
-            .strip('"')
-            .strip(" ")
-            .replace("trained", "added")
-        )  # 防止小白写错，自动帮他替换掉
         for path in paths:
             info, opt = vc_single(
                 sid,
@@ -221,17 +231,20 @@ def vc_multi(
                 None,
                 f0_method,
                 file_index,
+                file_index2,
                 # file_big_npy,
                 index_rate,
+                filter_radius,
+                resample_sr,
             )
-            if info == "Success":
+            if "Success"in info:
                 try:
                     tgt_sr, audio_opt = opt
                     wavfile.write(
                         "%s/%s" % (opt_root, os.path.basename(path)), tgt_sr, audio_opt
                     )
                 except:
-                    info = traceback.format_exc()
+                    info += traceback.format_exc()
             infos.append("%s->%s" % (os.path.basename(path), info))
             yield "\n".join(infos)
         yield "\n".join(infos)
@@ -310,7 +323,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
 # 一个选项卡全局只能有一个音色
 def get_vc(sid):
     global n_spk, tgt_sr, net_g, vc, cpt
-    if sid == "":
+    if sid == ""or sid==[]:
         global hubert_model
         if hubert_model != None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
             print("clean_empty_cache")
@@ -358,7 +371,12 @@ def change_choices():
     for name in os.listdir(weight_root):
         if name.endswith(".pth"):
             names.append(name)
-    return {"choices": sorted(names), "__type__": "update"}
+    index_paths=[]
+    for root, dirs, files in os.walk(index_root, topdown=False):
+        for name in files:
+            if name.endswith(".index") and "trained" not in name:
+                index_paths.append("%s/%s" % (root, name))
+    return {"choices": sorted(names), "__type__": "update"},{"choices": sorted(index_paths), "__type__": "update"}
 
 
 def clean():
@@ -412,7 +430,7 @@ def if_done_multi(done, ps):
     done[0] = True
 
 
-def preprocess_dataset(trainset_dir, exp_dir, sr, n_p=ncpu):
+def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
@@ -684,7 +702,6 @@ def train_index(exp_dir1):
     infos.append("training")
     yield "\n".join(infos)
     index_ivf = faiss.extract_index_ivf(index)  #
-    # index_ivf.nprobe = int(np.power(n_ivf,0.3))
     index_ivf.nprobe = 1
     index.train(big_npy)
     faiss.write_index(
@@ -743,7 +760,7 @@ def train1key(
     cmd = (
         config.python_cmd
         + " trainset_preprocess_pipeline_print.py %s %s %s %s "
-        % (trainset_dir4, sr_dict[sr2], ncpu, model_log_dir)
+        % (trainset_dir4, sr_dict[sr2], np7, model_log_dir)
         + str(config.noparallel)
     )
     yield get_info_str(i18n("step1:正在处理数据"))
@@ -908,7 +925,6 @@ def train1key(
     index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
     yield get_info_str("training index")
     index_ivf = faiss.extract_index_ivf(index)  #
-    # index_ivf.nprobe = int(np.power(n_ivf,0.3))
     index_ivf.nprobe = 1
     index.train(big_npy)
     faiss.write_index(
@@ -1044,8 +1060,7 @@ with gr.Blocks() as app:
         with gr.TabItem(i18n("模型推理")):
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
-                refresh_button = gr.Button(i18n("刷新音色列表"), variant="primary")
-                refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0])
+                refresh_button = gr.Button(i18n("刷新音色列表和索引路径"), variant="primary")
                 clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
                 spk_item = gr.Slider(
                     minimum=0,
@@ -1073,7 +1088,7 @@ with gr.Blocks() as app:
                         )
                         input_audio0 = gr.Textbox(
                             label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\todo-songs\\冬之花clip1.wav",
+                            value="E:\\codes\\py39\\test-20230416b\\todo-songs\\冬之花clip1.wav",
                         )
                         f0method0 = gr.Radio(
                             label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"),
@@ -1081,12 +1096,26 @@ with gr.Blocks() as app:
                             value="pm",
                             interactive=True,
                         )
-                    with gr.Column():
-                        file_index1 = gr.Textbox(
-                            label=i18n("特征检索库文件路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
+                        filter_radius0=gr.Slider(
+                            minimum=0,
+                            maximum=7,
+                            label=i18n(">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"),
+                            value=3,
+                            step=1,
                             interactive=True,
                         )
+                    with gr.Column():
+                        file_index1 = gr.Textbox(
+                            label=i18n("特征检索库文件路径,为空则使用下拉的选择结果"),
+                            value="",
+                            interactive=True,
+                        )
+                        file_index2 = gr.Dropdown(
+                            label=i18n("自动检测index路径,下拉式选择(dropdown)"),
+                            choices=sorted(index_paths),
+                            interactive=True,
+                        )
+                        refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0, file_index2])
                         # file_big_npy1 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
@@ -1097,6 +1126,14 @@ with gr.Blocks() as app:
                             maximum=1,
                             label=i18n("检索特征占比"),
                             value=0.76,
+                            interactive=True,
+                        )
+                        resample_sr0=gr.Slider(
+                            minimum=0,
+                            maximum=48000,
+                            label=i18n("后处理重采样至最终采样率，0为不进行重采样"),
+                            value=0,
+                            step=1,
                             interactive=True,
                         )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
@@ -1113,8 +1150,11 @@ with gr.Blocks() as app:
                             f0_file,
                             f0method0,
                             file_index1,
+                            file_index2,
                             # file_big_npy1,
                             index_rate1,
+                            filter_radius0,
+                            resample_sr0
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1134,10 +1174,23 @@ with gr.Blocks() as app:
                             value="pm",
                             interactive=True,
                         )
+                        filter_radius1=gr.Slider(
+                            minimum=0,
+                            maximum=7,
+                            label=i18n(">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"),
+                            value=3,
+                            step=1,
+                            interactive=True,
+                        )
                     with gr.Column():
-                        file_index2 = gr.Textbox(
-                            label=i18n("特征检索库文件路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\added_IVF677_Flat_nprobe_7.index",
+                        file_index3 = gr.Textbox(
+                            label=i18n("特征检索库文件路径,为空则使用下拉的选择结果"),
+                            value="",
+                            interactive=True,
+                        )
+                        file_index4 = gr.Dropdown(
+                            label=i18n("自动检测index路径,下拉式选择(dropdown)"),
+                            choices=sorted(index_paths),
                             interactive=True,
                         )
                         # file_big_npy2 = gr.Textbox(
@@ -1152,10 +1205,18 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                        resample_sr1=gr.Slider(
+                            minimum=0,
+                            maximum=48000,
+                            label=i18n("后处理重采样至最终采样率，0为不进行重采样"),
+                            value=0,
+                            step=1,
+                            interactive=True,
+                        )
                     with gr.Column():
                         dir_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
-                            value="E:\codes\py39\\vits_vc_gpu_train\\todo-songs",
+                            value="E:\codes\py39\\test-20230416b\\todo-songs",
                         )
                         inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
@@ -1171,9 +1232,12 @@ with gr.Blocks() as app:
                             inputs,
                             vc_transform1,
                             f0method1,
-                            file_index2,
+                            file_index3,
+                            file_index4,
                             # file_big_npy2,
                             index_rate2,
+                            filter_radius1,
+                            resample_sr1
                         ],
                         [vc_output3],
                     )
@@ -1188,7 +1252,7 @@ with gr.Blocks() as app:
                     with gr.Column():
                         dir_wav_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径"),
-                            value="E:\\codes\\py39\\vits_vc_gpu_train\\todo-songs",
+                            value="E:\\codes\\py39\\test-20230416b\\todo-songs\\todo-songs",
                         )
                         wav_inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
@@ -1242,6 +1306,14 @@ with gr.Blocks() as app:
                     value=True,
                     interactive=True,
                 )
+                np7 = gr.Slider(
+                    minimum=0,
+                    maximum=ncpu,
+                    step=1,
+                    label=i18n("提取音高和处理数据使用的CPU进程数"),
+                    value=ncpu,
+                    interactive=True,
+                )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
                 gr.Markdown(
                     value=i18n(
@@ -1263,7 +1335,7 @@ with gr.Blocks() as app:
                     but1 = gr.Button(i18n("处理数据"), variant="primary")
                     info1 = gr.Textbox(label=i18n("输出信息"), value="")
                     but1.click(
-                        preprocess_dataset, [trainset_dir4, exp_dir1, sr2], [info1]
+                        preprocess_dataset, [trainset_dir4, exp_dir1, sr2,np7], [info1]
                     )
             with gr.Group():
                 gr.Markdown(value=i18n("step2b: 使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)"))
@@ -1276,14 +1348,6 @@ with gr.Blocks() as app:
                         )
                         gpu_info9 = gr.Textbox(label=i18n("显卡信息"), value=gpu_info)
                     with gr.Column():
-                        np7 = gr.Slider(
-                            minimum=0,
-                            maximum=ncpu,
-                            step=1,
-                            label=i18n("提取音高使用的CPU进程数"),
-                            value=ncpu,
-                            interactive=True,
-                        )
                         f0method8 = gr.Radio(
                             label=i18n(
                                 "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢"
@@ -1532,6 +1596,19 @@ with gr.Blocks() as app:
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
             butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
+
+        tab_faq=i18n("常见问题解答")
+        with gr.TabItem(tab_faq):
+            try:
+                if(tab_faq=="常见问题解答"):
+                    with open("docs/faq.md","r",encoding="utf8")as f:info=f.read()
+                else:
+                    with open("docs/faq_en.md", "r")as f:info = f.read()
+                gr.Markdown(
+                    value=info
+                )
+            except:
+                gr.Markdown(traceback.format_exc())
 
         # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
         #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
