@@ -42,6 +42,7 @@ from mel_processing import mel_spectrogram_torch, spec_to_mel_torch
 
 global_step = 0
 
+
 def main():
     # n_gpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
@@ -513,10 +514,7 @@ def train_and_evaluate(
             )
 
     if rank == 0:
-        timestamp = "[{}] | ({})".format(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            str(datetime.timedelta(seconds=ttime())))
-        logger.info("====> Epoch: {} {}".format(epoch, timestamp))
+        logger.info("====> Epoch: {} {}".format(epoch, epoch_recorder.record()))
     if epoch >= hps.total_epoch and rank == 0:
         logger.info("Training is done. The program is closed.")
         from process_ckpt import savee  # def savee(ckpt,sr,if_f0,name,epoch):
