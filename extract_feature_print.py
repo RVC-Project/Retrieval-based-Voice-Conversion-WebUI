@@ -18,9 +18,12 @@ from fairseq import checkpoint_utils
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if torch.cuda.is_available():device="cuda"
-elif torch.backends.mps.is_available():device="mps"
-else:device="cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
 
 f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
 
@@ -64,7 +67,7 @@ models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
 model = models[0]
 model = model.to(device)
 printt("move model to %s" % device)
-if device not in ["mps","cpu"]:
+if device not in ["mps", "cpu"]:
     model = model.half()
 model.eval()
 

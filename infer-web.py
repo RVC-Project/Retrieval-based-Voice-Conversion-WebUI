@@ -11,8 +11,8 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack"%(now_dir), ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack"%(now_dir) , ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
@@ -121,11 +121,11 @@ names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
-index_paths=[]
+index_paths = []
 for root, dirs, files in os.walk(index_root, topdown=False):
     for name in files:
         if name.endswith(".index") and "trained" not in name:
-            index_paths.append("%s/%s"%(root,name))
+            index_paths.append("%s/%s" % (root, name))
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth"):
@@ -156,13 +156,17 @@ def vc_single(
             load_hubert()
         if_f0 = cpt.get("f0", 1)
         file_index = (
-            file_index.strip(" ")
-            .strip('"')
-            .strip("\n")
-            .strip('"')
-            .strip(" ")
-            .replace("trained", "added")
-        )if file_index!=""else file_index2  # 防止小白写错，自动帮他替换掉
+            (
+                file_index.strip(" ")
+                .strip('"')
+                .strip("\n")
+                .strip('"')
+                .strip(" ")
+                .replace("trained", "added")
+            )
+            if file_index != ""
+            else file_index2
+        )  # 防止小白写错，自动帮他替换掉
         # file_big_npy = (
         #     file_big_npy.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         # )
@@ -184,10 +188,19 @@ def vc_single(
             resample_sr,
             f0_file=f0_file,
         )
-        if(resample_sr>=16000 and tgt_sr!=resample_sr):
-            tgt_sr=resample_sr
-        index_info="Using index:%s."%file_index if os.path.exists(file_index)else"Index not used."
-        return "Success.\n %s\nTime:\n npy:%ss, f0:%ss, infer:%ss"%(index_info,times[0],times[1],times[2]), (tgt_sr, audio_opt)
+        if resample_sr >= 16000 and tgt_sr != resample_sr:
+            tgt_sr = resample_sr
+        index_info = (
+            "Using index:%s." % file_index
+            if os.path.exists(file_index)
+            else "Index not used."
+        )
+        return "Success.\n %s\nTime:\n npy:%ss, f0:%ss, infer:%ss" % (
+            index_info,
+            times[0],
+            times[1],
+            times[2],
+        ), (tgt_sr, audio_opt)
     except:
         info = traceback.format_exc()
         print(info)
@@ -237,7 +250,7 @@ def vc_multi(
                 filter_radius,
                 resample_sr,
             )
-            if "Success"in info:
+            if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
                     wavfile.write(
@@ -323,7 +336,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
 # 一个选项卡全局只能有一个音色
 def get_vc(sid):
     global n_spk, tgt_sr, net_g, vc, cpt
-    if sid == ""or sid==[]:
+    if sid == "" or sid == []:
         global hubert_model
         if hubert_model != None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
             print("clean_empty_cache")
@@ -371,12 +384,15 @@ def change_choices():
     for name in os.listdir(weight_root):
         if name.endswith(".pth"):
             names.append(name)
-    index_paths=[]
+    index_paths = []
     for root, dirs, files in os.walk(index_root, topdown=False):
         for name in files:
             if name.endswith(".index") and "trained" not in name:
                 index_paths.append("%s/%s" % (root, name))
-    return {"choices": sorted(names), "__type__": "update"},{"choices": sorted(index_paths), "__type__": "update"}
+    return {"choices": sorted(names), "__type__": "update"}, {
+        "choices": sorted(index_paths),
+        "__type__": "update",
+    }
 
 
 def clean():
@@ -1096,7 +1112,7 @@ with gr.Blocks() as app:
                             value="pm",
                             interactive=True,
                         )
-                        filter_radius0=gr.Slider(
+                        filter_radius0 = gr.Slider(
                             minimum=0,
                             maximum=7,
                             label=i18n(">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"),
@@ -1115,7 +1131,9 @@ with gr.Blocks() as app:
                             choices=sorted(index_paths),
                             interactive=True,
                         )
-                        refresh_button.click(fn=change_choices, inputs=[], outputs=[sid0, file_index2])
+                        refresh_button.click(
+                            fn=change_choices, inputs=[], outputs=[sid0, file_index2]
+                        )
                         # file_big_npy1 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
@@ -1128,7 +1146,7 @@ with gr.Blocks() as app:
                             value=0.76,
                             interactive=True,
                         )
-                        resample_sr0=gr.Slider(
+                        resample_sr0 = gr.Slider(
                             minimum=0,
                             maximum=48000,
                             label=i18n("后处理重采样至最终采样率，0为不进行重采样"),
@@ -1154,7 +1172,7 @@ with gr.Blocks() as app:
                             # file_big_npy1,
                             index_rate1,
                             filter_radius0,
-                            resample_sr0
+                            resample_sr0,
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1174,7 +1192,7 @@ with gr.Blocks() as app:
                             value="pm",
                             interactive=True,
                         )
-                        filter_radius1=gr.Slider(
+                        filter_radius1 = gr.Slider(
                             minimum=0,
                             maximum=7,
                             label=i18n(">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"),
@@ -1205,7 +1223,7 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
-                        resample_sr1=gr.Slider(
+                        resample_sr1 = gr.Slider(
                             minimum=0,
                             maximum=48000,
                             label=i18n("后处理重采样至最终采样率，0为不进行重采样"),
@@ -1237,7 +1255,7 @@ with gr.Blocks() as app:
                             # file_big_npy2,
                             index_rate2,
                             filter_radius1,
-                            resample_sr1
+                            resample_sr1,
                         ],
                         [vc_output3],
                     )
@@ -1335,7 +1353,7 @@ with gr.Blocks() as app:
                     but1 = gr.Button(i18n("处理数据"), variant="primary")
                     info1 = gr.Textbox(label=i18n("输出信息"), value="")
                     but1.click(
-                        preprocess_dataset, [trainset_dir4, exp_dir1, sr2,np7], [info1]
+                        preprocess_dataset, [trainset_dir4, exp_dir1, sr2, np7], [info1]
                     )
             with gr.Group():
                 gr.Markdown(value=i18n("step2b: 使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)"))
@@ -1597,16 +1615,16 @@ with gr.Blocks() as app:
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
             butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
 
-        tab_faq=i18n("常见问题解答")
+        tab_faq = i18n("常见问题解答")
         with gr.TabItem(tab_faq):
             try:
-                if(tab_faq=="常见问题解答"):
-                    with open("docs/faq.md","r",encoding="utf8")as f:info=f.read()
+                if tab_faq == "常见问题解答":
+                    with open("docs/faq.md", "r", encoding="utf8") as f:
+                        info = f.read()
                 else:
-                    with open("docs/faq_en.md", "r")as f:info = f.read()
-                gr.Markdown(
-                    value=info
-                )
+                    with open("docs/faq_en.md", "r") as f:
+                        info = f.read()
+                gr.Markdown(value=info)
             except:
                 gr.Markdown(traceback.format_exc())
 
