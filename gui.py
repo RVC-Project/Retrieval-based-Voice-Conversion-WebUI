@@ -133,9 +133,9 @@ class RVC:
             score, ix = self.index.search(npy, k=8)
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
-            npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1).astype(
-                "float16"
-            )
+            npy = np.sum(
+                self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1
+            ).astype("float16")
 
             feats = (
                 torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
