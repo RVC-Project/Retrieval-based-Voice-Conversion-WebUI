@@ -29,7 +29,6 @@ def rename_wav_as_extension(file_name):
       For example,file `abc.mp3` will be renamed as `abc.wav`
     * If a file does not have an extension, `.wav` will be appended as extension
       For example,file `abc` will be renamed as `abc.wav`
-    `
     '''
     if '.' not in file_name:
         return file_name + '.wav'
