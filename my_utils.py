@@ -22,7 +22,7 @@ def load_audio(file, sr):
     return np.frombuffer(out, np.float32).flatten()
 
 
-def rename_as_wav_extension(file_name):
+def rename_wav_as_extension(file_name):
     '''
     Renames file_name extension as .wav
     * If a file has an extension different from `.wav` it will be renamed to `.wav`
