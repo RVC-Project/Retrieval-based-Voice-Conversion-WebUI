@@ -1,4 +1,5 @@
 from multiprocessing import cpu_count
+from my_utils import rename_as_wav_extension
 import threading
 from time import sleep
 from subprocess import Popen
@@ -251,14 +252,15 @@ def vc_multi(
                 resample_sr,
             )
             if "Success" in info:
+                output_wav_file_name = rename_as_wav_extension(os.path.basename(path))
                 try:
                     tgt_sr, audio_opt = opt
                     wavfile.write(
-                        "%s/%s" % (opt_root, os.path.basename(path)), tgt_sr, audio_opt
+                        "%s/%s" % (opt_root, output_wav_file_name), tgt_sr, audio_opt
                     )
                 except:
                     info += traceback.format_exc()
-            infos.append("%s->%s" % (os.path.basename(path), info))
+            infos.append("%s->%s" % (output_wav_file_name, info))
             yield "\n".join(infos)
         yield "\n".join(infos)
     except:

@@ -1,5 +1,6 @@
 import ffmpeg
 import numpy as np
+import re
 
 
 def load_audio(file, sr):
@@ -19,3 +20,17 @@ def load_audio(file, sr):
         raise RuntimeError(f"Failed to load audio: {e}")
 
     return np.frombuffer(out, np.float32).flatten()
+
+
+def rename_as_wav_extension(file_name):
+    '''
+    Renames file_name extension as .wav
+    * If a file has an extension different from `.wav` it will be renamed to `.wav`
+      For example,file `abc.mp3` will be renamed as `abc.wav`
+    * If a file does not have an extension, `.wav` will be appended as extension
+      For example,file `abc` will be renamed as `abc.wav`
+    `
+    '''
+    if '.' not in file_name:
+        return file_name + '.wav'
+    return re.sub(r'\.\w*?$', '.wav', file_name)
