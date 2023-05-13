@@ -1,6 +1,7 @@
 import sys, os
 
 now_dir = os.getcwd()
+sys.path.append(os.path.join(now_dir))
 sys.path.append(os.path.join(now_dir, "train"))
 import utils
 import datetime
