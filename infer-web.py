@@ -251,16 +251,17 @@ def vc_multi(
                 filter_radius,
                 resample_sr,
             )
-            output_wav_file_name = rename_wav_as_extension(os.path.basename(path))
+
             if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
+                    output_wav_file_name = rename_wav_as_extension(os.path.basename(path))
                     wavfile.write(
                         "%s/%s" % (opt_root, output_wav_file_name), tgt_sr, audio_opt
                     )
                 except:
                     info += traceback.format_exc()
-            infos.append("%s->%s" % (output_wav_file_name, info))
+            infos.append("%s->%s" % (os.path.basename(path), info))
             yield "\n".join(infos)
         yield "\n".join(infos)
     except:
