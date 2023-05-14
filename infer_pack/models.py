@@ -59,6 +59,8 @@ class TextEncoder256(nn.Module):
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
         return m, logs, x_mask
+
+
 class TextEncoder768(nn.Module):
     def __init__(
         self,
@@ -104,6 +106,7 @@ class TextEncoder768(nn.Module):
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
         return m, logs, x_mask
+
 
 class ResidualCouplingBlock(nn.Module):
     def __init__(
@@ -635,6 +638,8 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
+
+
 class SynthesizerTrnMs768NSFsid(nn.Module):
     def __init__(
         self,
@@ -846,6 +851,8 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
+
+
 class SynthesizerTrnMs768NSFsid_nono(nn.Module):
     def __init__(
         self,
@@ -977,11 +984,12 @@ class MultiPeriodDiscriminator(torch.nn.Module):
 
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
 
+
 class MultiPeriodDiscriminatorV2(torch.nn.Module):
     def __init__(self, use_spectral_norm=False):
         super(MultiPeriodDiscriminatorV2, self).__init__()
         # periods = [2, 3, 5, 7, 11, 17]
-        periods = [2,3, 5, 7, 11, 17, 23, 37]
+        periods = [2, 3, 5, 7, 11, 17, 23, 37]
 
         discs = [DiscriminatorS(use_spectral_norm=use_spectral_norm)]
         discs = discs + [

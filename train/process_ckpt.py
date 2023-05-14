@@ -2,7 +2,7 @@ import torch, traceback, os, pdb
 from collections import OrderedDict
 
 
-def savee(ckpt, sr, if_f0, name, epoch,version):
+def savee(ckpt, sr, if_f0, name, epoch, version):
     try:
         opt = OrderedDict()
         opt["weight"] = {}
@@ -96,7 +96,7 @@ def show_info(path):
         return traceback.format_exc()
 
 
-def extract_small_model(path, name, sr, if_f0, info,version):
+def extract_small_model(path, name, sr, if_f0, info, version):
     try:
         ckpt = torch.load(path, map_location="cpu")
         if "model" in ckpt:
@@ -194,7 +194,7 @@ def change_info(path, info, name):
         return traceback.format_exc()
 
 
-def merge(path1, path2, alpha1, sr, f0, info, name,version):
+def merge(path1, path2, alpha1, sr, f0, info, name, version):
     try:
 
         def extract(ckpt):

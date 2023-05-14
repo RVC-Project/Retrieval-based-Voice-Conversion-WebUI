@@ -322,7 +322,11 @@ def get_hparams(init=True):
         "-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k"
     )
     parser.add_argument(
-        "-sw", "--save_every_weights", type=str, default="0", help="save the extracted model in weights directory when saving checkpoints"
+        "-sw",
+        "--save_every_weights",
+        type=str,
+        default="0",
+        help="save the extracted model in weights directory when saving checkpoints",
     )
     parser.add_argument(
         "-v", "--version", type=str, required=True, help="model version"
