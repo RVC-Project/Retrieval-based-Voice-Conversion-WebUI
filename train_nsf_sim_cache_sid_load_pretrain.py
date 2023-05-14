@@ -31,7 +31,8 @@ from data_utils import (
     TextAudioCollate,
     DistributedBucketSampler,
 )
-if(hps.version=="v1"):
+
+if hps.version == "v1":
     from infer_pack.models import (
         SynthesizerTrnMs256NSFsid as RVC_Model_f0,
         SynthesizerTrnMs256NSFsid_nono as RVC_Model_nof0,
@@ -519,14 +520,25 @@ def train_and_evaluate(
                 epoch,
                 os.path.join(hps.model_dir, "D_{}.pth".format(2333333)),
             )
-        if(rank==0 and hps.save_every_weights=="1"):
+        if rank == 0 and hps.save_every_weights == "1":
             if hasattr(net_g, "module"):
                 ckpt = net_g.module.state_dict()
             else:
                 ckpt = net_g.state_dict()
             logger.info(
                 "saving ckpt %s_e%s:%s"
-                % (hps.name,epoch,savee(ckpt, hps.sample_rate, hps.if_f0, hps.name+"_e%s"%epoch, epoch,hps.version))
+                % (
+                    hps.name,
+                    epoch,
+                    savee(
+                        ckpt,
+                        hps.sample_rate,
+                        hps.if_f0,
+                        hps.name + "_e%s" % epoch,
+                        epoch,
+                        hps.version,
+                    ),
+                )
             )
 
     if rank == 0:
@@ -540,7 +552,7 @@ def train_and_evaluate(
             ckpt = net_g.state_dict()
         logger.info(
             "saving final ckpt:%s"
-            % (savee(ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch,hps.version))
+            % (savee(ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch, hps.version))
         )
         sleep(1)
         os._exit(2333333)
