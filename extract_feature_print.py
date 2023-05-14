@@ -9,7 +9,7 @@ else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
-
+version = sys.argv[6]
 import torch
 import torch.nn.functional as F
 import soundfile as sf
@@ -18,12 +18,9 @@ from fairseq import checkpoint_utils
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-if torch.cuda.is_available():
-    device = "cuda"
-elif torch.backends.mps.is_available():
-    device = "mps"
-else:
-    device = "cpu"
+if torch.cuda.is_available():device="cuda"
+elif torch.backends.mps.is_available():device="mps"
+else:device="cpu"
 
 f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
 
@@ -39,7 +36,7 @@ model_path = "hubert_base.pt"
 
 printt(exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
-outPath = "%s/3_feature256" % exp_dir
+outPath = "%s/3_feature256" % exp_dir if version=="v1"else "%s/3_feature768" % exp_dir
 os.makedirs(outPath, exist_ok=True)
 
 
@@ -67,7 +64,7 @@ models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
 model = models[0]
 model = model.to(device)
 printt("move model to %s" % device)
-if device not in ["mps", "cpu"]:
+if device not in ["mps","cpu"]:
     model = model.half()
 model.eval()
 
@@ -93,11 +90,11 @@ else:
                     if device not in ["mps", "cpu"]
                     else feats.to(device),
                     "padding_mask": padding_mask.to(device),
-                    "output_layer": 9,  # layer 9
+                    "output_layer": 9 if version=="v1"else 12,  # layer 9
                 }
                 with torch.no_grad():
                     logits = model.extract_features(**inputs)
-                    feats = model.final_proj(logits[0])
+                    feats = model.final_proj(logits[0])if version=="v1"else logits[0]
 
                 feats = feats.squeeze(0).float().cpu().numpy()
                 if np.isnan(feats).sum() == 0:
