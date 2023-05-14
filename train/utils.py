@@ -284,8 +284,8 @@ def get_hparams(init=True):
         bs                                    done
         pretrainG、pretrainD                  done
         卡号：os.en["CUDA_VISIBLE_DEVICES"]   done
-        if_latest                             todo
-      模型：if_f0                             todo
+        if_latest                             done
+      模型：if_f0                             done
       采样率：自动选择config                  done
       是否缓存数据集进GPU:if_cache_data_in_gpu done
 
@@ -320,6 +320,16 @@ def get_hparams(init=True):
     )  # -m
     parser.add_argument(
         "-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k"
+    )
+    parser.add_argument(
+        "-sw",
+        "--save_every_weights",
+        type=str,
+        default="0",
+        help="save the extracted model in weights directory when saving checkpoints",
+    )
+    parser.add_argument(
+        "-v", "--version", type=str, required=True, help="model version"
     )
     parser.add_argument(
         "-f0",
@@ -369,11 +379,13 @@ def get_hparams(init=True):
     hparams.total_epoch = args.total_epoch
     hparams.pretrainG = args.pretrainG
     hparams.pretrainD = args.pretrainD
+    hparams.version = args.version
     hparams.gpus = args.gpus
     hparams.train.batch_size = args.batch_size
     hparams.sample_rate = args.sample_rate
     hparams.if_f0 = args.if_f0
     hparams.if_latest = args.if_latest
+    hparams.save_every_weights = args.save_every_weights
     hparams.if_cache_data_in_gpu = args.if_cache_data_in_gpu
     hparams.data.training_files = "%s/filelist.txt" % experiment_dir
     return hparams

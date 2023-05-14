@@ -51,9 +51,9 @@ def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False)
         :: (B, Freq, Frame) - Linear-frequency Linear-amplitude spectrogram
     """
     # Validation
-    if torch.min(y) < -1.0:
+    if torch.min(y) < -1.07:
         print("min value is ", torch.min(y))
-    if torch.max(y) > 1.0:
+    if torch.max(y) > 1.07:
         print("max value is ", torch.max(y))
 
     # Window - Cache if needed

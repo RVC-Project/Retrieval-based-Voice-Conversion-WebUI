@@ -25,6 +25,28 @@ def cache_harvest_f0(input_audio_path, fs, f0max, f0min, frame_period):
     return f0
 
 
+def change_rms(data1, sr1, data2, sr2, rate):  # 1是输入音频，2是输出音频,rate是2的占比
+    # print(data1.max(),data2.max())
+    rms1 = librosa.feature.rms(
+        y=data1, frame_length=sr1 // 2 * 2, hop_length=sr1 // 2
+    )  # 每半秒一个点
+    rms2 = librosa.feature.rms(y=data2, frame_length=sr2 // 2 * 2, hop_length=sr2 // 2)
+    rms1 = torch.from_numpy(rms1)
+    rms1 = F.interpolate(
+        rms1.unsqueeze(0), size=data2.shape[0], mode="linear"
+    ).squeeze()
+    rms2 = torch.from_numpy(rms2)
+    rms2 = F.interpolate(
+        rms2.unsqueeze(0), size=data2.shape[0], mode="linear"
+    ).squeeze()
+    rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-6)
+    data2 *= (
+        torch.pow(rms1, torch.tensor(1 - rate))
+        * torch.pow(rms2, torch.tensor(rate - 1))
+    ).numpy()
+    return data2
+
+
 class VC(object):
     def __init__(self, tgt_sr, config):
         self.x_pad, self.x_query, self.x_center, self.x_max, self.is_half = (
@@ -118,6 +140,7 @@ class VC(object):
         index,
         big_npy,
         index_rate,
+        version,
     ):  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
         if self.is_half:
@@ -133,12 +156,12 @@ class VC(object):
         inputs = {
             "source": feats.to(self.device),
             "padding_mask": padding_mask,
-            "output_layer": 9,  # layer 9
+            "output_layer": 9 if version == "v1" else 12,
         }
         t0 = ttime()
         with torch.no_grad():
             logits = model.extract_features(**inputs)
-            feats = model.final_proj(logits[0])
+            feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
 
         if (
             isinstance(index, type(None)) == False
@@ -176,17 +199,14 @@ class VC(object):
         with torch.no_grad():
             if pitch != None and pitchf != None:
                 audio1 = (
-                    (net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0] * 32768)
+                    (net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0])
                     .data.cpu()
                     .float()
                     .numpy()
                 )
             else:
                 audio1 = (
-                    (net_g.infer(feats, p_len, sid)[0][0, 0] * 32768)
-                    .data.cpu()
-                    .float()
-                    .numpy()
+                    (net_g.infer(feats, p_len, sid)[0][0, 0]).data.cpu().float().numpy()
                 )
         del feats, p_len, padding_mask
         if torch.cuda.is_available():
@@ -213,6 +233,8 @@ class VC(object):
         filter_radius,
         tgt_sr,
         resample_sr,
+        rms_mix_rate,
+        version,
         f0_file=None,
     ):
         if (
@@ -299,6 +321,7 @@ class VC(object):
                         index,
                         big_npy,
                         index_rate,
+                        version,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
@@ -314,6 +337,7 @@ class VC(object):
                         index,
                         big_npy,
                         index_rate,
+                        version,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
@@ -330,6 +354,7 @@ class VC(object):
                     index,
                     big_npy,
                     index_rate,
+                    version,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
@@ -345,14 +370,21 @@ class VC(object):
                     index,
                     big_npy,
                     index_rate,
+                    version,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)
+        if rms_mix_rate != 1:
+            audio_opt = change_rms(audio, 16000, audio_opt, tgt_sr, rms_mix_rate)
         if resample_sr >= 16000 and tgt_sr != resample_sr:
             audio_opt = librosa.resample(
                 audio_opt, orig_sr=tgt_sr, target_sr=resample_sr
             )
-        audio_opt = audio_opt.astype(np.int16)
+        audio_max = np.abs(audio_opt).max() / 0.99
+        max_int16 = 32768
+        if audio_max > 1:
+            max_int16 /= audio_max
+        audio_opt = (audio_opt * max_int16).astype(np.int16)
         del pitch, pitchf, sid
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

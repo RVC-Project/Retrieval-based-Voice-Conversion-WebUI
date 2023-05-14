@@ -85,6 +85,10 @@ hubert_base.pt
 
 ./uvr5_weights
 
+想测试v2版本模型的话(v2版本模型将特征从 9层hubert+final_proj的256维输入 变更为 12层hubert的768维输入，并且增加了3个周期鉴别器)，需要额外下载
+
+./pretrained_v2 
+
 #如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库
 ./ffmpeg
 

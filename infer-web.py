@@ -1,9 +1,10 @@
+import torch, os, traceback, sys, warnings, shutil, numpy as np
+
+os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
 from multiprocessing import cpu_count
 import threading
 from time import sleep
 from subprocess import Popen
-from time import sleep
-import torch, os, traceback, sys, warnings, shutil, numpy as np
 import faiss
 from random import shuffle
 
@@ -70,7 +71,12 @@ else:
     gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
-from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
+from infer_pack.models import (
+    SynthesizerTrnMs256NSFsid,
+    SynthesizerTrnMs256NSFsid_nono,
+    SynthesizerTrnMs768NSFsid,
+    SynthesizerTrnMs768NSFsid_nono,
+)
 from scipy.io import wavfile
 from fairseq import checkpoint_utils
 import gradio as gr
@@ -144,13 +150,17 @@ def vc_single(
     index_rate,
     filter_radius,
     resample_sr,
+    rms_mix_rate,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
-    global tgt_sr, net_g, vc, hubert_model
+    global tgt_sr, net_g, vc, hubert_model, version
     if input_audio_path is None:
         return "You need to upload an audio", None
     f0_up_key = int(f0_up_key)
     try:
         audio = load_audio(input_audio_path, 16000)
+        audio_max = np.abs(audio).max() / 0.95
+        if audio_max > 1:
+            audio /= audio_max
         times = [0, 0, 0]
         if hubert_model == None:
             load_hubert()
@@ -186,6 +196,8 @@ def vc_single(
             filter_radius,
             tgt_sr,
             resample_sr,
+            rms_mix_rate,
+            version,
             f0_file=f0_file,
         )
         if resample_sr >= 16000 and tgt_sr != resample_sr:
@@ -220,6 +232,7 @@ def vc_multi(
     index_rate,
     filter_radius,
     resample_sr,
+    rms_mix_rate,
 ):
     try:
         dir_path = (
@@ -249,6 +262,7 @@ def vc_multi(
                 index_rate,
                 filter_radius,
                 resample_sr,
+                rms_mix_rate,
             )
             if "Success" in info:
                 try:
@@ -335,7 +349,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
 
 # 一个选项卡全局只能有一个音色
 def get_vc(sid):
-    global n_spk, tgt_sr, net_g, vc, cpt
+    global n_spk, tgt_sr, net_g, vc, cpt, version
     if sid == "" or sid == []:
         global hubert_model
         if hubert_model != None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
@@ -346,12 +360,21 @@ def get_vc(sid):
                 torch.cuda.empty_cache()
             ###楼下不这么折腾清理不干净
             if_f0 = cpt.get("f0", 1)
-            if if_f0 == 1:
-                net_g = SynthesizerTrnMs256NSFsid(
-                    *cpt["config"], is_half=config.is_half
-                )
-            else:
-                net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+            version = cpt.get("version", "v1")
+            if version == "v1":
+                if if_f0 == 1:
+                    net_g = SynthesizerTrnMs256NSFsid(
+                        *cpt["config"], is_half=config.is_half
+                    )
+                else:
+                    net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+            elif version == "v2":
+                if if_f0 == 1:
+                    net_g = SynthesizerTrnMs768NSFsid(
+                        *cpt["config"], is_half=config.is_half
+                    )
+                else:
+                    net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del net_g, cpt
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -363,12 +386,19 @@ def get_vc(sid):
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     if_f0 = cpt.get("f0", 1)
-    if if_f0 == 1:
-        net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
-    else:
-        net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+    version = cpt.get("version", "v1")
+    if version == "v1":
+        if if_f0 == 1:
+            net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
+        else:
+            net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+    elif version == "v2":
+        if if_f0 == 1:
+            net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=config.is_half)
+        else:
+            net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
     del net_g.enc_q
-    print(net_g.load_state_dict(cpt["weight"], strict=False))  # 不加这一行清不干净, 真奇葩
+    print(net_g.load_state_dict(cpt["weight"], strict=False))
     net_g.eval().to(config.device)
     if config.is_half:
         net_g = net_g.half()
@@ -397,22 +427,6 @@ def change_choices():
 
 def clean():
     return {"value": "", "__type__": "update"}
-
-
-def change_f0(if_f0_3, sr2):  # np7, f0method8,pretrained_G14,pretrained_D15
-    if if_f0_3:
-        return (
-            {"visible": True, "__type__": "update"},
-            {"visible": True, "__type__": "update"},
-            "pretrained/f0G%s.pth" % sr2,
-            "pretrained/f0D%s.pth" % sr2,
-        )
-    return (
-        {"visible": False, "__type__": "update"},
-        {"visible": False, "__type__": "update"},
-        "pretrained/G%s.pth" % sr2,
-        "pretrained/D%s.pth" % sr2,
-    )
 
 
 sr_dict = {
@@ -481,7 +495,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
 
 
 # but2.click(extract_f0,[gpus6,np7,f0method8,if_f0_3,trainset_dir4],[info2])
-def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
+def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
     gpus = gpus.split("-")
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
@@ -527,13 +541,18 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = config.python_cmd + " extract_feature_print.py %s %s %s %s %s/logs/%s" % (
-            config.device,
-            leng,
-            idx,
-            n_g,
-            now_dir,
-            exp_dir,
+        cmd = (
+            config.python_cmd
+            + " extract_feature_print.py %s %s %s %s %s/logs/%s %s"
+            % (
+                config.device,
+                leng,
+                idx,
+                n_g,
+                now_dir,
+                exp_dir,
+                version19,
+            )
         )
         print(cmd)
         p = Popen(
@@ -561,11 +580,45 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir):
     yield log
 
 
-def change_sr2(sr2, if_f0_3):
+def change_sr2(sr2, if_f0_3, version19):
+    vis_v = True if sr2 == "40k" else False
+    if sr2 != "40k":
+        version19 = "v1"
+    path_str = "" if version19 == "v1" else "_v2"
+    version_state = {"visible": vis_v, "__type__": "update"}
+    if vis_v == False:
+        version_state["value"] = "v1"
+    f0_str = "f0" if if_f0_3 else ""
+    return (
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+        version_state,
+    )
+
+
+def change_version19(sr2, if_f0_3, version19):
+    path_str = "" if version19 == "v1" else "_v2"
+    f0_str = "f0" if if_f0_3 else ""
+    return "pretrained%s/%sG%s.pth" % (
+        path_str,
+        f0_str,
+        sr2,
+    ), "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+
+
+def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
+    path_str = "" if version19 == "v1" else "_v2"
     if if_f0_3:
-        return "pretrained/f0G%s.pth" % sr2, "pretrained/f0D%s.pth" % sr2
-    else:
-        return "pretrained/G%s.pth" % sr2, "pretrained/D%s.pth" % sr2
+        return (
+            {"visible": True, "__type__": "update"},
+            "pretrained%s/f0G%s.pth" % (path_str, sr2),
+            "pretrained%s/f0D%s.pth" % (path_str, sr2),
+        )
+    return (
+        {"visible": False, "__type__": "update"},
+        "pretrained%s/G%s.pth" % (path_str, sr2),
+        "pretrained%s/D%s.pth" % (path_str, sr2),
+    )
 
 
 # but3.click(click_train,[exp_dir1,sr2,if_f0_3,save_epoch10,total_epoch11,batch_size12,if_save_latest13,pretrained_G14,pretrained_D15,gpus16])
@@ -582,24 +635,30 @@ def click_train(
     pretrained_D15,
     gpus16,
     if_cache_gpu17,
+    if_save_every_weights18,
+    version19,
 ):
     # 生成filelist
     exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
-    co256_dir = "%s/3_feature256" % (exp_dir)
+    feature_dir = (
+        "%s/3_feature256" % (exp_dir)
+        if version19 == "v1"
+        else "%s/3_feature768" % (exp_dir)
+    )
     if if_f0_3:
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
         names = (
             set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
-            & set([name.split(".")[0] for name in os.listdir(co256_dir)])
+            & set([name.split(".")[0] for name in os.listdir(feature_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
         )
     else:
         names = set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)]) & set(
-            [name.split(".")[0] for name in os.listdir(co256_dir)]
+            [name.split(".")[0] for name in os.listdir(feature_dir)]
         )
     opt = []
     for name in names:
@@ -609,7 +668,7 @@ def click_train(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    co256_dir.replace("\\", "\\\\"),
+                    feature_dir.replace("\\", "\\\\"),
                     name,
                     f0_dir.replace("\\", "\\\\"),
                     name,
@@ -624,22 +683,23 @@ def click_train(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    co256_dir.replace("\\", "\\\\"),
+                    feature_dir.replace("\\", "\\\\"),
                     name,
                     spk_id5,
                 )
             )
+    fea_dim = 256 if version19 == "v1" else 768
     if if_f0_3:
         for _ in range(2):
             opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-                % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
             )
     else:
         for _ in range(2):
             opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
-                % (now_dir, sr2, now_dir, spk_id5)
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
+                % (now_dir, sr2, now_dir, fea_dim, spk_id5)
             )
     shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
@@ -651,7 +711,7 @@ def click_train(
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -664,12 +724,14 @@ def click_train(
                 pretrained_D15,
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
+                1 if if_save_every_weights18 == i18n("是") else 0,
+                version19,
             )
         )
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -681,6 +743,8 @@ def click_train(
                 pretrained_D15,
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
+                1 if if_save_every_weights18 == i18n("是") else 0,
+                version19,
             )
         )
     print(cmd)
@@ -690,10 +754,14 @@ def click_train(
 
 
 # but4.click(train_index, [exp_dir1], info3)
-def train_index(exp_dir1):
+def train_index(exp_dir1, version19):
     exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
-    feature_dir = "%s/3_feature256" % (exp_dir)
+    feature_dir = (
+        "%s/3_feature256" % (exp_dir)
+        if version19 == "v1"
+        else "%s/3_feature768" % (exp_dir)
+    )
     if os.path.exists(feature_dir) == False:
         return "请先进行特征提取!"
     listdir_res = list(os.listdir(feature_dir))
@@ -713,8 +781,8 @@ def train_index(exp_dir1):
     infos = []
     infos.append("%s,%s" % (big_npy.shape, n_ivf))
     yield "\n".join(infos)
-    index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
-    # index = faiss.index_factory(256, "IVF%s,PQ128x4fs,RFlat"%n_ivf)
+    index = faiss.index_factory(256 if version19 == "v1" else 768, "IVF%s,Flat" % n_ivf)
+    # index = faiss.index_factory(256if version19=="v1"else 768, "IVF%s,PQ128x4fs,RFlat"%n_ivf)
     infos.append("training")
     yield "\n".join(infos)
     index_ivf = faiss.extract_index_ivf(index)  #
@@ -722,9 +790,10 @@ def train_index(exp_dir1):
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
+        % (exp_dir, n_ivf, index_ivf.nprobe, version19),
     )
-    # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
+    # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     infos.append("adding")
     yield "\n".join(infos)
     batch_size_add = 8192
@@ -734,9 +803,12 @@ def train_index(exp_dir1):
         index,
         "%s/added_IVF%s_Flat_nprobe_%s.index" % (exp_dir, n_ivf, index_ivf.nprobe),
     )
-    infos.append("成功构建索引，added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe))
-    # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan.index'%(exp_dir,n_ivf))
-    # infos.append("成功构建索引，added_IVF%s_Flat_FastScan.index"%(n_ivf))
+    infos.append(
+        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, version19)
+    )
+    # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
+    # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
     yield "\n".join(infos)
 
 
@@ -757,6 +829,8 @@ def train1key(
     pretrained_D15,
     gpus16,
     if_cache_gpu17,
+    if_save_every_weights18,
+    version19,
 ):
     infos = []
 
@@ -768,7 +842,11 @@ def train1key(
     preprocess_log_path = "%s/preprocess.log" % model_log_dir
     extract_f0_feature_log_path = "%s/extract_f0_feature.log" % model_log_dir
     gt_wavs_dir = "%s/0_gt_wavs" % model_log_dir
-    feature256_dir = "%s/3_feature256" % model_log_dir
+    feature_dir = (
+        "%s/3_feature256" % model_log_dir
+        if version19 == "v1"
+        else "%s/3_feature768" % model_log_dir
+    )
 
     os.makedirs(model_log_dir, exist_ok=True)
     #########step1:处理数据
@@ -807,12 +885,13 @@ def train1key(
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = config.python_cmd + " extract_feature_print.py %s %s %s %s %s" % (
+        cmd = config.python_cmd + " extract_feature_print.py %s %s %s %s %s %s" % (
             config.device,
             leng,
             idx,
             n_g,
             model_log_dir,
+            version19,
         )
         yield get_info_str(cmd)
         p = Popen(
@@ -831,13 +910,13 @@ def train1key(
         f0nsf_dir = "%s/2b-f0nsf" % model_log_dir
         names = (
             set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
-            & set([name.split(".")[0] for name in os.listdir(feature256_dir)])
+            & set([name.split(".")[0] for name in os.listdir(feature_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0_dir)])
             & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
         )
     else:
         names = set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)]) & set(
-            [name.split(".")[0] for name in os.listdir(feature256_dir)]
+            [name.split(".")[0] for name in os.listdir(feature_dir)]
         )
     opt = []
     for name in names:
@@ -847,7 +926,7 @@ def train1key(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    feature256_dir.replace("\\", "\\\\"),
+                    feature_dir.replace("\\", "\\\\"),
                     name,
                     f0_dir.replace("\\", "\\\\"),
                     name,
@@ -862,22 +941,23 @@ def train1key(
                 % (
                     gt_wavs_dir.replace("\\", "\\\\"),
                     name,
-                    feature256_dir.replace("\\", "\\\\"),
+                    feature_dir.replace("\\", "\\\\"),
                     name,
                     spk_id5,
                 )
             )
+    fea_dim = 256 if version19 == "v1" else 768
     if if_f0_3:
         for _ in range(2):
             opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-                % (now_dir, sr2, now_dir, now_dir, now_dir, spk_id5)
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
             )
     else:
         for _ in range(2):
             opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature256/mute.npy|%s"
-                % (now_dir, sr2, now_dir, spk_id5)
+                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
+                % (now_dir, sr2, now_dir, fea_dim, spk_id5)
             )
     shuffle(opt)
     with open("%s/filelist.txt" % model_log_dir, "w") as f:
@@ -886,7 +966,7 @@ def train1key(
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -899,12 +979,14 @@ def train1key(
                 pretrained_D15,
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
+                1 if if_save_every_weights18 == i18n("是") else 0,
+                version19,
             )
         )
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -916,6 +998,8 @@ def train1key(
                 pretrained_D15,
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
+                1 if if_save_every_weights18 == i18n("是") else 0,
+                version19,
             )
         )
     yield get_info_str(cmd)
@@ -924,9 +1008,9 @@ def train1key(
     yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
     #######step3b:训练索引
     npys = []
-    listdir_res = list(os.listdir(feature256_dir))
+    listdir_res = list(os.listdir(feature_dir))
     for name in sorted(listdir_res):
-        phone = np.load("%s/%s" % (feature256_dir, name))
+        phone = np.load("%s/%s" % (feature_dir, name))
         npys.append(phone)
     big_npy = np.concatenate(npys, 0)
 
@@ -938,15 +1022,15 @@ def train1key(
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
-    index = faiss.index_factory(256, "IVF%s,Flat" % n_ivf)
+    index = faiss.index_factory(256 if version19 == "v1" else 768, "IVF%s,Flat" % n_ivf)
     yield get_info_str("training index")
     index_ivf = faiss.extract_index_ivf(index)  #
     index_ivf.nprobe = 1
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -954,11 +1038,12 @@ def train1key(
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe),
+        "%s/added_IVF%s_Flat_nprobe_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
     )
     yield get_info_str(
-        "成功构建索引, added_IVF%s_Flat_nprobe_%s.index" % (n_ivf, index_ivf.nprobe)
+        "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, version19)
     )
     yield get_info_str(i18n("全流程结束！"))
 
@@ -969,17 +1054,18 @@ def change_info_(ckpt_path):
         os.path.exists(ckpt_path.replace(os.path.basename(ckpt_path), "train.log"))
         == False
     ):
-        return {"__type__": "update"}, {"__type__": "update"}
+        return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
     try:
         with open(
             ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r"
         ) as f:
             info = eval(f.read().strip("\n").split("\n")[0].split("\t")[-1])
             sr, f0 = info["sample_rate"], info["if_f0"]
-            return sr, str(f0)
+            version = "v2" if ("version" in info and info["version"] == "v2") else "v1"
+            return sr, str(f0), version
     except:
         traceback.print_exc()
-        return {"__type__": "update"}, {"__type__": "update"}
+        return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
 from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsidM
@@ -1154,6 +1240,13 @@ with gr.Blocks() as app:
                             step=1,
                             interactive=True,
                         )
+                        rms_mix_rate0 = gr.Slider(
+                            minimum=0,
+                            maximum=1,
+                            label=i18n("输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络"),
+                            value=1,
+                            interactive=True,
+                        )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
                     but0 = gr.Button(i18n("转换"), variant="primary")
                     with gr.Column():
@@ -1173,6 +1266,7 @@ with gr.Blocks() as app:
                             index_rate1,
                             filter_radius0,
                             resample_sr0,
+                            rms_mix_rate0,
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1231,6 +1325,13 @@ with gr.Blocks() as app:
                             step=1,
                             interactive=True,
                         )
+                        rms_mix_rate1 = gr.Slider(
+                            minimum=0,
+                            maximum=1,
+                            label=i18n("输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络"),
+                            value=1,
+                            interactive=True,
+                        )
                     with gr.Column():
                         dir_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
@@ -1256,6 +1357,7 @@ with gr.Blocks() as app:
                             index_rate2,
                             filter_radius1,
                             resample_sr1,
+                            rms_mix_rate1,
                         ],
                         [vc_output3],
                     )
@@ -1324,6 +1426,13 @@ with gr.Blocks() as app:
                     value=True,
                     interactive=True,
                 )
+                version19 = gr.Radio(
+                    label=i18n("版本(目前仅40k支持了v2)"),
+                    choices=["v1", "v2"],
+                    value="v1",
+                    interactive=True,
+                    visible=True,
+                )
                 np7 = gr.Slider(
                     minimum=0,
                     maximum=ncpu,
@@ -1378,7 +1487,7 @@ with gr.Blocks() as app:
                     info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
                     but2.click(
                         extract_f0_feature,
-                        [gpus6, np7, f0method8, if_f0_3, exp_dir1],
+                        [gpus6, np7, f0method8, if_f0_3, exp_dir1, version19],
                         [info2],
                     )
             with gr.Group():
@@ -1422,6 +1531,12 @@ with gr.Blocks() as app:
                         value=i18n("否"),
                         interactive=True,
                     )
+                    if_save_every_weights18 = gr.Radio(
+                        label=i18n("是否在每次保存时间点将最终小模型保存至weights文件夹"),
+                        choices=[i18n("是"), i18n("否")],
+                        value=i18n("否"),
+                        interactive=True,
+                    )
                 with gr.Row():
                     pretrained_G14 = gr.Textbox(
                         label=i18n("加载预训练底模G路径"),
@@ -1434,12 +1549,19 @@ with gr.Blocks() as app:
                         interactive=True,
                     )
                     sr2.change(
-                        change_sr2, [sr2, if_f0_3], [pretrained_G14, pretrained_D15]
+                        change_sr2,
+                        [sr2, if_f0_3, version19],
+                        [pretrained_G14, pretrained_D15, version19],
+                    )
+                    version19.change(
+                        change_version19,
+                        [sr2, if_f0_3, version19],
+                        [pretrained_G14, pretrained_D15],
                     )
                     if_f0_3.change(
                         change_f0,
-                        [if_f0_3, sr2],
-                        [np7, f0method8, pretrained_G14, pretrained_D15],
+                        [if_f0_3, sr2, version19],
+                        [f0method8, pretrained_G14, pretrained_D15],
                     )
                     gpus16 = gr.Textbox(
                         label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),
@@ -1465,10 +1587,12 @@ with gr.Blocks() as app:
                             pretrained_D15,
                             gpus16,
                             if_cache_gpu17,
+                            if_save_every_weights18,
+                            version19,
                         ],
                         info3,
                     )
-                    but4.click(train_index, [exp_dir1], info3)
+                    but4.click(train_index, [exp_dir1, version19], info3)
                     but5.click(
                         train1key,
                         [
@@ -1487,6 +1611,8 @@ with gr.Blocks() as app:
                             pretrained_D15,
                             gpus16,
                             if_cache_gpu17,
+                            if_save_every_weights18,
+                            version19,
                         ],
                         info3,
                     )
@@ -1526,12 +1652,27 @@ with gr.Blocks() as app:
                         max_lines=1,
                         interactive=True,
                     )
+                    version_2 = gr.Radio(
+                        label=i18n("模型版本型号"),
+                        choices=["v1", "v2"],
+                        value="v1",
+                        interactive=True,
+                    )
                 with gr.Row():
                     but6 = gr.Button(i18n("融合"), variant="primary")
                     info4 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
                 but6.click(
                     merge,
-                    [ckpt_a, ckpt_b, alpha_a, sr_, if_f0_, info__, name_to_save0],
+                    [
+                        ckpt_a,
+                        ckpt_b,
+                        alpha_a,
+                        sr_,
+                        if_f0_,
+                        info__,
+                        name_to_save0,
+                        version_2,
+                    ],
                     info4,
                 )  # def merge(path1,path2,alpha1,sr,f0,info):
             with gr.Group():
@@ -1589,15 +1730,23 @@ with gr.Blocks() as app:
                         value="1",
                         interactive=True,
                     )
+                    version_1 = gr.Radio(
+                        label=i18n("模型版本型号"),
+                        choices=["v1", "v2"],
+                        value="v1",
+                        interactive=True,
+                    )
                     info___ = gr.Textbox(
                         label=i18n("要置入的模型信息"), value="", max_lines=8, interactive=True
                     )
                     but9 = gr.Button(i18n("提取"), variant="primary")
                     info7 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
-                    ckpt_path2.change(change_info_, [ckpt_path2], [sr__, if_f0__])
+                    ckpt_path2.change(
+                        change_info_, [ckpt_path2], [sr__, if_f0__, version_1]
+                    )
                 but9.click(
                     extract_small_model,
-                    [ckpt_path2, save_name, sr__, if_f0__, info___],
+                    [ckpt_path2, save_name, sr__, if_f0__, info___, version_1],
                     info7,
                 )
 
