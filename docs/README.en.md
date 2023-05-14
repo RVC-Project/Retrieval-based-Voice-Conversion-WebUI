@@ -75,6 +75,10 @@ hubert_base.pt
 
 ./uvr5_weights
 
+If you want to test the v2 version model (the v2 version model has changed the input from the 256 dimensional feature of 9-layer Hubert+final_proj to the 768 dimensional feature of 12-layer Hubert, and has added 3 period discriminators), you will need to download additional features
+
+./pretrained_v2
+
 #If you are using Windows, you may also need this dictionary, skip if FFmpeg is installed
 ffmpeg.exe
 ```
