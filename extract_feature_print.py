@@ -5,11 +5,12 @@ n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
 if len(sys.argv) == 5:
     exp_dir = sys.argv[4]
+    version = sys.argv[5]
 else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
-version = sys.argv[6]
+    version = sys.argv[6]
 import torch
 import torch.nn.functional as F
 import soundfile as sf
