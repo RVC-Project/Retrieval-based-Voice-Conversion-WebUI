@@ -51,10 +51,10 @@ from process_ckpt import savee
 
 global_step = 0
 
+
 class EpochRecorder:
     def __init__(self):
         self.last_time = ttime()
-    
 
     def record(self):
         now_time = ttime()
@@ -63,6 +63,7 @@ class EpochRecorder:
         elapsed_time_str = str(datetime.timedelta(seconds=elapsed_time))
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return f"[{current_time}] | ({elapsed_time_str})"
+
 
 def main():
     # n_gpus = torch.cuda.device_count()
