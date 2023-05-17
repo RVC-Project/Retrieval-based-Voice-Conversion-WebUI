@@ -1668,7 +1668,7 @@ with gr.Blocks() as app:
                         ckpt_b,
                         alpha_a,
                         sr_,
-                        1 if if_f0_ == i18n("是") else 0,
+                        if_f0_,
                         info__,
                         name_to_save0,
                         version_2,
