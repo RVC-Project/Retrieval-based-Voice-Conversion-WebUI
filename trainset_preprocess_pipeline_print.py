@@ -98,14 +98,14 @@ class PreProcess:
             println("%s->%s" % (path, traceback.format_exc()))
 
     def pipeline_mp(self, infos):
-        for path, idx0 in infos:
+        for path, idx0 in tqdm(infos):
             self.pipeline(path, idx0)
 
     def pipeline_mp_inp_dir(self, inp_root, n_p):
         try:
             infos = [
                 ("%s/%s" % (inp_root, name), idx)
-                for idx, name in enumerate(sorted(list(os.listdir(inp_root))))
+                for idx, name in tqdm(enumerate(sorted(list(os.listdir(inp_root)))))
             ]
             if noparallel:
                 for i in range(n_p):

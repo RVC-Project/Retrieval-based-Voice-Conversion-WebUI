@@ -6,15 +6,12 @@ from time import sleep
 from subprocess import Popen
 import faiss
 from random import shuffle
-from i18n import I18nAuto
 from config_cli import Config
 
 config = Config()
 
 weight_root = "weights"
 index_root = "logs"
-
-i18n = I18nAuto()
 
 sr_dict = {
     "32k": 32000,
@@ -50,7 +47,7 @@ if if_gpu_ok == True and len(gpu_infos) > 0:
     gpu_info = "\n".join(gpu_infos)
     default_batch_size = min(mem) // 2
 else:
-    gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
+    gpu_info = print("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
 
@@ -259,9 +256,9 @@ def click_train(
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
+                1 if if_save_latest13 == True else 0,
+                1 if if_cache_gpu17 == True else 0,
+                1 if if_save_every_weights18 == True else 0,
                 version19,
             ))
     else:
@@ -277,9 +274,9 @@ def click_train(
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
+                1 if if_save_latest13 == True else 0,
+                1 if if_cache_gpu17 == True else 0,
+                1 if if_save_every_weights18 == True else 0,
                 version19,
             ))
     print(cmd)
@@ -386,8 +383,8 @@ def train1key(
            " trainset_preprocess_pipeline_print.py %s %s %s %s " %
            (trainset_dir4, sr_dict[sr2], np7, model_log_dir) +
            str(config.noparallel))
-    yield get_info_str(i18n("step1:正在处理数据"))
-    yield get_info_str(cmd)
+    print(("step1:正在处理数据"))
+    print(cmd)
     p = Popen(cmd, shell=True)
     p.wait()
     with open(preprocess_log_path, "r") as f:
@@ -395,21 +392,22 @@ def train1key(
     #########step2a:提取音高
     open(extract_f0_feature_log_path, "w")
     if if_f0_3:
-        yield get_info_str("step2a:正在提取音高")
+        print("step2a:正在提取音高")
         cmd = config.python_cmd + " extract_f0_print.py %s %s %s" % (
             model_log_dir,
             np7,
             f0method8,
         )
-        yield get_info_str(cmd)
+        print(cmd)
         p = Popen(cmd, shell=True, cwd=now_dir)
         p.wait()
         with open(extract_f0_feature_log_path, "r") as f:
             print(f.read())
     else:
-        yield get_info_str(i18n("step2a:无需提取音高"))
+        print(("step2a:无需提取音高"))
+        pass
     #######step2b:提取特征
-    yield get_info_str(i18n("step2b:正在提取特征"))
+    print(("step2b:正在提取特征"))
     gpus = gpus16.split("-")
     leng = len(gpus)
     ps = []
@@ -422,7 +420,7 @@ def train1key(
             model_log_dir,
             version19,
         )
-        yield get_info_str(cmd)
+        print(cmd)
         p = Popen(
             cmd, shell=True, cwd=now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -432,7 +430,7 @@ def train1key(
     with open(extract_f0_feature_log_path, "r") as f:
         print(f.read())
     #######step3a:训练模型
-    yield get_info_str(i18n("step3a:正在训练模型"))
+    print(("step3a:正在训练模型"))
     # 生成filelist
     if if_f0_3:
         f0_dir = "%s/2a_f0" % model_log_dir
@@ -482,7 +480,7 @@ def train1key(
     shuffle(opt)
     with open("%s/filelist.txt" % model_log_dir, "w") as f:
         f.write("\n".join(opt))
-    yield get_info_str("write filelist done")
+    print("write filelist done")
     if gpus16:
         cmd = (
             config.python_cmd +
@@ -497,9 +495,9 @@ def train1key(
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
+                1 if if_save_latest13 == True else 0,
+                1 if if_cache_gpu17 == True else 0,
+                1 if if_save_every_weights18 == True else 0,
                 version19,
             ))
     else:
@@ -515,15 +513,15 @@ def train1key(
                 save_epoch10,
                 pretrained_G14,
                 pretrained_D15,
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
+                1 if if_save_latest13 == True else 0,
+                1 if if_cache_gpu17 == True else 0,
+                1 if if_save_every_weights18 == True else 0,
                 version19,
             ))
-    yield get_info_str(cmd)
+    print(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
-    yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
+    print("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log")
     #######step3b:训练索引
     npys = []
     listdir_res = list(os.listdir(feature_dir))
@@ -539,10 +537,10 @@ def train1key(
 
     # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
-    yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
+    print("%s,%s" % (big_npy.shape, n_ivf))
     index = faiss.index_factory(256 if version19 == "v1" else 768,
                                 "IVF%s,Flat" % n_ivf)
-    yield get_info_str("training index")
+    print("training index")
     index_ivf = faiss.extract_index_ivf(index)  #
     index_ivf.nprobe = 1
     index.train(big_npy)
@@ -551,7 +549,7 @@ def train1key(
         "%s/trained_IVF%s_Flat_nprobe_%s_%s.index" %
         (model_log_dir, n_ivf, index_ivf.nprobe, version19),
     )
-    yield get_info_str("adding index")
+    print("adding index")
     batch_size_add = 8192
     for i in range(0, big_npy.shape[0], batch_size_add):
         index.add(big_npy[i:i + batch_size_add])
@@ -560,9 +558,9 @@ def train1key(
         "%s/added_IVF%s_Flat_nprobe_%s_%s.index" %
         (model_log_dir, n_ivf, index_ivf.nprobe, version19),
     )
-    yield get_info_str("成功构建索引, added_IVF%s_Flat_nprobe_%s_%s.index" %
+    print("成功构建索引, added_IVF%s_Flat_nprobe_%s_%s.index" %
                        (n_ivf, index_ivf.nprobe, version19))
-    yield get_info_str(i18n("全流程结束！"))
+    print(("全流程结束！"))
 
 
 par = argparse.ArgumentParser()
@@ -684,3 +682,4 @@ elif mode=='train':
         if_save_every_weights,
         version,
     )
+    train_index(exp_dir, version)

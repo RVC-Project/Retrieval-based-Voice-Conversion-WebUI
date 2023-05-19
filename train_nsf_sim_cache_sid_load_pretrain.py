@@ -1,5 +1,5 @@
 import sys, os
-
+from tqdm import tqdm
 now_dir = os.getcwd()
 sys.path.append(os.path.join(now_dir))
 sys.path.append(os.path.join(now_dir, "train"))
@@ -342,7 +342,7 @@ def train_and_evaluate(
 
     # Run steps
     epoch_recorder = EpochRecorder()
-    for batch_idx, info in data_iterator:
+    for batch_idx, info in tqdm(data_iterator):
         # Data
         ## Unpack
         if hps.if_f0 == 1:

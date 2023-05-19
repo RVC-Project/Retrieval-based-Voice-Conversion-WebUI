@@ -31,6 +31,9 @@
 
 ## 简介
 
+**此为fork仓库，相较于原版，不会进行过多的更新**
+但是这个仓库有命令行工具，方便进行批量调用或者不方便查看WebUI的机器上运行
+
 本仓库具有以下特点
 
 - 使用 top1 检索替换输入源特征为训练集特征来杜绝音色泄漏
@@ -187,11 +190,11 @@ output/<input_filename>_<model_name>_<index_rate>_<f0up_keys>_<f0method>_<time>.
 
 示例命令：
 ```bash
-python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida preprocess # 预处理数据
+python train_cli.py preprocess D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida    # 预处理数据
 
-python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida f0 # 提取f0
+python train_cli.py f0 D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida    # 提取f0
 
-python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida train # 正式训练
+python train_cli.py train D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida    # 正式训练
 ```
  
 帮助：
@@ -199,7 +202,7 @@ python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahid
 ```bash
 usage: train_cli.py [-h] [-sr SAMPLE_RATE] [-np N_P] [-gpus GPUS] [-if IF_F0] [-v {v1,v2}] [-f {pm,harvest,dio}] [-s SPK_ID] [-se SAVE_EPOCH] [-e TOTAL_EPOCH] [-bs BATCH_SIZE] [-sl IF_SAVE_LATEST] [-cg IF_CACHE_GPU]
                     [-sew IF_SAVE_EVERY_WEIGHTS] [-pg PRETRAINED_G] [-pd PRETRAINED_D]
-                    dataset_path exp_dir mode
+                    {preprocess,f0,train} dataset_path exp_dir
 
 positional arguments:
   dataset_path          数据集路径
