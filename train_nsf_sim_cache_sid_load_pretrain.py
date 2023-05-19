@@ -66,18 +66,22 @@ class EpochRecorder:
 
 
 def main():
-    # n_gpus = torch.cuda.device_count()
+    n_gpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "51545"
 
-    mp.spawn(
-        run,
-        nprocs=n_gpus,
-        args=(
+    children = []
+    for i in range(n_gpus):
+        subproc = mp.Process(target=run, args=(
+            i,
             n_gpus,
             hps,
-        ),
-    )
+        ))
+        children.append(subproc)
+        subproc.start()
+
+    for i in range(n_gpus):
+        children[i].join()
 
 
 def run(rank, n_gpus, hps):

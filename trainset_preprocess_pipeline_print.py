@@ -115,10 +115,10 @@ class PreProcess:
                     p = multiprocessing.Process(
                         target=self.pipeline_mp, args=(infos[i::n_p],)
                     )
-                    p.start()
                     ps.append(p)
-                for p in ps:
-                    p.join()
+                    p.start()
+                for i in range(n_p):
+                    ps[i].join()
         except:
             println("Fail. %s" % traceback.format_exc())
 
