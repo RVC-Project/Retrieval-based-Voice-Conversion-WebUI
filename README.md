@@ -98,9 +98,70 @@ hubert_base.pt
 ```bash
 python infer-web.py
 ```
-如果你正在使用Windows，你可以直接下载并解压`RVC-beta.7z`，运行`go-web.bat`以启动WebUI。
+如果你正在使用Windows，你可以直接下载并解压 `RVC-beta.7z`，运行 `go-web.bat` 以启动WebUI。
 
-仓库内还有一份`小白简易教程.doc`以供参考。
+仓库内还有一份 `小白简易教程.doc` 以供参考。
+
+## 无WebUI推理(CLI)
+
+示例命令:
+
+```bash
+python -O infer_cli.py .\raw\whd.wav -i .\logs\nahida\added_IVF3204_Flat_nprobe_1_v1.index -f harvest -o .\output\whd_nahida_e200.wav -m .\weights\nahida_e200.pth  -ir 0.7 -d cuda:0 -fp
+```
+
+帮助:
+```bash
+python infer_cli.py -h
+```
+
+参数:
+```bash
+usage: infer_cli.py [-h] [-m MODEL] [-i INDEX] [-f F0METHOD] [-k KEY] [-ir INDEX_RATE] [-d DEVICE] [-fp] [-o OUTPUT] [-fr FILTER_RADIUS] [-s TGT_SR] [-rs RESAMPLE_SR] [-rms RMS_MIX_RATE] [-v VERSION] input_audio
+
+positional arguments:
+  input_audio           输入的音频文件路径
+
+options:
+  -h,   --help          show this help message and exit
+  -m    --model 
+                        \weights路径下的pth文件
+  -i    --index 
+                        索引文件路径
+  -f    --f0method 
+                        f0的方法，可选‘pm’ ‘harvest’
+  -k    --key           升降调
+  -ir   --index_rate 
+                        索引比例（取值0~1，越趋近于1理论上音色泄露更少）
+  -d    --device 
+                        使用的设备，默认 cuda:0 输入格式 <device_name>:<device_id>
+  -fp,  --is_half       是否使用半精度运算 如果添加该flag，则使用fp16
+                        半精度训练；若没有，则使用fp32单精度模式
+  -o    --output        输出路径，可以不填写
+  -fr   --filter_radius 
+                        对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音
+  -s    --tgt_sr 
+                        目标采样率
+  -rs   --resample_sr 
+                        后处理重采样至最终采样率，0为不进行重采样
+  -rms  --rms_mix_rate 
+                        输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络
+  -v    --version 
+                        模型版本, 默认为 v1
+```
+
+### 特殊说明
+输出文件路径可不填, 若不指定则会将生成的文件按照如下规则命名并置于`output/`文件夹中。
+```
+output/<input_filename>_<model_name>_<index_rate>_<f0up_keys>_<f0method>_<time>.wav
+```
+
+## Tips
+
+- 最终的模型文件为 `weights/` 目录下的pth文件。`logs/实验名称/` 下的pth文件只用于记录训练状态，不可直接使用。
+- 如果你的训练运行完成但是没有在 `weights/` 目录下生成相应的模型文件，请使用webui中的 `ckpt处理` 选项卡中 `模型提取` 功能生成最终的模型。
+
+
 
 ## 参考项目
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
