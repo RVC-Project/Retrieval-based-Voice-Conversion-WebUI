@@ -187,29 +187,24 @@ output/<input_filename>_<model_name>_<index_rate>_<f0up_keys>_<f0method>_<time>.
 
 示例命令：
 ```bash
-python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida
+python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida preprocess # 预处理数据
+
+python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida f0 # 提取f0
+
+python train_cli.py D:\Data\Retrieval-based-Voice-Conversion-WebUI\dataset\nahida_main nahida train # 正式训练
 ```
-
-其中，所有的可选参数都已经设定了默认值，只需要设定数据集路径和实验名称即可。
-
-### Tips
-
-+ 直接把一整个长的wav文件放在指定目录即可，程序会自动分片并重新采样
-+ 你可能需要改的参数：
-  + pretrained_d 和 pretrained_g 将它们改成和采样率相匹配的名称：如32k填入pretrained/f0D32k.pth
-  + total_epoch 总共训练轮数。通常情况下40轮即可出效果，如果训练集数据质量高，可以调大至200epoch以减少可能的音色泄露，并可能解决生成出来的声音中电流声的问题
-  + save_epoch 一定要设置成 total_epoch 的某一个因数！！！不然你的模型训练完了最后的一个epoch但是你会发现没有保存下来的文件！！
  
 帮助：
 
 ```bash
 usage: train_cli.py [-h] [-sr SAMPLE_RATE] [-np N_P] [-gpus GPUS] [-if IF_F0] [-v {v1,v2}] [-f {pm,harvest,dio}] [-s SPK_ID] [-se SAVE_EPOCH] [-e TOTAL_EPOCH] [-bs BATCH_SIZE] [-sl IF_SAVE_LATEST] [-cg IF_CACHE_GPU]
                     [-sew IF_SAVE_EVERY_WEIGHTS] [-pg PRETRAINED_G] [-pd PRETRAINED_D]
-                    dataset_path exp_dir
+                    dataset_path exp_dir mode
 
 positional arguments:
-  dataset_path
-  exp_dir
+  dataset_path          数据集路径
+  exp_dir               实验名称
+  mode                  执行任务的类型 可选：preprocess f0 train
 
 options:
   -h, --help            show this help message and exit
@@ -245,7 +240,19 @@ options:
 
 ```
 
-## Tips
+
+其中，所有的可选参数都已经设定了默认值，只需要设定数据集路径和实验名称即可。
+
+### 关于训练的Tips
+
++ 直接把一整个长的wav文件放在指定目录即可，程序会自动分片并重新采样
++ 你可能需要改的参数：
+  + pretrained_d 和 pretrained_g 将它们改成和采样率相匹配的名称：如32k填入pretrained/f0D32k.pth
+  + total_epoch 总共训练轮数。通常情况下40轮即可出效果，如果训练集数据质量高，可以调大至200epoch以减少可能的音色泄露，并可能解决生成出来的声音中电流声的问题
+  + save_epoch 一定要设置成 total_epoch 的某一个因数！！！不然你的模型训练完了最后的一个epoch但是你会发现没有保存下来的文件！！
+
+
+## 关于此项目的Tips
 
 - 最终的模型文件为 `weights/` 目录下的 pth 文件。`logs/实验名称/` 下的 pth 文件只用于记录训练状态，不可直接使用。
 - 如果你的训练运行完成但是没有在 `weights/` 目录下生成相应的模型文件，请使用 webui 中的 `ckpt处理` 选项卡中 `模型提取` 功能生成最终的模型。

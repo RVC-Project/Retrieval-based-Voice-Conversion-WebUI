@@ -567,6 +567,9 @@ def train1key(
 
 par = argparse.ArgumentParser()
 
+# modes
+par.add_argument('mode', help='执行任务的类型 可选：preprocess f0 train', choices=["preprocess", "f0", "train"])
+
 # preprocess
 par.add_argument('dataset_path')
 par.add_argument('exp_dir')
@@ -656,23 +659,28 @@ if_cache_gpu = args.if_cache_gpu
 if_save_every_weights =args.if_save_every_weights
 pretrained_G = args.pretrained_g
 pretrained_D = args.pretrained_d
-preprocess_dataset(dataset_path, exp_dir, sr, n_p)
 
-extract_f0_feature(gpus, n_p,f0method, if_f0,exp_dir, version)
+# mode 
+mode = args.mode
 
-click_train(
-    exp_dir,
-    sr,
-    if_f0,
-    spk_id,
-    save_epoch,
-    total_epoch,
-    batch_size,
-    if_save_latest,
-    pretrained_G,
-    pretrained_D,
-    gpus,
-    if_cache_gpu,
-    if_save_every_weights,
-    version,
-)
+if mode == 'preprocess':
+    preprocess_dataset(dataset_path, exp_dir, sr, n_p)
+elif mode =='f0':
+    extract_f0_feature(gpus, n_p,f0method, if_f0,exp_dir, version)
+elif mode=='train':
+    click_train(
+        exp_dir,
+        sr,
+        if_f0,
+        spk_id,
+        save_epoch,
+        total_epoch,
+        batch_size,
+        if_save_latest,
+        pretrained_G,
+        pretrained_D,
+        gpus,
+        if_cache_gpu,
+        if_save_every_weights,
+        version,
+    )
