@@ -26,7 +26,7 @@ parser.add_argument('-d', '--device', type=str, help='使用的设备，默认 c
 parser.add_argument('-fp', '--is_half', action='store_true', help='是否使用半精度运算')
 parser.add_argument('-o', '--output',type=str, default='')
 parser.add_argument('-fr', '--filter_radius', type=int, help='对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音', default=3)
-parser.add_argument('-s', '--tgt_sr', type=int, help='目标采样率', default=44100)
+parser.add_argument('-s', '--tgt_sr', type=int, help='目标采样率', default=48000)
 parser.add_argument('-rs', '--resample_sr',type=int, help='后处理重采样至最终采样率，0为不进行重采样', default=0 )
 parser.add_argument('-rms', '--rms_mix_rate', type=float, help='输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络', default=1)
 parser.add_argument('-v', '--version', type=str, help='模型版本', default='v1')

@@ -15,6 +15,7 @@ import librosa, traceback
 from scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
+from tqdm import tqdm
 
 mutex = multiprocessing.Lock()
 f = open("%s/preprocess.log" % exp_dir, "a+")
@@ -78,7 +79,7 @@ class PreProcess:
             audio = signal.lfilter(self.bh, self.ah, audio)
 
             idx1 = 0
-            for audio in self.slicer.slice(audio):
+            for audio in tqdm(self.slicer.slice(audio)):
                 i = 0
                 while 1:
                     start = int(self.sr * (self.per - self.overlap) * i)
