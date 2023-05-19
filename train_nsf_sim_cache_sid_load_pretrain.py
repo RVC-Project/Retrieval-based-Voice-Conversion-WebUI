@@ -72,11 +72,14 @@ def main():
 
     children = []
     for i in range(n_gpus):
-        subproc = mp.Process(target=run, args=(
-            i,
-            n_gpus,
-            hps,
-        ))
+        subproc = mp.Process(
+            target=run,
+            args=(
+                i,
+                n_gpus,
+                hps,
+            ),
+        )
         children.append(subproc)
         subproc.start()
 
