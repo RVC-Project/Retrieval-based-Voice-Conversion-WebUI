@@ -25,7 +25,6 @@ import ffmpeg
 
 i18n = I18nAuto()
 # 判断是否有能用来训练和加速推理的N卡
-ncpu = cpu_count()
 ngpu = torch.cuda.device_count()
 gpu_infos = []
 mem = []
@@ -1436,10 +1435,10 @@ with gr.Blocks() as app:
                 )
                 np7 = gr.Slider(
                     minimum=0,
-                    maximum=ncpu,
+                    maximum=config.n_cpu,
                     step=1,
                     label=i18n("提取音高和处理数据使用的CPU进程数"),
-                    value=ncpu,
+                    value=config.n_cpu,
                     interactive=True,
                 )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
