@@ -66,7 +66,7 @@ class EpochRecorder:
 
 
 def main():
-    # n_gpus = torch.cuda.device_count()
+    n_gpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "51545"
 
