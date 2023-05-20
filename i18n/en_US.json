@@ -1,5 +1,5 @@
 {
-    "很遗憾您这没有能用的显卡来支持您训练": "No supported GPU is found. Training may be ",
+    "很遗憾您这没有能用的显卡来支持您训练": "No supported GPU is found. Training may be slow or unavailable.",
     "是": "yes",
     "step1:正在处理数据": "step 1: processing data",
     "step2a:无需提取音高": "step 2a: skipping pitch extraction",
@@ -44,7 +44,7 @@
     "目标采样率": "Target sample rate",
     "模型是否带音高指导(唱歌一定要, 语音可以不要)": "Does the model have pitch guidance (required for singing; optional for speech, but recommended)",
     "版本(目前仅40k支持了v2)": "Model architecture version (v2 version only supports 40k sample rate for testing purposes)",
-    "提取音高和处理数据使用的CPU进程数": "Threads of CPU to use, for pitch extraction and dataset processing",
+    "提取音高和处理数据使用的CPU进程数": "Threads of CPU, for pitch extraction and dataset processing",
     "step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. ": "step2a: Automatically traverse all files that can be decoded into audio in the training folder and perform slice normalization. Generates 2 wav folders in the experiment directory; Only single-singer/speaker training is supported for the time being. ",
     "输入训练文件夹路径": "Input training folder path",
     "请指定说话人id": "Please specify speaker ID",
