@@ -1,10 +1,17 @@
-import os, sys, traceback
+import os, sys, traceback,platform
+
+debug_macos = True if(platform.system() == "Darwin") else False
 
 # device=sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
 if len(sys.argv) == 5:
     exp_dir = sys.argv[4]
+    version = sys.argv[5]
+elif debug_macos:  #Not checked for cross-platform compatibility, but on macos there's an off-by-one error.
+    i_gpu = sys.argv[3]
+    exp_dir = sys.argv[4]
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[5]
 else:
     i_gpu = sys.argv[4]
