@@ -1770,7 +1770,7 @@ with gr.Blocks() as app:
                     with open("docs/faq.md", "r", encoding="utf8") as f:
                         info = f.read()
                 else:
-                    with open("docs/faq_en.md", "r") as f:
+                    with open("docs/faq_en.md", "r", encoding="utf8") as f:
                         info = f.read()
                 gr.Markdown(value=info)
             except:
