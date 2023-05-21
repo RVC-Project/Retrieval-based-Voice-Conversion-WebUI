@@ -75,14 +75,14 @@ class RVC:
             self.version = cpt.get("version", "v1")
             if version == "v1":
                 if if_f0 == 1:
-                    net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
+                    self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
                 else:
-                    net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+                    self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
             elif version == "v2":
                 if if_f0 == 1:
-                    net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=config.is_half)
+                    self.net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=config.is_half)
                 else:
-                    net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
+                    self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del self.net_g.enc_q
             print(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
