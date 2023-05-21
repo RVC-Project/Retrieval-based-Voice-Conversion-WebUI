@@ -2,6 +2,7 @@ import argparse
 import torch
 from multiprocessing import cpu_count
 
+
 def config_file_change_fp32():
     for config_file in ["32k.json", "40k.json", "48k.json"]:
         with open(f"configs/{config_file}", "r") as f:
@@ -12,6 +13,7 @@ def config_file_change_fp32():
         strr = f.read().replace("3.7", "3.0")
     with open("trainset_preprocess_pipeline_print.py", "w") as f:
         f.write(strr)
+
 
 class Config:
     def __init__(self):
