@@ -1068,15 +1068,11 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
-from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsidM
-from infer_pack.models_onnx import SynthesizerTrnMs256NSFsidO
-
-
+from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 def export_onnx(ModelPath, ExportedPath, MoeVS=True):
-    hidden_channels = 256  # hidden_channels，为768Vec做准备
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-    print(*cpt["config"])
+    hidden_channels = cpt["config"][-2]  # hidden_channels，为768Vec做准备
 
     test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
@@ -1087,68 +1083,38 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
 
     device = "cpu"  # 导出时设备（不影响使用模型）
 
-    if MoeVS:
-        net_g = SynthesizerTrnMs256NSFsidM(
-            *cpt["config"], is_half=False
-        )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
-        net_g.load_state_dict(cpt["weight"], strict=False)
-        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
-        output_names = [
-            "audio",
-        ]
-        torch.onnx.export(
-            net_g,
-            (
-                test_phone.to(device),
-                test_phone_lengths.to(device),
-                test_pitch.to(device),
-                test_pitchf.to(device),
-                test_ds.to(device),
-                test_rnd.to(device),
-            ),
-            ExportedPath,
-            dynamic_axes={
-                "phone": [1],
-                "pitch": [1],
-                "pitchf": [1],
-                "rnd": [2],
-            },
-            do_constant_folding=False,
-            opset_version=16,
-            verbose=False,
-            input_names=input_names,
-            output_names=output_names,
-        )
-    else:
-        net_g = SynthesizerTrnMs256NSFsidO(
-            *cpt["config"], is_half=False
-        )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
-        net_g.load_state_dict(cpt["weight"], strict=False)
-        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds"]
-        output_names = [
-            "audio",
-        ]
-        torch.onnx.export(
-            net_g,
-            (
-                test_phone.to(device),
-                test_phone_lengths.to(device),
-                test_pitch.to(device),
-                test_pitchf.to(device),
-                test_ds.to(device),
-            ),
-            ExportedPath,
-            dynamic_axes={
-                "phone": [1],
-                "pitch": [1],
-                "pitchf": [1],
-            },
-            do_constant_folding=False,
-            opset_version=16,
-            verbose=False,
-            input_names=input_names,
-            output_names=output_names,
-        )
+    net_g = SynthesizerTrnMsNSFsidM(
+        *cpt["config"], is_half=False
+    )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
+    net_g.load_state_dict(cpt["weight"], strict=False)
+    input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
+    output_names = [
+        "audio",
+    ]
+    # net_g.construct_spkmixmap(n_speaker) 多角色混合轨道导出
+    torch.onnx.export(
+        net_g,
+        (
+            test_phone.to(device),
+            test_phone_lengths.to(device),
+            test_pitch.to(device),
+            test_pitchf.to(device),
+            test_ds.to(device),
+            test_rnd.to(device),
+        ),
+        ExportedPath,
+        dynamic_axes={
+            "phone": [1],
+            "pitch": [1],
+            "pitchf": [1],
+            "rnd": [2],
+        },
+        do_constant_folding=False,
+        opset_version=16,
+        verbose=False,
+        input_names=input_names,
+        output_names=output_names,
+    )
     return "Finished"
 
 
