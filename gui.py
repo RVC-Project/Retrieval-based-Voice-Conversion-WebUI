@@ -1,7 +1,20 @@
-import os, sys, traceback
+'''
+0416后的更新：
+    引入config中half
+    重建npy而不用填写
+    v2支持
+    无f0模型支持
+    修复
 
+    int16：
+    增加无索引支持
+    f0算法改harvest(怎么看就只有这个会影响CPU占用)，但是不这么改效果不好
+'''
+import os, sys, traceback
 now_dir = os.getcwd()
 sys.path.append(now_dir)
+from config import Config
+is_half=Config().is_half
 import PySimpleGUI as sg
 import sounddevice as sd
 import noisereduce as nr
@@ -13,7 +26,7 @@ import torchaudio.transforms as tat
 import scipy.signal as signal
 
 # import matplotlib.pyplot as plt
-from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
+from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono,SynthesizerTrnMs768NSFsid,SynthesizerTrnMs768NSFsid_nono
 from i18n import I18nAuto
 
 i18n = I18nAuto()
@@ -50,20 +63,33 @@ class RVC:
             )
             self.model = models[0]
             self.model = self.model.to(device)
-            self.model = self.model.half()
+            if(is_half==True):
+                self.model = self.model.half()
+            else:
+                self.model = self.model.float()
             self.model.eval()
             cpt = torch.load(pth_path, map_location="cpu")
             self.tgt_sr = cpt["config"][-1]
             cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
             self.if_f0 = cpt.get("f0", 1)
-            if self.if_f0 == 1:
-                self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=True)
-            else:
-                self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+            self.version = cpt.get("version", "v1")
+            if version == "v1":
+                if if_f0 == 1:
+                    self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
+                else:
+                    self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+            elif version == "v2":
+                if if_f0 == 1:
+                    self.net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=config.is_half)
+                else:
+                    self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del self.net_g.enc_q
             print(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
-            self.net_g.half()
+            if(is_half==True):
+                self.net_g=self.net_g.half()
+            else:
+                self.net_g=self.net_g.float()
         except:
             print(traceback.format_exc())
 
@@ -116,34 +142,33 @@ class RVC:
         inputs = {
             "source": feats.half().to(device),
             "padding_mask": padding_mask.to(device),
-            "output_layer": 9,  # layer 9
+            "output_layer": 9 if self.version == "v1" else 12,
         }
         torch.cuda.synchronize()
         with torch.no_grad():
             logits = self.model.extract_features(**inputs)
-            feats = self.model.final_proj(logits[0])
+            feats = model.final_proj(logits[0]) if self.version == "v1" else logits[0]
 
         ####索引优化
-        if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
-            npy = feats[0].cpu().numpy().astype("float32")
-
-            # _, I = self.index.search(npy, 1)
-            # npy = self.big_npy[I.squeeze()].astype("float16")
-
-            score, ix = self.index.search(npy, k=8)
-            weight = np.square(1 / score)
-            weight /= weight.sum(axis=1, keepdims=True)
-            npy = np.sum(
-                self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1
-            ).astype("float16")
-
-            feats = (
-                torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
-                + (1 - self.index_rate) * feats
-            )
-        else:
-            print("index search FAIL or disabled")
-
+        try:
+            if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
+                npy = feats[0].cpu().numpy().astype("float32")
+                score, ix = self.index.search(npy, k=8)
+                weight = np.square(1 / score)
+                weight /= weight.sum(axis=1, keepdims=True)
+                npy = np.sum(
+                    self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1
+                )
+                if(is_half==True):npy=npy.astype("float16")
+                feats = (
+                    torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
+                    + (1 - self.index_rate) * feats
+                )
+            else:
+                print("index search FAIL or disabled")
+        except:
+            traceback.print_exc()
+            print("index search FAIL")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         torch.cuda.synchronize()
         print(feats.shape)
