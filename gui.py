@@ -1,4 +1,4 @@
-'''
+"""
 0416后的更新：
     引入config中half
     重建npy而不用填写
@@ -9,12 +9,14 @@
     int16：
     增加无索引支持
     f0算法改harvest(怎么看就只有这个会影响CPU占用)，但是不这么改效果不好
-'''
+"""
 import os, sys, traceback
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 from config import Config
-is_half=Config().is_half
+
+is_half = Config().is_half
 import PySimpleGUI as sg
 import sounddevice as sd
 import noisereduce as nr
@@ -26,7 +28,12 @@ import torchaudio.transforms as tat
 import scipy.signal as signal
 
 # import matplotlib.pyplot as plt
-from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono,SynthesizerTrnMs768NSFsid,SynthesizerTrnMs768NSFsid_nono
+from infer_pack.models import (
+    SynthesizerTrnMs256NSFsid,
+    SynthesizerTrnMs256NSFsid_nono,
+    SynthesizerTrnMs768NSFsid,
+    SynthesizerTrnMs768NSFsid_nono,
+)
 from i18n import I18nAuto
 
 i18n = I18nAuto()
@@ -63,7 +70,7 @@ class RVC:
             )
             self.model = models[0]
             self.model = self.model.to(device)
-            if(is_half==True):
+            if is_half == True:
                 self.model = self.model.half()
             else:
                 self.model = self.model.float()
@@ -75,21 +82,25 @@ class RVC:
             self.version = cpt.get("version", "v1")
             if version == "v1":
                 if if_f0 == 1:
-                    self.net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=config.is_half)
+                    self.net_g = SynthesizerTrnMs256NSFsid(
+                        *cpt["config"], is_half=config.is_half
+                    )
                 else:
                     self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
             elif version == "v2":
                 if if_f0 == 1:
-                    self.net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=config.is_half)
+                    self.net_g = SynthesizerTrnMs768NSFsid(
+                        *cpt["config"], is_half=config.is_half
+                    )
                 else:
                     self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del self.net_g.enc_q
             print(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
-            if(is_half==True):
-                self.net_g=self.net_g.half()
+            if is_half == True:
+                self.net_g = self.net_g.half()
             else:
-                self.net_g=self.net_g.float()
+                self.net_g = self.net_g.float()
         except:
             print(traceback.format_exc())
 
@@ -151,15 +162,18 @@ class RVC:
 
         ####索引优化
         try:
-            if hasattr(self, "index") and hasattr(self, "big_npy") and self.index_rate != 0:
+            if (
+                hasattr(self, "index")
+                and hasattr(self, "big_npy")
+                and self.index_rate != 0
+            ):
                 npy = feats[0].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
                 weight = np.square(1 / score)
                 weight /= weight.sum(axis=1, keepdims=True)
-                npy = np.sum(
-                    self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1
-                )
-                if(is_half==True):npy=npy.astype("float16")
+                npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
+                if is_half == True:
+                    npy = npy.astype("float16")
                 feats = (
                     torch.from_numpy(npy).unsqueeze(0).to(device) * self.index_rate
                     + (1 - self.index_rate) * feats

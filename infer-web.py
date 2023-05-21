@@ -1069,6 +1069,8 @@ def change_info_(ckpt_path):
 
 
 from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
+
+
 def export_onnx(ModelPath, ExportedPath, MoeVS=True):
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk

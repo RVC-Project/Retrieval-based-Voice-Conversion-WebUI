@@ -633,14 +633,14 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         self.speaker_map = self.speaker_map.unsqueeze(0)
 
     def forward(self, phone, phone_lengths, pitch, nsff0, g, rnd, max_len=None):
-        if self.speaker_map is not None:   # [N, S]  *  [S, B, 1, H]
+        if self.speaker_map is not None:  # [N, S]  *  [S, B, 1, H]
             g = g.reshape((g.shape[0], g.shape[1], 1, 1, 1))  # [N, S, B, 1, 1]
             g = g * self.speaker_map  # [N, S, B, 1, H]
-            g = torch.sum(g, dim=1) # [N, 1, B, 1, H]
-            g = g.transpose(0, -1).transpose(0, -2).squeeze(0) # [B, H, N]
+            g = torch.sum(g, dim=1)  # [N, 1, B, 1, H]
+            g = g.transpose(0, -1).transpose(0, -2).squeeze(0)  # [B, H, N]
         else:
             g = g.unsqueeze(0)
-            g = self.emb_g(g).transpose(1,2)
+            g = self.emb_g(g).transpose(1, 2)
 
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * rnd) * x_mask

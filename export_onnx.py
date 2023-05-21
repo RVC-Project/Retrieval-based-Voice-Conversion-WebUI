@@ -52,4 +52,3 @@ if __name__ == "__main__":
         input_names=input_names,
         output_names=output_names,
     )
-
