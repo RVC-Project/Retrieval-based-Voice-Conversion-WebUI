@@ -14,9 +14,9 @@ import os, sys, traceback
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from config import Config
+from config import Config as MyConfig
 
-is_half = Config().is_half
+is_half = MyConfig().is_half
 import PySimpleGUI as sg
 import sounddevice as sd
 import noisereduce as nr
@@ -48,6 +48,7 @@ class RVC:
         初始化
         """
         try:
+            self.config = MyConfig()
             self.f0_up_key = key
             self.time_step = 160 / 16000 * 1000
             self.f0_min = 50
@@ -80,17 +81,18 @@ class RVC:
             cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
             self.if_f0 = cpt.get("f0", 1)
             self.version = cpt.get("version", "v1")
-            if version == "v1":
-                if if_f0 == 1:
+            
+            if self.version == "v1":
+                if self.if_f0 == 1:
                     self.net_g = SynthesizerTrnMs256NSFsid(
-                        *cpt["config"], is_half=config.is_half
+                        *cpt["config"], is_half=self.config.is_half
                     )
                 else:
                     self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
-            elif version == "v2":
-                if if_f0 == 1:
+            elif self.version == "v2":
+                if self.if_f0 == 1:
                     self.net_g = SynthesizerTrnMs768NSFsid(
-                        *cpt["config"], is_half=config.is_half
+                        *cpt["config"], is_half=self.config.is_half
                     )
                 else:
                     self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
