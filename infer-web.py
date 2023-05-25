@@ -1736,10 +1736,10 @@ with gr.Blocks() as app:
         with gr.TabItem(tab_faq):
             try:
                 if tab_faq == "常见问题解答":
-                    with open("docs/faq.md", "r", encoding="utf8") as f:
+                    with open("docs/faq.md", "r", encoding="utf-8") as f:
                         info = f.read()
                 else:
-                    with open("docs/faq_en.md", "r", encoding="utf8") as f:
+                    with open("docs/faq_en.md", "r", encoding="utf-8") as f:
                         info = f.read()
                 gr.Markdown(value=info)
             except:
