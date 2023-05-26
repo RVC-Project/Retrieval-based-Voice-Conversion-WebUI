@@ -6,7 +6,7 @@ authors = ["lj1995"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.8,<3.11"
 torch = "^2.0.0"
 torchaudio = "^2.0.1"
 Cython = "^0.29.34"
