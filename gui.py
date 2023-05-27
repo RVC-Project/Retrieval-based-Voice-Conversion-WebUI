@@ -159,7 +159,9 @@ class RVC:
         torch.cuda.synchronize()
         with torch.no_grad():
             logits = self.model.extract_features(**inputs)
-            feats = self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
+            feats = (
+                self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
+            )
 
         ####索引优化
         try:
