@@ -119,7 +119,7 @@
     "开始音频转换": "start audio conversion",
     "停止音频转换": "stop audio conversion",
     "导出文件格式": "output file format",
-    "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果": "Protect the artifact of voiceless consonant and breath. 0.5: don' use it. The number smaller, the stronger protection.",
+    "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果": "Protect voiceless consonant and breath, less artifact. 0.5: don' use it. The number smaller, the stronger protection.",
     "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU": "Select pitch extraction algorithm.('pm': fastest extraction but lower-quality speech; 'dio': improved speech but slower extraction; 'harvest': better quality but slowest extraction; 'crepe': best quality but GPU needed. )",
     "推理时间(ms):": "Inference Time(ms):"
 }
