@@ -1,3 +1,20 @@
+### 2023-05-28
+- Add v2 jupyter notebook, korean changelog, fix some environment requirments
+- Add voiceless consonant and breath protection mode
+- Support crepe-full pitch detect
+- UVR5 vocal separation: support dereverb models and de-echo models
+- Add experiment name and version on the name of index
+- Support users to manually select export format of output audios when batch voice conversion processing and UVR5 vocal separation
+- 32k model training is no more supported
+
+todolist：
+- Feature retrieval: add temporal feature retrieval
+- Feature retrieval: add pre-kmeans option
+- Feature retrieval: add PCAR dimensionality reduction
+- Add onnx inference support
+- Random data augmentation when training: pitch, gender, eq, noise
+- Add v2 version pretrained-models
+
 ### 2023-05-13
 - Clear the redundant codes in the old version of runtime in the one-click-package: infer_pack and uvr5_pack
 - Fix pseudo multiprocessing bug in training set preprocessing
@@ -16,9 +33,6 @@
 - Limit excessive volume exceeding 1 before inference
 - Slightly adjusted the settings of training-set preprocessing
 
-Todolist:
- - Support crepe pitch detect
- - Support users to manually select export format of output audios when batch voice conversion processing
 
 #######################
 
@@ -56,5 +70,3 @@ Features:
 Base model:
 - Collect breathing wav files to add to the training dataset to fix the issue of distorted breath sounds
 - We are currently training a base model with an extended singing dataset, which will be released in the future
-- Upgrade discriminator
-- Upgrade self-supervised feature structure
