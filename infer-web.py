@@ -83,7 +83,7 @@ import gradio as gr
 import logging
 from vc_infer_pipeline import VC
 from config import Config
-from infer_uvr5 import _audio_pre_,_audio_pre_new
+from infer_uvr5 import _audio_pre_, _audio_pre_new
 from my_utils import load_audio
 from train.process_ckpt import show_info, change_info, merge, extract_small_model
 
@@ -134,7 +134,7 @@ for root, dirs, files in os.walk(index_root, topdown=False):
             index_paths.append("%s/%s" % (root, name))
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
-    if name.endswith(".pth")or "onnx"in name:
+    if name.endswith(".pth") or "onnx" in name:
         uvr5_names.append(name.replace(".pth", ""))
 
 
@@ -151,7 +151,7 @@ def vc_single(
     filter_radius,
     resample_sr,
     rms_mix_rate,
-    protect
+    protect,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model, version
     if input_audio_path is None:
@@ -236,7 +236,7 @@ def vc_multi(
     resample_sr,
     rms_mix_rate,
     protect,
-    format1
+    format1,
 ):
     try:
         dir_path = (
@@ -267,13 +267,15 @@ def vc_multi(
                 filter_radius,
                 resample_sr,
                 rms_mix_rate,
-                protect
+                protect,
             )
             if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
                     sf.write(
-                        "%s/%s.%s" % (opt_root, os.path.basename(path),format1), audio_opt,tgt_sr
+                        "%s/%s.%s" % (opt_root, os.path.basename(path), format1),
+                        audio_opt,
+                        tgt_sr,
                     )
                 except:
                     info += traceback.format_exc()
@@ -284,7 +286,7 @@ def vc_multi(
         yield traceback.format_exc()
 
 
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0):
+def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format0):
     infos = []
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -294,10 +296,10 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0
         save_root_ins = (
             save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
-        if(model_name=="onnx_dereverb_By_FoxJoy"):
-            pre_fun=MDXNetDereverb(15)
+        if model_name == "onnx_dereverb_By_FoxJoy":
+            pre_fun = MDXNetDereverb(15)
         else:
-            func=_audio_pre_ if "DeEcho"not in model_name else  _audio_pre_new
+            func = _audio_pre_ if "DeEcho" not in model_name else _audio_pre_new
             pre_fun = func(
                 agg=int(agg),
                 model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
@@ -319,7 +321,9 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0
                     and info["streams"][0]["sample_rate"] == "44100"
                 ):
                     need_reformat = 0
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal,format0)
+                    pre_fun._path_audio_(
+                        inp_path, save_root_ins, save_root_vocal, format0
+                    )
                     done = 1
             except:
                 need_reformat = 1
@@ -333,7 +337,9 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0
                 inp_path = tmp_path
             try:
                 if done == 0:
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal,format0)
+                    pre_fun._path_audio_(
+                        inp_path, save_root_ins, save_root_vocal, format0
+                    )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
@@ -346,7 +352,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0
         yield "\n".join(infos)
     finally:
         try:
-            if (model_name == "onnx_dereverb_By_FoxJoy"):
+            if model_name == "onnx_dereverb_By_FoxJoy":
                 del pre_fun.pred.model
                 del pre_fun.pred.model_
             else:
@@ -804,7 +810,7 @@ def train_index(exp_dir1, version19):
     faiss.write_index(
         index,
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     infos.append("adding")
@@ -815,11 +821,11 @@ def train_index(exp_dir1, version19):
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     infos.append(
         "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe,exp_dir1, version19)
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
@@ -1044,7 +1050,7 @@ def train1key(
     faiss.write_index(
         index,
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -1053,11 +1059,11 @@ def train1key(
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, exp_dir1,version19)
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     yield get_info_str(i18n("全流程结束！"))
 
@@ -1175,8 +1181,10 @@ with gr.Blocks() as app:
                             value="E:\\codes\\py39\\test-20230416b\\todo-songs\\冬之花clip1.wav",
                         )
                         f0method0 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
-                            choices=["pm", "harvest","crepe"],
+                            label=i18n(
+                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
+                            ),
+                            choices=["pm", "harvest", "crepe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1233,7 +1241,9 @@ with gr.Blocks() as app:
                         protect0 = gr.Slider(
                             minimum=0,
                             maximum=0.5,
-                            label=i18n("保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"),
+                            label=i18n(
+                                "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"
+                            ),
                             value=0.33,
                             step=0.01,
                             interactive=True,
@@ -1258,7 +1268,7 @@ with gr.Blocks() as app:
                             filter_radius0,
                             resample_sr0,
                             rms_mix_rate0,
-                            protect0
+                            protect0,
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1273,8 +1283,10 @@ with gr.Blocks() as app:
                         )
                         opt_input = gr.Textbox(label=i18n("指定输出文件夹"), value="opt")
                         f0method1 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
-                            choices=["pm", "harvest","crepe"],
+                            label=i18n(
+                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
+                            ),
+                            choices=["pm", "harvest", "crepe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1328,7 +1340,9 @@ with gr.Blocks() as app:
                         protect1 = gr.Slider(
                             minimum=0,
                             maximum=0.5,
-                            label=i18n("保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"),
+                            label=i18n(
+                                "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"
+                            ),
                             value=0.33,
                             step=0.01,
                             interactive=True,
@@ -1342,9 +1356,9 @@ with gr.Blocks() as app:
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
                         )
                     with gr.Row():
-                        format1= gr.Radio(
+                        format1 = gr.Radio(
                             label=i18n("导出文件格式"),
-                            choices=["wav", "flac","mp3","m4a"],
+                            choices=["wav", "flac", "mp3", "m4a"],
                             value="flac",
                             interactive=True,
                         )
@@ -1367,7 +1381,7 @@ with gr.Blocks() as app:
                             resample_sr1,
                             rms_mix_rate1,
                             protect1,
-                            format1
+                            format1,
                         ],
                         [vc_output3],
                     )
@@ -1412,10 +1426,12 @@ with gr.Blocks() as app:
                         opt_vocal_root = gr.Textbox(
                             label=i18n("指定输出主人声文件夹"), value="opt"
                         )
-                        opt_ins_root = gr.Textbox(label=i18n("指定输出非主人声文件夹"), value="opt")
-                        format0= gr.Radio(
+                        opt_ins_root = gr.Textbox(
+                            label=i18n("指定输出非主人声文件夹"), value="opt"
+                        )
+                        format0 = gr.Radio(
                             label=i18n("导出文件格式"),
-                            choices=["wav", "flac","mp3","m4a"],
+                            choices=["wav", "flac", "mp3", "m4a"],
                             value="flac",
                             interactive=True,
                         )
@@ -1430,7 +1446,7 @@ with gr.Blocks() as app:
                             wav_inputs,
                             opt_ins_root,
                             agg,
-                            format0
+                            format0,
                         ],
                         [vc_output4],
                     )

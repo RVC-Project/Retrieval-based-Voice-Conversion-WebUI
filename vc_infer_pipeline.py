@@ -2,7 +2,7 @@ import numpy as np, parselmouth, torch, pdb
 from time import time as ttime
 import torch.nn.functional as F
 import scipy.signal as signal
-import pyworld, os, traceback, faiss, librosa,torchcrepe
+import pyworld, os, traceback, faiss, librosa, torchcrepe
 from scipy import signal
 from functools import lru_cache
 
@@ -162,7 +162,7 @@ class VC(object):
         big_npy,
         index_rate,
         version,
-        protect
+        protect,
     ):  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
         if self.is_half:
@@ -184,8 +184,8 @@ class VC(object):
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
-        if(protect<0.5):
-            feats0=feats.clone()
+        if protect < 0.5:
+            feats0 = feats.clone()
         if (
             isinstance(index, type(None)) == False
             and isinstance(big_npy, type(None)) == False
@@ -211,8 +211,10 @@ class VC(object):
             )
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
-        if(protect<0.5):
-            feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
+        if protect < 0.5:
+            feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
+                0, 2, 1
+            )
         t1 = ttime()
         p_len = audio0.shape[0] // self.window
         if feats.shape[1] < p_len:
@@ -221,13 +223,13 @@ class VC(object):
                 pitch = pitch[:, :p_len]
                 pitchf = pitchf[:, :p_len]
 
-        if(protect<0.5):
+        if protect < 0.5:
             pitchff = pitchf.clone()
             pitchff[pitchf > 0] = 1
             pitchff[pitchf < 1] = protect
             pitchff = pitchff.unsqueeze(-1)
             feats = feats * pitchff + feats0 * (1 - pitchff)
-            feats=feats.to(feats0.dtype)
+            feats = feats.to(feats0.dtype)
         p_len = torch.tensor([p_len], device=self.device).long()
         with torch.no_grad():
             if pitch != None and pitchf != None:
@@ -356,7 +358,7 @@ class VC(object):
                         big_npy,
                         index_rate,
                         version,
-                        protect
+                        protect,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
@@ -373,7 +375,7 @@ class VC(object):
                         big_npy,
                         index_rate,
                         version,
-                        protect
+                        protect,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
@@ -391,7 +393,7 @@ class VC(object):
                     big_npy,
                     index_rate,
                     version,
-                    protect
+                    protect,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
@@ -408,7 +410,7 @@ class VC(object):
                     big_npy,
                     index_rate,
                     version,
-                    protect
+                    protect,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)
