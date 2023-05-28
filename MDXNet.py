@@ -141,7 +141,7 @@ class Predictor:
         # del self.model
         progress_bar.close()
         return _sources
-    def prediction(self, m,vocal_root,others_root):
+    def prediction(self, m,vocal_root,others_root,format):
         os.makedirs(vocal_root,exist_ok=True)
         os.makedirs(others_root,exist_ok=True)
         basename = os.path.basename(m)
@@ -151,8 +151,8 @@ class Predictor:
         mix = mix.T
         sources = self.demix(mix.T)
         opt=sources[0].T
-        sf.write("%s/%s_main_vocal.wav"%(vocal_root,basename), mix-opt, rate)
-        sf.write("%s/%s_others.wav"%(others_root,basename), opt , rate)
+        sf.write("%s/%s_main_vocal.%s"%(vocal_root,basename,format), mix-opt, rate)
+        sf.write("%s/%s_others.%s"%(others_root,basename,format), opt , rate)
 
 class MDXNetDereverb():
     def __init__(self,chunks):
@@ -167,8 +167,8 @@ class MDXNetDereverb():
         self.denoise=True
         self.pred=Predictor(self)
 
-    def _path_audio_(self,input,vocal_root,others_root):
-        self.pred.prediction(input,vocal_root,others_root)
+    def _path_audio_(self,input,vocal_root,others_root,format):
+        self.pred.prediction(input,vocal_root,others_root,format)
 
 if __name__ == '__main__':
     dereverb=MDXNetDereverb(15)

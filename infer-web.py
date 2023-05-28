@@ -77,7 +77,7 @@ from infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from scipy.io import wavfile
+import soundfile as sf
 from fairseq import checkpoint_utils
 import gradio as gr
 import logging
@@ -235,7 +235,8 @@ def vc_multi(
     filter_radius,
     resample_sr,
     rms_mix_rate,
-    protect
+    protect,
+    format1
 ):
     try:
         dir_path = (
@@ -271,8 +272,8 @@ def vc_multi(
             if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
-                    wavfile.write(
-                        "%s/%s" % (opt_root, os.path.basename(path)), tgt_sr, audio_opt
+                    sf.write(
+                        "%s/%s.%s" % (opt_root, os.path.basename(path),format1), audio_opt,tgt_sr
                     )
                 except:
                     info += traceback.format_exc()
@@ -283,7 +284,7 @@ def vc_multi(
         yield traceback.format_exc()
 
 
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
+def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg,format0):
     infos = []
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -318,7 +319,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
                     and info["streams"][0]["sample_rate"] == "44100"
                 ):
                     need_reformat = 0
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal,format0)
                     done = 1
             except:
                 need_reformat = 1
@@ -332,7 +333,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
                 inp_path = tmp_path
             try:
                 if done == 0:
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal,format0)
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
@@ -1341,6 +1342,12 @@ with gr.Blocks() as app:
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
                         )
                     with gr.Row():
+                        format1= gr.Radio(
+                            label=i18n("导出文件格式"),
+                            choices=["wav", "flac","mp3","m4a"],
+                            value="flac",
+                            interactive=True,
+                        )
                         but1 = gr.Button(i18n("转换"), variant="primary")
                         vc_output3 = gr.Textbox(label=i18n("输出信息"))
                     but1.click(
@@ -1359,7 +1366,8 @@ with gr.Blocks() as app:
                             filter_radius1,
                             resample_sr1,
                             rms_mix_rate1,
-                            protect1
+                            protect1,
+                            format1
                         ],
                         [vc_output3],
                     )
@@ -1402,9 +1410,15 @@ with gr.Blocks() as app:
                             visible=False,  # 先不开放调整
                         )
                         opt_vocal_root = gr.Textbox(
-                            label=i18n("指定输出人声文件夹"), value="opt"
+                            label=i18n("指定输出主人声文件夹"), value="opt"
                         )
-                        opt_ins_root = gr.Textbox(label=i18n("指定输出乐器文件夹"), value="opt")
+                        opt_ins_root = gr.Textbox(label=i18n("指定输出非主人声文件夹"), value="opt")
+                        format0= gr.Radio(
+                            label=i18n("导出文件格式"),
+                            choices=["wav", "flac","mp3","m4a"],
+                            value="flac",
+                            interactive=True,
+                        )
                     but2 = gr.Button(i18n("转换"), variant="primary")
                     vc_output4 = gr.Textbox(label=i18n("输出信息"))
                     but2.click(
@@ -1416,6 +1430,7 @@ with gr.Blocks() as app:
                             wav_inputs,
                             opt_ins_root,
                             agg,
+                            format0
                         ],
                         [vc_output4],
                     )
