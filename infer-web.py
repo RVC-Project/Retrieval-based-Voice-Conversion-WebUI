@@ -789,8 +789,8 @@ def train_index(exp_dir1, version19):
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     infos.append("adding")
@@ -800,12 +800,12 @@ def train_index(exp_dir1, version19):
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     infos.append(
-        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, version19)
+        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
@@ -1029,8 +1029,8 @@ def train1key(
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -1038,12 +1038,12 @@ def train1key(
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str(
-        "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, version19)
+        "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     yield get_info_str(i18n("全流程结束！"))
 
