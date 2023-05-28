@@ -14,7 +14,7 @@ import os, sys, traceback
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from config import Config as MyConfig
+from config import Config
 
 Config = Config()
 import PySimpleGUI as sg
@@ -48,7 +48,6 @@ class RVC:
         初始化
         """
         try:
-            self.config = MyConfig()
             self.f0_up_key = key
             self.time_step = 160 / 16000 * 1000
             self.f0_min = 50
