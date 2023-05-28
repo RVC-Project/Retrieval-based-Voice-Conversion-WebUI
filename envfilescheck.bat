@@ -117,7 +117,17 @@ if exist "%~dp0pretrained\D40k.pth" (
         if exist "%~dp0pretrained\D40k.pth" (echo download successful.) else (echo please try again!
         echo=)
     )
-    echo checking D48k.pth
+echo checking D40k.pth
+if exist "%~dp0pretrained_v2\D40k.pth" (
+        echo D40k.pth in .\pretrained_v2 checked.
+        echo=
+    ) else (
+        echo failed. starting download from huggingface.
+        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/D40k.pth -d %~dp0pretrained_v2 -o D40k.pth
+        if exist "%~dp0pretrained_v2\D40k.pth" (echo download successful.) else (echo please try again!
+        echo=)
+    )    
+echo checking D48k.pth
 if exist "%~dp0pretrained\D48k.pth" (
         echo D48k.pth in .\pretrained checked.
         echo=
@@ -127,7 +137,7 @@ if exist "%~dp0pretrained\D48k.pth" (
         if exist "%~dp0pretrained\D48k.pth" (echo download successful.) else (echo please try again!
         echo=)
     )
-    echo checking G32k.pth
+echo checking G32k.pth
 if exist "%~dp0pretrained\G32k.pth" (
         echo G32k.pth in .\pretrained checked.
         echo=
@@ -137,7 +147,7 @@ if exist "%~dp0pretrained\G32k.pth" (
         if exist "%~dp0pretrained\G32k.pth" (echo download successful.) else (echo please try again!
         echo=)
     )
-    echo checking G40k.pth
+echo checking G40k.pth
 if exist "%~dp0pretrained\G40k.pth" (
         echo G40k.pth in .\pretrained checked.
         echo=
@@ -147,7 +157,17 @@ if exist "%~dp0pretrained\G40k.pth" (
         if exist "%~dp0pretrained\G40k.pth" (echo download successful.) else (echo please try again!
         echo=)
     )
-    echo checking G48k.pth
+echo checking G40k.pth
+if exist "%~dp0pretrained_v2\G40k.pth" (
+        echo G40k.pth in .\pretrained_v2 checked.
+        echo=
+    ) else (
+        echo failed. starting download from huggingface.
+        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/G40k.pth -d %~dp0pretrained_v2 -o G40k.pth
+        if exist "%~dp0pretrained_v2\G40k.pth" (echo download successful.) else (echo please try again!
+        echo=)
+    )    
+echo checking G48k.pth
 if exist "%~dp0pretrained\G48k.pth" (
         echo G48k.pth in .\pretrained checked.
         echo=
