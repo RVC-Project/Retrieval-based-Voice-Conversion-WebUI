@@ -11,7 +11,7 @@ from tqdm import tqdm
 from uvr5_pack.lib_v5 import spec_utils
 from uvr5_pack.utils import _get_name_params, inference
 from uvr5_pack.lib_v5.model_param_init import ModelParameters
-from scipy.io import wavfile
+import soundfile as sf
 from uvr5_pack.lib_v5.nets_new import CascadedNet
 from uvr5_pack.lib_v5 import nets_61968KB as nets
 
@@ -41,7 +41,7 @@ class _audio_pre_:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(self, music_file, ins_root=None, vocal_root=None):
+    def _path_audio_(self, music_file, ins_root=None, vocal_root=None,format="flac"):
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -120,12 +120,11 @@ class _audio_pre_:
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             print("%s instruments done" % name)
-            wavfile.write(
+            sf.write(
                 os.path.join(
-                    ins_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
+                    ins_root, "instrument_{}_{}.{}".format(name, self.data["agg"],format)
                 ),
-                self.mp.param["sr"],
-                (np.array(wav_instrument) * 32768).astype("int16"),
+                (np.array(wav_instrument) * 32768).astype("int16"),                self.mp.param["sr"],
             )  #
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
@@ -138,12 +137,11 @@ class _audio_pre_:
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             print("%s vocals done" % name)
-            wavfile.write(
+            sf.write(
                 os.path.join(
-                    vocal_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
+                    vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"],format)
                 ),
-                self.mp.param["sr"],
-                (np.array(wav_vocals) * 32768).astype("int16"),
+                (np.array(wav_vocals) * 32768).astype("int16"),                self.mp.param["sr"],
             )
 
 class _audio_pre_new:
@@ -173,7 +171,7 @@ class _audio_pre_new:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(self, music_file, vocal_root=None, ins_root=None):#3个VR模型vocal和ins是反的
+    def _path_audio_(self, music_file, vocal_root=None, ins_root=None,format="flac"):#3个VR模型vocal和ins是反的
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -252,12 +250,11 @@ class _audio_pre_new:
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             print("%s instruments done" % name)
-            wavfile.write(
+            sf.write(
                 os.path.join(
-                    ins_root, "main_vocal_{}_{}.wav".format(name, self.data["agg"])
+                    ins_root, "main_vocal_{}_{}.{}".format(name, self.data["agg"],format)
                 ),
-                self.mp.param["sr"],
-                (np.array(wav_instrument) * 32768).astype("int16"),
+                (np.array(wav_instrument) * 32768).astype("int16"),self.mp.param["sr"],
             )  #
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
@@ -270,12 +267,11 @@ class _audio_pre_new:
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             print("%s vocals done" % name)
-            wavfile.write(
+            sf.write(
                 os.path.join(
-                    vocal_root, "others_{}_{}.wav".format(name, self.data["agg"])
+                    vocal_root, "others_{}_{}.{}".format(name, self.data["agg"],format)
                 ),
-                self.mp.param["sr"],
-                (np.array(wav_vocals) * 32768).astype("int16"),
+                (np.array(wav_vocals) * 32768).astype("int16"),self.mp.param["sr"],
             )
 
 
