@@ -179,13 +179,13 @@ if exist "%~dp0pretrained\%d40%" (
         echo=)
     )
 echo checking %d40v2%
-if exist "%~dp0pretrained\%d40v2%" (
-        echo %d40v2% in .\pretrained checked.
+if exist "%~dp0pretrained_v2\%d40v2%" (
+        echo %d40v2% in .\pretrained_v2 checked.
         echo=
     ) else (
         echo failed. starting download from huggingface.
-        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dld40v2% -d %~dp0pretrained -o %d40v2%
-        if exist "%~dp0pretrained\%d40v2%" (echo download successful.) else (echo please try again!
+        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dld40v2% -d %~dp0pretrained_v2 -o %d40v2%
+        if exist "%~dp0pretrained_v2\%d40v2%" (echo download successful.) else (echo please try again!
         echo=)
     )    
 echo checking %d48%
@@ -219,13 +219,13 @@ if exist "%~dp0pretrained\%g40%" (
         echo=)
     )
 echo checking %g40v2%
-if exist "%~dp0pretrained\%g40v2%" (
-        echo %g40v2% in .\pretrained checked.
+if exist "%~dp0pretrained_v2\%g40v2%" (
+        echo %g40v2% in .\pretrained_v2 checked.
         echo=
     ) else (
         echo failed. starting download from huggingface.
-        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dlg40v2% -d %~dp0pretrained -o %g40v2%
-        if exist "%~dp0pretrained\%g40v2%" (echo download successful.) else (echo please try again!
+        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dlg40v2% -d %~dp0pretrained_v2 -o %g40v2%
+        if exist "%~dp0pretrained_v2\%g40v2%" (echo download successful.) else (echo please try again!
         echo=)
     )    
 echo checking %g48%
