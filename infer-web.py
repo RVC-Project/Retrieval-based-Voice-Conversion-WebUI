@@ -21,6 +21,7 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 from i18n import I18nAuto
 import ffmpeg
+from MDXNet import MDXNetDereverb
 
 i18n = I18nAuto()
 i18n.print()
@@ -82,7 +83,7 @@ import gradio as gr
 import logging
 from vc_infer_pipeline import VC
 from config import Config
-from infer_uvr5 import _audio_pre_
+from infer_uvr5 import _audio_pre_,_audio_pre_new
 from my_utils import load_audio
 from train.process_ckpt import show_info, change_info, merge, extract_small_model
 
@@ -133,7 +134,7 @@ for root, dirs, files in os.walk(index_root, topdown=False):
             index_paths.append("%s/%s" % (root, name))
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
-    if name.endswith(".pth"):
+    if name.endswith(".pth")or "onnx"in name:
         uvr5_names.append(name.replace(".pth", ""))
 
 
@@ -150,6 +151,7 @@ def vc_single(
     filter_radius,
     resample_sr,
     rms_mix_rate,
+    protect
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model, version
     if input_audio_path is None:
@@ -197,6 +199,7 @@ def vc_single(
             resample_sr,
             rms_mix_rate,
             version,
+            protect,
             f0_file=f0_file,
         )
         if resample_sr >= 16000 and tgt_sr != resample_sr:
@@ -232,6 +235,7 @@ def vc_multi(
     filter_radius,
     resample_sr,
     rms_mix_rate,
+    protect
 ):
     try:
         dir_path = (
@@ -262,6 +266,7 @@ def vc_multi(
                 filter_radius,
                 resample_sr,
                 rms_mix_rate,
+                protect
             )
             if "Success" in info:
                 try:
@@ -288,12 +293,16 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
         save_root_ins = (
             save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
-        pre_fun = _audio_pre_(
-            agg=int(agg),
-            model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
-            device=config.device,
-            is_half=config.is_half,
-        )
+        if(model_name=="onnx_dereverb_By_FoxJoy"):
+            pre_fun=MDXNetDereverb(15)
+        else:
+            func=_audio_pre_ if "DeEcho"not in model_name else  _audio_pre_new
+            pre_fun = func(
+                agg=int(agg),
+                model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
+                device=config.device,
+                is_half=config.is_half,
+            )
         if inp_root != "":
             paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:
@@ -336,8 +345,12 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
         yield "\n".join(infos)
     finally:
         try:
-            del pre_fun.model
-            del pre_fun
+            if (model_name == "onnx_dereverb_By_FoxJoy"):
+                del pre_fun.pred.model
+                del pre_fun.pred.model_
+            else:
+                del pre_fun.model
+                del pre_fun
         except:
             traceback.print_exc()
         print("clean_empty_cache")
@@ -790,7 +803,7 @@ def train_index(exp_dir1, version19):
     faiss.write_index(
         index,
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+        % (exp_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
     )
     # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     infos.append("adding")
@@ -801,11 +814,11 @@ def train_index(exp_dir1, version19):
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+        % (exp_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
     )
     infos.append(
         "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
+        % (n_ivf, index_ivf.nprobe,exp_dir1, version19)
     )
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
@@ -1030,7 +1043,7 @@ def train1key(
     faiss.write_index(
         index,
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+        % (model_log_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -1039,11 +1052,11 @@ def train1key(
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+        % (model_log_dir, n_ivf, index_ivf.nprobe,exp_dir1, version19),
     )
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
+        % (n_ivf, index_ivf.nprobe, exp_dir1,version19)
     )
     yield get_info_str(i18n("全流程结束！"))
 
@@ -1161,8 +1174,8 @@ with gr.Blocks() as app:
                             value="E:\\codes\\py39\\test-20230416b\\todo-songs\\冬之花clip1.wav",
                         )
                         f0method0 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"),
-                            choices=["pm", "harvest"],
+                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
+                            choices=["pm", "harvest","crepe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1197,9 +1210,10 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label=i18n("检索特征占比"),
-                            value=0.76,
+                            value=0.88,
                             interactive=True,
                         )
+                    with gr.Column():
                         resample_sr0 = gr.Slider(
                             minimum=0,
                             maximum=48000,
@@ -1215,9 +1229,17 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                        protect0 = gr.Slider(
+                            minimum=0,
+                            maximum=0.5,
+                            label=i18n("保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"),
+                            value=0.33,
+                            step=0.01,
+                            interactive=True,
+                        )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
                     but0 = gr.Button(i18n("转换"), variant="primary")
-                    with gr.Column():
+                    with gr.Row():
                         vc_output1 = gr.Textbox(label=i18n("输出信息"))
                         vc_output2 = gr.Audio(label=i18n("输出音频(右下角三个点,点了可以下载)"))
                     but0.click(
@@ -1235,6 +1257,7 @@ with gr.Blocks() as app:
                             filter_radius0,
                             resample_sr0,
                             rms_mix_rate0,
+                            protect0
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1249,8 +1272,8 @@ with gr.Blocks() as app:
                         )
                         opt_input = gr.Textbox(label=i18n("指定输出文件夹"), value="opt")
                         f0method1 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"),
-                            choices=["pm", "harvest"],
+                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
+                            choices=["pm", "harvest","crepe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1285,6 +1308,7 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                    with gr.Column():
                         resample_sr1 = gr.Slider(
                             minimum=0,
                             maximum=48000,
@@ -1300,6 +1324,14 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                        protect1 = gr.Slider(
+                            minimum=0,
+                            maximum=0.5,
+                            label=i18n("保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"),
+                            value=0.33,
+                            step=0.01,
+                            interactive=True,
+                        )
                     with gr.Column():
                         dir_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
@@ -1308,8 +1340,9 @@ with gr.Blocks() as app:
                         inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
                         )
-                    but1 = gr.Button(i18n("转换"), variant="primary")
-                    vc_output3 = gr.Textbox(label=i18n("输出信息"))
+                    with gr.Row():
+                        but1 = gr.Button(i18n("转换"), variant="primary")
+                        vc_output3 = gr.Textbox(label=i18n("输出信息"))
                     but1.click(
                         vc_multi,
                         [
@@ -1326,14 +1359,26 @@ with gr.Blocks() as app:
                             filter_radius1,
                             resample_sr1,
                             rms_mix_rate1,
+                            protect1
                         ],
                         [vc_output3],
                     )
-        with gr.TabItem(i18n("伴奏人声分离")):
+        with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():
                 gr.Markdown(
                     value=i18n(
-                        "人声伴奏分离批量处理, 使用UVR5模型. <br>不带和声用HP2, 带和声且提取的人声不需要和声用HP5<br>合格的文件夹路径格式举例: E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)"
+                        "人声伴奏分离批量处理， 使用UVR5模型。 <br>"
+                        "合格的文件夹路径格式举例： E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)。 <br>"
+                        "模型分为三类： <br>"
+                        "1、保留人声：不带和声的音频选这个，对主人声保留比HP5更好。内置HP2和HP3两个模型，HP3可能轻微漏伴奏但对主人声保留比HP2稍微好一丁点； <br>"
+                        "2、仅保留主人声：带和声的音频选这个，对主人声可能有削弱。内置HP5一个模型； <br> "
+                        "3、去混响、去延迟模型（by FoxJoy）：<br>"
+                        "  (1)MDX-Net:对于双通道混响是最好的选择，不能去除单通道混响；<br>"
+                        "        (234)DeEcho:去除延迟效果。Aggressive比Normal去除得更彻底，DeReverb额外去除混响，可去除单声道混响，但是对高频重的板式混响去不干净。<br>"
+                        "去混响/去延迟，附：<br>"
+                        "1、DeEcho-DeReverb模型的耗时是另外2个DeEcho模型的接近2倍；<br>"
+                        "2、MDX-Net-Dereverb模型挺慢的；<br>"
+                        "3、个人推荐的最干净的配置是先MDX-Net再DeEcho-Aggressive。"
                     )
                 )
                 with gr.Row():
@@ -1384,7 +1429,7 @@ with gr.Blocks() as app:
                 exp_dir1 = gr.Textbox(label=i18n("输入实验名"), value="mi-test")
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
-                    choices=["32k", "40k", "48k"],
+                    choices=["40k", "48k"],
                     value="40k",
                     interactive=True,
                 )
