@@ -1,7 +1,9 @@
 import os, sys, torch, warnings, pdb
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 from json import load as ll
+
 warnings.filterwarnings("ignore")
 import librosa
 import importlib
@@ -14,6 +16,7 @@ from uvr5_pack.lib_v5.model_param_init import ModelParameters
 import soundfile as sf
 from uvr5_pack.lib_v5.nets_new import CascadedNet
 from uvr5_pack.lib_v5 import nets_61968KB as nets
+
 
 class _audio_pre_:
     def __init__(self, agg, model_path, device, is_half):
@@ -41,7 +44,7 @@ class _audio_pre_:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(self, music_file, ins_root=None, vocal_root=None,format="flac"):
+    def _path_audio_(self, music_file, ins_root=None, vocal_root=None, format="flac"):
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -122,9 +125,11 @@ class _audio_pre_:
             print("%s instruments done" % name)
             sf.write(
                 os.path.join(
-                    ins_root, "instrument_{}_{}.{}".format(name, self.data["agg"],format)
+                    ins_root,
+                    "instrument_{}_{}.{}".format(name, self.data["agg"], format),
                 ),
-                (np.array(wav_instrument) * 32768).astype("int16"),                self.mp.param["sr"],
+                (np.array(wav_instrument) * 32768).astype("int16"),
+                self.mp.param["sr"],
             )  #
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
@@ -139,10 +144,12 @@ class _audio_pre_:
             print("%s vocals done" % name)
             sf.write(
                 os.path.join(
-                    vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"],format)
+                    vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"], format)
                 ),
-                (np.array(wav_vocals) * 32768).astype("int16"),                self.mp.param["sr"],
+                (np.array(wav_vocals) * 32768).astype("int16"),
+                self.mp.param["sr"],
             )
+
 
 class _audio_pre_new:
     def __init__(self, agg, model_path, device, is_half):
@@ -157,9 +164,9 @@ class _audio_pre_new:
             "agg": agg,
             "high_end_process": "mirroring",
         }
-        mp=ModelParameters("uvr5_pack/lib_v5/modelparams/4band_v3.json")
-        nout=64 if "DeReverb"in model_path else 48
-        model = CascadedNet(mp.param["bins"] * 2,nout)
+        mp = ModelParameters("uvr5_pack/lib_v5/modelparams/4band_v3.json")
+        nout = 64 if "DeReverb" in model_path else 48
+        model = CascadedNet(mp.param["bins"] * 2, nout)
         cpk = torch.load(model_path, map_location="cpu")
         model.load_state_dict(cpk)
         model.eval()
@@ -171,7 +178,9 @@ class _audio_pre_new:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(self, music_file, vocal_root=None, ins_root=None,format="flac"):#3个VR模型vocal和ins是反的
+    def _path_audio_(
+        self, music_file, vocal_root=None, ins_root=None, format="flac"
+    ):  # 3个VR模型vocal和ins是反的
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -252,9 +261,11 @@ class _audio_pre_new:
             print("%s instruments done" % name)
             sf.write(
                 os.path.join(
-                    ins_root, "main_vocal_{}_{}.{}".format(name, self.data["agg"],format)
+                    ins_root,
+                    "main_vocal_{}_{}.{}".format(name, self.data["agg"], format),
                 ),
-                (np.array(wav_instrument) * 32768).astype("int16"),self.mp.param["sr"],
+                (np.array(wav_instrument) * 32768).astype("int16"),
+                self.mp.param["sr"],
             )  #
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
@@ -269,9 +280,10 @@ class _audio_pre_new:
             print("%s vocals done" % name)
             sf.write(
                 os.path.join(
-                    vocal_root, "others_{}_{}.{}".format(name, self.data["agg"],format)
+                    vocal_root, "others_{}_{}.{}".format(name, self.data["agg"], format)
                 ),
-                (np.array(wav_vocals) * 32768).astype("int16"),self.mp.param["sr"],
+                (np.array(wav_vocals) * 32768).astype("int16"),
+                self.mp.param["sr"],
             )
 
 
@@ -283,7 +295,7 @@ if __name__ == "__main__":
     # model_path = "uvr5_weights/VR-DeEchoNormal.pth"
     model_path = "uvr5_weights/DeEchoNormal.pth"
     # pre_fun = _audio_pre_(model_path=model_path, device=device, is_half=True,agg=10)
-    pre_fun = _audio_pre_new(model_path=model_path, device=device, is_half=True,agg=10)
+    pre_fun = _audio_pre_new(model_path=model_path, device=device, is_half=True, agg=10)
     audio_path = "雪雪伴奏对消HP5.wav"
     save_path = "opt"
     pre_fun._path_audio_(audio_path, save_path, save_path)
