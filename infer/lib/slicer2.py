@@ -44,6 +44,7 @@ class Slicer:
         min_interval: int = 300,
         hop_size: int = 20,
         max_sil_kept: int = 5000,
+        # max_sil_kept: int = 500000,
     ):
         if not min_length >= min_interval >= hop_size:
             raise ValueError(

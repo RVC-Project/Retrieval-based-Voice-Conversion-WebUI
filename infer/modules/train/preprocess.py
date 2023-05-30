@@ -42,6 +42,8 @@ class PreProcess:
             sr=sr,
             threshold=-42,
             min_length=1500,
+            # threshold=-100,
+            # min_length=400,
             min_interval=400,
             hop_size=15,
             max_sil_kept=500,
