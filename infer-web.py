@@ -1309,7 +1309,11 @@ with gr.Blocks() as app:
                             choices=sorted(index_paths),
                             interactive=True,
                         )
-                        refresh_button.click(fn=lambda: change_choices()[1], inputs=[], outputs=file_index4)
+                        refresh_button.click(
+                            fn=lambda: change_choices()[1],
+                            inputs=[],
+                            outputs=file_index4,
+                        )
                         # file_big_npy2 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
