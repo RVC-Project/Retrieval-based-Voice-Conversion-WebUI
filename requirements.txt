@@ -40,4 +40,4 @@ colorama>=0.4.5
 pyworld>=0.3.2
 httpx==0.23.0
 onnxruntime-gpu
-torchcrepe
+torchcrepe==0.0.18
