@@ -568,6 +568,24 @@ files = [
 ]
 
 [[package]]
+name = "coloredlogs"
+version = "15.0.1"
+description = "Colored terminal output for Python's logging module"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "coloredlogs-15.0.1-py2.py3-none-any.whl", hash = "sha256:612ee75c546f53e92e70049c9dbfcc18c935a2b9a53b66085ce9ef6a6e5c0934"},
+    {file = "coloredlogs-15.0.1.tar.gz", hash = "sha256:7c991aa71a4577af2f82600d8f8f3a89f936baeaf9b50a9c197da014e5bf16b0"},
+]
+
+[package.dependencies]
+humanfriendly = ">=9.1"
+
+[package.extras]
+cron = ["capturer (>=2.4)"]
+
+[[package]]
 name = "contourpy"
 version = "1.0.7"
 description = "Python library for calculating contours of 2D quadrilateral grids"
@@ -848,6 +866,18 @@ files = [
 [package.extras]
 docs = ["furo (>=2022.12.7)", "sphinx (>=6.1.3)", "sphinx-autodoc-typehints (>=1.22,!=1.23.4)"]
 testing = ["covdefaults (>=2.3)", "coverage (>=7.2.2)", "diff-cover (>=7.5)", "pytest (>=7.2.2)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "pytest-timeout (>=2.1)"]
+
+[[package]]
+name = "flatbuffers"
+version = "23.5.26"
+description = "The FlatBuffers serialization format for Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "flatbuffers-23.5.26-py2.py3-none-any.whl", hash = "sha256:c0ff356da363087b915fde4b8b45bdda73432fc17cddb3c8157472eab1422ad1"},
+    {file = "flatbuffers-23.5.26.tar.gz", hash = "sha256:9ea1144cac05ce5d86e2859f431c6cd5e66cd9c78c558317c7955fb8d4c78d89"},
+]
 
 [[package]]
 name = "fonttools"
@@ -1262,6 +1292,21 @@ torch = ["torch"]
 typing = ["types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
 
 [[package]]
+name = "humanfriendly"
+version = "10.0"
+description = "Human friendly output for text interfaces using Python"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "humanfriendly-10.0-py2.py3-none-any.whl", hash = "sha256:1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477"},
+    {file = "humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc"},
+]
+
+[package.dependencies]
+pyreadline3 = {version = "*", markers = "sys_platform == \"win32\" and python_version >= \"3.8\""}
+
+[[package]]
 name = "hydra-core"
 version = "1.0.7"
 description = "A framework for elegantly configuring complex applications"
@@ -1467,17 +1512,17 @@ files = [
 
 [[package]]
 name = "librosa"
-version = "0.9.2"
+version = "0.9.1"
 description = "Python module for audio and music processing"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "librosa-0.9.2-py3-none-any.whl", hash = "sha256:322a813e6d37af9fbc369e6a637dcf5fdc5c6925ce806a0d27c68de61a81350f"},
-    {file = "librosa-0.9.2.tar.gz", hash = "sha256:5b576b5efdce428e90bc988bdd5a953d12a727e5f931f30d74c53b63abbe3c89"},
+    {file = "librosa-0.9.1-py3-none-any.whl", hash = "sha256:c2bb61a8008367cca89a3f1dad352d8e55fe5ca5f7414fb5d5258eb52765db33"},
+    {file = "librosa-0.9.1.tar.gz", hash = "sha256:7ed5d6e3f4546e5e3c2840691f9ddc56878f914a35a50060df5fca2b26d4b614"},
 ]
 
 [package.dependencies]
-audioread = ">=2.1.9"
+audioread = ">=2.1.5"
 decorator = ">=4.0.10"
 joblib = ">=0.14"
 numba = ">=0.45.1"
@@ -1491,7 +1536,11 @@ soundfile = ">=0.10.2"
 
 [package.extras]
 display = ["matplotlib (>=3.3.0)"]
+<<<<<<< HEAD
 docs = ["ipython (>=7.0)", "matplotlib (>=3.3.0)", "mir-eval (>=0.5)", "numba (<0.50)", "numpydoc", "presets", "sphinx (!=1.3.1)", "sphinx-gallery (>=0.7)", "sphinx-multiversion (>=0.2.3)", "sphinx-rtd-theme (==1.*)", "sphinxcontrib-svg2pdfconverter"]
+=======
+docs = ["ipython (>=7.0)", "matplotlib (>=3.3.0)", "mir-eval (>=0.5)", "numba (<0.50)", "numpydoc", "presets", "sphinx (!=1.3.1)", "sphinx-gallery (>=0.7)", "sphinx-multiversion (>=0.2.3)", "sphinx-rtd-theme (>=0.5.0,<0.6.0)", "sphinxcontrib-svg2pdfconverter"]
+>>>>>>> 4e614b8 (working web ui)
 tests = ["contextlib2", "matplotlib (>=3.3.0)", "pytest", "pytest-cov", "pytest-mpl", "samplerate", "soxr"]
 
 [[package]]
@@ -2248,6 +2297,32 @@ PyYAML = ">=5.1"
 typing-extensions = "*"
 
 [[package]]
+name = "onnxruntime-gpu"
+version = "1.15.0"
+description = "ONNX Runtime is a runtime accelerator for Machine Learning models"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "onnxruntime_gpu-1.15.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:287f8f542c7ec4234ee823c46f19ae661376cac06b2276f65c44cf88371b9c0a"},
+    {file = "onnxruntime_gpu-1.15.0-cp310-cp310-win_amd64.whl", hash = "sha256:12c0d5c3f3339b025fdcc8d416512ab53394a13f77528292d0a6d061e3dc9a01"},
+    {file = "onnxruntime_gpu-1.15.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0e4e2f1bb421ec3d9e69663ab8fffe99cba0b17456c8ff237965fcdacf71588d"},
+    {file = "onnxruntime_gpu-1.15.0-cp311-cp311-win_amd64.whl", hash = "sha256:1f2f508348ce91dd61607d3d86aaad8663178a17e9661722873ef3804f678345"},
+    {file = "onnxruntime_gpu-1.15.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c05d061f20f005cf0a185f26f0e50042b6aa17eff9f94f768a59e5063013bebd"},
+    {file = "onnxruntime_gpu-1.15.0-cp38-cp38-win_amd64.whl", hash = "sha256:35d2b52610d9f3087c6550c85674bd085bfa04b547bf3d4942f651bf8dcaa908"},
+    {file = "onnxruntime_gpu-1.15.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6a43153ff1dc706d3cc39af8d77d3b44a2dcb176a8498f0e02d0804db358973b"},
+    {file = "onnxruntime_gpu-1.15.0-cp39-cp39-win_amd64.whl", hash = "sha256:87abc8461b43c0194d911e64e625e192b809ee105ddfde706c7c691157a0d203"},
+]
+
+[package.dependencies]
+coloredlogs = "*"
+flatbuffers = "*"
+numpy = ">=1.21.6"
+packaging = "*"
+protobuf = "*"
+sympy = "*"
+
+[[package]]
 name = "orjson"
 version = "3.8.9"
 description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
@@ -2762,6 +2837,18 @@ files = [
 
 [package.extras]
 diagrams = ["jinja2", "railroad-diagrams"]
+
+[[package]]
+name = "pyreadline3"
+version = "3.4.1"
+description = "A python implementation of GNU readline."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyreadline3-3.4.1-py3-none-any.whl", hash = "sha256:b0efb6516fd4fb07b45949053826a62fa4cb353db5be2bbb4a7aa1fdd1e345fb"},
+    {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},
+]
 
 [[package]]
 name = "pyrsistent"
@@ -3492,6 +3579,25 @@ files = [
 torch = "2.0.0"
 
 [[package]]
+name = "torchcrepe"
+version = "0.0.19"
+description = "Pytorch implementation of CREPE pitch tracker"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "torchcrepe-0.0.19-py3-none-any.whl", hash = "sha256:477dca94c5f3fd37ba2319b6214ef0a7463a7e17cfb5b2c45754eac44178ba2b"},
+    {file = "torchcrepe-0.0.19.tar.gz", hash = "sha256:ff943eb29a416f0485166b0097c2123d9a4054630ce2ecc9f16709b3961ce210"},
+]
+
+[package.dependencies]
+librosa = "0.9.1"
+resampy = "*"
+scipy = "*"
+torch = "*"
+tqdm = "*"
+
+[[package]]
 name = "torchgen"
 version = "0.0.1"
 description = "Ready to use implementations of state-of-the-art generative models in PyTorch"
@@ -3877,5 +3983,5 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.8"
-content-hash = "400ac506bf8f14333fa2e073fd39cc765a1941aab895d5ed6f9dd264146fc726"
+python-versions = "^3.8,<3.11"
+content-hash = "bfbbb73915e5c62def332b45178a754723917937924a62f3f961bd470ebf7487"

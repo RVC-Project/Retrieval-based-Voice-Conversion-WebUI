@@ -1986,6 +1986,6 @@ with gr.Blocks() as app:
         app.queue(concurrency_count=511, max_size=1022).launch(
             server_name="0.0.0.0",
             inbrowser=not config.noautoopen,
-            server_port=config.listen_port,
+            server_port=8080,
             quiet=True,
         )
