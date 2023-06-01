@@ -1029,7 +1029,8 @@ class DiscriminatorS(torch.nn.Module):
                 norm_f(Conv1d(1024, 1024, 5, 1, padding=2)),
             ]
         )
-        self.conv_post = norm_f(Conv1d(1024, 1, 3, 1, padding=1))
+        self.conv_post = Conv1d(1024, 1, 3, 1, padding=1)
+        self.out = torch.nn.Sigmoid()
 
     def forward(self, x):
         fmap = []
@@ -1039,9 +1040,8 @@ class DiscriminatorS(torch.nn.Module):
             x = F.leaky_relu(x, modules.LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
-        fmap.append(x)
         x = torch.flatten(x, 1, -1)
-
+        x = self.out(x)
         return x, fmap
 
 
@@ -1100,7 +1100,8 @@ class DiscriminatorP(torch.nn.Module):
                 ),
             ]
         )
-        self.conv_post = norm_f(Conv2d(1024, 1, (3, 1), 1, padding=(1, 0)))
+        self.conv_post = Conv2d(1024, 1, (3, 1), 1, padding=(1, 0))
+        self.out = torch.nn.Sigmoid()
 
     def forward(self, x):
         fmap = []
@@ -1118,7 +1119,6 @@ class DiscriminatorP(torch.nn.Module):
             x = F.leaky_relu(x, modules.LRELU_SLOPE)
             fmap.append(x)
         x = self.conv_post(x)
-        fmap.append(x)
         x = torch.flatten(x, 1, -1)
-
+        x = self.out(x)
         return x, fmap
