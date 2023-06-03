@@ -1,3 +1,5 @@
+import os
+import sys
 import argparse
 import torch
 from multiprocessing import cpu_count
@@ -31,12 +33,14 @@ class Config:
         ) = self.arg_parse()
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
+        self.is_conda = os.getenv('CONDA_DEFAULT_ENV') or False
+
     @staticmethod
     def arg_parse() -> tuple:
         parser = argparse.ArgumentParser()
         parser.add_argument("--port", type=int, default=7865, help="Listen port")
         parser.add_argument(
-            "--pycmd", type=str, default="python", help="Python command"
+            "--pycmd", type=str, default=None, help="Python command"
         )
         parser.add_argument("--colab", action="store_true", help="Launch in colab")
         parser.add_argument(
@@ -50,6 +54,11 @@ class Config:
         cmd_opts = parser.parse_args()
 
         cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
+
+        # working python version
+        version = '.'.join(sys.version.split()[0].split('.')[:2])
+        cmd_opts.pycmd = "Python" + version if cmd_opts.pycmd is None else "Python"
+        print(cmd_opts.pycmd)
 
         return (
             cmd_opts.pycmd,
