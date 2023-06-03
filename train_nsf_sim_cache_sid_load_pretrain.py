@@ -9,7 +9,7 @@ import datetime
 hps = utils.get_hparams()
 os.environ["CUDA_VISIBLE_DEVICES"] = hps.gpus.replace("-", ",")
 n_gpus = len(hps.gpus.split("-"))
-from random import shuffle,randint
+from random import shuffle, randint
 import traceback, json, argparse, itertools, math, torch, pdb
 
 torch.backends.cudnn.deterministic = False
@@ -67,9 +67,10 @@ class EpochRecorder:
 
 def main():
     n_gpus = torch.cuda.device_count()
-    if torch.cuda.is_available()==False and torch.backends.mps.is_available()==True:n_gpus = 1
+    if torch.cuda.is_available() == False and torch.backends.mps.is_available() == True:
+        n_gpus = 1
     os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = str(randint(20000,55555))
+    os.environ["MASTER_PORT"] = str(randint(20000, 55555))
     children = []
     for i in range(n_gpus):
         subproc = mp.Process(
