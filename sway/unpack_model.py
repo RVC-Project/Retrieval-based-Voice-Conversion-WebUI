@@ -40,11 +40,12 @@ if GDLoading:
     shutil.move(f"{source_dir}/G_{MODELSTEP}.pth", 
                 f"logs/{MODELNAME}/D_{MODELSTEP}.pth")
 
-os.makedirs(f"logs/{MODELNAME}/", exist_ok=True)
-for pattern in ['*.index', '*.npy']:
-    for file in glob.glob(f"{source_dir}/{pattern}"):
-        shutil.move(file, f"logs/{MODELNAME}/")
-
 for pattern in [f'{MODELNAME}*.pth', f'{MODELNAME}{MODELSTEP}.pth']:
     for file in glob.glob(f"{source_dir}/{pattern}"):
         shutil.move(file, f"weights/{MODELNAME}.pth")
+
+if not source_dir.startswith("logs/"):
+    os.makedirs(f"logs/{MODELNAME}/", exist_ok=True)
+    for pattern in ['*.index', '*.npy']:
+        for file in glob.glob(f"{source_dir}/{pattern}"):
+            shutil.move(file, f"logs/{MODELNAME}/")
