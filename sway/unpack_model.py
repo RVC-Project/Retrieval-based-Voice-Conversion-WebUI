@@ -2,7 +2,7 @@ import glob
 import os
 import shutil
 
-MODELNAME = 'kanye'
+MODELNAME = 'mjAI-v2-michael-jackson'
 source_dir = f'sway/models/{MODELNAME}/'
 
 def has_numbers(inputString):
@@ -39,7 +39,7 @@ if GDLoading:
     shutil.move(f"{source_dir}/G_{MODELSTEP}.pth", 
                 f"logs/{MODELNAME}/D_{MODELSTEP}.pth")
 
-os.mkdir(f"logs/{MODELNAME}/", exist_ok=True)
+os.makedirs(f"logs/{MODELNAME}/", exist_ok=True)
 for pattern in ['*.index', '*.npy']:
     for file in glob.glob(f"{source_dir}/{pattern}"):
         shutil.move(file, f"logs/{MODELNAME}/")

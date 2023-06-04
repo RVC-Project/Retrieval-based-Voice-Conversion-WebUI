@@ -1358,7 +1358,7 @@ with gr.Blocks() as app:
                         )
                         input_audio0 = gr.Textbox(
                             label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),
-                            value="E:\\codes\\py39\\test-20230416b\\todo-songs\\冬之花clip1.wav",
+                            value="_svc_in/blah.wav",
                         )
                         f0method0 = gr.Radio(
                             label=i18n(
@@ -1672,7 +1672,7 @@ with gr.Blocks() as app:
                 )
                 with gr.Row():
                     trainset_dir4 = gr.Textbox(
-                        label=i18n("输入训练文件夹路径"), value="E:\\语音音频+标注\\米津玄师\\src"
+                        label=i18n("_svc_in/"
                     )
                     spk_id5 = gr.Slider(
                         minimum=0,
