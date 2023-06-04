@@ -2,8 +2,9 @@ import glob
 import os
 import shutil
 
-MODELNAME = 'mjAI-v2-michael-jackson'
-source_dir = f'sway/models/{MODELNAME}/'
+MODELNAME = 'sacks'
+# source_dir = f'sway/models/{MODELNAME}/'
+source_dir = f'logs/{MODELNAME}/'
 
 def has_numbers(inputString):
     return any(char.isdigit() for char in inputString)
