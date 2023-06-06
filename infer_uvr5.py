@@ -123,14 +123,29 @@ class _audio_pre_:
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             print("%s instruments done" % name)
-            sf.write(
-                os.path.join(
-                    ins_root,
-                    "instrument_{}_{}.{}".format(name, self.data["agg"], format),
-                ),
-                (np.array(wav_instrument) * 32768).astype("int16"),
-                self.mp.param["sr"],
-            )  #
+            if(format in ["wav","flac"]):
+                sf.write(
+                    os.path.join(
+                        ins_root,
+                        "instrument_{}_{}.{}".format(name, self.data["agg"], format),
+                    ),
+                    (np.array(wav_instrument) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )  #
+            else:
+                path=os.path.join(
+                        ins_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
+                    )
+                sf.write(
+                    path ,
+                    (np.array(wav_instrument) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+                if(os.path.exists(path)):
+                    os.system(
+                        "ffmpeg -i %s -vn %s -q:a 2 -y"
+                        % (path, path[:-4]+".%s"%format)
+                    )
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
                 input_high_end_ = spec_utils.mirroring(
@@ -142,14 +157,28 @@ class _audio_pre_:
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             print("%s vocals done" % name)
-            sf.write(
-                os.path.join(
-                    vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"], format)
-                ),
-                (np.array(wav_vocals) * 32768).astype("int16"),
-                self.mp.param["sr"],
-            )
-
+            if(format in ["wav","flac"]):
+                sf.write(
+                    os.path.join(
+                        vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"], format)
+                    ),
+                    (np.array(wav_vocals) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+            else:
+                path=os.path.join(
+                        vocal_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
+                    )
+                sf.write(
+                    path ,
+                    (np.array(wav_vocals) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+                if(os.path.exists(path)):
+                    os.system(
+                        "ffmpeg -i %s -vn %s -q:a 2 -y"
+                        % (path, path[:-4]+".%s"%format)
+                    )
 
 class _audio_pre_new:
     def __init__(self, agg, model_path, device, is_half):
@@ -259,14 +288,29 @@ class _audio_pre_new:
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             print("%s instruments done" % name)
-            sf.write(
-                os.path.join(
-                    ins_root,
-                    "main_vocal_{}_{}.{}".format(name, self.data["agg"], format),
-                ),
-                (np.array(wav_instrument) * 32768).astype("int16"),
-                self.mp.param["sr"],
-            )  #
+            if(format in ["wav","flac"]):
+                sf.write(
+                    os.path.join(
+                        ins_root,
+                        "instrument_{}_{}.{}".format(name, self.data["agg"], format),
+                    ),
+                    (np.array(wav_instrument) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )  #
+            else:
+                path=os.path.join(
+                        ins_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
+                    )
+                sf.write(
+                    path ,
+                    (np.array(wav_instrument) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+                if(os.path.exists(path)):
+                    os.system(
+                        "ffmpeg -i %s -vn %s -q:a 2 -y"
+                        % (path, path[:-4]+".%s"%format)
+                    )
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
                 input_high_end_ = spec_utils.mirroring(
@@ -278,14 +322,28 @@ class _audio_pre_new:
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             print("%s vocals done" % name)
-            sf.write(
-                os.path.join(
-                    vocal_root, "others_{}_{}.{}".format(name, self.data["agg"], format)
-                ),
-                (np.array(wav_vocals) * 32768).astype("int16"),
-                self.mp.param["sr"],
-            )
-
+            if(format in ["wav","flac"]):
+                sf.write(
+                    os.path.join(
+                        vocal_root, "vocal_{}_{}.{}".format(name, self.data["agg"], format)
+                    ),
+                    (np.array(wav_vocals) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+            else:
+                path=os.path.join(
+                        vocal_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
+                    )
+                sf.write(
+                    path ,
+                    (np.array(wav_vocals) * 32768).astype("int16"),
+                    self.mp.param["sr"],
+                )
+                if(os.path.exists(path)):
+                    os.system(
+                        "ffmpeg -i %s -vn %s -q:a 2 -y"
+                        % (path, path[:-4]+".%s"%format)
+                    )
 
 if __name__ == "__main__":
     device = "cuda"
