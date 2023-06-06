@@ -584,10 +584,14 @@ class GUI:
             if d["max_output_channels"] > 0
         ]
         input_devices_indices = [
-            d["index"] if "index" in d else d["name"] for d in devices if d["max_input_channels"] > 0
+            d["index"] if "index" in d else d["name"]
+            for d in devices
+            if d["max_input_channels"] > 0
         ]
         output_devices_indices = [
-            d["index"] if "index" in d else d["name"] for d in devices if d["max_output_channels"] > 0
+            d["index"] if "index" in d else d["name"]
+            for d in devices
+            if d["max_output_channels"] > 0
         ]
         return (
             input_devices,

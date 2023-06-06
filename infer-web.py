@@ -272,20 +272,20 @@ def vc_multi(
             if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
-                    if (format1 in ["wav", "flac"]):
+                    if format1 in ["wav", "flac"]:
                         sf.write(
                             "%s/%s.%s" % (opt_root, os.path.basename(path), format1),
                             audio_opt,
                             tgt_sr,
                         )
                     else:
-                        path="%s/%s.wav" % (opt_root, os.path.basename(path))
+                        path = "%s/%s.wav" % (opt_root, os.path.basename(path))
                         sf.write(
                             path,
                             audio_opt,
                             tgt_sr,
                         )
-                        if (os.path.exists(path)):
+                        if os.path.exists(path):
                             os.system(
                                 "ffmpeg -i %s -vn %s -q:a 2 -y"
                                 % (path, path[:-4] + ".%s" % format1)
