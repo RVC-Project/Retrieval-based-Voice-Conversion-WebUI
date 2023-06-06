@@ -8,7 +8,7 @@ from i18n import I18nAuto
 i18n = I18nAuto()
 
 
-def savee(ckpt, sr, if_f0, name, epoch, version,hps):
+def savee(ckpt, sr, if_f0, name, epoch, version, hps):
     try:
         opt = OrderedDict()
         opt["weight"] = {}
@@ -16,8 +16,8 @@ def savee(ckpt, sr, if_f0, name, epoch, version,hps):
             if "enc_q" in key:
                 continue
             opt["weight"][key] = ckpt[key].half()
-        opt["config"]=[
-            hpt.data.filter_length//2+1,
+        opt["config"] = [
+            hpt.data.filter_length // 2 + 1,
             32,
             hpt.model.inter_channels,
             hpt.model.hidden_channels,
@@ -34,7 +34,7 @@ def savee(ckpt, sr, if_f0, name, epoch, version,hps):
             hpt.model.upsample_kernel_sizes,
             hpt.model.spk_embed_dim,
             hpt.model.gin_channels,
-            hpt.data.sampling_rate
+            hpt.data.sampling_rate,
         ]
         opt["info"] = "%sepoch" % epoch
         opt["sr"] = sr
