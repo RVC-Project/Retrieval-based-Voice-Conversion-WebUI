@@ -46,6 +46,7 @@ else:
             or "A4" in gpu_name.upper()
             or "P4" in gpu_name.upper()
             or "A50" in gpu_name.upper()
+            or "A60" in gpu_name.upper()
             or "70" in gpu_name
             or "80" in gpu_name
             or "90" in gpu_name
