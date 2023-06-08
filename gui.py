@@ -289,11 +289,11 @@ class GUI:
                     layout=[
                         [
                             sg.Input(default_text="hubert_base.pt", key="hubert_path",disabled=True),
-                            sg.FileBrowse(i18n("Hubert模型")),
+                            sg.FileBrowse(i18n("Hubert模型"), initial_folder=os.path.join(os.getcwd()),file_types=((". pt"),)),
                         ],
                         [
                             sg.Input(default_text=data.get("pth_path", ''), key="pth_path",),
-                            sg.FileBrowse(i18n("选择.pth文件")),
+                            sg.FileBrowse(i18n("选择.pth文件"),initial_folder=os.path.join(os.getcwd(), "weights"), file_types=((". pth"),))
                         ],
                         [
                             sg.Input(
@@ -301,7 +301,7 @@ class GUI:
                                 key="index_path",
                                 
                             ),
-                            sg.FileBrowse(i18n("选择.index文件")),
+                            sg.FileBrowse(i18n("选择.index文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". index"),)),
                         ],
                         [
                             sg.Input(
@@ -309,7 +309,7 @@ class GUI:
                                 key="npy_path",
                                 disabled=True
                             ),
-                            sg.FileBrowse(i18n("选择.npy文件")),
+                            sg.FileBrowse(i18n("选择.npy文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". npy"),)),
                         ],
                     ],
                 )
@@ -641,10 +641,14 @@ class GUI:
             if d["max_output_channels"] > 0
         ]
         input_devices_indices = [
-            d["index"] for d in devices if d["max_input_channels"] > 0
+            d["index"] if "index" in d else d["name"]
+            for d in devices
+            if d["max_input_channels"] > 0
         ]
         output_devices_indices = [
-            d["index"] for d in devices if d["max_output_channels"] > 0
+            d["index"] if "index" in d else d["name"]
+            for d in devices
+            if d["max_output_channels"] > 0
         ]
         return (
             input_devices,

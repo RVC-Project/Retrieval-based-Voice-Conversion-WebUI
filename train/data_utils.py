@@ -38,7 +38,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
         for audiopath, text, pitch, pitchf, dv in self.audiopaths_and_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, text, pitch, pitchf, dv])
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                lengths.append(os.path.getsize(audiopath) // (3 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 
@@ -246,7 +246,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         for audiopath, text, dv in self.audiopaths_and_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, text, dv])
-                lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
+                lengths.append(os.path.getsize(audiopath) // (3 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 

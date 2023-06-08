@@ -6,7 +6,7 @@ authors = ["lj1995"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8,<3.11"
+python = "^3.8"
 torch = "^2.0.0"
 torchaudio = "^2.0.1"
 Cython = "^0.29.34"
@@ -34,7 +34,7 @@ Pillow = "9.3.0"
 pyworld = "^0.3.2"
 resampy = "^0.4.2"
 scikit-learn = "^1.2.2"
-starlette = "^0.26.1"
+starlette = "^0.27.0"
 tensorboard = "^2.12.1"
 tensorboard-data-server = "^0.7.0"
 tensorboard-plugin-wit = "^1.8.1"
