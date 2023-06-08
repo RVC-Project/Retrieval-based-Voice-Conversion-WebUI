@@ -253,31 +253,27 @@ class GUI:
 
         self.launcher()
 
-
-
     def load(self):
         input_devices, output_devices, _, _ = self.get_devices()
         try:
-            with open('values1.json', 'r') as j:
+            with open("values1.json", "r") as j:
                 data = json.load(j)
         except:
-            with open('values1.json', 'w') as j:
+            with open("values1.json", "w") as j:
                 data = {
-                        "pth_path":" ",
-                        "index_path":" ", 
-                        "sg_input_device": input_devices[sd.default.device[0]],
-                        "sg_output_device": output_devices[sd.default.device[1]],
-                        "threshold": '-60',
-                        "pitch": '12',
-                        "index_rate": '0.5',
-                        "block_time": '1',
-                        "crossfade_length": '0.15',
-                        "extra_time": '1.1', }
+                    "pth_path": " ",
+                    "index_path": " ",
+                    "sg_input_device": input_devices[sd.default.device[0]],
+                    "sg_output_device": output_devices[sd.default.device[1]],
+                    "threshold": "-60",
+                    "pitch": "12",
+                    "index_rate": "0.5",
+                    "block_time": "1",
+                    "crossfade_length": "0.15",
+                    "extra_time": "1.1",
+                }
         return data
-    
-    
-    
-    
+
     def launcher(self):
         data = self.load()
         sg.theme("LightBlue3")
@@ -288,28 +284,50 @@ class GUI:
                     title=i18n("加载模型"),
                     layout=[
                         [
-                            sg.Input(default_text="hubert_base.pt", key="hubert_path",disabled=True),
-                            sg.FileBrowse(i18n("Hubert模型"), initial_folder=os.path.join(os.getcwd()),file_types=((". pt"),)),
-                        ],
-                        [
-                            sg.Input(default_text=data.get("pth_path", ''), key="pth_path",),
-                            sg.FileBrowse(i18n("选择.pth文件"),initial_folder=os.path.join(os.getcwd(), "weights"), file_types=((". pth"),))
+                            sg.Input(
+                                default_text="hubert_base.pt",
+                                key="hubert_path",
+                                disabled=True,
+                            ),
+                            sg.FileBrowse(
+                                i18n("Hubert模型"),
+                                initial_folder=os.path.join(os.getcwd()),
+                                file_types=((". pt"),),
+                            ),
                         ],
                         [
                             sg.Input(
-                                default_text=data.get('index_path', ''), 
-                                key="index_path",
-                                
+                                default_text=data.get("pth_path", ""),
+                                key="pth_path",
                             ),
-                            sg.FileBrowse(i18n("选择.index文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". index"),)),
+                            sg.FileBrowse(
+                                i18n("选择.pth文件"),
+                                initial_folder=os.path.join(os.getcwd(), "weights"),
+                                file_types=((". pth"),),
+                            ),
+                        ],
+                        [
+                            sg.Input(
+                                default_text=data.get("index_path", ""),
+                                key="index_path",
+                            ),
+                            sg.FileBrowse(
+                                i18n("选择.index文件"),
+                                initial_folder=os.path.join(os.getcwd(), "logs"),
+                                file_types=((". index"),),
+                            ),
                         ],
                         [
                             sg.Input(
                                 default_text="你不需要填写这个You don't need write this.",
                                 key="npy_path",
-                                disabled=True
+                                disabled=True,
                             ),
-                            sg.FileBrowse(i18n("选择.npy文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". npy"),)),
+                            sg.FileBrowse(
+                                i18n("选择.npy文件"),
+                                initial_folder=os.path.join(os.getcwd(), "logs"),
+                                file_types=((". npy"),),
+                            ),
                         ],
                     ],
                 )
@@ -322,7 +340,7 @@ class GUI:
                             sg.Combo(
                                 input_devices,
                                 key="sg_input_device",
-                                default_value=data.get('sg_input_device', ''),
+                                default_value=data.get("sg_input_device", ""),
                             ),
                         ],
                         [
@@ -330,7 +348,7 @@ class GUI:
                             sg.Combo(
                                 output_devices,
                                 key="sg_output_device",
-                                default_value=data.get('sg_output_device', ''),
+                                default_value=data.get("sg_output_device", ""),
                             ),
                         ],
                     ],
@@ -347,7 +365,7 @@ class GUI:
                                 key="threhold",
                                 resolution=1,
                                 orientation="h",
-                                default_value=data.get('threhold', '')
+                                default_value=data.get("threhold", ""),
                             ),
                         ],
                         [
@@ -357,7 +375,7 @@ class GUI:
                                 key="pitch",
                                 resolution=1,
                                 orientation="h",
-                                default_value=data.get('pitch', ''),
+                                default_value=data.get("pitch", ""),
                             ),
                         ],
                         [
@@ -367,7 +385,7 @@ class GUI:
                                 key="index_rate",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=data.get('index_rate', ''),
+                                default_value=data.get("index_rate", ""),
                             ),
                         ],
                     ],
@@ -382,7 +400,7 @@ class GUI:
                                 key="block_time",
                                 resolution=0.1,
                                 orientation="h",
-                                default_value=data.get('block_time', ''),
+                                default_value=data.get("block_time", ""),
                             ),
                         ],
                         [
@@ -392,7 +410,7 @@ class GUI:
                                 key="crossfade_length",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=data.get('crossfade_length', ''),
+                                default_value=data.get("crossfade_length", ""),
                             ),
                         ],
                         [
@@ -402,7 +420,7 @@ class GUI:
                                 key="extra_time",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=data.get('extra_time', ''),
+                                default_value=data.get("extra_time", ""),
                             ),
                         ],
                         [
@@ -434,10 +452,8 @@ class GUI:
                 print("using_cuda:" + str(torch.cuda.is_available()))
                 self.start_vc()
                 settings = {
-                    "pth_path":values["pth_path"],
-                    "index_path":values["index_path"], 
-                    
-                    
+                    "pth_path": values["pth_path"],
+                    "index_path": values["index_path"],
                     "sg_input_device": values["sg_input_device"],
                     "sg_output_device": values["sg_output_device"],
                     "threhold": values["threhold"],
@@ -447,25 +463,14 @@ class GUI:
                     "crossfade_length": values["crossfade_length"],
                     "extra_time": values["extra_time"],
                 }
-                with open('values1.json', 'w') as j:
+                with open("values1.json", "w") as j:
                     json.dump(settings, j)
             if event == "stop_vc" and self.flag_vc == True:
                 self.flag_vc = False
-    
-    
-    
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
     def set_values(self, values):
         self.set_devices(values["sg_input_device"], values["sg_output_device"])
-        self.config.hubert_path = os.path.join(current_dir, 'hubert_base.pt')
+        self.config.hubert_path = os.path.join(current_dir, "hubert_base.pt")
         self.config.pth_path = values["pth_path"]
         self.config.index_path = values["index_path"]
         self.config.npy_path = values["npy_path"]
@@ -671,5 +676,6 @@ class GUI:
         ]
         print("input device:" + str(sd.default.device[0]) + ":" + str(input_device))
         print("output device:" + str(sd.default.device[1]) + ":" + str(output_device))
+
 
 gui = GUI()
