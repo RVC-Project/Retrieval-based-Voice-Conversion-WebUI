@@ -259,25 +259,25 @@ class GUI:
                     layout=[
                         [
                             sg.Input(default_text="hubert_base.pt", key="hubert_path"),
-                            sg.FileBrowse(i18n("Hubert模型")),
+                            sg.FileBrowse(i18n("Hubert模型"), initial_folder=os.path.join(os.getcwd()),file_types=((". pt"),)),
                         ],
                         [
                             sg.Input(default_text="TEMP\\atri.pth", key="pth_path"),
-                            sg.FileBrowse(i18n("选择.pth文件")),
+                            sg.FileBrowse(i18n("选择.pth文件"),initial_folder=os.path.join(os.getcwd(), "weights"), file_types=((". pth"),)),
                         ],
                         [
                             sg.Input(
                                 default_text="TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index",
                                 key="index_path",
                             ),
-                            sg.FileBrowse(i18n("选择.index文件")),
+                            sg.FileBrowse(i18n("选择.index文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". index"),)),
                         ],
                         [
                             sg.Input(
                                 default_text="你不需要填写这个You don't need write this.",
                                 key="npy_path",
                             ),
-                            sg.FileBrowse(i18n("选择.npy文件")),
+                            sg.FileBrowse(i18n("选择.npy文件"), initial_folder=os.path.join(os.getcwd(), "logs"),file_types=((". npy"),)),
                         ],
                     ],
                 )
