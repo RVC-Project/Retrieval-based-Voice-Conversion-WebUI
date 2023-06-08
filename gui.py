@@ -10,7 +10,9 @@
     增加无索引支持
     f0算法改harvest(怎么看就只有这个会影响CPU占用)，但是不这么改效果不好
 """
-import os, sys, traceback
+import os, sys, traceback, 
+
+import json
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -27,6 +29,7 @@ import torch.nn.functional as F
 import torchaudio.transforms as tat
 import scipy.signal as signal
 
+
 # import matplotlib.pyplot as plt
 from infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
@@ -38,6 +41,7 @@ from i18n import I18nAuto
 
 i18n = I18nAuto()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+current_dir = os.getcwd()
 
 
 class RVC:
@@ -150,8 +154,12 @@ class RVC:
         assert feats.dim() == 1, feats.dim()
         feats = feats.view(1, -1)
         padding_mask = torch.BoolTensor(feats.shape).fill_(False)
+        if Config.is_half:
+            feats = feats.half()
+        else:
+            feats = feats.float()
         inputs = {
-            "source": feats.half().to(device),
+            "source": feats.to(device),
             "padding_mask": padding_mask.to(device),
             "output_layer": 9 if self.version == "v1" else 12,
         }
@@ -245,7 +253,33 @@ class GUI:
 
         self.launcher()
 
+
+
+    def load(self):
+        input_devices, output_devices, _, _ = self.get_devices()
+        try:
+            with open('values1.json', 'r') as j:
+                data = json.load(j)
+        except:
+            with open('values1.json', 'w') as j:
+                data = {
+                        "pth_path":" ",
+                        "index_path":" ", 
+                        "sg_input_device": input_devices[sd.default.device[0]],
+                        "sg_output_device": output_devices[sd.default.device[1]],
+                        "threshold": '-60',
+                        "pitch": '12',
+                        "index_rate": '0.5',
+                        "block_time": '1',
+                        "crossfade_length": '0.15',
+                        "extra_time": '1.1', }
+        return data
+    
+    
+    
+    
     def launcher(self):
+        data = self.load()
         sg.theme("LightBlue3")
         input_devices, output_devices, _, _ = self.get_devices()
         layout = [
@@ -254,17 +288,18 @@ class GUI:
                     title=i18n("加载模型"),
                     layout=[
                         [
-                            sg.Input(default_text="hubert_base.pt", key="hubert_path"),
+                            sg.Input(default_text="hubert_base.pt", key="hubert_path",disabled=True),
                             sg.FileBrowse(i18n("Hubert模型")),
                         ],
                         [
-                            sg.Input(default_text="TEMP\\atri.pth", key="pth_path"),
+                            sg.Input(default_text=data.get("pth_path", ''), key="pth_path",),
                             sg.FileBrowse(i18n("选择.pth文件")),
                         ],
                         [
                             sg.Input(
-                                default_text="TEMP\\added_IVF512_Flat_atri_baseline_src_feat.index",
+                                default_text=data.get('index_path', ''), 
                                 key="index_path",
+                                
                             ),
                             sg.FileBrowse(i18n("选择.index文件")),
                         ],
@@ -272,6 +307,7 @@ class GUI:
                             sg.Input(
                                 default_text="你不需要填写这个You don't need write this.",
                                 key="npy_path",
+                                disabled=True
                             ),
                             sg.FileBrowse(i18n("选择.npy文件")),
                         ],
@@ -286,7 +322,7 @@ class GUI:
                             sg.Combo(
                                 input_devices,
                                 key="sg_input_device",
-                                default_value=input_devices[sd.default.device[0]],
+                                default_value=data.get('sg_input_device', ''),
                             ),
                         ],
                         [
@@ -294,7 +330,7 @@ class GUI:
                             sg.Combo(
                                 output_devices,
                                 key="sg_output_device",
-                                default_value=output_devices[sd.default.device[1]],
+                                default_value=data.get('sg_output_device', ''),
                             ),
                         ],
                     ],
@@ -311,7 +347,7 @@ class GUI:
                                 key="threhold",
                                 resolution=1,
                                 orientation="h",
-                                default_value=-30,
+                                default_value=data.get('threhold', '')
                             ),
                         ],
                         [
@@ -321,7 +357,7 @@ class GUI:
                                 key="pitch",
                                 resolution=1,
                                 orientation="h",
-                                default_value=12,
+                                default_value=data.get('pitch', ''),
                             ),
                         ],
                         [
@@ -331,7 +367,7 @@ class GUI:
                                 key="index_rate",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=0.5,
+                                default_value=data.get('index_rate', ''),
                             ),
                         ],
                     ],
@@ -346,7 +382,7 @@ class GUI:
                                 key="block_time",
                                 resolution=0.1,
                                 orientation="h",
-                                default_value=1.0,
+                                default_value=data.get('block_time', ''),
                             ),
                         ],
                         [
@@ -356,7 +392,7 @@ class GUI:
                                 key="crossfade_length",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=0.08,
+                                default_value=data.get('crossfade_length', ''),
                             ),
                         ],
                         [
@@ -366,7 +402,7 @@ class GUI:
                                 key="extra_time",
                                 resolution=0.01,
                                 orientation="h",
-                                default_value=0.05,
+                                default_value=data.get('extra_time', ''),
                             ),
                         ],
                         [
@@ -384,7 +420,6 @@ class GUI:
                 sg.Text("0", key="infer_time"),
             ],
         ]
-
         self.window = sg.Window("RVC - GUI", layout=layout)
         self.event_handler()
 
@@ -396,15 +431,41 @@ class GUI:
                 exit()
             if event == "start_vc" and self.flag_vc == False:
                 self.set_values(values)
-                print(str(self.config.__dict__))
                 print("using_cuda:" + str(torch.cuda.is_available()))
                 self.start_vc()
+                settings = {
+                    "pth_path":values["pth_path"],
+                    "index_path":values["index_path"], 
+                    
+                    
+                    "sg_input_device": values["sg_input_device"],
+                    "sg_output_device": values["sg_output_device"],
+                    "threhold": values["threhold"],
+                    "pitch": values["pitch"],
+                    "index_rate": values["index_rate"],
+                    "block_time": values["block_time"],
+                    "crossfade_length": values["crossfade_length"],
+                    "extra_time": values["extra_time"],
+                }
+                with open('values1.json', 'w') as j:
+                    json.dump(settings, j)
             if event == "stop_vc" and self.flag_vc == True:
                 self.flag_vc = False
-
+    
+    
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
     def set_values(self, values):
         self.set_devices(values["sg_input_device"], values["sg_output_device"])
-        self.config.hubert_path = values["hubert_path"]
+        self.config.hubert_path = os.path.join(current_dir, 'hubert_base.pt')
         self.config.pth_path = values["pth_path"]
         self.config.index_path = values["index_path"]
         self.config.npy_path = values["npy_path"]
@@ -606,6 +667,5 @@ class GUI:
         ]
         print("input device:" + str(sd.default.device[0]) + ":" + str(input_device))
         print("output device:" + str(sd.default.device[1]) + ":" + str(output_device))
-
 
 gui = GUI()
