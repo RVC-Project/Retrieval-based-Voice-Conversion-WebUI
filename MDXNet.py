@@ -86,7 +86,12 @@ def get_models(device, dim_f, dim_t, n_fft):
 
 warnings.filterwarnings("ignore")
 cpu = torch.device("cpu")
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
 
 
 class Predictor:
@@ -201,10 +206,26 @@ class Predictor:
         mix = mix.T
         sources = self.demix(mix.T)
         opt = sources[0].T
-        sf.write(
-            "%s/%s_main_vocal.%s" % (vocal_root, basename, format), mix - opt, rate
-        )
-        sf.write("%s/%s_others.%s" % (others_root, basename, format), opt, rate)
+        if format in ["wav", "flac"]:
+            sf.write(
+                "%s/%s_main_vocal.%s" % (vocal_root, basename, format), mix - opt, rate
+            )
+            sf.write("%s/%s_others.%s" % (others_root, basename, format), opt, rate)
+        else:
+            path_vocal = "%s/%s_main_vocal.wav" % (vocal_root, basename)
+            path_other = "%s/%s_others.wav" % (others_root, basename)
+            sf.write(path_vocal, mix - opt, rate)
+            sf.write(path_other, opt, rate)
+            if os.path.exists(path_vocal):
+                os.system(
+                    "ffmpeg -i %s -vn %s -q:a 2 -y"
+                    % (path_vocal, path_vocal[:-4] + ".%s" % format)
+                )
+            if os.path.exists(path_other):
+                os.system(
+                    "ffmpeg -i %s -vn %s -q:a 2 -y"
+                    % (path_other, path_other[:-4] + ".%s" % format)
+                )
 
 
 class MDXNetDereverb:
