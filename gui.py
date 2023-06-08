@@ -265,12 +265,12 @@ class GUI:
                     "index_path": " ",
                     "sg_input_device": input_devices[sd.default.device[0]],
                     "sg_output_device": output_devices[sd.default.device[1]],
-                    "threshold": "-45",
+                    "threhold": "-45",
                     "pitch": "0",
                     "index_rate": "0",
-                    "block_time": "0.6",
+                    "block_time": "1",
                     "crossfade_length": "0.04",
-                    "extra_time": "1.1",
+                    "extra_time": "1",
                 }
         return data
 
