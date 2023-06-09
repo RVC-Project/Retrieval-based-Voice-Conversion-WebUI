@@ -64,8 +64,6 @@ poetry install
 
 pip를 활용하여 dependencies를 설치하여도 무방합니다.
 
-**공지**: `MacOS`에서 `faiss 1.7.2`를 사용하면 Segmentation Fault: 11 오류가 발생할 수 있습니다. 수동으로 pip를 사용하여 설치하는 경우 `pip install faiss-cpu==1.7.0`을 사용해야 합니다.
-
 ```bash
 pip install -r requirements.txt
 ```

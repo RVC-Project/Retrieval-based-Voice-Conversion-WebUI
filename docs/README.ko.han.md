@@ -58,8 +58,6 @@ poetry install
 ```
 pip를 活用하여依存를 設置하여도 無妨합니다.
 
-**公知**: `MacOS`에서 `faiss 1.7.2`를 使用하면 Segmentation Fault: 11 誤謬가 發生할 수 있습니다. 手動으로 pip를 使用하여 設置하는境遇 `pip install faiss-cpu==1.7.0`을 使用해야 합니다.
-
 ```bash
 pip install -r requirements.txt
 ```
