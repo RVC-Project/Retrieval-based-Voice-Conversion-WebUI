@@ -557,7 +557,7 @@ def train_and_evaluate(
                         ckpt,
                         hps.sample_rate,
                         hps.if_f0,
-                        hps.name + "_e%s" % epoch,
+                        hps.name + "_e%s_s%s" % (epoch, global_step),
                         epoch,
                         hps.version,
                         hps,
