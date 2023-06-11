@@ -21,6 +21,7 @@
 
 [**English**](./docs/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/README.ja.md) | [**한국어**](./docs/README.ko.md) ([**韓國語**](./docs/README.ko.han.md))
 
+:fire: **使用了RVC变声器训练的人声转木吉他模型在线demo**:fire: ：https://huggingface.co/spaces/lj1995/vocal2guitar
 
 > 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
