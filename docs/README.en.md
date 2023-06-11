@@ -20,6 +20,10 @@ An easy-to-use Voice Conversion framework based on VITS.<br><br>
 
 [**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md) ([**韓國語**](./README.ko.han.md))
 
+:fire: A online demo using RVC that convert Vocal to Acoustic Guitar audio:fire: ：https://huggingface.co/spaces/lj1995/vocal2guitar
+
+:fire: Vocal2Guitar demo video:fire: ：https://www.bilibili.com/video/BV19W4y1D7tT/
+
 > Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
 
 > Realtime Voice Conversion Software using RVC : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
