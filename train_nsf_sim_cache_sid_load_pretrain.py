@@ -194,13 +194,16 @@ def run(rank, n_gpus, hps):
         if hps.pretrainG != "":
 
             if rank == 0:
-                logger.info("loaded pretrained %s %s" % (hps.pretrainG, hps.pretrainD))
+                logger.info("loaded pretrained %s" % (hps.pretrainG))
             print(
                 net_g.module.load_state_dict(
                     torch.load(hps.pretrainG, map_location="cpu")["model"]
                 )
             )  ##测试不加载优化器
         if hps.pretrainD != "":
+
+            if rank == 0:
+                logger.info("loaded pretrained %s" % (hps.pretrainD))
             print(
                 net_d.module.load_state_dict(
                     torch.load(hps.pretrainD, map_location="cpu")["model"]
