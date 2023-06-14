@@ -191,18 +191,21 @@ def run(rank, n_gpus, hps):
         # traceback.print_exc()
         epoch_str = 1
         global_step = 0
-        if rank == 0:
-            logger.info("loaded pretrained %s %s" % (hps.pretrainG, hps.pretrainD))
-        print(
-            net_g.module.load_state_dict(
-                torch.load(hps.pretrainG, map_location="cpu")["model"]
+        if hps.pretrainG != "":
+
+            if rank == 0:
+                logger.info("loaded pretrained %s %s" % (hps.pretrainG, hps.pretrainD))
+            print(
+                net_g.module.load_state_dict(
+                    torch.load(hps.pretrainG, map_location="cpu")["model"]
+                )
+            )  ##测试不加载优化器
+        if hps.pretrainD != "":
+            print(
+                net_d.module.load_state_dict(
+                    torch.load(hps.pretrainD, map_location="cpu")["model"]
+                )
             )
-        )  ##测试不加载优化器
-        print(
-            net_d.module.load_state_dict(
-                torch.load(hps.pretrainD, map_location="cpu")["model"]
-            )
-        )
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2

@@ -613,34 +613,58 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
     yield log
 
 
+# def change_sr2(sr2, if_f0_3, version19):
+#     vis_v = True if sr2 == "40k" else False
+#     if sr2 != "40k":
+#         version19 = "v1"
+#     path_str = "" if version19 == "v1" else "_v2"
+#     version_state = {"visible": vis_v, "__type__": "update"}
+#     if vis_v == False:
+#         version_state["value"] = "v1"
+#     f0_str = "f0" if if_f0_3 else ""
+#     return (
+#         "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+#         "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+#         version_state,
+#     )
 def change_sr2(sr2, if_f0_3, version19):
-    vis_v = True if sr2 == "40k" else False
-    if sr2 != "40k":
-        version19 = "v1"
     path_str = "" if version19 == "v1" else "_v2"
-    version_state = {"visible": vis_v, "__type__": "update"}
-    if vis_v == False:
-        version_state["value"] = "v1"
     f0_str = "f0" if if_f0_3 else ""
+    if_pretrained_generator_exist = os.access("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK)
+    if_pretrained_discriminator_exist = os.access("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK)
+    if (if_pretrained_generator_exist == False):
+        print("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
+    if (if_pretrained_discriminator_exist == False):
+        print("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
-        version_state,
+        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_generator_exist else "",
+        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_discriminator_exist else "",
+        {"visible": True, "__type__": "update"}
     )
-
 
 def change_version19(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
-    return "pretrained%s/%sG%s.pth" % (
-        path_str,
-        f0_str,
-        sr2,
-    ), "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+    if_pretrained_generator_exist = os.access("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK)
+    if_pretrained_discriminator_exist = os.access("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK)
+    if (if_pretrained_generator_exist == False):
+        print("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
+    if (if_pretrained_discriminator_exist == False):
+        print("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
+    return (
+        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_generator_exist else "",
+        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_discriminator_exist else "",
+    )
 
 
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
+    if_pretrained_generator_exist = os.access("pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK)
+    if_pretrained_discriminator_exist = os.access("pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK)
+    if (if_pretrained_generator_exist == False):
+        print("pretrained%s/f0G%s.pth" % (path_str, sr2), "not exist, will not use pretrained model")
+    if (if_pretrained_discriminator_exist == False):
+        print("pretrained%s/f0D%s.pth" % (path_str, sr2), "not exist, will not use pretrained model")
     if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
@@ -649,8 +673,8 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
         )
     return (
         {"visible": False, "__type__": "update"},
-        "pretrained%s/G%s.pth" % (path_str, sr2),
-        "pretrained%s/D%s.pth" % (path_str, sr2),
+        ("pretrained%s/G%s.pth" % (path_str, sr2)) if if_pretrained_generator_exist else "",
+        ("pretrained%s/D%s.pth" % (path_str, sr2)) if if_pretrained_discriminator_exist else "",
     )
 
 
@@ -741,10 +765,14 @@ def click_train(
     # 生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
     print("use gpus:", gpus16)
+    if pretrained_G14 == "":
+        print("no pretrained Generator")
+    if pretrained_D15 == "":
+        print("no pretrained Discriminator")
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -753,8 +781,8 @@ def click_train(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
+                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -764,7 +792,7 @@ def click_train(
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -772,8 +800,8 @@ def click_train(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "\b",
+                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "\b",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -1000,7 +1028,7 @@ def train1key(
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            +" train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -1009,8 +1037,8 @@ def train1key(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
+                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -1020,7 +1048,7 @@ def train1key(
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -1028,8 +1056,8 @@ def train1key(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
+                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
