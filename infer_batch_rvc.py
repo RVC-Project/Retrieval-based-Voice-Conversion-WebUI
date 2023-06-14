@@ -1,10 +1,11 @@
-'''
+"""
 v1
 runtime\python.exe myinfer-v2-0528.py 0 "E:\codes\py39\RVC-beta\todo-songs" "E:\codes\py39\logs\mi-test\added_IVF677_Flat_nprobe_7.index" harvest "E:\codes\py39\RVC-beta\output" "E:\codes\py39\test-20230416b\weights\mi-test.pth" 0.66 cuda:0 True 3 0 1 0.33
 v2
 runtime\python.exe myinfer-v2-0528.py 0 "E:\codes\py39\RVC-beta\todo-songs" "E:\codes\py39\test-20230416b\logs\mi-test-v2\aadded_IVF677_Flat_nprobe_1_v2.index" harvest "E:\codes\py39\RVC-beta\output_v2" "E:\codes\py39\test-20230416b\weights\mi-test-v2.pth" 0.66 cuda:0 True 3 0 1 0.33
-'''
-import os,sys,pdb,torch
+"""
+import os, sys, pdb, torch
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import argparse
@@ -13,8 +14,10 @@ import sys
 import torch
 import tqdm as tq
 from multiprocessing import cpu_count
+
+
 class Config:
-    def __init__(self,device,is_half):
+    def __init__(self, device, is_half):
         self.device = device
         self.is_half = is_half
         self.n_cpu = 0
@@ -90,22 +93,23 @@ class Config:
 
         return x_pad, x_query, x_center, x_max
 
-f0up_key=sys.argv[1]
-input_path=sys.argv[2]
-index_path=sys.argv[3]
-f0method=sys.argv[4]#harvest or pm
-opt_path=sys.argv[5]
-model_path=sys.argv[6]
-index_rate=float(sys.argv[7])
-device=sys.argv[8]
-is_half=bool(sys.argv[9])
-filter_radius=int(sys.argv[10])
-resample_sr=int(sys.argv[11])
-rms_mix_rate=float(sys.argv[12])
-protect=float(sys.argv[13])
+
+f0up_key = sys.argv[1]
+input_path = sys.argv[2]
+index_path = sys.argv[3]
+f0method = sys.argv[4]  # harvest or pm
+opt_path = sys.argv[5]
+model_path = sys.argv[6]
+index_rate = float(sys.argv[7])
+device = sys.argv[8]
+is_half = bool(sys.argv[9])
+filter_radius = int(sys.argv[10])
+resample_sr = int(sys.argv[11])
+rms_mix_rate = float(sys.argv[12])
+protect = float(sys.argv[13])
 print(sys.argv)
-config=Config(device,is_half)
-now_dir=os.getcwd()
+config = Config(device, is_half)
+now_dir = os.getcwd()
 sys.path.append(now_dir)
 from vc_infer_pipeline import VC
 from infer_pack.models import (
@@ -118,37 +122,66 @@ from my_utils import load_audio
 from fairseq import checkpoint_utils
 from scipy.io import wavfile
 
-hubert_model=None
+hubert_model = None
+
+
 def load_hubert():
     global hubert_model
-    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(["hubert_base.pt"],suffix="",)
+    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
+        ["hubert_base.pt"],
+        suffix="",
+    )
     hubert_model = models[0]
     hubert_model = hubert_model.to(device)
-    if(is_half):hubert_model = hubert_model.half()
-    else:hubert_model = hubert_model.float()
+    if is_half:
+        hubert_model = hubert_model.half()
+    else:
+        hubert_model = hubert_model.float()
     hubert_model.eval()
 
-def vc_single(sid,input_audio,f0_up_key,f0_file,f0_method,file_index,index_rate):
-    global tgt_sr,net_g,vc,hubert_model,version
-    if input_audio is None:return "You need to upload an audio", None
+
+def vc_single(sid, input_audio, f0_up_key, f0_file, f0_method, file_index, index_rate):
+    global tgt_sr, net_g, vc, hubert_model, version
+    if input_audio is None:
+        return "You need to upload an audio", None
     f0_up_key = int(f0_up_key)
-    audio=load_audio(input_audio,16000)
+    audio = load_audio(input_audio, 16000)
     times = [0, 0, 0]
-    if(hubert_model==None):load_hubert()
+    if hubert_model == None:
+        load_hubert()
     if_f0 = cpt.get("f0", 1)
     # audio_opt=vc.pipeline(hubert_model,net_g,sid,audio,times,f0_up_key,f0_method,file_index,file_big_npy,index_rate,if_f0,f0_file=f0_file)
-    audio_opt=vc.pipeline(hubert_model,net_g,sid,audio,input_audio,times,f0_up_key,f0_method,file_index,index_rate,if_f0,filter_radius,tgt_sr,resample_sr,rms_mix_rate,version,protect,f0_file=f0_file)
+    audio_opt = vc.pipeline(
+        hubert_model,
+        net_g,
+        sid,
+        audio,
+        input_audio,
+        times,
+        f0_up_key,
+        f0_method,
+        file_index,
+        index_rate,
+        if_f0,
+        filter_radius,
+        tgt_sr,
+        resample_sr,
+        rms_mix_rate,
+        version,
+        protect,
+        f0_file=f0_file,
+    )
     print(times)
     return audio_opt
 
 
 def get_vc(model_path):
-    global n_spk,tgt_sr,net_g,vc,cpt,device,is_half,version
-    print("loading pth %s"%model_path)
+    global n_spk, tgt_sr, net_g, vc, cpt, device, is_half, version
+    print("loading pth %s" % model_path)
     cpt = torch.load(model_path, map_location="cpu")
     tgt_sr = cpt["config"][-1]
-    cpt["config"][-3]=cpt["weight"]["emb_g.weight"].shape[0]#n_spk
-    if_f0=cpt.get("f0",1)
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
+    if_f0 = cpt.get("f0", 1)
     version = cpt.get("version", "v1")
     if version == "v1":
         if if_f0 == 1:
@@ -156,26 +189,29 @@ def get_vc(model_path):
         else:
             net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
     elif version == "v2":
-        if if_f0 == 1:#
+        if if_f0 == 1:  #
             net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=is_half)
         else:
             net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
     del net_g.enc_q
     print(net_g.load_state_dict(cpt["weight"], strict=False))  # 不加这一行清不干净，真奇葩
     net_g.eval().to(device)
-    if (is_half):net_g = net_g.half()
-    else:net_g = net_g.float()
+    if is_half:
+        net_g = net_g.half()
+    else:
+        net_g = net_g.float()
     vc = VC(tgt_sr, config)
-    n_spk=cpt["config"][-3]
+    n_spk = cpt["config"][-3]
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 
 get_vc(model_path)
 audios = os.listdir(input_path)
 for file in tq.tqdm(audios):
-    if file.endswith('.wav'):
-        file_path = input_path + '/' + file
-        wav_opt=vc_single(0,file_path,f0up_key,None,f0method,index_path,index_rate)
-        out_path = opt_path + '/' + file
+    if file.endswith(".wav"):
+        file_path = input_path + "/" + file
+        wav_opt = vc_single(
+            0, file_path, f0up_key, None, f0method, index_path, index_rate
+        )
+        out_path = opt_path + "/" + file
         wavfile.write(out_path, tgt_sr, wav_opt)
-
