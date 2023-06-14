@@ -613,20 +613,6 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
     yield log
 
 
-# def change_sr2(sr2, if_f0_3, version19):
-#     vis_v = True if sr2 == "40k" else False
-#     if sr2 != "40k":
-#         version19 = "v1"
-#     path_str = "" if version19 == "v1" else "_v2"
-#     version_state = {"visible": vis_v, "__type__": "update"}
-#     if vis_v == False:
-#         version_state["value"] = "v1"
-#     f0_str = "f0" if if_f0_3 else ""
-#     return (
-#         "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
-#         "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
-#         version_state,
-#     )
 def change_sr2(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
