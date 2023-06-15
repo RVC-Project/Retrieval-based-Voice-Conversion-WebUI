@@ -65,7 +65,7 @@ def readwave(wav_path, normalize=False):
 printt("load model(s) from {}".format(model_path))
 # if hubert model is exist
 if (os.access(model_path, os.F_OK) == False):
-    printt("extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main" % model_path)
+    printt("Error: Extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main" % model_path)
     exit(0)
 models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
