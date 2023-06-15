@@ -1,11 +1,37 @@
-import torch, os, traceback, sys, warnings, shutil, numpy as np
+import os
+import shutil
+import sys
+import traceback
+import warnings
+
+import numpy as np
+import torch
 
 os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
+import logging
 import threading
-from time import sleep
-from subprocess import Popen
-import faiss
 from random import shuffle
+from subprocess import Popen
+from time import sleep
+
+import faiss
+import ffmpeg
+import gradio as gr
+import soundfile as sf
+from config import Config
+from fairseq import checkpoint_utils
+from i18n import I18nAuto
+from infer_pack.models import (SynthesizerTrnMs256NSFsid,
+                               SynthesizerTrnMs256NSFsid_nono,
+                               SynthesizerTrnMs768NSFsid,
+                               SynthesizerTrnMs768NSFsid_nono)
+from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
+from infer_uvr5 import _audio_pre_, _audio_pre_new
+from MDXNet import MDXNetDereverb
+from my_utils import load_audio
+from train.process_ckpt import (change_info, extract_small_model, merge,
+                                show_info)
+from vc_infer_pipeline import VC
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -19,9 +45,7 @@ os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
-from i18n import I18nAuto
-import ffmpeg
-from MDXNet import MDXNetDereverb
+
 
 i18n = I18nAuto()
 i18n.print()
@@ -72,21 +96,7 @@ else:
     gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
-from infer_pack.models import (
-    SynthesizerTrnMs256NSFsid,
-    SynthesizerTrnMs256NSFsid_nono,
-    SynthesizerTrnMs768NSFsid,
-    SynthesizerTrnMs768NSFsid_nono,
-)
-import soundfile as sf
-from fairseq import checkpoint_utils
-import gradio as gr
-import logging
-from vc_infer_pipeline import VC
-from config import Config
-from infer_uvr5 import _audio_pre_, _audio_pre_new
-from my_utils import load_audio
-from train.process_ckpt import show_info, change_info, merge, extract_small_model
+
 
 config = Config()
 # from trainset_preprocess_pipeline import PreProcess
@@ -1116,7 +1126,7 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
-from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
+
 
 
 def export_onnx(ModelPath, ExportedPath, MoeVS=True):
