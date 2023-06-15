@@ -33,6 +33,7 @@ from MDXNet import MDXNetDereverb
 from my_utils import load_audio
 from train.process_ckpt import change_info, extract_small_model, merge, show_info
 from vc_infer_pipeline import VC
+
 # from trainset_preprocess_pipeline import PreProcess
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -104,8 +105,6 @@ else:
     gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
-
-
 
 
 class ToolButton(gr.Button, gr.components.FormComponent):
@@ -648,8 +647,12 @@ def change_sr2(sr2, if_f0_3, version19):
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2) if if_pretrained_generator_exist else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2) if if_pretrained_discriminator_exist else "",
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_generator_exist
+        else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_discriminator_exist
+        else "",
         {"visible": True, "__type__": "update"},
     )
 
@@ -674,8 +677,12 @@ def change_version19(sr2, if_f0_3, version19):
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2) if if_pretrained_generator_exist else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2) if if_pretrained_discriminator_exist else "",
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_generator_exist
+        else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_discriminator_exist
+        else "",
     )
 
 
@@ -700,8 +707,12 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
     if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
-            "pretrained%s/f0G%s.pth" % (path_str, sr2) if if_pretrained_generator_exist else "",
-            "pretrained%s/f0D%s.pth" % (path_str, sr2) if if_pretrained_discriminator_exist else "",
+            "pretrained%s/f0G%s.pth" % (path_str, sr2)
+            if if_pretrained_generator_exist
+            else "",
+            "pretrained%s/f0D%s.pth" % (path_str, sr2)
+            if if_pretrained_discriminator_exist
+            else "",
         )
     return (
         {"visible": False, "__type__": "update"},
