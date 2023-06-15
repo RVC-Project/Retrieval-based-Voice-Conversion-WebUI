@@ -1122,7 +1122,7 @@ from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 def export_onnx(ModelPath, ExportedPath, MoeVS=True):
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-    hidden_channels = cpt["config"][-2]  # hidden_channels，为768Vec做准备
+    hidden_channels = 256 if cpt.get("version","v1")=="v1"else 768#cpt["config"][-2]  # hidden_channels，为768Vec做准备
 
     test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
@@ -1134,7 +1134,7 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
     device = "cpu"  # 导出时设备（不影响使用模型）
 
     net_g = SynthesizerTrnMsNSFsidM(
-        *cpt["config"], is_half=False
+        *cpt["config"], is_half=False,version=cpt.get("version","v1")
     )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
     net_g.load_state_dict(cpt["weight"], strict=False)
     input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
