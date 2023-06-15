@@ -21,16 +21,17 @@ import soundfile as sf
 from config import Config
 from fairseq import checkpoint_utils
 from i18n import I18nAuto
-from infer_pack.models import (SynthesizerTrnMs256NSFsid,
-                               SynthesizerTrnMs256NSFsid_nono,
-                               SynthesizerTrnMs768NSFsid,
-                               SynthesizerTrnMs768NSFsid_nono)
+from infer_pack.models import (
+    SynthesizerTrnMs256NSFsid,
+    SynthesizerTrnMs256NSFsid_nono,
+    SynthesizerTrnMs768NSFsid,
+    SynthesizerTrnMs768NSFsid_nono,
+)
 from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 from infer_uvr5 import _audio_pre_, _audio_pre_new
 from MDXNet import MDXNetDereverb
 from my_utils import load_audio
-from train.process_ckpt import (change_info, extract_small_model, merge,
-                                show_info)
+from train.process_ckpt import change_info, extract_small_model, merge, show_info
 from vc_infer_pipeline import VC
 
 now_dir = os.getcwd()
@@ -59,25 +60,29 @@ else:
     if_gpu_ok = False
     for i in range(ngpu):
         gpu_name = torch.cuda.get_device_name(i)
-        if (
-            "10" in gpu_name
-            or "16" in gpu_name
-            or "20" in gpu_name
-            or "30" in gpu_name
-            or "40" in gpu_name
-            or "A2" in gpu_name.upper()
-            or "A3" in gpu_name.upper()
-            or "A4" in gpu_name.upper()
-            or "P4" in gpu_name.upper()
-            or "A50" in gpu_name.upper()
-            or "A60" in gpu_name.upper()
-            or "70" in gpu_name
-            or "80" in gpu_name
-            or "90" in gpu_name
-            or "M4" in gpu_name.upper()
-            or "T4" in gpu_name.upper()
-            or "TITAN" in gpu_name.upper()
-        ):  # A10#A100#V100#A40#P40#M40#K80#A4500
+        if any(
+            value in gpu_name.upper()
+            for value in [
+                "10",
+                "16",
+                "20",
+                "30",
+                "40",
+                "A2",
+                "A3",
+                "A4",
+                "P4",
+                "A50",
+                "A60",
+                "70",
+                "80",
+                "90",
+                "M4",
+                "T4",
+                "TITAN",
+            ]
+        ):
+            # A10#A100#V100#A40#P40#M40#K80#A4500
             if_gpu_ok = True  # 至少有一张能用的N卡
             gpu_infos.append("%s\t%s" % (i, gpu_name))
             mem.append(
@@ -626,51 +631,98 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
 def change_sr2(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
-    if_pretrained_generator_exist = os.access("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK)
-    if_pretrained_discriminator_exist = os.access("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK)
-    if (if_pretrained_generator_exist == False):
-        print("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
-    if (if_pretrained_discriminator_exist == False):
-        print("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
-    return (
-        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_generator_exist else "",
-        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_discriminator_exist else "",
-        {"visible": True, "__type__": "update"}
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if if_pretrained_generator_exist == False:
+        print(
+            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if if_pretrained_discriminator_exist == False:
+        print(
+            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    return (
+        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2))
+        if if_pretrained_generator_exist
+        else "",
+        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2))
+        if if_pretrained_discriminator_exist
+        else "",
+        {"visible": True, "__type__": "update"},
+    )
+
 
 def change_version19(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
-    if_pretrained_generator_exist = os.access("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK)
-    if_pretrained_discriminator_exist = os.access("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK)
-    if (if_pretrained_generator_exist == False):
-        print("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
-    if (if_pretrained_discriminator_exist == False):
-        print("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if if_pretrained_generator_exist == False:
+        print(
+            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if if_pretrained_discriminator_exist == False:
+        print(
+            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
     return (
-        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_generator_exist else "",
-        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_discriminator_exist else "",
+        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2))
+        if if_pretrained_generator_exist
+        else "",
+        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2))
+        if if_pretrained_discriminator_exist
+        else "",
     )
 
 
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
-    if_pretrained_generator_exist = os.access("pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK)
-    if_pretrained_discriminator_exist = os.access("pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK)
-    if (if_pretrained_generator_exist == False):
-        print("pretrained%s/f0G%s.pth" % (path_str, sr2), "not exist, will not use pretrained model")
-    if (if_pretrained_discriminator_exist == False):
-        print("pretrained%s/f0D%s.pth" % (path_str, sr2), "not exist, will not use pretrained model")
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK
+    )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
+    )
+    if if_pretrained_generator_exist == False:
+        print(
+            "pretrained%s/f0G%s.pth" % (path_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if if_pretrained_discriminator_exist == False:
+        print(
+            "pretrained%s/f0D%s.pth" % (path_str, sr2),
+            "not exist, will not use pretrained model",
+        )
     if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
-            "pretrained%s/f0G%s.pth" % (path_str, sr2) if if_pretrained_generator_exist else "",
-            "pretrained%s/f0D%s.pth" % (path_str, sr2) if if_pretrained_discriminator_exist else "",
+            "pretrained%s/f0G%s.pth" % (path_str, sr2)
+            if if_pretrained_generator_exist
+            else "",
+            "pretrained%s/f0D%s.pth" % (path_str, sr2)
+            if if_pretrained_discriminator_exist
+            else "",
         )
     return (
         {"visible": False, "__type__": "update"},
-        ("pretrained%s/G%s.pth" % (path_str, sr2)) if if_pretrained_generator_exist else "",
-        ("pretrained%s/D%s.pth" % (path_str, sr2)) if if_pretrained_discriminator_exist else "",
+        ("pretrained%s/G%s.pth" % (path_str, sr2))
+        if if_pretrained_generator_exist
+        else "",
+        ("pretrained%s/D%s.pth" % (path_str, sr2))
+        if if_pretrained_discriminator_exist
+        else "",
     )
 
 
@@ -1024,7 +1076,7 @@ def train1key(
     if gpus16:
         cmd = (
             config.python_cmd
-            +" train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -1124,9 +1176,6 @@ def change_info_(ckpt_path):
     except:
         traceback.print_exc()
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
-
-
-
 
 
 def export_onnx(ModelPath, ExportedPath, MoeVS=True):
