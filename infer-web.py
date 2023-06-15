@@ -638,8 +638,8 @@ def change_version19(sr2, if_f0_3, version19):
     if (if_pretrained_discriminator_exist == False):
         print("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), "not exist, will not use pretrained model")
     return (
-        ("pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_generator_exist else "",
-        ("pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)) if if_pretrained_discriminator_exist else "",
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2) if if_pretrained_generator_exist else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2) if if_pretrained_discriminator_exist else "",
     )
 
 
@@ -659,8 +659,8 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
         )
     return (
         {"visible": False, "__type__": "update"},
-        ("pretrained%s/G%s.pth" % (path_str, sr2)) if if_pretrained_generator_exist else "",
-        ("pretrained%s/D%s.pth" % (path_str, sr2)) if if_pretrained_discriminator_exist else "",
+        "pretrained%s/G%s.pth" % (path_str, sr2) if if_pretrained_generator_exist else "",
+        "pretrained%s/D%s.pth" % (path_str, sr2) if if_pretrained_discriminator_exist else "",
     )
 
 
