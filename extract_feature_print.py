@@ -63,6 +63,10 @@ def readwave(wav_path, normalize=False):
 
 # HuBERT model
 printt("load model(s) from {}".format(model_path))
+# if hubert model is exist
+if (os.access(model_path, os.F_OK) == False):
+    printt("hubert_base.py not exist, please download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main")
+    exit(0)
 models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
     suffix="",
