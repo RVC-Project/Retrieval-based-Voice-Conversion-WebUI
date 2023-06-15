@@ -33,6 +33,9 @@ from MDXNet import MDXNetDereverb
 from my_utils import load_audio
 from train.process_ckpt import change_info, extract_small_model, merge, show_info
 from vc_infer_pipeline import VC
+# from trainset_preprocess_pipeline import PreProcess
+
+logging.getLogger("numba").setLevel(logging.WARNING)
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -48,6 +51,7 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
 
+config = Config()
 i18n = I18nAuto()
 i18n.print()
 # 判断是否有能用来训练和加速推理的N卡
@@ -102,9 +106,6 @@ else:
 gpus = "-".join([i[0] for i in gpu_infos])
 
 
-config = Config()
-# from trainset_preprocess_pipeline import PreProcess
-logging.getLogger("numba").setLevel(logging.WARNING)
 
 
 class ToolButton(gr.Button, gr.components.FormComponent):
