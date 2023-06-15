@@ -1826,7 +1826,7 @@ with gr.Blocks() as app:
                     [ckpt_path2, save_name, sr__, if_f0__, info___, version_1],
                     info7,
                 )
-
+                
         with gr.TabItem(i18n("Onnx导出")):
             with gr.Row():
                 ckpt_dir = gr.Textbox(label=i18n("RVC模型路径"), value="", interactive=True)
@@ -1835,8 +1835,8 @@ with gr.Blocks() as app:
                     label=i18n("Onnx输出路径"), value="", interactive=True
                 )
             with gr.Row():
-                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=True)
-                infoOnnx = gr.Label(label="Null")
+                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=False,visible=False)
+                infoOnnx = gr.Label(label="info")
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
             butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
