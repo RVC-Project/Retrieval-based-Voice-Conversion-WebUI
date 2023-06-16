@@ -93,7 +93,7 @@ config = Config()
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 
-class ToolButton(gr.Button, gr.components.FormComponent):
+class ToolButton(gr.Button, gr.components.base.FormComponent):
     """Small button with single emoji as text, fits inside gradio forms"""
 
     def __init__(self, **kwargs):
