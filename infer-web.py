@@ -178,7 +178,7 @@ def vc_single(
         if audio_max > 1:
             audio /= audio_max
         times = [0, 0, 0]
-        if hubert_model == None:
+        if not hubert_model:
             load_hubert()
         if_f0 = cpt.get("f0", 1)
         file_index = (
