@@ -3,7 +3,7 @@ import os, sys, traceback
 # device=sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
-if len(sys.argv) == 5:
+if len(sys.argv) == 6:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
 else:
