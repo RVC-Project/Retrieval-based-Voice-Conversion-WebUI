@@ -1,3 +1,22 @@
+### 2023-06-18
+- New pretrained v2 models: 32k and 48k
+- Fix non-f0 model inference errors
+- For training-set exceeding 1 hour, do automatic minibatch-kmeans to reduce feature shape, so that index training, adding, and searching will be much faster.
+- Provide a toy vocal2guitar huggingface space
+- Auto delete outlier short cut training-set audios
+- Onnx export tab
+
+Failed experiments:
+- ~~Feature retrieval: add temporal feature retrieval: not effective~~
+- ~~Feature retrieval: add PCAR dimensionality reduction: searching is even slower~~
+- ~~Random data augmentation when training: not effective~~
+
+todolist：
+- Vocos-RVC (tiny vocoder)
+- Crepe support for training
+- Half precision crepe inference
+- F0 editor support
+
 ### 2023-05-28
 - Add v2 jupyter notebook, korean changelog, fix some environment requirments
 - Add voiceless consonant and breath protection mode
@@ -5,15 +24,7 @@
 - UVR5 vocal separation: support dereverb models and de-echo models
 - Add experiment name and version on the name of index
 - Support users to manually select export format of output audios when batch voice conversion processing and UVR5 vocal separation
-- 32k model training is no more supported
-
-todolist：
-- Feature retrieval: add temporal feature retrieval
-- Feature retrieval: add pre-kmeans option
-- Feature retrieval: add PCAR dimensionality reduction
-- Add onnx inference support
-- Random data augmentation when training: pitch, gender, eq, noise
-- Add v2 version pretrained-models
+- v1 32k model training is no more supported
 
 ### 2023-05-13
 - Clear the redundant codes in the old version of runtime in the one-click-package: infer_pack and uvr5_pack
