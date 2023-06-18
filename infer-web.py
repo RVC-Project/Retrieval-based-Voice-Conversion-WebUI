@@ -1,6 +1,8 @@
 import os
 import shutil
 import sys
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 import traceback
 import warnings
 
@@ -38,8 +40,7 @@ from vc_infer_pipeline import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
-now_dir = os.getcwd()
-sys.path.append(now_dir)
+
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
