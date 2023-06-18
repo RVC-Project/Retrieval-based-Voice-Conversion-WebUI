@@ -469,21 +469,21 @@ class GUI:
                 self.flag_vc = False
 
     def set_values(self, values):
-        if(len(values["pth_path"].strip()) == 0):
-            sg.popup(i18n('请选择pth文件'))  
+        if len(values["pth_path"].strip()) == 0:
+            sg.popup(i18n("请选择pth文件"))
             return False
-        if(len(values["index_path"].strip()) == 0):
-            sg.popup(i18n('请选择index文件'))  
+        if len(values["index_path"].strip()) == 0:
+            sg.popup(i18n("请选择index文件"))
             return False
         pattern = re.compile("[^\x00-\x7F]+")
-        if(pattern.findall(values["hubert_path"])):
-            sg.popup(i18n('hubert模型路径不可包含中文'))  
+        if pattern.findall(values["hubert_path"]):
+            sg.popup(i18n("hubert模型路径不可包含中文"))
             return False
-        if(pattern.findall(values["pth_path"])):
-            sg.popup(i18n('pth文件路径不可包含中文'))  
+        if pattern.findall(values["pth_path"]):
+            sg.popup(i18n("pth文件路径不可包含中文"))
             return False
-        if(pattern.findall(values["index_path"])):
-            sg.popup(i18n('index文件路径不可包含中文'))  
+        if pattern.findall(values["index_path"]):
+            sg.popup(i18n("index文件路径不可包含中文"))
             return False
         self.set_devices(values["sg_input_device"], values["sg_output_device"])
         self.config.hubert_path = os.path.join(current_dir, "hubert_base.pt")

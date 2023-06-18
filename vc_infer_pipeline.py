@@ -184,7 +184,7 @@ class VC(object):
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
-        if protect < 0.5 and pitch!=None and pitchf!=None:
+        if protect < 0.5 and pitch != None and pitchf != None:
             feats0 = feats.clone()
         if (
             isinstance(index, type(None)) == False
@@ -211,7 +211,7 @@ class VC(object):
             )
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
-        if protect < 0.5 and pitch!=None and pitchf!=None:
+        if protect < 0.5 and pitch != None and pitchf != None:
             feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
                 0, 2, 1
             )
@@ -223,7 +223,7 @@ class VC(object):
                 pitch = pitch[:, :p_len]
                 pitchf = pitchf[:, :p_len]
 
-        if protect < 0.5 and pitch!=None and pitchf!=None:
+        if protect < 0.5 and pitch != None and pitchf != None:
             pitchff = pitchf.clone()
             pitchff[pitchf > 0] = 1
             pitchff[pitchf < 1] = protect
