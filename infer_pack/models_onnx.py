@@ -550,6 +550,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         spk_embed_dim,
         gin_channels,
         sr,
+        version,
         **kwargs
     ):
         super().__init__()
@@ -573,7 +574,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         self.gin_channels = gin_channels
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
-        if self.gin_channels == 256:
+        if version == "v1":
             self.enc_p = TextEncoder256(
                 inter_channels,
                 hidden_channels,
