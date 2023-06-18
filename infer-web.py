@@ -3,7 +3,7 @@ import shutil
 import sys
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-import traceback
+import traceback,pdb
 import warnings
 
 import numpy as np
@@ -396,7 +396,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
 
 
 # 一个选项卡全局只能有一个音色
-def get_vc(sid):
+def get_vc(sid,to_return_protect0,to_return_protect1):
     global n_spk, tgt_sr, net_g, vc, cpt, version
     if sid == "" or sid == []:
         global hubert_model
@@ -434,6 +434,11 @@ def get_vc(sid):
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     if_f0 = cpt.get("f0", 1)
+    if(if_f0==0):
+        to_return_protect0=to_return_protect1={"visible": False, "value": 0.5, "__type__": "update"}
+    else:
+        to_return_protect0 ={"visible": True, "value": to_return_protect0, "__type__": "update"}
+        to_return_protect1 ={"visible": True, "value": to_return_protect1, "__type__": "update"}
     version = cpt.get("version", "v1")
     if version == "v1":
         if if_f0 == 1:
@@ -454,7 +459,7 @@ def get_vc(sid):
         net_g = net_g.float()
     vc = VC(tgt_sr, config)
     n_spk = cpt["config"][-3]
-    return {"visible": True, "maximum": n_spk, "__type__": "update"}
+    return {"visible": True, "maximum": n_spk, "__type__": "update"},to_return_protect0,to_return_protect1
 
 
 def change_choices():
@@ -1247,11 +1252,6 @@ with gr.Blocks() as app:
                     interactive=True,
                 )
                 clean_button.click(fn=clean, inputs=[], outputs=[sid0])
-                sid0.change(
-                    fn=get_vc,
-                    inputs=[sid0],
-                    outputs=[spk_item],
-                )
             with gr.Group():
                 gr.Markdown(
                     value=i18n("男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ")
@@ -1475,6 +1475,11 @@ with gr.Blocks() as app:
                         ],
                         [vc_output3],
                     )
+            sid0.change(
+                fn=get_vc,
+                inputs=[sid0,protect0,protect1],
+                outputs=[spk_item,protect0,protect1],
+            )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():
                 gr.Markdown(
