@@ -44,7 +44,7 @@
     "输入实验名": "Ingrese el nombre del modelo",
     "目标采样率": "Tasa de muestreo objetivo",
     "模型是否带音高指导(唱歌一定要, 语音可以不要)": "Si el modelo tiene guía de tono (necesaria para cantar, pero no para hablar)",
-    "版本(目前仅40k支持了v2)": "版本(目前仅40k支持了v2)",
+    "版本": "版本",
     "提取音高和处理数据使用的CPU进程数": "提取音高和处理数据使用的CPU进程数",
     "step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. ": "paso 2a: recorra automáticamente la carpeta de capacitación y corte y normalice todos los archivos de audio que se pueden decodificar en audio. Se generarán dos carpetas 'wav' en el directorio del experimento. Actualmente, solo se admite la capacitación de una sola persona.",
     "输入训练文件夹路径": "Introduzca la ruta de la carpeta de entrenamiento",
