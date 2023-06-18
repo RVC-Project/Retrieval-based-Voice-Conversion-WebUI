@@ -1,9 +1,10 @@
 import os
 import shutil
 import sys
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-import traceback,pdb
+import traceback, pdb
 import warnings
 
 import numpy as np
@@ -396,7 +397,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
 
 
 # 一个选项卡全局只能有一个音色
-def get_vc(sid,to_return_protect0,to_return_protect1):
+def get_vc(sid, to_return_protect0, to_return_protect1):
     global n_spk, tgt_sr, net_g, vc, cpt, version
     if sid == "" or sid == []:
         global hubert_model
@@ -434,11 +435,23 @@ def get_vc(sid,to_return_protect0,to_return_protect1):
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     if_f0 = cpt.get("f0", 1)
-    if(if_f0==0):
-        to_return_protect0=to_return_protect1={"visible": False, "value": 0.5, "__type__": "update"}
+    if if_f0 == 0:
+        to_return_protect0 = to_return_protect1 = {
+            "visible": False,
+            "value": 0.5,
+            "__type__": "update",
+        }
     else:
-        to_return_protect0 ={"visible": True, "value": to_return_protect0, "__type__": "update"}
-        to_return_protect1 ={"visible": True, "value": to_return_protect1, "__type__": "update"}
+        to_return_protect0 = {
+            "visible": True,
+            "value": to_return_protect0,
+            "__type__": "update",
+        }
+        to_return_protect1 = {
+            "visible": True,
+            "value": to_return_protect1,
+            "__type__": "update",
+        }
     version = cpt.get("version", "v1")
     if version == "v1":
         if if_f0 == 1:
@@ -459,7 +472,11 @@ def get_vc(sid,to_return_protect0,to_return_protect1):
         net_g = net_g.float()
     vc = VC(tgt_sr, config)
     n_spk = cpt["config"][-3]
-    return {"visible": True, "maximum": n_spk, "__type__": "update"},to_return_protect0,to_return_protect1
+    return (
+        {"visible": True, "maximum": n_spk, "__type__": "update"},
+        to_return_protect0,
+        to_return_protect1,
+    )
 
 
 def change_choices():
@@ -665,8 +682,13 @@ def change_sr2(sr2, if_f0_3, version19):
 
 def change_version19(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
-    if(sr2=="32k"and version19=="v1"):sr2="40k"
-    to_return_sr2= {"choices": ["40k","48k"], "__type__": "update"} if version19=="v1"else {"choices": ["32k","40k","48k"], "__type__": "update"}
+    if sr2 == "32k" and version19 == "v1":
+        sr2 = "40k"
+    to_return_sr2 = (
+        {"choices": ["40k", "48k"], "__type__": "update"}
+        if version19 == "v1"
+        else {"choices": ["32k", "40k", "48k"], "__type__": "update"}
+    )
     f0_str = "f0" if if_f0_3 else ""
     if_pretrained_generator_exist = os.access(
         "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
@@ -691,7 +713,7 @@ def change_version19(sr2, if_f0_3, version19):
         "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_discriminator_exist
         else "",
-        to_return_sr2
+        to_return_sr2,
     )
 
 
@@ -893,14 +915,24 @@ def train_index(exp_dir1, version19):
     big_npy_idx = np.arange(big_npy.shape[0])
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
-    if(big_npy.shape[0]>2e5):
-    # if(1):
-        infos.append("Trying doing kmeans %s shape to 10k centers."%big_npy.shape[0])
+    if big_npy.shape[0] > 2e5:
+        # if(1):
+        infos.append("Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0])
         yield "\n".join(infos)
         try:
-            big_npy = MiniBatchKMeans(n_clusters=10000, verbose=True, batch_size=256 * config.n_cpu, compute_labels=False, init="random").fit(big_npy).cluster_centers_
+            big_npy = (
+                MiniBatchKMeans(
+                    n_clusters=10000,
+                    verbose=True,
+                    batch_size=256 * config.n_cpu,
+                    compute_labels=False,
+                    init="random",
+                )
+                .fit(big_npy)
+                .cluster_centers_
+            )
         except:
-            info=traceback.format_exc()
+            info = traceback.format_exc()
             print(info)
             infos.append(info)
             yield "\n".join(infos)
@@ -1147,15 +1179,25 @@ def train1key(
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
 
-    if(big_npy.shape[0]>2e5):
-    # if(1):
-        info="Trying doing kmeans %s shape to 10k centers."%big_npy.shape[0]
+    if big_npy.shape[0] > 2e5:
+        # if(1):
+        info = "Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0]
         print(info)
         yield get_info_str(info)
         try:
-            big_npy = MiniBatchKMeans(n_clusters=10000, verbose=True, batch_size=256 * config.n_cpu, compute_labels=False, init="random").fit(big_npy).cluster_centers_
+            big_npy = (
+                MiniBatchKMeans(
+                    n_clusters=10000,
+                    verbose=True,
+                    batch_size=256 * config.n_cpu,
+                    compute_labels=False,
+                    init="random",
+                )
+                .fit(big_npy)
+                .cluster_centers_
+            )
         except:
-            info=traceback.format_exc()
+            info = traceback.format_exc()
             print(info)
             yield get_info_str(info)
 
@@ -1207,11 +1249,10 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
-
 def export_onnx(ModelPath, ExportedPath):
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
-    vec_channels = 256 if cpt.get("version","v1")=="v1"else 768
+    vec_channels = 256 if cpt.get("version", "v1") == "v1" else 768
 
     test_phone = torch.rand(1, 200, vec_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
@@ -1223,7 +1264,7 @@ def export_onnx(ModelPath, ExportedPath):
     device = "cpu"  # 导出时设备（不影响使用模型）
 
     net_g = SynthesizerTrnMsNSFsidM(
-        *cpt["config"], is_half=False,version=cpt.get("version","v1")
+        *cpt["config"], is_half=False, version=cpt.get("version", "v1")
     )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
     net_g.load_state_dict(cpt["weight"], strict=False)
     input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
@@ -1504,8 +1545,8 @@ with gr.Blocks() as app:
                     )
             sid0.change(
                 fn=get_vc,
-                inputs=[sid0,protect0,protect1],
-                outputs=[spk_item,protect0,protect1],
+                inputs=[sid0, protect0, protect1],
+                outputs=[spk_item, protect0, protect1],
             )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():
@@ -1604,7 +1645,7 @@ with gr.Blocks() as app:
                     maximum=config.n_cpu,
                     step=1,
                     label=i18n("提取音高和处理数据使用的CPU进程数"),
-                    value=int(np.ceil(config.n_cpu/1.5)),
+                    value=int(np.ceil(config.n_cpu / 1.5)),
                     interactive=True,
                 )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
@@ -1722,7 +1763,7 @@ with gr.Blocks() as app:
                     version19.change(
                         change_version19,
                         [sr2, if_f0_3, version19],
-                        [pretrained_G14, pretrained_D15,sr2],
+                        [pretrained_G14, pretrained_D15, sr2],
                     )
                     if_f0_3.change(
                         change_f0,
@@ -1915,7 +1956,7 @@ with gr.Blocks() as app:
                     [ckpt_path2, save_name, sr__, if_f0__, info___, version_1],
                     info7,
                 )
-                
+
         with gr.TabItem(i18n("Onnx导出")):
             with gr.Row():
                 ckpt_dir = gr.Textbox(label=i18n("RVC模型路径"), value="", interactive=True)
