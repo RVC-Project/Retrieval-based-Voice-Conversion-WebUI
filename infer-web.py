@@ -1939,7 +1939,7 @@ with gr.Blocks() as app:
                     version_1 = gr.Radio(
                         label=i18n("模型版本型号"),
                         choices=["v1", "v2"],
-                        value="v1",
+                        value="v2",
                         interactive=True,
                     )
                     info___ = gr.Textbox(
