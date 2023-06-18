@@ -653,13 +653,9 @@ def change_sr2(sr2, if_f0_3, version19):
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_generator_exist
-        else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_discriminator_exist
-        else "",
-        {"visible": True, "__type__": "update"},
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2) if if_pretrained_generator_exist else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2) if if_pretrained_discriminator_exist else "",
+        {"visible": True, "__type__": "update"}
     )
 
 
@@ -683,12 +679,8 @@ def change_version19(sr2, if_f0_3, version19):
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_generator_exist
-        else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_discriminator_exist
-        else "",
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2) if if_pretrained_generator_exist else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2) if if_pretrained_discriminator_exist else "",
     )
 
 
@@ -722,12 +714,8 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
         )
     return (
         {"visible": False, "__type__": "update"},
-        ("pretrained%s/G%s.pth" % (path_str, sr2))
-        if if_pretrained_generator_exist
-        else "",
-        ("pretrained%s/D%s.pth" % (path_str, sr2))
-        if if_pretrained_discriminator_exist
-        else "",
+        "pretrained%s/G%s.pth" % (path_str, sr2) if if_pretrained_generator_exist else "",
+        "pretrained%s/D%s.pth" % (path_str, sr2) if if_pretrained_discriminator_exist else "",
     )
 
 
@@ -834,8 +822,8 @@ def click_train(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
-                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -853,8 +841,8 @@ def click_train(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "\b",
-                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "\b",
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "\b",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "\b",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -1090,8 +1078,8 @@ def train1key(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
-                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -1109,8 +1097,8 @@ def train1key(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                ("-pg %s" % pretrained_G14) if pretrained_G14 != "" else "",
-                ("-pd %s" % pretrained_D15) if pretrained_D15 != "" else "",
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
