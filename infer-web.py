@@ -1166,14 +1166,12 @@ def change_info_(ckpt_path):
 from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 
 
-def export_onnx(ModelPath, ExportedPath, MoeVS=True):
+def export_onnx(ModelPath, ExportedPath):
     cpt = torch.load(ModelPath, map_location="cpu")
-    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-    hidden_channels = (
-        256 if cpt.get("version", "v1") == "v1" else 768
-    )  # cpt["config"][-2]  # hidden_channels，为768Vec做准备
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
+    vec_channels = 256 if cpt.get("version","v1")=="v1"else 768
 
-    test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
+    test_phone = torch.rand(1, 200, vec_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
     test_pitch = torch.randint(size=(1, 200), low=5, high=255)  # 基频（单位赫兹）
     test_pitchf = torch.rand(1, 200)  # nsf基频
@@ -1209,7 +1207,7 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
             "rnd": [2],
         },
         do_constant_folding=False,
-        opset_version=16,
+        opset_version=13,
         verbose=False,
         input_names=input_names,
         output_names=output_names,
@@ -1884,11 +1882,10 @@ with gr.Blocks() as app:
                     label=i18n("Onnx输出路径"), value="", interactive=True
                 )
             with gr.Row():
-                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=False, visible=False)
                 infoOnnx = gr.Label(label="info")
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
-            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
+            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir], infoOnnx)
 
         tab_faq = i18n("常见问题解答")
         with gr.TabItem(tab_faq):
