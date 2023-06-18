@@ -664,6 +664,8 @@ def change_sr2(sr2, if_f0_3, version19):
 
 def change_version19(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
+    if(sr2=="32k"and version19=="v1"):sr2="40k"
+    to_return_sr2= {"choices": ["40k","48k"], "__type__": "update"} if version19=="v1"else {"choices": ["32k","40k","48k"], "__type__": "update"}
     f0_str = "f0" if if_f0_3 else ""
     if_pretrained_generator_exist = os.access(
         "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
@@ -688,6 +690,7 @@ def change_version19(sr2, if_f0_3, version19):
         "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_discriminator_exist
         else "",
+        to_return_sr2
     )
 
 
@@ -1589,7 +1592,7 @@ with gr.Blocks() as app:
                     interactive=True,
                 )
                 version19 = gr.Radio(
-                    label=i18n("版本(目前仅40k支持了v2)"),
+                    label=i18n("版本"),
                     choices=["v1", "v2"],
                     value="v1",
                     interactive=True,
@@ -1718,7 +1721,7 @@ with gr.Blocks() as app:
                     version19.change(
                         change_version19,
                         [sr2, if_f0_3, version19],
-                        [pretrained_G14, pretrained_D15],
+                        [pretrained_G14, pretrained_D15,sr2],
                     )
                     if_f0_3.change(
                         change_f0,
@@ -1795,7 +1798,7 @@ with gr.Blocks() as app:
                 with gr.Row():
                     sr_ = gr.Radio(
                         label=i18n("目标采样率"),
-                        choices=["32k", "40k", "48k"],
+                        choices=["40k", "48k"],
                         value="40k",
                         interactive=True,
                     )
