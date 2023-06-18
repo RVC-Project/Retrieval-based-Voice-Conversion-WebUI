@@ -360,7 +360,7 @@ def get_hparams(init=True):
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 
-    if(args.version=="v1"or args.sample_rate=="40k"):
+    if args.version == "v1" or args.sample_rate == "40k":
         config_path = "configs/%s.json" % args.sample_rate
     else:
         config_path = "configs/%s_v2.json" % args.sample_rate
