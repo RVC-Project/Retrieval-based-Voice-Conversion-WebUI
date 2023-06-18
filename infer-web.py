@@ -1174,12 +1174,13 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
-def export_onnx(ModelPath, ExportedPath, MoeVS=True):
-    cpt = torch.load(ModelPath, map_location="cpu")
-    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-    hidden_channels = cpt["config"][-2]  # hidden_channels，为768Vec做准备
 
-    test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
+def export_onnx(ModelPath, ExportedPath):
+    cpt = torch.load(ModelPath, map_location="cpu")
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
+    vec_channels = 256 if cpt.get("version","v1")=="v1"else 768
+
+    test_phone = torch.rand(1, 200, vec_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
     test_pitch = torch.randint(size=(1, 200), low=5, high=255)  # 基频（单位赫兹）
     test_pitchf = torch.rand(1, 200)  # nsf基频
@@ -1189,7 +1190,7 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
     device = "cpu"  # 导出时设备（不影响使用模型）
 
     net_g = SynthesizerTrnMsNSFsidM(
-        *cpt["config"], is_half=False
+        *cpt["config"], is_half=False,version=cpt.get("version","v1")
     )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
     net_g.load_state_dict(cpt["weight"], strict=False)
     input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
@@ -1215,7 +1216,7 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
             "rnd": [2],
         },
         do_constant_folding=False,
-        opset_version=16,
+        opset_version=13,
         verbose=False,
         input_names=input_names,
         output_names=output_names,
@@ -1881,7 +1882,7 @@ with gr.Blocks() as app:
                     [ckpt_path2, save_name, sr__, if_f0__, info___, version_1],
                     info7,
                 )
-
+                
         with gr.TabItem(i18n("Onnx导出")):
             with gr.Row():
                 ckpt_dir = gr.Textbox(label=i18n("RVC模型路径"), value="", interactive=True)
@@ -1890,11 +1891,10 @@ with gr.Blocks() as app:
                     label=i18n("Onnx输出路径"), value="", interactive=True
                 )
             with gr.Row():
-                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=True)
-                infoOnnx = gr.Label(label="Null")
+                infoOnnx = gr.Label(label="info")
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
-            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
+            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir], infoOnnx)
 
         tab_faq = i18n("常见问题解答")
         with gr.TabItem(tab_faq):
