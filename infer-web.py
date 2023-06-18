@@ -76,7 +76,7 @@ if torch.cuda.is_available() or ngpu != 0:
                 "A3",
                 "A4",
                 "P4",
-                "A50",
+                "A50","5000",
                 "A60",
                 "70",
                 "80",
