@@ -889,8 +889,8 @@ def train_index(exp_dir1, version19):
     big_npy_idx = np.arange(big_npy.shape[0])
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
-    # if(big_npy.shape[0]>2e5):
-    if(1):
+    if(big_npy.shape[0]>2e5):
+    # if(1):
         infos.append("Trying doing kmeans %s shape to 10k centers."%big_npy.shape[0])
         yield "\n".join(infos)
         try:
@@ -1143,8 +1143,8 @@ def train1key(
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
 
-    # if(big_npy.shape[0]>2e5):
-    if(1):
+    if(big_npy.shape[0]>2e5):
+    # if(1):
         info="Trying doing kmeans %s shape to 10k centers."%big_npy.shape[0]
         print(info)
         yield get_info_str(info)
