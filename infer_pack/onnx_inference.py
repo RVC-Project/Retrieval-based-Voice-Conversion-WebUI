@@ -3,6 +3,7 @@ import librosa
 import numpy as np
 import soundfile
 
+
 class ContentVec:
     def __init__(self, vec_path="pretrained/vec-768-layer-12.onnx", device=None):
         print("load model(s) from {}".format(vec_path))

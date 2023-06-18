@@ -1169,7 +1169,7 @@ from infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 def export_onnx(ModelPath, ExportedPath):
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
-    vec_channels = 256 if cpt.get("version","v1")=="v1"else 768
+    vec_channels = 256 if cpt.get("version", "v1") == "v1" else 768
 
     test_phone = torch.rand(1, 200, vec_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
