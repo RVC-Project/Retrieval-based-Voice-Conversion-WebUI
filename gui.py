@@ -10,7 +10,7 @@
     增加无索引支持
     f0算法改harvest(怎么看就只有这个会影响CPU占用)，但是不这么改效果不好
 """
-import os, sys, traceback
+import os, sys, traceback, re
 
 import json
 
@@ -448,27 +448,43 @@ class GUI:
                 self.flag_vc = False
                 exit()
             if event == "start_vc" and self.flag_vc == False:
-                self.set_values(values)
-                print("using_cuda:" + str(torch.cuda.is_available()))
-                self.start_vc()
-                settings = {
-                    "pth_path": values["pth_path"],
-                    "index_path": values["index_path"],
-                    "sg_input_device": values["sg_input_device"],
-                    "sg_output_device": values["sg_output_device"],
-                    "threhold": values["threhold"],
-                    "pitch": values["pitch"],
-                    "index_rate": values["index_rate"],
-                    "block_time": values["block_time"],
-                    "crossfade_length": values["crossfade_length"],
-                    "extra_time": values["extra_time"],
-                }
-                with open("values1.json", "w") as j:
-                    json.dump(settings, j)
+                if self.set_values(values) == True:
+                    print("using_cuda:" + str(torch.cuda.is_available()))
+                    self.start_vc()
+                    settings = {
+                        "pth_path": values["pth_path"],
+                        "index_path": values["index_path"],
+                        "sg_input_device": values["sg_input_device"],
+                        "sg_output_device": values["sg_output_device"],
+                        "threhold": values["threhold"],
+                        "pitch": values["pitch"],
+                        "index_rate": values["index_rate"],
+                        "block_time": values["block_time"],
+                        "crossfade_length": values["crossfade_length"],
+                        "extra_time": values["extra_time"],
+                    }
+                    with open("values1.json", "w") as j:
+                        json.dump(settings, j)
             if event == "stop_vc" and self.flag_vc == True:
                 self.flag_vc = False
 
     def set_values(self, values):
+        if len(values["pth_path"].strip()) == 0:
+            sg.popup(i18n("请选择pth文件"))
+            return False
+        if len(values["index_path"].strip()) == 0:
+            sg.popup(i18n("请选择index文件"))
+            return False
+        pattern = re.compile("[^\x00-\x7F]+")
+        if pattern.findall(values["hubert_path"]):
+            sg.popup(i18n("hubert模型路径不可包含中文"))
+            return False
+        if pattern.findall(values["pth_path"]):
+            sg.popup(i18n("pth文件路径不可包含中文"))
+            return False
+        if pattern.findall(values["index_path"]):
+            sg.popup(i18n("index文件路径不可包含中文"))
+            return False
         self.set_devices(values["sg_input_device"], values["sg_output_device"])
         self.config.hubert_path = os.path.join(current_dir, "hubert_base.pt")
         self.config.pth_path = values["pth_path"]
@@ -482,6 +498,7 @@ class GUI:
         self.config.I_noise_reduce = values["I_noise_reduce"]
         self.config.O_noise_reduce = values["O_noise_reduce"]
         self.config.index_rate = values["index_rate"]
+        return True
 
     def start_vc(self):
         torch.cuda.empty_cache()

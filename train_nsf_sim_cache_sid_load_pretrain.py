@@ -192,7 +192,6 @@ def run(rank, n_gpus, hps):
         epoch_str = 1
         global_step = 0
         if hps.pretrainG != "":
-
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainG))
             print(
@@ -201,7 +200,6 @@ def run(rank, n_gpus, hps):
                 )
             )  ##测试不加载优化器
         if hps.pretrainD != "":
-
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainD))
             print(
