@@ -21,13 +21,13 @@
 
 [**English**](./docs/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/README.ja.md) | [**한국어**](./docs/README.ko.md) ([**韓國語**](./docs/README.ko.han.md))
 
-:fire: 使用了RVC变声器训练的人声转木吉他模型在线demo:fire: ：https://huggingface.co/spaces/lj1995/vocal2guitar
+点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
-:fire: RVC人声转吉他效果展示视频:fire: ：https://www.bilibili.com/video/BV19W4y1D7tT/
+使用了RVC的实时语音转换: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
+> 使用了RVC变声器训练的人声转木吉他模型在线demo ：https://huggingface.co/spaces/lj1995/vocal2guitar
 
-> 使用了RVC的实时语音转换: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
+> RVC人声转吉他效果展示视频 ：https://www.bilibili.com/video/BV19W4y1D7tT/
 
 > 底模使用接近50小时的开源高质量VCTK训练集训练，无版权方面的顾虑，请大家放心使用
 
