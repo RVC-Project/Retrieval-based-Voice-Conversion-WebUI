@@ -53,7 +53,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
         pitch = audiopath_and_text[2]
         pitchf = audiopath_and_text[3]
         dv = audiopath_and_text[4]
-
+        
         phone, pitch, pitchf = self.get_labels(phone, pitch, pitchf)
         spec, wav = self.get_audio(file)
         dv = self.get_sid(dv)
@@ -72,7 +72,6 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
             phone = phone[:len_min, :]
             pitch = pitch[:len_min]
             pitchf = pitchf[:len_min]
-
         return (spec, wav, phone, pitch, pitchf, dv)
 
     def get_labels(self, phone, pitch, pitchf):

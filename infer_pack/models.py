@@ -550,6 +550,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         spk_embed_dim,
         gin_channels,
         sr,
+        enc_out_dim,
         **kwargs
     ):
         super().__init__()
@@ -607,6 +608,9 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             inter_channels, hidden_channels, 5, 1, 3, gin_channels=gin_channels
         )
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
+        if enc_out_dim != 256: # If speech encoder output dim is not 256, make a point-wise projection
+            self.proj = nn.Linear(enc_out_dim, 256)
+            nn.init.xavier_uniform_(self.proj.weight)
         print("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
 
     def remove_weight_norm(self):
@@ -619,7 +623,11 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
     ):  # 这里ds是id，[bs,1]
         # print(1,pitch.shape)#[bs,t]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
-        m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
+        if phone.shape[-1] > 256: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, pitch, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
         z_slice, ids_slice = commons.rand_slice_segments(
@@ -661,6 +669,7 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         spk_embed_dim,
         gin_channels,
         sr,
+        enc_out_dim,
         **kwargs
     ):
         super().__init__()
@@ -718,6 +727,9 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
             inter_channels, hidden_channels, 5, 1, 3, gin_channels=gin_channels
         )
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
+        if enc_out_dim != 768: # If speech encoder output dim is not 768, make a point-wise projection
+            self.proj = nn.Linear(enc_out_dim, 768)
+            nn.init.xavier_uniform_(self.proj.weight)
         print("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
 
     def remove_weight_norm(self):
@@ -730,7 +742,11 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
     ):  # 这里ds是id，[bs,1]
         # print(1,pitch.shape)#[bs,t]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
-        m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
+        if phone.shape[-1] != 768: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, pitch, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
         z_slice, ids_slice = commons.rand_slice_segments(
@@ -772,6 +788,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         spk_embed_dim,
         gin_channels,
         sr=None,
+        enc_out_dim=256,
         **kwargs
     ):
         super().__init__()
@@ -826,6 +843,9 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
             inter_channels, hidden_channels, 5, 1, 3, gin_channels=gin_channels
         )
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
+        if enc_out_dim != 256: # If speech encoder output dim is not 768, make a point-wise projection
+            self.proj = nn.Linear(enc_out_dim, 256)
+            nn.init.xavier_uniform_(self.proj.weight)
         print("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
 
     def remove_weight_norm(self):
@@ -835,7 +855,11 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
 
     def forward(self, phone, phone_lengths, y, y_lengths, ds):  # 这里ds是id，[bs,1]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
-        m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
+        if phone.shape[-1] != 256: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, None, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
         z_slice, ids_slice = commons.rand_slice_segments(
@@ -874,6 +898,7 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         spk_embed_dim,
         gin_channels,
         sr=None,
+        enc_out_dim=768,
         **kwargs
     ):
         super().__init__()
@@ -928,6 +953,9 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
             inter_channels, hidden_channels, 5, 1, 3, gin_channels=gin_channels
         )
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
+        if enc_out_dim != 768: # If speech encoder output dim is not 768, make a point-wise projection
+            self.proj = nn.Linear(enc_out_dim, 768)
+            nn.init.xavier_uniform_(self.proj.weight)
         print("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
 
     def remove_weight_norm(self):
@@ -937,7 +965,11 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
 
     def forward(self, phone, phone_lengths, y, y_lengths, ds):  # 这里ds是id，[bs,1]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
-        m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
+        if phone.shape[-1] != 768: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, None, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
         z_slice, ids_slice = commons.rand_slice_segments(

@@ -3,14 +3,22 @@ import os, sys, traceback
 # device=sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
-if len(sys.argv) == 5:
+if len(sys.argv) == 6:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
-else:
+    speech_encoder = "hubert_base"
+elif len(sys.argv) == 7:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[6]
+    speech_encoder = "hubert_base" # Default is hubert_base
+elif len(sys.argv) == 8:
+    i_gpu = sys.argv[4]
+    exp_dir = sys.argv[5]
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
+    version = sys.argv[6]
+    speech_encoder = sys.argv[7]
 import torch
 import torch.nn.functional as F
 import soundfile as sf
@@ -36,12 +44,14 @@ def printt(strr):
 
 
 printt(sys.argv)
-model_path = "hubert_base.pt"
-
+if speech_encoder == "hubert_base":
+    model_path = "hubert_base.pt"
+elif speech_encoder == "PPGLarge":
+    model_path = "Large-v2.pt"
 printt(exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
 outPath = (
-    "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
+    "%s/3_feature256" % exp_dir if version == "v1" else ("%s/3_feature768" % exp_dir if speech_encoder == "hubert_base" else "%s/3_feature1280" % exp_dir)
 )
 os.makedirs(outPath, exist_ok=True)
 
@@ -61,26 +71,34 @@ def readwave(wav_path, normalize=False):
     return feats
 
 
-# HuBERT model
+# Load speech encoder. Two are available: hubert_base and PPGLarge
 printt("load model(s) from {}".format(model_path))
-# if hubert model is exist
+
+# If not exist
 if os.access(model_path, os.F_OK) == False:
     printt(
         "Error: Extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main"
         % model_path
     )
     exit(0)
-models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
-    [model_path],
-    suffix="",
-)
-model = models[0]
-model = model.to(device)
-printt("move model to %s" % device)
-if device not in ["mps", "cpu"]:
-    model = model.half()
-model.eval()
 
+if speech_encoder == "hubert_base":
+    # if hubert_base model is exist
+    models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
+        [model_path],
+        suffix="",
+    )
+    model = models[0]
+    model = model.to(device)
+    if device not in ["mps", "cpu"]:
+        model = model.half()
+    model.eval()
+
+elif speech_encoder == "PPGLarge":
+    from whisperPPGLarge import WhisperPPGLarge
+    model = WhisperPPGLarge(device=device)
+
+printt("move model to %s" % device)
 todo = sorted(list(os.listdir(wavPath)))[i_part::n_part]
 n = max(1, len(todo) // 10)  # 最多打印十条
 if len(todo) == 0:
@@ -96,26 +114,33 @@ else:
                 if os.path.exists(out_path):
                     continue
 
-                feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
-                padding_mask = torch.BoolTensor(feats.shape).fill_(False)
-                inputs = {
-                    "source": feats.half().to(device)
-                    if device not in ["mps", "cpu"]
-                    else feats.to(device),
-                    "padding_mask": padding_mask.to(device),
-                    "output_layer": 9 if version == "v1" else 12,  # layer 9
-                }
-                with torch.no_grad():
-                    logits = model.extract_features(**inputs)
-                    feats = (
-                        model.final_proj(logits[0]) if version == "v1" else logits[0]
-                    )
 
-                feats = feats.squeeze(0).float().cpu().numpy()
+                if speech_encoder == "hubert_base":
+                    feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
+                    padding_mask = torch.BoolTensor(feats.shape).fill_(False)
+                    inputs = {
+                        "source": feats.half().to(device)
+                        if device not in ["mps", "cpu"]
+                        else feats.to(device),
+                        "padding_mask": padding_mask.to(device),
+                        "output_layer": 9 if version == "v1" else 12,  # layer 9
+                    }
+                    with torch.no_grad():
+                        logits = model.extract_features(**inputs)
+                        feats = (
+                            model.final_proj(logits[0]) if version == "v1" else logits[0]
+                        )
+
+                    feats = feats.squeeze(0).float().cpu().numpy()
+                elif speech_encoder == "PPGLarge":
+                    feats = readwave(wav_path)
+                    feats = model.encoder(feats).cpu().numpy()
+
                 if np.isnan(feats).sum() == 0:
                     np.save(out_path, feats, allow_pickle=False)
                 else:
                     printt("%s-contains nan" % file)
+                    
                 if idx % n == 0:
                     printt("now-%s,all-%s,%s,%s" % (len(todo), idx, file, feats.shape))
         except:

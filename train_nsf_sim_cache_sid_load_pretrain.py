@@ -133,6 +133,8 @@ def run(rank, n_gpus, hps):
         persistent_workers=True,
         prefetch_factor=8,
     )
+    enc_out_dim = next(iter(train_loader))[0].shape[-1]
+
     if hps.if_f0 == 1:
         net_g = RVC_Model_f0(
             hps.data.filter_length // 2 + 1,
@@ -140,6 +142,7 @@ def run(rank, n_gpus, hps):
             **hps.model,
             is_half=hps.train.fp16_run,
             sr=hps.sample_rate,
+            enc_out_dim=enc_out_dim,
         )
     else:
         net_g = RVC_Model_nof0(
@@ -147,6 +150,7 @@ def run(rank, n_gpus, hps):
             hps.train.segment_size // hps.data.hop_length,
             **hps.model,
             is_half=hps.train.fp16_run,
+            enc_out_dim = next(iter(train_loader))[0][0].shape(-1)
         )
     if torch.cuda.is_available():
         net_g = net_g.cuda(rank)
@@ -168,11 +172,11 @@ def run(rank, n_gpus, hps):
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
     if torch.cuda.is_available():
-        net_g = DDP(net_g, device_ids=[rank])
-        net_d = DDP(net_d, device_ids=[rank])
+        net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
+        net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
     else:
-        net_g = DDP(net_g)
-        net_d = DDP(net_d)
+        net_g = DDP(net_g, find_unused_parameters=True)
+        net_d = DDP(net_d, find_unused_parameters=True)
 
     try:  # 如果能加载自动resume
         _, _, _, epoch_str = utils.load_checkpoint(
@@ -194,19 +198,21 @@ def run(rank, n_gpus, hps):
         if hps.pretrainG != "":
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainG))
-            print(
-                net_g.module.load_state_dict(
-                    torch.load(hps.pretrainG, map_location="cpu")["model"]
-                )
-            )  ##测试不加载优化器
+            # print(
+            #     net_g.module.load_state_dict(
+            #         torch.load(hps.pretrainG, map_location="cpu")["model"]
+            #     )
+                net_g, _, _, _ = utils.load_checkpoint(hps.pretrainG, net_g)
+               ##测试不加载优化器
         if hps.pretrainD != "":
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainD))
-            print(
-                net_d.module.load_state_dict(
-                    torch.load(hps.pretrainD, map_location="cpu")["model"]
-                )
-            )
+            # print(
+            #     net_d.module.load_state_dict(
+            #         torch.load(hps.pretrainD, map_location="cpu")["model"]
+            #     )
+            # )
+            net_d, _, _, _ = utils.load_checkpoint(hps.pretrainD, net_d)
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2

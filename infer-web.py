@@ -565,7 +565,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
 
 
 # but2.click(extract_f0,[gpus6,np7,f0method8,if_f0_3,trainset_dir4],[info2])
-def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
+def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, speech_encoder):
     gpus = gpus.split("-")
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
@@ -613,7 +613,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
     for idx, n_g in enumerate(gpus):
         cmd = (
             config.python_cmd
-            + " extract_feature_print.py %s %s %s %s %s/logs/%s %s"
+            + " extract_feature_print.py %s %s %s %s %s/logs/%s %s %s"
             % (
                 config.device,
                 leng,
@@ -622,6 +622,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
                 now_dir,
                 exp_dir,
                 version19,
+                speech_encoder
             )
         )
         print(cmd)
@@ -779,7 +780,7 @@ def click_train(
     feature_dir = (
         "%s/3_feature256" % (exp_dir)
         if version19 == "v1"
-        else "%s/3_feature768" % (exp_dir)
+        else ("%s/3_feature768" % (exp_dir) if speech_encoder == "hubert_base" else "%s/3_feature1280"  % (exp_dir))
     )
     if if_f0_3:
         f0_dir = "%s/2a_f0" % (exp_dir)
@@ -823,18 +824,19 @@ def click_train(
                 )
             )
     fea_dim = 256 if version19 == "v1" else 768
-    if if_f0_3:
-        for _ in range(2):
-            opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-                % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
-            )
-    else:
-        for _ in range(2):
-            opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
-                % (now_dir, sr2, now_dir, fea_dim, spk_id5)
-            )
+    if speech_encoder == "hubert_base":
+        if if_f0_3:
+            for _ in range(2):
+                opt.append(
+                    "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                    % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
+                )
+        else:
+            for _ in range(2):
+                opt.append(
+                    "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
+                    % (now_dir, sr2, now_dir, fea_dim, spk_id5)
+                )
     shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
@@ -898,7 +900,7 @@ def train_index(exp_dir1, version19):
     feature_dir = (
         "%s/3_feature256" % (exp_dir)
         if version19 == "v1"
-        else "%s/3_feature768" % (exp_dir)
+        else ("%s/3_feature768" % (exp_dir) if speech_encoder == "hubert_base" else "%s/3_feature1280"  % (exp_dir))
     )
     if not os.path.exists(feature_dir):
         return "请先进行特征提取!"
@@ -1005,7 +1007,7 @@ def train1key(
     feature_dir = (
         "%s/3_feature256" % model_log_dir
         if version19 == "v1"
-        else "%s/3_feature768" % model_log_dir
+        else ("%s/3_feature768" % (model_log_dir) if speech_encoder == "hubert_base" else "%s/3_feature1280"  % (model_log_dir))
     )
 
     os.makedirs(model_log_dir, exist_ok=True)
@@ -1107,18 +1109,19 @@ def train1key(
                 )
             )
     fea_dim = 256 if version19 == "v1" else 768
-    if if_f0_3:
-        for _ in range(2):
-            opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
-                % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
-            )
-    else:
-        for _ in range(2):
-            opt.append(
-                "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
-                % (now_dir, sr2, now_dir, fea_dim, spk_id5)
-            )
+    if speech_encoder == "hubert_base": # PPG is 1280 dims, but there is no mute.npy, TODO: make mute.npy of 1280 dims
+        if if_f0_3:
+            for _ in range(2):
+                opt.append(
+                    "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s/logs/mute/2a_f0/mute.wav.npy|%s/logs/mute/2b-f0nsf/mute.wav.npy|%s"
+                    % (now_dir, sr2, now_dir, fea_dim, now_dir, now_dir, spk_id5)
+                )
+        else:
+            for _ in range(2):
+                opt.append(
+                    "%s/logs/mute/0_gt_wavs/mute%s.wav|%s/logs/mute/3_feature%s/mute.npy|%s"
+                    % (now_dir, sr2, now_dir, fea_dim, spk_id5)
+                )
     shuffle(opt)
     with open("%s/filelist.txt" % model_log_dir, "w") as f:
         f.write("\n".join(opt))
@@ -1689,11 +1692,18 @@ with gr.Blocks() as app:
                             value="harvest",
                             interactive=True,
                         )
+                        speech_encoder = gr.Radio(
+                            label=i18n("选择语音特征提取器，Hubert_base更为广泛使用，而Whisper PPGLarge是由OpenAI开发的，速度慢模型大，在英文语音上效果更好"),
+                            choices=["hubert_base", "PPGLarge"],
+                            value="hubert_base",
+                            interactive=True,
+                            visible=True,
+                        )
                     but2 = gr.Button(i18n("特征提取"), variant="primary")
                     info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
                     but2.click(
                         extract_f0_feature,
-                        [gpus6, np7, f0method8, if_f0_3, exp_dir1, version19],
+                        [gpus6, np7, f0method8, if_f0_3, exp_dir1, version19, speech_encoder],
                         [info2],
                     )
             with gr.Group():
