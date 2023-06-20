@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import torch
 
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
 import logging
 import threading
@@ -1374,7 +1375,7 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label=i18n("检索特征占比"),
-                            value=0.88,
+                            value=0.75,
                             interactive=True,
                         )
                     with gr.Column():
@@ -1390,7 +1391,7 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label=i18n("输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络"),
-                            value=1,
+                            value=0.25,
                             interactive=True,
                         )
                         protect0 = gr.Slider(
