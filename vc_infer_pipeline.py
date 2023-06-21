@@ -163,9 +163,10 @@ class VC(object):
         index_rate,
         version,
         protect,
+        speech_encoder,
     ):  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
-        if self.is_half:
+        if self.is_half and speech_encoder != "PPGLarge":
             feats = feats.half()
         else:
             feats = feats.float()
@@ -174,16 +175,27 @@ class VC(object):
         assert feats.dim() == 1, feats.dim()
         feats = feats.view(1, -1)
         padding_mask = torch.BoolTensor(feats.shape).to(self.device).fill_(False)
-
-        inputs = {
-            "source": feats.to(self.device),
-            "padding_mask": padding_mask,
-            "output_layer": 9 if version == "v1" else 12,
-        }
         t0 = ttime()
-        with torch.no_grad():
-            logits = model.extract_features(**inputs)
-            feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
+        print("use %s as speech encoder" % speech_encoder)
+        if speech_encoder == "hubert_base":
+            inputs = {
+                "source": feats.to(self.device),
+                "padding_mask": padding_mask,
+                "output_layer": 9 if version == "v1" else 12,
+            }
+            with torch.no_grad():
+                logits = model.extract_features(**inputs)
+                feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
+        elif speech_encoder == "PPGLarge":
+            with torch.no_grad():
+                try:
+                    feats = model.encoder(feats).unsqueeze(0).half()
+                except:
+                    print("Error, try a different speech encoder.")
+                    del feats, p_len, padding_mask
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    exit()
         if protect < 0.5 and pitch != None and pitchf != None:
             feats0 = feats.clone()
         if (
@@ -272,6 +284,7 @@ class VC(object):
         version,
         protect,
         f0_file=None,
+        speech_encoder='hubert_base',
     ):
         if (
             file_index != ""
@@ -359,6 +372,7 @@ class VC(object):
                         index_rate,
                         version,
                         protect,
+                        speech_encoder,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
@@ -376,6 +390,7 @@ class VC(object):
                         index_rate,
                         version,
                         protect,
+                        speech_encoder,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
@@ -394,6 +409,7 @@ class VC(object):
                     index_rate,
                     version,
                     protect,
+                    speech_encoder,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
@@ -411,6 +427,7 @@ class VC(object):
                     index_rate,
                     version,
                     protect,
+                    speech_encoder,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)

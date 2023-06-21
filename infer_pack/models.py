@@ -641,7 +641,11 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
 
     def infer(self, phone, phone_lengths, pitch, nsff0, sid, max_len=None):
         g = self.emb_g(sid).unsqueeze(-1)
-        m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
+        if phone.shape[-1] > 256: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], nsff0, g=g)
@@ -760,7 +764,11 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
 
     def infer(self, phone, phone_lengths, pitch, nsff0, sid, max_len=None):
         g = self.emb_g(sid).unsqueeze(-1)
-        m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
+        if phone.shape[-1] != 768: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], nsff0, g=g)
@@ -870,7 +878,11 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
 
     def infer(self, phone, phone_lengths, sid, max_len=None):
         g = self.emb_g(sid).unsqueeze(-1)
-        m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
+        if phone.shape[-1] != 256: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], g=g)
@@ -979,8 +991,12 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, phone, phone_lengths, sid, max_len=None):
+        if phone.shape[-1] != 768: # If use different speech encoder
+            proj_phone = self.proj(phone)
+        else:
+            proj_phone = phone
         g = self.emb_g(sid).unsqueeze(-1)
-        m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
+        m_p, logs_p, x_mask = self.enc_p(proj_phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec((z * x_mask)[:, :, :max_len], g=g)
