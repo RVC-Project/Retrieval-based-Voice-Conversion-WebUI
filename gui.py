@@ -292,7 +292,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("Hubert模型"),
                                 initial_folder=os.path.join(os.getcwd()),
-                                file_types=((". pt"),),
+                                file_types=(("pt files", "*.pt"),),
                             ),
                         ],
                         [
@@ -303,7 +303,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.pth文件"),
                                 initial_folder=os.path.join(os.getcwd(), "weights"),
-                                file_types=((". pth"),),
+                                file_types=(("weight files", "*.pth"),),
                             ),
                         ],
                         [
@@ -314,7 +314,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.index文件"),
                                 initial_folder=os.path.join(os.getcwd(), "logs"),
-                                file_types=((". index"),),
+                                file_types=(("index files", "*.index"),),
                             ),
                         ],
                         [
@@ -326,7 +326,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.npy文件"),
                                 initial_folder=os.path.join(os.getcwd(), "logs"),
-                                file_types=((". npy"),),
+                                file_types=(("feature files", "*.npy"),),
                             ),
                         ],
                     ],
