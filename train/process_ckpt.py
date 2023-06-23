@@ -92,7 +92,7 @@ def extract_small_model(path, name, sr, if_f0, info, version):
                 40000,
             ]
         elif sr == "48k":
-            if(version=="v1"):
+            if version == "v1":
                 opt["config"] = [
                     1025,
                     32,
@@ -127,15 +127,15 @@ def extract_small_model(path, name, sr, if_f0, info, version):
                     "1",
                     [3, 7, 11],
                     [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
-                    [12,10,2,2],
+                    [12, 10, 2, 2],
                     512,
-                    [24,20,4,4],
+                    [24, 20, 4, 4],
                     109,
                     256,
                     48000,
                 ]
         elif sr == "32k":
-            if(version=="v1"):
+            if version == "v1":
                 opt["config"] = [
                     513,
                     32,
@@ -170,9 +170,9 @@ def extract_small_model(path, name, sr, if_f0, info, version):
                     "1",
                     [3, 7, 11],
                     [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
-                    [10,8,2,2],
+                    [10, 8, 2, 2],
                     512,
-                    [20,16,4,4],
+                    [20, 16, 4, 4],
                     109,
                     256,
                     32000,
