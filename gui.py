@@ -254,17 +254,17 @@ class GUI:
         self.launcher()
 
     def load(self):
-        input_devices, output_devices, _, _ = self.get_devices()
+        input_devices, output_devices, input_devices_indices, output_devices_indices = self.get_devices()
         try:
             with open("values1.json", "r") as j:
                 data = json.load(j)
         except:
             with open("values1.json", "w") as j:
                 data = {
-                    "pth_path": " ",
-                    "index_path": " ",
-                    "sg_input_device": input_devices[sd.default.device[0]],
-                    "sg_output_device": output_devices[sd.default.device[1]],
+                    "pth_path": "",
+                    "index_path": "",
+                    "sg_input_device": input_devices[input_devices_indices.index(sd.default.device[0])],
+                    "sg_output_device": output_devices[output_devices_indices.index(sd.default.device[1])],
                     "threhold": "-45",
                     "pitch": "0",
                     "index_rate": "0",
