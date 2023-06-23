@@ -16,7 +16,7 @@ VITS基盤의 簡單하고使用하기 쉬운音聲變換틀<br><br>
 </div>
 
 ------
-[**更新日誌**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_CN.md)
+[**更新日誌**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_KO.md)
 
 [**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md) ([**韓國語**](./README.ko.han.md))
 
