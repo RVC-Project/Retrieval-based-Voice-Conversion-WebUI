@@ -550,6 +550,7 @@ class GUI:
         接受音频输入
         """
         with sd.Stream(
+            channels=2,
             callback=self.audio_callback,
             blocksize=self.block_frame,
             samplerate=self.config.samplerate,
