@@ -10,7 +10,7 @@ import warnings
 import numpy as np
 import torch
 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
 import logging
 import threading
