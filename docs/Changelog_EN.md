@@ -27,7 +27,7 @@ todolist：
 - v1 32k model training is no more supported
 
 ### 2023-05-13
-- Clear the redundant codes in the old version of runtime in the one-click-package: infer_pack and uvr5_pack
+- Clear the redundant codes in the old version of runtime in the one-click-package: lib.infer_pack and uvr5_pack
 - Fix pseudo multiprocessing bug in training set preprocessing
 - Adding median filtering radius adjustment for harvest pitch recognize algorithm
 - Support post processing resampling for exporting audio

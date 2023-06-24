@@ -7,7 +7,7 @@
     "step3a:正在训练模型": "Step 3a: Model training started",
     "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log": "Training complete. You can check the training logs in the console or the 'train.log' file under the experiment folder.",
     "全流程结束！": "All processes have been completed!",
-    "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>使用需遵守的协议-LICENSE.txt</b>.": "This software is open source under the MIT license. The author does not have any control over the software. Users who use the software and distribute the sounds exported by the software are solely responsible. <br>If you do not agree with this clause, you cannot use or reference any codes and files within the software package. See the root directory <b>Agreement-LICENSE.txt</b> for details.",
+    "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>.": "This software is open source under the MIT license. The author does not have any control over the software. Users who use the software and distribute the sounds exported by the software are solely responsible. <br>If you do not agree with this clause, you cannot use or reference any codes and files within the software package. See the root directory <b>Agreement-LICENSE.txt</b> for details.",
     "模型推理": "Model Inference",
     "推理音色": "Inferencing voice:",
     "刷新音色列表和索引路径": "Refresh voice list and index path",

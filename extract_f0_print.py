@@ -4,7 +4,6 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 from my_utils import load_audio
 import pyworld
-from scipy.io import wavfile
 import numpy as np, logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)

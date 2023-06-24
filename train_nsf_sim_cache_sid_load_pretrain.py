@@ -22,7 +22,7 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
-from infer_pack import commons
+from lib.infer_pack import commons
 from time import sleep
 from time import time as ttime
 from data_utils import (
@@ -34,13 +34,13 @@ from data_utils import (
 )
 
 if hps.version == "v1":
-    from infer_pack.models import (
+    from lib.infer_pack.models import (
         SynthesizerTrnMs256NSFsid as RVC_Model_f0,
         SynthesizerTrnMs256NSFsid_nono as RVC_Model_nof0,
         MultiPeriodDiscriminator,
     )
 else:
-    from infer_pack.models import (
+    from lib.infer_pack.models import (
         SynthesizerTrnMs768NSFsid as RVC_Model_f0,
         SynthesizerTrnMs768NSFsid_nono as RVC_Model_nof0,
         MultiPeriodDiscriminatorV2 as MultiPeriodDiscriminator,

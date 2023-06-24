@@ -29,7 +29,7 @@ todolist：
 - 废弃32k模型的训练
 
 ### 20230513更新
-- 清除一键包内部老版本runtime内残留的infer_pack和uvr5_pack
+- 清除一键包内部老版本runtime内残留的lib.infer_pack和uvr5_pack
 - 修复训练集预处理伪多进程的bug
 - 增加harvest识别音高可选通过中值滤波削弱哑音现象，可调整中值滤波半径
 - 导出音频增加后处理重采样
