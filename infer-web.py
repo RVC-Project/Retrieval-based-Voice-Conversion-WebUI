@@ -43,7 +43,9 @@ logging.getLogger("numba").setLevel(logging.WARNING)
 
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/lib.infer_pack" % (now_dir), ignore_errors=True)
+shutil.rmtree(
+    "%s/runtime/Lib/site-packages/lib.infer_pack" % (now_dir), ignore_errors=True
+)
 shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
@@ -328,6 +330,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
         )
         if model_name == "onnx_dereverb_By_FoxJoy":
             from MDXNet import MDXNetDereverb
+
             pre_fun = MDXNetDereverb(15)
         else:
             func = _audio_pre_ if "DeEcho" not in model_name else _audio_pre_new
