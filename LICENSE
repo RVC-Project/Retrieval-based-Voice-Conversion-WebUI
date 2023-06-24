@@ -3,9 +3,6 @@ MIT License
 Copyright (c) 2023 liujing04
 Copyright (c) 2023 源文雨
 
-        本软件及其相关代码以MIT协议开源，作者不对软件具备任何控制力，使用软件者、传播软件导出的声音者自负全责。
-        如不认可该条款，则不能使用或引用软件包内任何代码和文件。
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -23,6 +20,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+本软件及其相关代码以MIT协议开源，作者不对软件具备任何控制力，使用软件者、传播软件导出的声音者自负全责。
+如不认可该条款，则不能使用或引用软件包内任何代码和文件。
 
 特此授予任何获得本软件和相关文档文件（以下简称“软件”）副本的人免费使用、复制、修改、合并、出版、分发、再授权和/或销售本软件的权利，以及授予本软件所提供的人使用本软件的权利，但须符合以下条件：
 上述版权声明和本许可声明应包含在软件的所有副本或实质部分中。
