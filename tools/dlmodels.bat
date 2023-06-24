@@ -1,7 +1,5 @@
 @echo off && chcp 65001
 
-cd ..
-
 echo working dir is %cd%
 echo downloading requirement aria2 check.
 echo=
