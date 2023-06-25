@@ -6,7 +6,7 @@ librosa==0.9.1
 llvmlite==0.39.0
 fairseq==0.12.2
 faiss-cpu==1.7.3
-gradio
+gradio==3.14.0
 Cython
 pydub>=0.25.1
 soundfile>=0.12.1
@@ -39,5 +39,5 @@ uvicorn>=0.21.1
 colorama>=0.4.5
 pyworld>=0.3.2
 httpx==0.23.0
-onnxruntime-gpu
+#onnxruntime-gpu
 torchcrepe==0.0.20

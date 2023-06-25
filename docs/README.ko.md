@@ -3,12 +3,12 @@
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
 VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<br><br>
 
-[![madewithlove](https://forthebadge.com/images/badges/built-with-love.svg)](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI)
+[![madewithlove](https://forthebadge.com/images/badges/built-with-love.svg)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
-[![Licence](https://img.shields.io/github/license/liujing04/Retrieval-based-Voice-Conversion-WebUI?style=for-the-badge)](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/%E4%BD%BF%E7%94%A8%E9%9C%80%E9%81%B5%E5%AE%88%E7%9A%84%E5%8D%8F%E8%AE%AE-LICENSE.txt)
+[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
+[![Licence](https://img.shields.io/github/license/RVC-Project/Retrieval-based-Voice-Conversion-WebUI?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
 [![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
 [![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
@@ -17,7 +17,7 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 ---
 
-[**업데이트 로그**](https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/blob/main/Changelog_KO.md)
+[**업데이트 로그**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_KO.md)
 
 [**English**](./README.en.md) | [**中文简体**](../README.md) | [**日本語**](./README.ja.md) | [**한국어**](./README.ko.md) ([**韓國語**](./README.ko.han.md))
 
@@ -51,7 +51,7 @@ poetry를 통해 dependecies를 설치하는 것을 권장합니다.
 # 참조: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
-# Windows + Nvidia Ampere Architecture(RTX30xx)를 사용하고 있다면, https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/issues/21 에서 명시된 것과 같이 PyTorch에 맞는 CUDA 버전을 지정해야 합니다.
+# Windows + Nvidia Ampere Architecture(RTX30xx)를 사용하고 있다면, https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/issues/21 에서 명시된 것과 같이 PyTorch에 맞는 CUDA 버전을 지정해야 합니다.
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 
 # Poetry 설치, 이미 설치되어 있는 경우 건너뛰기 가능
@@ -107,6 +107,6 @@ Windows를 사용하는 경우 `RVC-beta.7z`를 다운로드 및 압축 해제�
 
 ## 모든 기여자 분들의 노력에 감사드립니다.
 
-<a href="https://github.com/liujing04/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
-  <img src="https://contrib.rocks/image?repo=liujing04/Retrieval-based-Voice-Conversion-WebUI" />
+<a href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
+  <img src="https://contrib.rocks/image?repo=RVC-Project/Retrieval-based-Voice-Conversion-WebUI" />
 </a>

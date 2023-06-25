@@ -22,7 +22,7 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
-from infer_pack import commons
+from lib.infer_pack import commons
 from time import sleep
 from time import time as ttime
 from data_utils import (
@@ -34,13 +34,13 @@ from data_utils import (
 )
 
 if hps.version == "v1":
-    from infer_pack.models import (
+    from lib.infer_pack.models import (
         SynthesizerTrnMs256NSFsid as RVC_Model_f0,
         SynthesizerTrnMs256NSFsid_nono as RVC_Model_nof0,
         MultiPeriodDiscriminator,
     )
 else:
-    from infer_pack.models import (
+    from lib.infer_pack.models import (
         SynthesizerTrnMs768NSFsid as RVC_Model_f0,
         SynthesizerTrnMs768NSFsid_nono as RVC_Model_nof0,
         MultiPeriodDiscriminatorV2 as MultiPeriodDiscriminator,
@@ -191,18 +191,22 @@ def run(rank, n_gpus, hps):
         # traceback.print_exc()
         epoch_str = 1
         global_step = 0
-        if rank == 0:
-            logger.info("loaded pretrained %s %s" % (hps.pretrainG, hps.pretrainD))
-        print(
-            net_g.module.load_state_dict(
-                torch.load(hps.pretrainG, map_location="cpu")["model"]
+        if hps.pretrainG != "":
+            if rank == 0:
+                logger.info("loaded pretrained %s" % (hps.pretrainG))
+            print(
+                net_g.module.load_state_dict(
+                    torch.load(hps.pretrainG, map_location="cpu")["model"]
+                )
+            )  ##测试不加载优化器
+        if hps.pretrainD != "":
+            if rank == 0:
+                logger.info("loaded pretrained %s" % (hps.pretrainD))
+            print(
+                net_d.module.load_state_dict(
+                    torch.load(hps.pretrainD, map_location="cpu")["model"]
+                )
             )
-        )  ##测试不加载优化器
-        print(
-            net_d.module.load_state_dict(
-                torch.load(hps.pretrainD, map_location="cpu")["model"]
-            )
-        )
 
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
         optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
