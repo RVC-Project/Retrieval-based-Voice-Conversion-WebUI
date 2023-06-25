@@ -100,7 +100,7 @@ opt_path = sys.argv[5]
 model_path = sys.argv[6]
 index_rate = float(sys.argv[7])
 device = sys.argv[8]
-is_half = bool(sys.argv[9])
+is_half = sys.argv[9].lower() != "false"
 filter_radius = int(sys.argv[10])
 resample_sr = int(sys.argv[11])
 rms_mix_rate = float(sys.argv[12])
