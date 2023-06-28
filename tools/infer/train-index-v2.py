@@ -22,24 +22,24 @@ np.random.shuffle(big_npy_idx)
 big_npy = big_npy[big_npy_idx]
 print(big_npy.shape)  # (6196072, 192)#fp32#4.43G
 if big_npy.shape[0] > 2e5:
-        # if(1):
-        info = "Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0]
-        print(info)
-        try:
-            big_npy = (
-                MiniBatchKMeans(
-                    n_clusters=10000,
-                    verbose=True,
-                    batch_size=256 * n_cpu,
-                    compute_labels=False,
-                    init="random",
-                )
-                .fit(big_npy)
-                .cluster_centers_
+    # if(1):
+    info = "Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0]
+    print(info)
+    try:
+        big_npy = (
+            MiniBatchKMeans(
+                n_clusters=10000,
+                verbose=True,
+                batch_size=256 * n_cpu,
+                compute_labels=False,
+                init="random",
             )
-        except:
-            info = traceback.format_exc()
-            print(info)
+            .fit(big_npy)
+            .cluster_centers_
+        )
+    except:
+        info = traceback.format_exc()
+        print(info)
 
 np.save("tools/infer/big_src_feature_mi.npy", big_npy)
 
@@ -58,7 +58,9 @@ print("adding")
 batch_size_add = 8192
 for i in range(0, big_npy.shape[0], batch_size_add):
     index.add(big_npy[i : i + batch_size_add])
-faiss.write_index(index, "tools/infer/added_IVF%s_Flat_mi_baseline_src_feat.index" % (n_ivf))
+faiss.write_index(
+    index, "tools/infer/added_IVF%s_Flat_mi_baseline_src_feat.index" % (n_ivf)
+)
 """
 大小（都是FP32）
 big_src_feature 2.95G
