@@ -254,17 +254,17 @@ class GUI:
         self.launcher()
 
     def load(self):
-        input_devices, output_devices, _, _ = self.get_devices()
+        input_devices, output_devices, input_devices_indices, output_devices_indices = self.get_devices()
         try:
             with open("values1.json", "r") as j:
                 data = json.load(j)
         except:
             with open("values1.json", "w") as j:
                 data = {
-                    "pth_path": " ",
-                    "index_path": " ",
-                    "sg_input_device": input_devices[sd.default.device[0]],
-                    "sg_output_device": output_devices[sd.default.device[1]],
+                    "pth_path": "",
+                    "index_path": "",
+                    "sg_input_device": input_devices[input_devices_indices.index(sd.default.device[0])],
+                    "sg_output_device": output_devices[output_devices_indices.index(sd.default.device[1])],
                     "threhold": "-45",
                     "pitch": "0",
                     "index_rate": "0",
@@ -292,7 +292,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("Hubert模型"),
                                 initial_folder=os.path.join(os.getcwd()),
-                                file_types=((". pt"),),
+                                file_types=(("pt files", "*.pt"),),
                             ),
                         ],
                         [
@@ -303,7 +303,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.pth文件"),
                                 initial_folder=os.path.join(os.getcwd(), "weights"),
-                                file_types=((". pth"),),
+                                file_types=(("weight files", "*.pth"),),
                             ),
                         ],
                         [
@@ -314,7 +314,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.index文件"),
                                 initial_folder=os.path.join(os.getcwd(), "logs"),
-                                file_types=((". index"),),
+                                file_types=(("index files", "*.index"),),
                             ),
                         ],
                         [
@@ -326,7 +326,7 @@ class GUI:
                             sg.FileBrowse(
                                 i18n("选择.npy文件"),
                                 initial_folder=os.path.join(os.getcwd(), "logs"),
-                                file_types=((". npy"),),
+                                file_types=(("feature files", "*.npy"),),
                             ),
                         ],
                     ],
@@ -550,6 +550,7 @@ class GUI:
         接受音频输入
         """
         with sd.Stream(
+            channels=2,
             callback=self.audio_callback,
             blocksize=self.block_frame,
             samplerate=self.config.samplerate,
