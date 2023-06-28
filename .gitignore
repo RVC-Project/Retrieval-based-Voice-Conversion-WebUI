@@ -4,3 +4,4 @@ __pycache__
 *.pyd
 hubert_base.pt
 /logs
+.venv

@@ -31,7 +31,7 @@ import scipy.signal as signal
 
 
 # import matplotlib.pyplot as plt
-from infer_pack.models import (
+from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
     SynthesizerTrnMs768NSFsid,
