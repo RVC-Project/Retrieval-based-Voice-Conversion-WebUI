@@ -7,7 +7,7 @@
     "step3a:正在训练模型": "Adım 3a: Model eğitimi başladı",
     "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log": "Eğitim tamamlandı. Eğitim günlüklerini konsolda veya deney klasörü altındaki train.log dosyasında kontrol edebilirsiniz.",
     "全流程结束！": "Tüm işlemler tamamlandı!",
-    "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>使用需遵守的协议-LICENSE.txt</b>.": "Bu yazılım, MIT lisansı altında açık kaynaklıdır. Yazarın yazılım üzerinde herhangi bir kontrolü yoktur. Yazılımı kullanan ve yazılım tarafından dışa aktarılan sesleri dağıtan kullanıcılar sorumludur. <br>Eğer bu maddeyle aynı fikirde değilseniz, yazılım paketi içindeki herhangi bir kod veya dosyayı kullanamaz veya referans göremezsiniz. Detaylar için kök dizindeki <b>Agreement-LICENSE.txt</b> dosyasına bakınız.",
+    "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>.": "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>.",
     "模型推理": "Model çıkartma (Inference)",
     "推理音色": "Ses çıkartma (Inference):",
     "刷新音色列表和索引路径": "Ses listesini ve indeks yolunu yenile",
@@ -124,5 +124,5 @@
     "请选择index文件": "Lütfen .index dosyası seçin",
     "hubert模型路径不可包含中文": "hubert modeli yolu Çince karakter içeremez",
     "pth文件路径不可包含中文": ".pth dosya yolu Çince karakter içeremez",
-    "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez"    
+    "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez"
 }
