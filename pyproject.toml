@@ -53,6 +53,7 @@ absl-py = "^1.4.0"
 audioread = "^3.0.0"
 uvicorn = "^0.21.1"
 colorama = "^0.4.6"
+torchcrepe = "0.0.20"
 
 [tool.poetry.dev-dependencies]
 
