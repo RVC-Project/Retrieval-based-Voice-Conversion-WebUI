@@ -81,6 +81,7 @@ class RVC:
                 self.net_g = self.net_g.half()
             else:
                 self.net_g = self.net_g.float()
+            self.is_half=config.is_half
         except:
             print(traceback.format_exc())
 
@@ -102,6 +103,7 @@ class RVC:
     def get_f0(self, x, f0_up_key, n_cpu, method="harvest"):
         n_cpu = int(n_cpu)
         if (method == "crepe"): return self.get_f0_crepe(x, f0_up_key)
+        if (method == "rmvpe"): return self.get_f0_rmvpe(x, f0_up_key)
         if (method == "pm"):
             p_len = x.shape[0] // 160
             f0 = (
@@ -178,6 +180,16 @@ class RVC:
         f0 = torchcrepe.filter.mean(f0, 3)
         f0[pd < 0.1] = 0
         f0 = f0[0].cpu().numpy()
+        f0 *= pow(2, f0_up_key / 12)
+        return self.get_f0_post(f0)
+
+    def get_f0_rmvpe(self, x, f0_up_key):
+        if (hasattr(self, "model_rmvpe") == False):
+            from rmvpe import RMVPE
+            print("loading rmvpe model")
+            # self.model_rmvpe = RMVPE("rmvpe.pt", is_half=self.is_half, device=self.device)
+            self.model_rmvpe = RMVPE("aug2_58000_half.pt", is_half=self.is_half, device=self.device)
+        f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 

@@ -81,6 +81,7 @@ if __name__ == '__main__':
                     data["pm"]=data["f0method"]=="pm"
                     data["harvest"]=data["f0method"]=="harvest"
                     data["crepe"]=data["f0method"]=="crepe"
+                    data["rmvpe"]=data["f0method"]=="rmvpe"
             except:
                 with open("values1.json", "w") as j:
                     data = {
@@ -94,7 +95,7 @@ if __name__ == '__main__':
                         "block_time": "1",
                         "crossfade_length": "0.04",
                         "extra_time": "1",
-                        "f0method": "harvest",
+                        "f0method": "rmvpe",
                     }
             return data
 
@@ -193,6 +194,7 @@ if __name__ == '__main__':
                                 sg.Radio("pm","f0method",key="pm",default=data.get("pm","")==True),
                                 sg.Radio("harvest","f0method",key="harvest",default=data.get("harvest","")==True),
                                 sg.Radio("crepe","f0method",key="crepe",default=data.get("crepe","")==True),
+                                sg.Radio("rmvpe","f0method",key="rmvpe",default=data.get("rmvpe","")==True),
                             ],
                         ],
                         title=i18n("常规设置"),
@@ -279,7 +281,7 @@ if __name__ == '__main__':
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
                             "n_cpu": values["n_cpu"],
-                            "f0method": ["pm","harvest","crepe"][[values["pm"],values["harvest"],values["crepe"]].index(True)],
+                            "f0method": ["pm","harvest","crepe","rmvpe"][[values["pm"],values["harvest"],values["crepe"],values["rmvpe"]].index(True)],
                         }
                         with open("values1.json", "w") as j:
                             json.dump(settings, j)
@@ -312,7 +314,7 @@ if __name__ == '__main__':
             self.config.O_noise_reduce = values["O_noise_reduce"]
             self.config.index_rate = values["index_rate"]
             self.config.n_cpu = values["n_cpu"]
-            self.config.f0method = ["pm","harvest","crepe"][[values["pm"],values["harvest"],values["crepe"]].index(True)]
+            self.config.f0method = ["pm","harvest","crepe","rmvpe"][[values["pm"],values["harvest"],values["crepe"],values["rmvpe"]].index(True)]
             return True
 
         def start_vc(self):
@@ -346,7 +348,7 @@ if __name__ == '__main__':
             self.fade_out_window: torch.Tensor = 1 - self.fade_in_window
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
-            )
+            ).to(device)
             thread_vc = threading.Thread(target=self.soundinput)
             thread_vc.start()
 
@@ -389,13 +391,15 @@ if __name__ == '__main__':
                         indata[i * hop_length : (i + 1) * hop_length] = 0
             self.input_wav[:] = np.append(self.input_wav[self.block_frame :], indata)
             # infer
-            inp=torch.from_numpy(self.input_wav)
+            inp=torch.from_numpy(self.input_wav).to(device)
+            ##0
             res1=self.resampler(inp)
+            ###55%
             rate1=self.block_frame/(self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)
             rate2=(self.crossfade_frame + self.sola_search_frame + self.block_frame)/(self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)
-            res2=self.rvc.infer(res1,res1[-self.block_frame:].numpy(),rate1,rate2,self.pitch,self.pitchf,self.config.f0method)
+            res2=self.rvc.infer(res1,res1[-self.block_frame:].cpu().numpy(),rate1,rate2,self.pitch,self.pitchf,self.config.f0method)
             self.output_wav_cache[-res2.shape[0]:]=res2
-            infer_wav = self.output_wav_cache[-self.crossfade_frame - self.sola_search_frame - self.block_frame :].to(device)
+            infer_wav = self.output_wav_cache[-self.crossfade_frame - self.sola_search_frame - self.block_frame :]
             # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
             cor_nom = F.conv1d(
                 infer_wav[None, None, : self.crossfade_frame + self.sola_search_frame],
