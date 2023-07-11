@@ -1,15 +1,3 @@
-"""
-0416后的更新：
-    引入config中half
-    重建npy而不用填写
-    v2支持
-    无f0模型支持
-    修复
-
-    int16：
-    增加无索引支持
-    f0算法改harvest(怎么看就只有这个会影响CPU占用)，但是不这么改效果不好
-"""
 import os, sys, traceback, re
 
 import json
