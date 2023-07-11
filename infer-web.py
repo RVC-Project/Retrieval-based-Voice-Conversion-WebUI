@@ -1340,7 +1340,7 @@ with gr.Blocks() as app:
                             label=i18n(
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
                             ),
-                            choices=["pm", "harvest", "crepe"],
+                            choices=["pm", "harvest", "crepe", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1442,7 +1442,7 @@ with gr.Blocks() as app:
                             label=i18n(
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
                             ),
-                            choices=["pm", "harvest", "crepe"],
+                            choices=["pm", "harvest", "crepe", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )

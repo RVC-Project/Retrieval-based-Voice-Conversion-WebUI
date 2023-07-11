@@ -1,10 +1,12 @@
-import numpy as np, parselmouth, torch, pdb
+import numpy as np, parselmouth, torch, pdb,sys,os
 from time import time as ttime
 import torch.nn.functional as F
 import scipy.signal as signal
 import pyworld, os, traceback, faiss, librosa, torchcrepe
 from scipy import signal
 from functools import lru_cache
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
@@ -124,6 +126,12 @@ class VC(object):
             f0 = torchcrepe.filter.mean(f0, 3)
             f0[pd < 0.1] = 0
             f0 = f0[0].cpu().numpy()
+        elif f0_method == "rmvpe":
+            if(hasattr(self,"model_rmvpe")==False):
+                from rmvpe import RMVPE
+                print("loading rmvpe model")
+                self.model_rmvpe = RMVPE("rmvpe.pt",is_half=self.is_half, device=self.device)
+            f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         tf0 = self.sr // self.window  # 每秒f0点数
