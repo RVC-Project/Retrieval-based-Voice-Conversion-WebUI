@@ -1,4 +1,4 @@
-import faiss,torch,traceback,parselmouth,numpy as np,torchcrepe,torch.nn as nn,pyworld
+import faiss, torch, traceback, parselmouth, numpy as np, torchcrepe, torch.nn as nn, pyworld
 from fairseq import checkpoint_utils
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
@@ -6,29 +6,32 @@ from lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-import os,sys
+import os, sys
 from time import time as ttime
 import torch.nn.functional as F
 import scipy.signal as signal
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 from config import Config
 from multiprocessing import Manager as M
+
 mm = M()
 config = Config()
 
+
 class RVC:
     def __init__(
-            self, key, pth_path, index_path, index_rate, n_cpu,inp_q,opt_q,device
+        self, key, pth_path, index_path, index_rate, n_cpu, inp_q, opt_q, device
     ) -> None:
         """
         初始化
         """
         try:
             global config
-            self.inp_q=inp_q
-            self.opt_q=opt_q
-            self.device=device
+            self.inp_q = inp_q
+            self.opt_q = opt_q
+            self.device = device
             self.f0_up_key = key
             self.time_step = 160 / 16000 * 1000
             self.f0_min = 50
@@ -81,7 +84,7 @@ class RVC:
                 self.net_g = self.net_g.half()
             else:
                 self.net_g = self.net_g.float()
-            self.is_half=config.is_half
+            self.is_half = config.is_half
         except:
             print(traceback.format_exc())
 
@@ -102,29 +105,33 @@ class RVC:
 
     def get_f0(self, x, f0_up_key, n_cpu, method="harvest"):
         n_cpu = int(n_cpu)
-        if (method == "crepe"): return self.get_f0_crepe(x, f0_up_key)
-        if (method == "rmvpe"): return self.get_f0_rmvpe(x, f0_up_key)
-        if (method == "pm"):
+        if method == "crepe":
+            return self.get_f0_crepe(x, f0_up_key)
+        if method == "rmvpe":
+            return self.get_f0_rmvpe(x, f0_up_key)
+        if method == "pm":
             p_len = x.shape[0] // 160
             f0 = (
                 parselmouth.Sound(x, 16000)
-                    .to_pitch_ac(
+                .to_pitch_ac(
                     time_step=0.01,
                     voicing_threshold=0.6,
                     pitch_floor=50,
                     pitch_ceiling=1100,
                 )
-                    .selected_array["frequency"]
+                .selected_array["frequency"]
             )
 
             pad_size = (p_len - len(f0) + 1) // 2
             if pad_size > 0 or p_len - len(f0) - pad_size > 0:
                 print(pad_size, p_len - len(f0) - pad_size)
-                f0 = np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant")
+                f0 = np.pad(
+                    f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
+                )
 
             f0 *= pow(2, f0_up_key / 12)
             return self.get_f0_post(f0)
-        if (n_cpu == 1):
+        if n_cpu == 1:
             f0, t = pyworld.harvest(
                 x.astype(np.double),
                 fs=16000,
@@ -142,23 +149,27 @@ class RVC:
         res_f0 = mm.dict()
         for idx in range(n_cpu):
             tail = part_length * (idx + 1) + 320
-            if (idx == 0):
+            if idx == 0:
                 self.inp_q.put((idx, x[:tail], res_f0, n_cpu, ts))
             else:
-                self.inp_q.put((idx, x[part_length * idx - 320:tail], res_f0, n_cpu, ts))
-        while (1):
+                self.inp_q.put(
+                    (idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts)
+                )
+        while 1:
             res_ts = self.opt_q.get()
-            if (res_ts == ts):
+            if res_ts == ts:
                 break
         f0s = [i[1] for i in sorted(res_f0.items(), key=lambda x: x[0])]
         for idx, f0 in enumerate(f0s):
-            if (idx == 0):
+            if idx == 0:
                 f0 = f0[:-3]
-            elif (idx != n_cpu - 1):
+            elif idx != n_cpu - 1:
                 f0 = f0[2:-3]
             else:
                 f0 = f0[2:-1]
-            f0bak[part_length * idx // 160:part_length * idx // 160 + f0.shape[0]] = f0
+            f0bak[
+                part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]
+            ] = f0
         f0bak = signal.medfilt(f0bak, 3)
         f0bak *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0bak)
@@ -184,16 +195,28 @@ class RVC:
         return self.get_f0_post(f0)
 
     def get_f0_rmvpe(self, x, f0_up_key):
-        if (hasattr(self, "model_rmvpe") == False):
+        if hasattr(self, "model_rmvpe") == False:
             from rmvpe import RMVPE
+
             print("loading rmvpe model")
-            self.model_rmvpe = RMVPE("rmvpe.pt", is_half=self.is_half, device=self.device)
+            self.model_rmvpe = RMVPE(
+                "rmvpe.pt", is_half=self.is_half, device=self.device
+            )
             # self.model_rmvpe = RMVPE("aug2_58000_half.pt", is_half=self.is_half, device=self.device)
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 
-    def infer(self, feats: torch.Tensor, indata: np.ndarray, rate1, rate2, cache_pitch, cache_pitchf, f0method) -> np.ndarray:
+    def infer(
+        self,
+        feats: torch.Tensor,
+        indata: np.ndarray,
+        rate1,
+        rate2,
+        cache_pitch,
+        cache_pitchf,
+        f0method,
+    ) -> np.ndarray:
         feats = feats.view(1, -1)
         if config.is_half:
             feats = feats.half()
@@ -209,13 +232,12 @@ class RVC:
                 "output_layer": 9 if self.version == "v1" else 12,
             }
             logits = self.model.extract_features(**inputs)
-            feats = self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
+            feats = (
+                self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
+            )
         t2 = ttime()
         try:
-            if (
-                        hasattr(self, "index")
-                    and self.index_rate != 0
-            ):
+            if hasattr(self, "index") and self.index_rate != 0:
                 leng_replace_head = int(rate1 * feats[0].shape[0])
                 npy = feats[0][-leng_replace_head:].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
@@ -237,8 +259,10 @@ class RVC:
         t3 = ttime()
         if self.if_f0 == 1:
             pitch, pitchf = self.get_f0(indata, self.f0_up_key, self.n_cpu, f0method)
-            cache_pitch[:] = np.append(cache_pitch[pitch[:-1].shape[0]:], pitch[:-1])
-            cache_pitchf[:] = np.append(cache_pitchf[pitchf[:-1].shape[0]:], pitchf[:-1])
+            cache_pitch[:] = np.append(cache_pitch[pitch[:-1].shape[0] :], pitch[:-1])
+            cache_pitchf[:] = np.append(
+                cache_pitchf[pitchf[:-1].shape[0] :], pitchf[:-1]
+            )
             p_len = min(feats.shape[1], 13000, cache_pitch.shape[0])
         else:
             cache_pitch, cache_pitchf = None, None
@@ -256,13 +280,17 @@ class RVC:
         with torch.no_grad():
             if self.if_f0 == 1:
                 infered_audio = (
-                    self.net_g.infer(feats, p_len, cache_pitch, cache_pitchf, sid, rate2)[0][0, 0]
-                        .data.cpu()
-                        .float()
+                    self.net_g.infer(
+                        feats, p_len, cache_pitch, cache_pitchf, sid, rate2
+                    )[0][0, 0]
+                    .data.cpu()
+                    .float()
                 )
             else:
                 infered_audio = (
-                    self.net_g.infer(feats, p_len, sid, rate2)[0][0, 0].data.cpu().float()
+                    self.net_g.infer(feats, p_len, sid, rate2)[0][0, 0]
+                    .data.cpu()
+                    .float()
                 )
         t5 = ttime()
         print("time->fea-index-f0-model:", t2 - t1, t3 - t2, t4 - t3, t5 - t4)

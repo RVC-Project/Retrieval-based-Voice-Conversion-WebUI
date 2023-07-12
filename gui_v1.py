@@ -1,29 +1,34 @@
-import os,sys
+import os, sys
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
+
+
 class Harvest(multiprocessing.Process):
-    def __init__(self,inp_q,opt_q):
+    def __init__(self, inp_q, opt_q):
         multiprocessing.Process.__init__(self)
-        self.inp_q=inp_q
-        self.opt_q=opt_q
+        self.inp_q = inp_q
+        self.opt_q = opt_q
 
     def run(self):
         import numpy as np, pyworld
-        while(1):
-            idx, x, res_f0,n_cpu,ts=self.inp_q.get()
-            f0,t=pyworld.harvest(
+
+        while 1:
+            idx, x, res_f0, n_cpu, ts = self.inp_q.get()
+            f0, t = pyworld.harvest(
                 x.astype(np.double),
                 fs=16000,
                 f0_ceil=1100,
                 f0_floor=50,
                 frame_period=10,
             )
-            res_f0[idx]=f0
-            if(len(res_f0.keys())>=n_cpu):
+            res_f0[idx] = f0
+            if len(res_f0.keys()) >= n_cpu:
                 self.opt_q.put(ts)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from multiprocessing import Queue
     from queue import Empty
     import numpy as np
@@ -43,11 +48,12 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     current_dir = os.getcwd()
     inp_q = Queue()
-    opt_q=Queue()
-    n_cpu=min(cpu_count(),8)
+    opt_q = Queue()
+    n_cpu = min(cpu_count(), 8)
     for _ in range(n_cpu):
-        Harvest(inp_q,opt_q).start()
+        Harvest(inp_q, opt_q).start()
     from rvc_for_realtime import RVC
+
     class GUIConfig:
         def __init__(self) -> None:
             self.pth_path: str = ""
@@ -62,9 +68,8 @@ if __name__ == '__main__':
             self.I_noise_reduce = False
             self.O_noise_reduce = False
             self.index_rate = 0.3
-            self.n_cpu=min(n_cpu,8)
-            self.f0method="harvest"
-
+            self.n_cpu = min(n_cpu, 8)
+            self.f0method = "harvest"
 
     class GUI:
         def __init__(self) -> None:
@@ -78,10 +83,10 @@ if __name__ == '__main__':
             try:
                 with open("values1.json", "r") as j:
                     data = json.load(j)
-                    data["pm"]=data["f0method"]=="pm"
-                    data["harvest"]=data["f0method"]=="harvest"
-                    data["crepe"]=data["f0method"]=="crepe"
-                    data["rmvpe"]=data["f0method"]=="rmvpe"
+                    data["pm"] = data["f0method"] == "pm"
+                    data["harvest"] = data["f0method"] == "harvest"
+                    data["crepe"] = data["f0method"] == "crepe"
+                    data["rmvpe"] = data["f0method"] == "rmvpe"
             except:
                 with open("values1.json", "w") as j:
                     data = {
@@ -191,10 +196,30 @@ if __name__ == '__main__':
                             ],
                             [
                                 sg.Text(i18n("音高算法")),
-                                sg.Radio("pm","f0method",key="pm",default=data.get("pm","")==True),
-                                sg.Radio("harvest","f0method",key="harvest",default=data.get("harvest","")==True),
-                                sg.Radio("crepe","f0method",key="crepe",default=data.get("crepe","")==True),
-                                sg.Radio("rmvpe","f0method",key="rmvpe",default=data.get("rmvpe","")==True),
+                                sg.Radio(
+                                    "pm",
+                                    "f0method",
+                                    key="pm",
+                                    default=data.get("pm", "") == True,
+                                ),
+                                sg.Radio(
+                                    "harvest",
+                                    "f0method",
+                                    key="harvest",
+                                    default=data.get("harvest", "") == True,
+                                ),
+                                sg.Radio(
+                                    "crepe",
+                                    "f0method",
+                                    key="crepe",
+                                    default=data.get("crepe", "") == True,
+                                ),
+                                sg.Radio(
+                                    "rmvpe",
+                                    "f0method",
+                                    key="rmvpe",
+                                    default=data.get("rmvpe", "") == True,
+                                ),
                             ],
                         ],
                         title=i18n("常规设置"),
@@ -218,7 +243,9 @@ if __name__ == '__main__':
                                     key="n_cpu",
                                     resolution=1,
                                     orientation="h",
-                                    default_value=data.get("n_cpu", min(self.config.n_cpu,n_cpu)),
+                                    default_value=data.get(
+                                        "n_cpu", min(self.config.n_cpu, n_cpu)
+                                    ),
                                 ),
                             ],
                             [
@@ -281,7 +308,14 @@ if __name__ == '__main__':
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
                             "n_cpu": values["n_cpu"],
-                            "f0method": ["pm","harvest","crepe","rmvpe"][[values["pm"],values["harvest"],values["crepe"],values["rmvpe"]].index(True)],
+                            "f0method": ["pm", "harvest", "crepe", "rmvpe"][
+                                [
+                                    values["pm"],
+                                    values["harvest"],
+                                    values["crepe"],
+                                    values["rmvpe"],
+                                ].index(True)
+                            ],
                         }
                         with open("values1.json", "w") as j:
                             json.dump(settings, j)
@@ -314,7 +348,14 @@ if __name__ == '__main__':
             self.config.O_noise_reduce = values["O_noise_reduce"]
             self.config.index_rate = values["index_rate"]
             self.config.n_cpu = values["n_cpu"]
-            self.config.f0method = ["pm","harvest","crepe","rmvpe"][[values["pm"],values["harvest"],values["crepe"],values["rmvpe"]].index(True)]
+            self.config.f0method = ["pm", "harvest", "crepe", "rmvpe"][
+                [
+                    values["pm"],
+                    values["harvest"],
+                    values["crepe"],
+                    values["rmvpe"],
+                ].index(True)
+            ]
             return True
 
         def start_vc(self):
@@ -325,20 +366,64 @@ if __name__ == '__main__':
                 self.config.pth_path,
                 self.config.index_path,
                 self.config.index_rate,
-                self.config.n_cpu,inp_q,opt_q,device
+                self.config.n_cpu,
+                inp_q,
+                opt_q,
+                device,
             )
-            self.config.samplerate=self.rvc.tgt_sr
-            self.config.crossfade_time=min(self.config.crossfade_time,self.config.block_time)
+            self.config.samplerate = self.rvc.tgt_sr
+            self.config.crossfade_time = min(
+                self.config.crossfade_time, self.config.block_time
+            )
             self.block_frame = int(self.config.block_time * self.config.samplerate)
-            self.crossfade_frame = int(self.config.crossfade_time * self.config.samplerate)
+            self.crossfade_frame = int(
+                self.config.crossfade_time * self.config.samplerate
+            )
             self.sola_search_frame = int(0.01 * self.config.samplerate)
             self.extra_frame = int(self.config.extra_time * self.config.samplerate)
-            self.zc=self.rvc.tgt_sr//100
-            self.input_wav: np.ndarray = np.zeros(int(np.ceil((self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)/self.zc)*self.zc),dtype="float32",)
-            self.output_wav_cache: torch.Tensor = torch.zeros(int(np.ceil((self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)/self.zc)*self.zc), device=device,dtype=torch.float32)
-            self.pitch: np.ndarray = np.zeros(self.input_wav.shape[0]//self.zc,dtype="int32",)
-            self.pitchf: np.ndarray = np.zeros(self.input_wav.shape[0]//self.zc,dtype="float64",)
-            self.output_wav: torch.Tensor = torch.zeros(self.block_frame, device=device, dtype=torch.float32)
+            self.zc = self.rvc.tgt_sr // 100
+            self.input_wav: np.ndarray = np.zeros(
+                int(
+                    np.ceil(
+                        (
+                            self.extra_frame
+                            + self.crossfade_frame
+                            + self.sola_search_frame
+                            + self.block_frame
+                        )
+                        / self.zc
+                    )
+                    * self.zc
+                ),
+                dtype="float32",
+            )
+            self.output_wav_cache: torch.Tensor = torch.zeros(
+                int(
+                    np.ceil(
+                        (
+                            self.extra_frame
+                            + self.crossfade_frame
+                            + self.sola_search_frame
+                            + self.block_frame
+                        )
+                        / self.zc
+                    )
+                    * self.zc
+                ),
+                device=device,
+                dtype=torch.float32,
+            )
+            self.pitch: np.ndarray = np.zeros(
+                self.input_wav.shape[0] // self.zc,
+                dtype="int32",
+            )
+            self.pitchf: np.ndarray = np.zeros(
+                self.input_wav.shape[0] // self.zc,
+                dtype="float64",
+            )
+            self.output_wav: torch.Tensor = torch.zeros(
+                self.block_frame, device=device, dtype=torch.float32
+            )
             self.sola_buffer: torch.Tensor = torch.zeros(
                 self.crossfade_frame, device=device, dtype=torch.float32
             )
@@ -384,22 +469,46 @@ if __name__ == '__main__':
             rms = librosa.feature.rms(
                 y=indata, frame_length=frame_length, hop_length=hop_length
             )
-            if(self.config.threhold>-60):
-                db_threhold = librosa.amplitude_to_db(rms, ref=1.0)[0] < self.config.threhold
+            if self.config.threhold > -60:
+                db_threhold = (
+                    librosa.amplitude_to_db(rms, ref=1.0)[0] < self.config.threhold
+                )
                 for i in range(db_threhold.shape[0]):
                     if db_threhold[i]:
                         indata[i * hop_length : (i + 1) * hop_length] = 0
             self.input_wav[:] = np.append(self.input_wav[self.block_frame :], indata)
             # infer
-            inp=torch.from_numpy(self.input_wav).to(device)
+            inp = torch.from_numpy(self.input_wav).to(device)
             ##0
-            res1=self.resampler(inp)
+            res1 = self.resampler(inp)
             ###55%
-            rate1=self.block_frame/(self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)
-            rate2=(self.crossfade_frame + self.sola_search_frame + self.block_frame)/(self.extra_frame+ self.crossfade_frame+ self.sola_search_frame+ self.block_frame)
-            res2=self.rvc.infer(res1,res1[-self.block_frame:].cpu().numpy(),rate1,rate2,self.pitch,self.pitchf,self.config.f0method)
-            self.output_wav_cache[-res2.shape[0]:]=res2
-            infer_wav = self.output_wav_cache[-self.crossfade_frame - self.sola_search_frame - self.block_frame :]
+            rate1 = self.block_frame / (
+                self.extra_frame
+                + self.crossfade_frame
+                + self.sola_search_frame
+                + self.block_frame
+            )
+            rate2 = (
+                self.crossfade_frame + self.sola_search_frame + self.block_frame
+            ) / (
+                self.extra_frame
+                + self.crossfade_frame
+                + self.sola_search_frame
+                + self.block_frame
+            )
+            res2 = self.rvc.infer(
+                res1,
+                res1[-self.block_frame :].cpu().numpy(),
+                rate1,
+                rate2,
+                self.pitch,
+                self.pitchf,
+                self.config.f0method,
+            )
+            self.output_wav_cache[-res2.shape[0] :] = res2
+            infer_wav = self.output_wav_cache[
+                -self.crossfade_frame - self.sola_search_frame - self.block_frame :
+            ]
             # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
             cor_nom = F.conv1d(
                 infer_wav[None, None, : self.crossfade_frame + self.sola_search_frame],
@@ -407,7 +516,9 @@ if __name__ == '__main__':
             )
             cor_den = torch.sqrt(
                 F.conv1d(
-                    infer_wav[None, None, : self.crossfade_frame + self.sola_search_frame]
+                    infer_wav[
+                        None, None, : self.crossfade_frame + self.sola_search_frame
+                    ]
                     ** 2,
                     torch.ones(1, 1, self.crossfade_frame, device=device),
                 )
@@ -491,12 +602,15 @@ if __name__ == '__main__':
                 input_device_indices,
                 output_device_indices,
             ) = self.get_devices()
-            sd.default.device[0] = input_device_indices[input_devices.index(input_device)]
+            sd.default.device[0] = input_device_indices[
+                input_devices.index(input_device)
+            ]
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
             print("input device:" + str(sd.default.device[0]) + ":" + str(input_device))
-            print("output device:" + str(sd.default.device[1]) + ":" + str(output_device))
-
+            print(
+                "output device:" + str(sd.default.device[1]) + ":" + str(output_device)
+            )
 
     gui = GUI()
