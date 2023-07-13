@@ -15,6 +15,7 @@ import librosa, traceback
 from scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
+from tqdm import tqdm
 
 mutex = multiprocessing.Lock()
 f = open("%s/preprocess.log" % exp_dir, "a+")
@@ -82,7 +83,7 @@ class PreProcess:
             audio = signal.lfilter(self.bh, self.ah, audio)
 
             idx1 = 0
-            for audio in self.slicer.slice(audio):
+            for audio in tqdm(self.slicer.slice(audio)):
                 i = 0
                 while 1:
                     start = int(self.sr * (self.per - self.overlap) * i)
@@ -101,14 +102,14 @@ class PreProcess:
             println("%s->%s" % (path, traceback.format_exc()))
 
     def pipeline_mp(self, infos):
-        for path, idx0 in infos:
+        for path, idx0 in tqdm(infos):
             self.pipeline(path, idx0)
 
     def pipeline_mp_inp_dir(self, inp_root, n_p):
         try:
             infos = [
                 ("%s/%s" % (inp_root, name), idx)
-                for idx, name in enumerate(sorted(list(os.listdir(inp_root))))
+                for idx, name in tqdm(enumerate(sorted(list(os.listdir(inp_root)))))
             ]
             if noparallel:
                 for i in range(n_p):
