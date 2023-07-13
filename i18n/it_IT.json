@@ -124,5 +124,7 @@
     "请选择index文件": "请选择index文件",
     "hubert模型路径不可包含中文": "hubert 模型路径不可包含中文",
     "pth文件路径不可包含中文": "pth è un'app per il futuro",
-    "index文件路径不可包含中文": "index文件路径不可包含中文"
+    "index文件路径不可包含中文": "index文件路径不可包含中文",
+    "音高算法": "音高算法",
+    "harvest进程数": "harvest进程数"
 }

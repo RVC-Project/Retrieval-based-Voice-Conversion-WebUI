@@ -124,5 +124,7 @@
     "请选择index文件": "Lütfen .index dosyası seçin",
     "hubert模型路径不可包含中文": "hubert modeli yolu Çince karakter içeremez",
     "pth文件路径不可包含中文": ".pth dosya yolu Çince karakter içeremez",
-    "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez"
+    "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez",
+    "音高算法": "音高算法",
+    "harvest进程数": "harvest进程数"
 }
