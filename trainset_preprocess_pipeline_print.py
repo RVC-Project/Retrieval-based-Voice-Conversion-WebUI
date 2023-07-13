@@ -15,6 +15,7 @@ import librosa, traceback
 from scipy.io import wavfile
 import multiprocessing
 from my_utils import load_audio
+from tqdm import tqdm
 
 mutex = multiprocessing.Lock()
 f = open("%s/preprocess.log" % exp_dir, "a+")
@@ -40,7 +41,7 @@ class PreProcess:
         )
         self.sr = sr
         self.bh, self.ah = signal.butter(N=5, Wn=48, btype="high", fs=self.sr)
-        self.per = 3.7
+        self.per = 3.0
         self.overlap = 0.3
         self.tail = self.per + self.overlap
         self.max = 0.9
@@ -53,7 +54,11 @@ class PreProcess:
         os.makedirs(self.wavs16k_dir, exist_ok=True)
 
     def norm_write(self, tmp_audio, idx0, idx1):
-        tmp_audio = (tmp_audio / np.abs(tmp_audio).max() * (self.max * self.alpha)) + (
+        tmp_max = np.abs(tmp_audio).max()
+        if tmp_max > 2.5:
+            print("%s-%s-%s-filtered" % (idx0, idx1, tmp_max))
+            return
+        tmp_audio = (tmp_audio / tmp_max * (self.max * self.alpha)) + (
             1 - self.alpha
         ) * tmp_audio
         wavfile.write(
@@ -78,7 +83,7 @@ class PreProcess:
             audio = signal.lfilter(self.bh, self.ah, audio)
 
             idx1 = 0
-            for audio in self.slicer.slice(audio):
+            for audio in tqdm(self.slicer.slice(audio)):
                 i = 0
                 while 1:
                     start = int(self.sr * (self.per - self.overlap) * i)
@@ -97,14 +102,14 @@ class PreProcess:
             println("%s->%s" % (path, traceback.format_exc()))
 
     def pipeline_mp(self, infos):
-        for path, idx0 in infos:
+        for path, idx0 in tqdm(infos):
             self.pipeline(path, idx0)
 
     def pipeline_mp_inp_dir(self, inp_root, n_p):
         try:
             infos = [
                 ("%s/%s" % (inp_root, name), idx)
-                for idx, name in enumerate(sorted(list(os.listdir(inp_root))))
+                for idx, name in tqdm(enumerate(sorted(list(os.listdir(inp_root)))))
             ]
             if noparallel:
                 for i in range(n_p):

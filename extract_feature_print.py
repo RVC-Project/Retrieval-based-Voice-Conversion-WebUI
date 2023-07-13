@@ -1,9 +1,12 @@
 import os, sys, traceback
 
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
+
 # device=sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
-if len(sys.argv) == 5:
+if len(sys.argv) == 6:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
 else:
@@ -17,14 +20,11 @@ import soundfile as sf
 import numpy as np
 from fairseq import checkpoint_utils
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 elif torch.backends.mps.is_available():
     device = "mps"
-else:
-    device = "cpu"
 
 f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
 
@@ -63,6 +63,13 @@ def readwave(wav_path, normalize=False):
 
 # HuBERT model
 printt("load model(s) from {}".format(model_path))
+# if hubert model is exist
+if os.access(model_path, os.F_OK) == False:
+    printt(
+        "Error: Extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main"
+        % model_path
+    )
+    exit(0)
 models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
     suffix="",

@@ -1,10 +1,14 @@
-import numpy as np, parselmouth, torch, pdb
+import numpy as np, parselmouth, torch, pdb, sys, os
 from time import time as ttime
 import torch.nn.functional as F
 import scipy.signal as signal
-import pyworld, os, traceback, faiss, librosa
+import pyworld, os, traceback, faiss, librosa, torchcrepe
 from scipy import signal
 from functools import lru_cache
+
+now_dir = os.getcwd()
+sys.path.append(now_dir)
+
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
@@ -103,6 +107,36 @@ class VC(object):
             f0 = cache_harvest_f0(input_audio_path, self.sr, f0_max, f0_min, 10)
             if filter_radius > 2:
                 f0 = signal.medfilt(f0, 3)
+        elif f0_method == "crepe":
+            model = "full"
+            # Pick a batch size that doesn't cause memory errors on your gpu
+            batch_size = 512
+            # Compute pitch using first gpu
+            audio = torch.tensor(np.copy(x))[None].float()
+            f0, pd = torchcrepe.predict(
+                audio,
+                self.sr,
+                self.window,
+                f0_min,
+                f0_max,
+                model,
+                batch_size=batch_size,
+                device=self.device,
+                return_periodicity=True,
+            )
+            pd = torchcrepe.filter.median(pd, 3)
+            f0 = torchcrepe.filter.mean(f0, 3)
+            f0[pd < 0.1] = 0
+            f0 = f0[0].cpu().numpy()
+        elif f0_method == "rmvpe":
+            if hasattr(self, "model_rmvpe") == False:
+                from rmvpe import RMVPE
+
+                print("loading rmvpe model")
+                self.model_rmvpe = RMVPE(
+                    "rmvpe.pt", is_half=self.is_half, device=self.device
+                )
+            f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         tf0 = self.sr // self.window  # 每秒f0点数
@@ -141,6 +175,7 @@ class VC(object):
         big_npy,
         index_rate,
         version,
+        protect,
     ):  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
         if self.is_half:
@@ -162,7 +197,8 @@ class VC(object):
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
-
+        if protect < 0.5 and pitch != None and pitchf != None:
+            feats0 = feats.clone()
         if (
             isinstance(index, type(None)) == False
             and isinstance(big_npy, type(None)) == False
@@ -188,6 +224,10 @@ class VC(object):
             )
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
+        if protect < 0.5 and pitch != None and pitchf != None:
+            feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
+                0, 2, 1
+            )
         t1 = ttime()
         p_len = audio0.shape[0] // self.window
         if feats.shape[1] < p_len:
@@ -195,6 +235,14 @@ class VC(object):
             if pitch != None and pitchf != None:
                 pitch = pitch[:, :p_len]
                 pitchf = pitchf[:, :p_len]
+
+        if protect < 0.5 and pitch != None and pitchf != None:
+            pitchff = pitchf.clone()
+            pitchff[pitchf > 0] = 1
+            pitchff[pitchf < 1] = protect
+            pitchff = pitchff.unsqueeze(-1)
+            feats = feats * pitchff + feats0 * (1 - pitchff)
+            feats = feats.to(feats0.dtype)
         p_len = torch.tensor([p_len], device=self.device).long()
         with torch.no_grad():
             if pitch != None and pitchf != None:
@@ -235,6 +283,7 @@ class VC(object):
         resample_sr,
         rms_mix_rate,
         version,
+        protect,
         f0_file=None,
     ):
         if (
@@ -282,7 +331,7 @@ class VC(object):
                     lines = f.read().strip("\n").split("\n")
                 inp_f0 = []
                 for line in lines:
-                    inp_f0.append([float(i) for i in line.split(",")])
+                    inp_f0.append([float(i) for i in (line.split(","))])
                 inp_f0 = np.array(inp_f0, dtype="float32")
             except:
                 traceback.print_exc()
@@ -306,7 +355,7 @@ class VC(object):
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
         t2 = ttime()
         times[1] += t2 - t1
-        for t in opt_ts:
+        for t in (opt_ts):
             t = t // self.window * self.window
             if if_f0 == 1:
                 audio_opt.append(
@@ -322,6 +371,7 @@ class VC(object):
                         big_npy,
                         index_rate,
                         version,
+                        protect,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
@@ -338,6 +388,7 @@ class VC(object):
                         big_npy,
                         index_rate,
                         version,
+                        protect,
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
@@ -355,6 +406,7 @@ class VC(object):
                     big_npy,
                     index_rate,
                     version,
+                    protect,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
@@ -371,6 +423,7 @@ class VC(object):
                     big_npy,
                     index_rate,
                     version,
+                    protect,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)

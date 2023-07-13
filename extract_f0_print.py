@@ -4,7 +4,6 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 from my_utils import load_audio
 import pyworld
-from scipy.io import wavfile
 import numpy as np, logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -86,7 +85,7 @@ class FeatureInput(object):
         # use 0 or 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > self.f0_bin - 1] = self.f0_bin - 1
-        f0_coarse = np.rint(f0_mel).astype(np.int)
+        f0_coarse = np.rint(f0_mel).astype(int)
         assert f0_coarse.max() <= 255 and f0_coarse.min() >= 1, (
             f0_coarse.max(),
             f0_coarse.min(),

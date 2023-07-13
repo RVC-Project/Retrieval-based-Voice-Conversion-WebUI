@@ -1,17 +1,51 @@
-import torch, os, traceback, sys, warnings, shutil, numpy as np
-
-os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
-import threading
-from time import sleep
-from subprocess import Popen
-import faiss
-from random import shuffle
+import os
+import shutil
+import sys
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
+import traceback, pdb
+import warnings
+
+import numpy as np
+import torch
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
+import logging
+import threading
+from random import shuffle
+from subprocess import Popen
+from time import sleep
+
+import faiss
+import ffmpeg
+import gradio as gr
+import soundfile as sf
+from config import Config
+from fairseq import checkpoint_utils
+from i18n import I18nAuto
+from lib.infer_pack.models import (
+    SynthesizerTrnMs256NSFsid,
+    SynthesizerTrnMs256NSFsid_nono,
+    SynthesizerTrnMs768NSFsid,
+    SynthesizerTrnMs768NSFsid_nono,
+)
+from lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
+from infer_uvr5 import _audio_pre_, _audio_pre_new
+from my_utils import load_audio
+from train.process_ckpt import change_info, extract_small_model, merge, show_info
+from vc_infer_pipeline import VC
+from sklearn.cluster import MiniBatchKMeans
+
+logging.getLogger("numba").setLevel(logging.WARNING)
+
+
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
+shutil.rmtree(
+    "%s/runtime/Lib/site-packages/lib.infer_pack" % (now_dir), ignore_errors=True
+)
 shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
@@ -19,38 +53,44 @@ os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
-from i18n import I18nAuto
-import ffmpeg
 
+
+config = Config()
 i18n = I18nAuto()
+i18n.print()
 # 判断是否有能用来训练和加速推理的N卡
 ngpu = torch.cuda.device_count()
 gpu_infos = []
 mem = []
-if (not torch.cuda.is_available()) or ngpu == 0:
-    if_gpu_ok = False
-else:
-    if_gpu_ok = False
+if_gpu_ok = False
+
+if torch.cuda.is_available() or ngpu != 0:
     for i in range(ngpu):
         gpu_name = torch.cuda.get_device_name(i)
-        if (
-            "10" in gpu_name
-            or "16" in gpu_name
-            or "20" in gpu_name
-            or "30" in gpu_name
-            or "40" in gpu_name
-            or "A2" in gpu_name.upper()
-            or "A3" in gpu_name.upper()
-            or "A4" in gpu_name.upper()
-            or "P4" in gpu_name.upper()
-            or "A50" in gpu_name.upper()
-            or "70" in gpu_name
-            or "80" in gpu_name
-            or "90" in gpu_name
-            or "M4" in gpu_name.upper()
-            or "T4" in gpu_name.upper()
-            or "TITAN" in gpu_name.upper()
-        ):  # A10#A100#V100#A40#P40#M40#K80#A4500
+        if any(
+            value in gpu_name.upper()
+            for value in [
+                "10",
+                "16",
+                "20",
+                "30",
+                "40",
+                "A2",
+                "A3",
+                "A4",
+                "P4",
+                "A50",
+                "500",
+                "A60",
+                "70",
+                "80",
+                "90",
+                "M4",
+                "T4",
+                "TITAN",
+            ]
+        ):
+            # A10#A100#V100#A40#P40#M40#K80#A4500
             if_gpu_ok = True  # 至少有一张能用的N卡
             gpu_infos.append("%s\t%s" % (i, gpu_name))
             mem.append(
@@ -62,32 +102,13 @@ else:
                     + 0.4
                 )
             )
-if if_gpu_ok == True and len(gpu_infos) > 0:
+if if_gpu_ok and len(gpu_infos) > 0:
     gpu_info = "\n".join(gpu_infos)
     default_batch_size = min(mem) // 2
 else:
     gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
-from infer_pack.models import (
-    SynthesizerTrnMs256NSFsid,
-    SynthesizerTrnMs256NSFsid_nono,
-    SynthesizerTrnMs768NSFsid,
-    SynthesizerTrnMs768NSFsid_nono,
-)
-from scipy.io import wavfile
-from fairseq import checkpoint_utils
-import gradio as gr
-import logging
-from vc_infer_pipeline import VC
-from config import Config
-from infer_uvr5 import _audio_pre_
-from my_utils import load_audio
-from train.process_ckpt import show_info, change_info, merge, extract_small_model
-
-config = Config()
-# from trainset_preprocess_pipeline import PreProcess
-logging.getLogger("numba").setLevel(logging.WARNING)
 
 
 class ToolButton(gr.Button, gr.components.FormComponent):
@@ -132,7 +153,7 @@ for root, dirs, files in os.walk(index_root, topdown=False):
             index_paths.append("%s/%s" % (root, name))
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
-    if name.endswith(".pth"):
+    if name.endswith(".pth") or "onnx" in name:
         uvr5_names.append(name.replace(".pth", ""))
 
 
@@ -149,6 +170,7 @@ def vc_single(
     filter_radius,
     resample_sr,
     rms_mix_rate,
+    protect,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model, version
     if input_audio_path is None:
@@ -160,7 +182,7 @@ def vc_single(
         if audio_max > 1:
             audio /= audio_max
         times = [0, 0, 0]
-        if hubert_model == None:
+        if not hubert_model:
             load_hubert()
         if_f0 = cpt.get("f0", 1)
         file_index = (
@@ -196,9 +218,10 @@ def vc_single(
             resample_sr,
             rms_mix_rate,
             version,
+            protect,
             f0_file=f0_file,
         )
-        if resample_sr >= 16000 and tgt_sr != resample_sr:
+        if tgt_sr != resample_sr >= 16000:
             tgt_sr = resample_sr
         index_info = (
             "Using index:%s." % file_index
@@ -231,6 +254,8 @@ def vc_multi(
     filter_radius,
     resample_sr,
     rms_mix_rate,
+    protect,
+    format1,
 ):
     try:
         dir_path = (
@@ -261,13 +286,29 @@ def vc_multi(
                 filter_radius,
                 resample_sr,
                 rms_mix_rate,
+                protect,
             )
             if "Success" in info:
                 try:
                     tgt_sr, audio_opt = opt
-                    wavfile.write(
-                        "%s/%s" % (opt_root, os.path.basename(path)), tgt_sr, audio_opt
-                    )
+                    if format1 in ["wav", "flac"]:
+                        sf.write(
+                            "%s/%s.%s" % (opt_root, os.path.basename(path), format1),
+                            audio_opt,
+                            tgt_sr,
+                        )
+                    else:
+                        path = "%s/%s.wav" % (opt_root, os.path.basename(path))
+                        sf.write(
+                            path,
+                            audio_opt,
+                            tgt_sr,
+                        )
+                        if os.path.exists(path):
+                            os.system(
+                                "ffmpeg -i %s -vn %s -q:a 2 -y"
+                                % (path, path[:-4] + ".%s" % format1)
+                            )
                 except:
                     info += traceback.format_exc()
             infos.append("%s->%s" % (os.path.basename(path), info))
@@ -277,7 +318,7 @@ def vc_multi(
         yield traceback.format_exc()
 
 
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
+def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format0):
     infos = []
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
@@ -287,12 +328,18 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
         save_root_ins = (
             save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
-        pre_fun = _audio_pre_(
-            agg=int(agg),
-            model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
-            device=config.device,
-            is_half=config.is_half,
-        )
+        if model_name == "onnx_dereverb_By_FoxJoy":
+            from MDXNet import MDXNetDereverb
+
+            pre_fun = MDXNetDereverb(15)
+        else:
+            func = _audio_pre_ if "DeEcho" not in model_name else _audio_pre_new
+            pre_fun = func(
+                agg=int(agg),
+                model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
+                device=config.device,
+                is_half=config.is_half,
+            )
         if inp_root != "":
             paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:
@@ -308,7 +355,9 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
                     and info["streams"][0]["sample_rate"] == "44100"
                 ):
                     need_reformat = 0
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                    pre_fun._path_audio_(
+                        inp_path, save_root_ins, save_root_vocal, format0
+                    )
                     done = 1
             except:
                 need_reformat = 1
@@ -322,7 +371,9 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
                 inp_path = tmp_path
             try:
                 if done == 0:
-                    pre_fun._path_audio_(inp_path, save_root_ins, save_root_vocal)
+                    pre_fun._path_audio_(
+                        inp_path, save_root_ins, save_root_vocal, format0
+                    )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
@@ -335,8 +386,12 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
         yield "\n".join(infos)
     finally:
         try:
-            del pre_fun.model
-            del pre_fun
+            if model_name == "onnx_dereverb_By_FoxJoy":
+                del pre_fun.pred.model
+                del pre_fun.pred.model_
+            else:
+                del pre_fun.model
+                del pre_fun
         except:
             traceback.print_exc()
         print("clean_empty_cache")
@@ -346,11 +401,11 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg):
 
 
 # 一个选项卡全局只能有一个音色
-def get_vc(sid):
+def get_vc(sid, to_return_protect0, to_return_protect1):
     global n_spk, tgt_sr, net_g, vc, cpt, version
     if sid == "" or sid == []:
         global hubert_model
-        if hubert_model != None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
+        if hubert_model is not None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
             print("clean_empty_cache")
             del net_g, n_spk, vc, hubert_model, tgt_sr  # ,cpt
             hubert_model = net_g = n_spk = vc = hubert_model = tgt_sr = None
@@ -384,6 +439,23 @@ def get_vc(sid):
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     if_f0 = cpt.get("f0", 1)
+    if if_f0 == 0:
+        to_return_protect0 = to_return_protect1 = {
+            "visible": False,
+            "value": 0.5,
+            "__type__": "update",
+        }
+    else:
+        to_return_protect0 = {
+            "visible": True,
+            "value": to_return_protect0,
+            "__type__": "update",
+        }
+        to_return_protect1 = {
+            "visible": True,
+            "value": to_return_protect1,
+            "__type__": "update",
+        }
     version = cpt.get("version", "v1")
     if version == "v1":
         if if_f0 == 1:
@@ -404,7 +476,11 @@ def get_vc(sid):
         net_g = net_g.float()
     vc = VC(tgt_sr, config)
     n_spk = cpt["config"][-3]
-    return {"visible": True, "maximum": n_spk, "__type__": "update"}
+    return (
+        {"visible": True, "maximum": n_spk, "__type__": "update"},
+        to_return_protect0,
+        to_return_protect1,
+    )
 
 
 def change_choices():
@@ -436,7 +512,7 @@ sr_dict = {
 
 def if_done(done, p):
     while 1:
-        if p.poll() == None:
+        if p.poll() is None:
             sleep(0.5)
         else:
             break
@@ -449,7 +525,7 @@ def if_done_multi(done, ps):
         # 只要有一个进程未结束都不停
         flag = 1
         for p in ps:
-            if p.poll() == None:
+            if p.poll() is None:
                 flag = 0
                 sleep(0.5)
                 break
@@ -484,7 +560,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "r") as f:
             yield (f.read())
         sleep(1)
-        if done[0] == True:
+        if done[0]:
             break
     with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "r") as f:
         log = f.read()
@@ -522,7 +598,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
             ) as f:
                 yield (f.read())
             sleep(1)
-            if done[0] == True:
+            if done[0]:
                 break
         with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
             log = f.read()
@@ -570,7 +646,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
         with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
             yield (f.read())
         sleep(1)
-        if done[0] == True:
+        if done[0]:
             break
     with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
         log = f.read()
@@ -579,43 +655,107 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19):
 
 
 def change_sr2(sr2, if_f0_3, version19):
-    vis_v = True if sr2 == "40k" else False
-    if sr2 != "40k":
-        version19 = "v1"
     path_str = "" if version19 == "v1" else "_v2"
-    version_state = {"visible": vis_v, "__type__": "update"}
-    if vis_v == False:
-        version_state["value"] = "v1"
     f0_str = "f0" if if_f0_3 else ""
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if not if_pretrained_generator_exist:
+        print(
+            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if not if_pretrained_discriminator_exist:
+        print(
+            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
-        version_state,
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_generator_exist
+        else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_discriminator_exist
+        else "",
     )
 
 
 def change_version19(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
+    if sr2 == "32k" and version19 == "v1":
+        sr2 = "40k"
+    to_return_sr2 = (
+        {"choices": ["40k", "48k"], "__type__": "update", "value": sr2}
+        if version19 == "v1"
+        else {"choices": ["40k", "48k", "32k"], "__type__": "update", "value": sr2}
+    )
     f0_str = "f0" if if_f0_3 else ""
-    return "pretrained%s/%sG%s.pth" % (
-        path_str,
-        f0_str,
-        sr2,
-    ), "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+    )
+    if not if_pretrained_generator_exist:
+        print(
+            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if not if_pretrained_discriminator_exist:
+        print(
+            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    return (
+        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_generator_exist
+        else "",
+        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        if if_pretrained_discriminator_exist
+        else "",
+        to_return_sr2,
+    )
 
 
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
+    if_pretrained_generator_exist = os.access(
+        "pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK
+    )
+    if_pretrained_discriminator_exist = os.access(
+        "pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
+    )
+    if not if_pretrained_generator_exist:
+        print(
+            "pretrained%s/f0G%s.pth" % (path_str, sr2),
+            "not exist, will not use pretrained model",
+        )
+    if not if_pretrained_discriminator_exist:
+        print(
+            "pretrained%s/f0D%s.pth" % (path_str, sr2),
+            "not exist, will not use pretrained model",
+        )
     if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
-            "pretrained%s/f0G%s.pth" % (path_str, sr2),
-            "pretrained%s/f0D%s.pth" % (path_str, sr2),
+            "pretrained%s/f0G%s.pth" % (path_str, sr2)
+            if if_pretrained_generator_exist
+            else "",
+            "pretrained%s/f0D%s.pth" % (path_str, sr2)
+            if if_pretrained_discriminator_exist
+            else "",
         )
     return (
         {"visible": False, "__type__": "update"},
-        "pretrained%s/G%s.pth" % (path_str, sr2),
-        "pretrained%s/D%s.pth" % (path_str, sr2),
+        ("pretrained%s/G%s.pth" % (path_str, sr2))
+        if if_pretrained_generator_exist
+        else "",
+        ("pretrained%s/D%s.pth" % (path_str, sr2))
+        if if_pretrained_discriminator_exist
+        else "",
     )
 
 
@@ -706,10 +846,14 @@ def click_train(
     # 生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
     print("use gpus:", gpus16)
+    if pretrained_G14 == "":
+        print("no pretrained Generator")
+    if pretrained_D15 == "":
+        print("no pretrained Discriminator")
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -718,8 +862,8 @@ def click_train(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -729,7 +873,7 @@ def click_train(
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -737,8 +881,8 @@ def click_train(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "\b",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "\b",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -760,11 +904,12 @@ def train_index(exp_dir1, version19):
         if version19 == "v1"
         else "%s/3_feature768" % (exp_dir)
     )
-    if os.path.exists(feature_dir) == False:
+    if not os.path.exists(feature_dir):
         return "请先进行特征提取!"
     listdir_res = list(os.listdir(feature_dir))
     if len(listdir_res) == 0:
         return "请先进行特征提取！"
+    infos = []
     npys = []
     for name in sorted(listdir_res):
         phone = np.load("%s/%s" % (feature_dir, name))
@@ -773,10 +918,30 @@ def train_index(exp_dir1, version19):
     big_npy_idx = np.arange(big_npy.shape[0])
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
+    if big_npy.shape[0] > 2e5:
+        # if(1):
+        infos.append("Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0])
+        yield "\n".join(infos)
+        try:
+            big_npy = (
+                MiniBatchKMeans(
+                    n_clusters=10000,
+                    verbose=True,
+                    batch_size=256 * config.n_cpu,
+                    compute_labels=False,
+                    init="random",
+                )
+                .fit(big_npy)
+                .cluster_centers_
+            )
+        except:
+            info = traceback.format_exc()
+            print(info)
+            infos.append(info)
+            yield "\n".join(infos)
+
     np.save("%s/total_fea.npy" % exp_dir, big_npy)
-    # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
-    infos = []
     infos.append("%s,%s" % (big_npy.shape, n_ivf))
     yield "\n".join(infos)
     index = faiss.index_factory(256 if version19 == "v1" else 768, "IVF%s,Flat" % n_ivf)
@@ -788,8 +953,8 @@ def train_index(exp_dir1, version19):
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     infos.append("adding")
@@ -799,12 +964,12 @@ def train_index(exp_dir1, version19):
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (exp_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     infos.append(
-        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, version19)
+        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
@@ -965,7 +1130,7 @@ def train1key(
     if gpus16:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -974,8 +1139,8 @@ def train1key(
                 gpus16,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -985,7 +1150,7 @@ def train1key(
     else:
         cmd = (
             config.python_cmd
-            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s -pg %s -pd %s -l %s -c %s -sw %s -v %s"
+            + " train_nsf_sim_cache_sid_load_pretrain.py -e %s -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s"
             % (
                 exp_dir1,
                 sr2,
@@ -993,8 +1158,8 @@ def train1key(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                pretrained_G14,
-                pretrained_D15,
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -1016,6 +1181,29 @@ def train1key(
     big_npy_idx = np.arange(big_npy.shape[0])
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
+
+    if big_npy.shape[0] > 2e5:
+        # if(1):
+        info = "Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0]
+        print(info)
+        yield get_info_str(info)
+        try:
+            big_npy = (
+                MiniBatchKMeans(
+                    n_clusters=10000,
+                    verbose=True,
+                    batch_size=256 * config.n_cpu,
+                    compute_labels=False,
+                    init="random",
+                )
+                .fit(big_npy)
+                .cluster_centers_
+            )
+        except:
+            info = traceback.format_exc()
+            print(info)
+            yield get_info_str(info)
+
     np.save("%s/total_fea.npy" % model_log_dir, big_npy)
 
     # n_ivf =  big_npy.shape[0] // 39
@@ -1028,8 +1216,8 @@ def train1key(
     index.train(big_npy)
     faiss.write_index(
         index,
-        "%s/trained_IVF%s_Flat_nprobe_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str("adding index")
     batch_size_add = 8192
@@ -1037,22 +1225,19 @@ def train1key(
         index.add(big_npy[i : i + batch_size_add])
     faiss.write_index(
         index,
-        "%s/added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, version19),
+        "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str(
-        "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s.index"
-        % (n_ivf, index_ivf.nprobe, version19)
+        "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     yield get_info_str(i18n("全流程结束！"))
 
 
 #                    ckpt_path2.change(change_info_,[ckpt_path2],[sr__,if_f0__])
 def change_info_(ckpt_path):
-    if (
-        os.path.exists(ckpt_path.replace(os.path.basename(ckpt_path), "train.log"))
-        == False
-    ):
+    if not os.path.exists(ckpt_path.replace(os.path.basename(ckpt_path), "train.log")):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
     try:
         with open(
@@ -1067,17 +1252,12 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
-from infer_pack.models_onnx_moess import SynthesizerTrnMs256NSFsidM
-from infer_pack.models_onnx import SynthesizerTrnMs256NSFsidO
-
-
-def export_onnx(ModelPath, ExportedPath, MoeVS=True):
-    hidden_channels = 256  # hidden_channels，为768Vec做准备
+def export_onnx(ModelPath, ExportedPath):
     cpt = torch.load(ModelPath, map_location="cpu")
-    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
-    print(*cpt["config"])
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
+    vec_channels = 256 if cpt.get("version", "v1") == "v1" else 768
 
-    test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
+    test_phone = torch.rand(1, 200, vec_channels)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
     test_pitch = torch.randint(size=(1, 200), low=5, high=255)  # 基频（单位赫兹）
     test_pitchf = torch.rand(1, 200)  # nsf基频
@@ -1086,75 +1266,45 @@ def export_onnx(ModelPath, ExportedPath, MoeVS=True):
 
     device = "cpu"  # 导出时设备（不影响使用模型）
 
-    if MoeVS:
-        net_g = SynthesizerTrnMs256NSFsidM(
-            *cpt["config"], is_half=False
-        )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
-        net_g.load_state_dict(cpt["weight"], strict=False)
-        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
-        output_names = [
-            "audio",
-        ]
-        torch.onnx.export(
-            net_g,
-            (
-                test_phone.to(device),
-                test_phone_lengths.to(device),
-                test_pitch.to(device),
-                test_pitchf.to(device),
-                test_ds.to(device),
-                test_rnd.to(device),
-            ),
-            ExportedPath,
-            dynamic_axes={
-                "phone": [1],
-                "pitch": [1],
-                "pitchf": [1],
-                "rnd": [2],
-            },
-            do_constant_folding=False,
-            opset_version=16,
-            verbose=False,
-            input_names=input_names,
-            output_names=output_names,
-        )
-    else:
-        net_g = SynthesizerTrnMs256NSFsidO(
-            *cpt["config"], is_half=False
-        )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
-        net_g.load_state_dict(cpt["weight"], strict=False)
-        input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds"]
-        output_names = [
-            "audio",
-        ]
-        torch.onnx.export(
-            net_g,
-            (
-                test_phone.to(device),
-                test_phone_lengths.to(device),
-                test_pitch.to(device),
-                test_pitchf.to(device),
-                test_ds.to(device),
-            ),
-            ExportedPath,
-            dynamic_axes={
-                "phone": [1],
-                "pitch": [1],
-                "pitchf": [1],
-            },
-            do_constant_folding=False,
-            opset_version=16,
-            verbose=False,
-            input_names=input_names,
-            output_names=output_names,
-        )
+    net_g = SynthesizerTrnMsNSFsidM(
+        *cpt["config"], is_half=False, version=cpt.get("version", "v1")
+    )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
+    net_g.load_state_dict(cpt["weight"], strict=False)
+    input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
+    output_names = [
+        "audio",
+    ]
+    # net_g.construct_spkmixmap(n_speaker) 多角色混合轨道导出
+    torch.onnx.export(
+        net_g,
+        (
+            test_phone.to(device),
+            test_phone_lengths.to(device),
+            test_pitch.to(device),
+            test_pitchf.to(device),
+            test_ds.to(device),
+            test_rnd.to(device),
+        ),
+        ExportedPath,
+        dynamic_axes={
+            "phone": [1],
+            "pitch": [1],
+            "pitchf": [1],
+            "rnd": [2],
+        },
+        do_constant_folding=False,
+        opset_version=13,
+        verbose=False,
+        input_names=input_names,
+        output_names=output_names,
+    )
     return "Finished"
 
 
 with gr.Blocks() as app:
     gr.Markdown(
         value=i18n(
-            "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>使用需遵守的协议-LICENSE.txt</b>."
+            "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>."
         )
     )
     with gr.Tabs():
@@ -1173,11 +1323,6 @@ with gr.Blocks() as app:
                     interactive=True,
                 )
                 clean_button.click(fn=clean, inputs=[], outputs=[sid0])
-                sid0.change(
-                    fn=get_vc,
-                    inputs=[sid0],
-                    outputs=[spk_item],
-                )
             with gr.Group():
                 gr.Markdown(
                     value=i18n("男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ")
@@ -1192,8 +1337,10 @@ with gr.Blocks() as app:
                             value="E:\\codes\\py39\\test-20230416b\\todo-songs\\冬之花clip1.wav",
                         )
                         f0method0 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"),
-                            choices=["pm", "harvest"],
+                            label=i18n(
+                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
+                            ),
+                            choices=["pm", "harvest", "crepe", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1228,9 +1375,10 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label=i18n("检索特征占比"),
-                            value=0.76,
+                            value=0.75,
                             interactive=True,
                         )
+                    with gr.Column():
                         resample_sr0 = gr.Slider(
                             minimum=0,
                             maximum=48000,
@@ -1243,12 +1391,22 @@ with gr.Blocks() as app:
                             minimum=0,
                             maximum=1,
                             label=i18n("输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络"),
-                            value=1,
+                            value=0.25,
+                            interactive=True,
+                        )
+                        protect0 = gr.Slider(
+                            minimum=0,
+                            maximum=0.5,
+                            label=i18n(
+                                "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"
+                            ),
+                            value=0.33,
+                            step=0.01,
                             interactive=True,
                         )
                     f0_file = gr.File(label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"))
                     but0 = gr.Button(i18n("转换"), variant="primary")
-                    with gr.Column():
+                    with gr.Row():
                         vc_output1 = gr.Textbox(label=i18n("输出信息"))
                         vc_output2 = gr.Audio(label=i18n("输出音频(右下角三个点,点了可以下载)"))
                     but0.click(
@@ -1266,6 +1424,7 @@ with gr.Blocks() as app:
                             filter_radius0,
                             resample_sr0,
                             rms_mix_rate0,
+                            protect0,
                         ],
                         [vc_output1, vc_output2],
                     )
@@ -1280,8 +1439,10 @@ with gr.Blocks() as app:
                         )
                         opt_input = gr.Textbox(label=i18n("指定输出文件夹"), value="opt")
                         f0method1 = gr.Radio(
-                            label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比"),
-                            choices=["pm", "harvest"],
+                            label=i18n(
+                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
+                            ),
+                            choices=["pm", "harvest", "crepe", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1304,6 +1465,11 @@ with gr.Blocks() as app:
                             choices=sorted(index_paths),
                             interactive=True,
                         )
+                        refresh_button.click(
+                            fn=lambda: change_choices()[1],
+                            inputs=[],
+                            outputs=file_index4,
+                        )
                         # file_big_npy2 = gr.Textbox(
                         #     label=i18n("特征文件路径"),
                         #     value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
@@ -1316,6 +1482,7 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                    with gr.Column():
                         resample_sr1 = gr.Slider(
                             minimum=0,
                             maximum=48000,
@@ -1331,6 +1498,16 @@ with gr.Blocks() as app:
                             value=1,
                             interactive=True,
                         )
+                        protect1 = gr.Slider(
+                            minimum=0,
+                            maximum=0.5,
+                            label=i18n(
+                                "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"
+                            ),
+                            value=0.33,
+                            step=0.01,
+                            interactive=True,
+                        )
                     with gr.Column():
                         dir_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
@@ -1339,8 +1516,15 @@ with gr.Blocks() as app:
                         inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
                         )
-                    but1 = gr.Button(i18n("转换"), variant="primary")
-                    vc_output3 = gr.Textbox(label=i18n("输出信息"))
+                    with gr.Row():
+                        format1 = gr.Radio(
+                            label=i18n("导出文件格式"),
+                            choices=["wav", "flac", "mp3", "m4a"],
+                            value="flac",
+                            interactive=True,
+                        )
+                        but1 = gr.Button(i18n("转换"), variant="primary")
+                        vc_output3 = gr.Textbox(label=i18n("输出信息"))
                     but1.click(
                         vc_multi,
                         [
@@ -1357,14 +1541,21 @@ with gr.Blocks() as app:
                             filter_radius1,
                             resample_sr1,
                             rms_mix_rate1,
+                            protect1,
+                            format1,
                         ],
                         [vc_output3],
                     )
-        with gr.TabItem(i18n("伴奏人声分离")):
+            sid0.change(
+                fn=get_vc,
+                inputs=[sid0, protect0, protect1],
+                outputs=[spk_item, protect0, protect1],
+            )
+        with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():
                 gr.Markdown(
                     value=i18n(
-                        "人声伴奏分离批量处理, 使用UVR5模型. <br>不带和声用HP2, 带和声且提取的人声不需要和声用HP5<br>合格的文件夹路径格式举例: E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)"
+                        "人声伴奏分离批量处理， 使用UVR5模型。 <br>合格的文件夹路径格式举例： E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)。 <br>模型分为三类： <br>1、保留人声：不带和声的音频选这个，对主人声保留比HP5更好。内置HP2和HP3两个模型，HP3可能轻微漏伴奏但对主人声保留比HP2稍微好一丁点； <br>2、仅保留主人声：带和声的音频选这个，对主人声可能有削弱。内置HP5一个模型； <br> 3、去混响、去延迟模型（by FoxJoy）：<br>  (1)MDX-Net(onnx_dereverb):对于双通道混响是最好的选择，不能去除单通道混响；<br>&emsp;(234)DeEcho:去除延迟效果。Aggressive比Normal去除得更彻底，DeReverb额外去除混响，可去除单声道混响，但是对高频重的板式混响去不干净。<br>去混响/去延迟，附：<br>1、DeEcho-DeReverb模型的耗时是另外2个DeEcho模型的接近2倍；<br>2、MDX-Net-Dereverb模型挺慢的；<br>3、个人推荐的最干净的配置是先MDX-Net再DeEcho-Aggressive。"
                     )
                 )
                 with gr.Row():
@@ -1388,9 +1579,17 @@ with gr.Blocks() as app:
                             visible=False,  # 先不开放调整
                         )
                         opt_vocal_root = gr.Textbox(
-                            label=i18n("指定输出人声文件夹"), value="opt"
+                            label=i18n("指定输出主人声文件夹"), value="opt"
                         )
-                        opt_ins_root = gr.Textbox(label=i18n("指定输出乐器文件夹"), value="opt")
+                        opt_ins_root = gr.Textbox(
+                            label=i18n("指定输出非主人声文件夹"), value="opt"
+                        )
+                        format0 = gr.Radio(
+                            label=i18n("导出文件格式"),
+                            choices=["wav", "flac", "mp3", "m4a"],
+                            value="flac",
+                            interactive=True,
+                        )
                     but2 = gr.Button(i18n("转换"), variant="primary")
                     vc_output4 = gr.Textbox(label=i18n("输出信息"))
                     but2.click(
@@ -1402,6 +1601,7 @@ with gr.Blocks() as app:
                             wav_inputs,
                             opt_ins_root,
                             agg,
+                            format0,
                         ],
                         [vc_output4],
                     )
@@ -1415,7 +1615,7 @@ with gr.Blocks() as app:
                 exp_dir1 = gr.Textbox(label=i18n("输入实验名"), value="mi-test")
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
-                    choices=["32k", "40k", "48k"],
+                    choices=["40k", "48k"],
                     value="40k",
                     interactive=True,
                 )
@@ -1426,7 +1626,7 @@ with gr.Blocks() as app:
                     interactive=True,
                 )
                 version19 = gr.Radio(
-                    label=i18n("版本(目前仅40k支持了v2)"),
+                    label=i18n("版本"),
                     choices=["v1", "v2"],
                     value="v1",
                     interactive=True,
@@ -1437,7 +1637,7 @@ with gr.Blocks() as app:
                     maximum=config.n_cpu,
                     step=1,
                     label=i18n("提取音高和处理数据使用的CPU进程数"),
-                    value=config.n_cpu,
+                    value=int(np.ceil(config.n_cpu / 1.5)),
                     interactive=True,
                 )
             with gr.Group():  # 暂时单人的, 后面支持最多4人的#数据处理
@@ -1550,12 +1750,12 @@ with gr.Blocks() as app:
                     sr2.change(
                         change_sr2,
                         [sr2, if_f0_3, version19],
-                        [pretrained_G14, pretrained_D15, version19],
+                        [pretrained_G14, pretrained_D15],
                     )
                     version19.change(
                         change_version19,
                         [sr2, if_f0_3, version19],
-                        [pretrained_G14, pretrained_D15],
+                        [pretrained_G14, pretrained_D15, sr2],
                     )
                     if_f0_3.change(
                         change_f0,
@@ -1632,7 +1832,7 @@ with gr.Blocks() as app:
                 with gr.Row():
                     sr_ = gr.Radio(
                         label=i18n("目标采样率"),
-                        choices=["32k", "40k", "48k"],
+                        choices=["40k", "48k"],
                         value="40k",
                         interactive=True,
                     )
@@ -1732,7 +1932,7 @@ with gr.Blocks() as app:
                     version_1 = gr.Radio(
                         label=i18n("模型版本型号"),
                         choices=["v1", "v2"],
-                        value="v1",
+                        value="v2",
                         interactive=True,
                     )
                     info___ = gr.Textbox(
@@ -1757,11 +1957,10 @@ with gr.Blocks() as app:
                     label=i18n("Onnx输出路径"), value="", interactive=True
                 )
             with gr.Row():
-                moevs = gr.Checkbox(label=i18n("MoeVS模型"), value=True)
-                infoOnnx = gr.Label(label="Null")
+                infoOnnx = gr.Label(label="info")
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
-            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir, moevs], infoOnnx)
+            butOnnx.click(export_onnx, [ckpt_dir, onnx_dir], infoOnnx)
 
         tab_faq = i18n("常见问题解答")
         with gr.TabItem(tab_faq):
@@ -1770,7 +1969,7 @@ with gr.Blocks() as app:
                     with open("docs/faq.md", "r", encoding="utf8") as f:
                         info = f.read()
                 else:
-                    with open("docs/faq_en.md", "r") as f:
+                    with open("docs/faq_en.md", "r", encoding="utf8") as f:
                         info = f.read()
                 gr.Markdown(value=info)
             except:
