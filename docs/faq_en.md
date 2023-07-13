@@ -87,7 +87,7 @@ Save via model extraction at the bottom of the ckpt processing tab.
 ## Q14:File/memory error(when training)?
 Too many processes and your memory is not enough. You may fix it by:
 
-1、decrease "Number of CPU threads".
+1、decrease the input in field "Threads of CPU".
 
 2、pre-cut trainset to shorter audio files.
 

@@ -40,7 +40,8 @@ jobs:
       - name: Create Pull Request
         if: steps.commitback.outcome == 'success'
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           body: Apply Code Formatter Change
+          title: Apply Code Formatter Change
           commit-message: Automatic code format
