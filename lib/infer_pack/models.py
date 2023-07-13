@@ -635,11 +635,11 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if(rate):
-            head=int(z_p.shape[2]*rate)
-            z_p=z_p[:,:,-head:]
-            x_mask=x_mask[:,:,-head:]
-            nsff0=nsff0[:,-head:]
+        if rate:
+            head = int(z_p.shape[2] * rate)
+            z_p = z_p[:, :, -head:]
+            x_mask = x_mask[:, :, -head:]
+            nsff0 = nsff0[:, -head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -751,11 +751,11 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if(rate):
-            head=int(z_p.shape[2]*rate)
-            z_p=z_p[:,:,-head:]
-            x_mask=x_mask[:,:,-head:]
-            nsff0=nsff0[:,-head:]
+        if rate:
+            head = int(z_p.shape[2] * rate)
+            z_p = z_p[:, :, -head:]
+            x_mask = x_mask[:, :, -head:]
+            nsff0 = nsff0[:, -head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -858,10 +858,10 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if(rate):
-            head=int(z_p.shape[2]*rate)
-            z_p=z_p[:,:,-head:]
-            x_mask=x_mask[:,:,-head:]
+        if rate:
+            head = int(z_p.shape[2] * rate)
+            z_p = z_p[:, :, -head:]
+            x_mask = x_mask[:, :, -head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -964,10 +964,10 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if(rate):
-            head=int(z_p.shape[2]*rate)
-            z_p=z_p[:,:,-head:]
-            x_mask=x_mask[:,:,-head:]
+        if rate:
+            head = int(z_p.shape[2] * rate)
+            z_p = z_p[:, :, -head:]
+            x_mask = x_mask[:, :, -head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
