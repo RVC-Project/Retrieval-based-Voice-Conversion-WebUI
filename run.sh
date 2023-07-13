@@ -4,13 +4,12 @@ if [[ "$(uname)" == "Darwin" ]]; then
   # macOS specific env:
   export PYTORCH_ENABLE_MPS_FALLBACK=1
   export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
-  requirements_file="requirements_macOS.txt"
-elif [[ "$(uname)" == "Linux" ]]; then
-  requirements_file="requirements.txt"
-else
+elif [[ "$(uname)" != "Linux" ]]; then
   echo "Unsupported operating system."
   exit 1
 fi
+
+requirements_file="requirements.txt"
 
 # Check if Python 3.8 is installed
 if ! command -v python3.8 &> /dev/null; then
