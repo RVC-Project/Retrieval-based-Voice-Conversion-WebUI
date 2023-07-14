@@ -13,6 +13,8 @@ from lib.infer_pack.commons import init_weights
 import numpy as np
 from lib.infer_pack import commons
 
+from config import Config
+config = Config()
 
 class TextEncoder256(nn.Module):
     def __init__(
@@ -395,7 +397,7 @@ class SourceModuleHnNSF(torch.nn.Module):
         sine_amp=0.1,
         add_noise_std=0.003,
         voiced_threshod=0,
-        is_half=True,
+        is_half=config.is_half,
     ):
         super(SourceModuleHnNSF, self).__init__()
 
