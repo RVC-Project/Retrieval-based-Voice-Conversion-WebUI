@@ -14,7 +14,9 @@ requirements_file="requirements.txt"
 # Check if Python 3.8 is installed
 if ! command -v python3.8 &> /dev/null; then
   echo "Python 3.8 not found. Attempting to install..."
-  if [[ "$(uname)" == "Darwin" ]] && command -v brew &> /dev/null; then
+  if [[ "$(uname -m)" == "arm64" ]] && command -v brew &> /dev/null; then
+    arch -arm64 brew install python@3.8
+  elif [[ "$(uname)" == "Darwin" ]] && command -v brew &> /dev/null; then
     brew install python@3.8
   elif [[ "$(uname)" == "Linux" ]] && command -v apt-get &> /dev/null; then
     sudo apt-get update
