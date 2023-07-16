@@ -568,7 +568,7 @@ if __name__ == "__main__":
                 if sys.platform == "darwin":
                     outdata[:] = self.output_wav[:].cpu().numpy()[:, np.newaxis]
                 else:
-                    outdata[:] = self.output_wav[:].cpu().numpy()
+                    outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
             print("infer time:" + str(total_time))
