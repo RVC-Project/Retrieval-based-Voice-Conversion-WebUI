@@ -21,7 +21,6 @@ praat-parselmouth>=0.4.2
 Pillow>=9.1.1
 resampy>=0.4.2
 scikit-learn
-starlette>=0.25.0
 tensorboard
 tqdm>=4.63.1
 tornado>=6.1
