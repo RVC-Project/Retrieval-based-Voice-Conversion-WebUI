@@ -48,7 +48,11 @@ if __name__ == "__main__":
     from i18n import I18nAuto
 
     i18n = I18nAuto()
-    device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        else ("mps" if torch.backends.mps.is_available() else "cpu")
+    )
     current_dir = os.getcwd()
     inp_q = Queue()
     opt_q = Queue()
@@ -560,7 +564,8 @@ if __name__ == "__main__":
                 else:
                     outdata[:] = np.tile(
                         nr.reduce_noise(
-                            y=self.output_wav[:].cpu().numpy(), sr=self.config.samplerate
+                            y=self.output_wav[:].cpu().numpy(),
+                            sr=self.config.samplerate,
                         ),
                         (2, 1),
                     ).T
