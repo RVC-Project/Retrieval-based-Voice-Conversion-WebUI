@@ -36,7 +36,7 @@ absl-py>=1.2.0
 audioread
 uvicorn>=0.21.1
 colorama>=0.4.5
-pyworld>=0.3.2
+pyworld==0.3.2
 httpx==0.23.0
 #onnxruntime-gpu
 torchcrepe==0.0.20
