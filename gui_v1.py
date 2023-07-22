@@ -302,22 +302,26 @@ if __name__ == "__main__":
                 if event == sg.WINDOW_CLOSED:
                     self.flag_vc = False
                     exit()
-                if event == 'reload_devices':
-                    prev_input = self.window['sg_input_device'].get()
-                    prev_output = self.window['sg_output_device'].get()
+                if event == "reload_devices":
+                    prev_input = self.window["sg_input_device"].get()
+                    prev_output = self.window["sg_output_device"].get()
                     input_devices, output_devices, _, _ = self.get_devices(update=True)
                     if prev_input not in input_devices:
-                       self.config.sg_input_device = input_devices[0]  
+                        self.config.sg_input_device = input_devices[0]
                     else:
-                       self.config.sg_input_device = prev_input
-                    self.window['sg_input_device'].Update(values=input_devices)
-                    self.window['sg_input_device'].Update(value=self.config.sg_input_device)
+                        self.config.sg_input_device = prev_input
+                    self.window["sg_input_device"].Update(values=input_devices)
+                    self.window["sg_input_device"].Update(
+                        value=self.config.sg_input_device
+                    )
                     if prev_output not in output_devices:
-                       self.config.sg_output_device = output_devices[0]
+                        self.config.sg_output_device = output_devices[0]
                     else:
-                       self.config.sg_output_device = prev_output
-                    self.window['sg_output_device'].Update(values=output_devices)
-                    self.window['sg_output_device'].Update(value=self.config.sg_output_device)
+                        self.config.sg_output_device = prev_output
+                    self.window["sg_output_device"].Update(values=output_devices)
+                    self.window["sg_output_device"].Update(
+                        value=self.config.sg_output_device
+                    )
                 if event == "start_vc" and self.flag_vc == False:
                     if self.set_values(values) == True:
                         print("using_cuda:" + str(torch.cuda.is_available()))
