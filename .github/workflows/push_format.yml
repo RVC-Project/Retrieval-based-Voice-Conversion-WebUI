@@ -42,6 +42,7 @@ jobs:
         continue-on-error: true
         uses: peter-evans/create-pull-request@v5
         with:
+          delete-branch: true
           body: Apply Code Formatter Change
           title: Apply Code Formatter Change
           commit-message: Automatic code format
