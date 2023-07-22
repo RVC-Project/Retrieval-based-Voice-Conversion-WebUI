@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{github.ref_name}}
+          ref: v1
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -44,3 +44,5 @@ jobs:
         with:
           body: Apply Code Formatter Change
           commit-message: Automatic code format
+          branch: create-pull-request/patchv1
+          delete-branch: true
