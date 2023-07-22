@@ -1,9 +1,9 @@
-name: push format
+name: push format v1
 
 on:
   push:
     branches:
-      - main
+      - v1
 
 permissions:
   contents: write

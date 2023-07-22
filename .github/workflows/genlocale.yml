@@ -1,8 +1,8 @@
-name: genlocale
+name: genlocale_v1
 on:
   push:
     branches:
-      - main
+      - v1
 jobs:
   golangci:
     name: genlocale

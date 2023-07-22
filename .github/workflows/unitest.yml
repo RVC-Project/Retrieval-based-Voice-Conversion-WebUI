@@ -1,5 +1,13 @@
-name: unitest
-on: [ push, pull_request ]
+name: unitest_v1
+
+on:
+  push:
+    branches:
+      - v1
+  pull_request:
+    branches:
+      - v1
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}

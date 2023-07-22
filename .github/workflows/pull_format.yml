@@ -1,6 +1,9 @@
-name: pull format
+name: pull format v1
 
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - v1
 
 permissions:
   contents: write
