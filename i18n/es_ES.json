@@ -106,7 +106,6 @@
     "选择.npy文件": "Seleccionar archivo .npy",
     "输入设备": "Dispositivo de entrada",
     "输出设备": "Dispositivo de salida",
-    "重载设备列表": "Recargar lista de dispositivos",
     "音频设备(请使用同种类驱动)": "Dispositivo de audio (utilice el mismo tipo de controlador)",
     "响应阈值": "Umbral de respuesta",
     "音调设置": "Ajuste de tono",
@@ -126,6 +125,7 @@
     "hubert模型路径不可包含中文": "hubert模型路径不可包含中文",
     "pth文件路径不可包含中文": "pth文件路径不可包含中文",
     "index文件路径不可包含中文": "index文件路径不可包含中文",
+    "重载设备列表": "Recargar lista de dispositivos",
     "音高算法": "音高算法",
     "harvest进程数": "harvest进程数"
 }

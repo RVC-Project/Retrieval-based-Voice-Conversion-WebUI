@@ -106,7 +106,6 @@
     "选择.npy文件": ".npy dosyası seç",
     "输入设备": "Giriş cihazı",
     "输出设备": "Çıkış cihazı",
-    "重载设备列表": "Cihaz listesini yeniden yükle",
     "音频设备(请使用同种类驱动)": "Ses cihazı (aynı tür sürücüyü kullanın)",
     "响应阈值": "Tepki eşiği",
     "音调设置": "Pitch ayarları",
@@ -126,6 +125,7 @@
     "hubert模型路径不可包含中文": "hubert modeli yolu Çince karakter içeremez",
     "pth文件路径不可包含中文": ".pth dosya yolu Çince karakter içeremez",
     "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez",
+    "重载设备列表": "Cihaz listesini yeniden yükle",
     "音高算法": "音高算法",
     "harvest进程数": "harvest进程数"
 }
