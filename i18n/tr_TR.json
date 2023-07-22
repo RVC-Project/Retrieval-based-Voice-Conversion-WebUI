@@ -106,6 +106,7 @@
     "选择.npy文件": ".npy dosyası seç",
     "输入设备": "Giriş cihazı",
     "输出设备": "Çıkış cihazı",
+    "重载设备列表": "Cihaz listesini yeniden yükle",
     "音频设备(请使用同种类驱动)": "Ses cihazı (aynı tür sürücüyü kullanın)",
     "响应阈值": "Tepki eşiği",
     "音调设置": "Pitch ayarları",

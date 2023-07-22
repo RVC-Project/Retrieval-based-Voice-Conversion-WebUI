@@ -106,6 +106,7 @@
     "选择.npy文件": "Select the .npy file",
     "输入设备": "Input device",
     "输出设备": "Output device",
+    "重载设备列表": "Reload device list",
     "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
     "响应阈值": "Response threshold",
     "音调设置": "Pitch settings",

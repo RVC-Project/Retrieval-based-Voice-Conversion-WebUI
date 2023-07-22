@@ -106,6 +106,7 @@
     "选择.npy文件": "Seleccionar archivo .npy",
     "输入设备": "Dispositivo de entrada",
     "输出设备": "Dispositivo de salida",
+    "重载设备列表": "Recargar lista de dispositivos",
     "音频设备(请使用同种类驱动)": "Dispositivo de audio (utilice el mismo tipo de controlador)",
     "响应阈值": "Umbral de respuesta",
     "音调设置": "Ajuste de tono",
