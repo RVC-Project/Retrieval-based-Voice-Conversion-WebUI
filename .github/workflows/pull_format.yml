@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
 jobs:
-  pull_format:
+  pull_format_v1:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

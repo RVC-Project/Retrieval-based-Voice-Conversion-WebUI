@@ -4,8 +4,8 @@ on:
     branches:
       - v1
 jobs:
-  golangci:
-    name: genlocale
+  genlocale_v1:
+    name: genlocale_v1
     runs-on: ubuntu-latest
     steps:
       - name: Check out
