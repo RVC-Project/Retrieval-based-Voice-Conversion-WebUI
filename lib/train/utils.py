@@ -44,9 +44,10 @@ def load_checkpoint_d(checkpoint_path, combd, sbd, optimizer=None, load_opt=1):
             model.module.load_state_dict(new_state_dict, strict=False)
         else:
             model.load_state_dict(new_state_dict, strict=False)
+        return model
 
     go(combd, "combd")
-    go(sbd, "sbd")
+    model = go(sbd, "sbd")
     #############
     logger.info("Loaded model weights")
 

@@ -34,7 +34,7 @@ from lib.infer_pack.models import (
 from lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 from infer_uvr5 import _audio_pre_, _audio_pre_new
 from my_utils import load_audio
-from train.process_ckpt import change_info, extract_small_model, merge, show_info
+from lib.train.process_ckpt import change_info, extract_small_model, merge, show_info
 from vc_infer_pipeline import VC
 from sklearn.cluster import MiniBatchKMeans
 
