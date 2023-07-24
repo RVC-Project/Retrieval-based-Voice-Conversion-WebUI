@@ -10,11 +10,11 @@ n_p = int(sys.argv[3])
 exp_dir = sys.argv[4]
 noparallel = sys.argv[5] == "True"
 import numpy as np, os, traceback
-from slicer2 import Slicer
+from lib.slicer2 import Slicer
 import librosa, traceback
 from scipy.io import wavfile
 import multiprocessing
-from my_utils import load_audio
+from lib.audio import load_audio
 
 mutex = multiprocessing.Lock()
 f = open("%s/preprocess.log" % exp_dir, "a+")

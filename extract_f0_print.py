@@ -2,7 +2,7 @@ import os, traceback, sys, parselmouth
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from my_utils import load_audio
+from lib.audio import load_audio
 import pyworld
 import numpy as np, logging
 

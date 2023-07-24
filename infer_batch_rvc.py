@@ -116,7 +116,7 @@ from lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from my_utils import load_audio
+from lib.audio import load_audio
 from fairseq import checkpoint_utils
 from scipy.io import wavfile
 

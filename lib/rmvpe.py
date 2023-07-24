@@ -1,6 +1,5 @@
-import sys, torch, numpy as np, traceback, pdb
+import torch, numpy as np
 import torch.nn as nn
-from time import time as ttime
 import torch.nn.functional as F
 
 
@@ -247,7 +246,7 @@ class E2E(nn.Module):
             )
         else:
             self.fc = nn.Sequential(
-                nn.Linear(3 * N_MELS, N_CLASS), nn.Dropout(0.25), nn.Sigmoid()
+                nn.Linear(3 * nn.N_MELS, nn.N_CLASS), nn.Dropout(0.25), nn.Sigmoid()
             )
 
     def forward(self, mel):

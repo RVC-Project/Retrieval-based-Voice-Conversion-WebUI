@@ -196,7 +196,7 @@ class RVC:
 
     def get_f0_rmvpe(self, x, f0_up_key):
         if hasattr(self, "model_rmvpe") == False:
-            from rmvpe import RMVPE
+            from lib.rmvpe import RMVPE
 
             print("loading rmvpe model")
             self.model_rmvpe = RMVPE(
