@@ -8,9 +8,17 @@ on:
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
   push_format:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        os: [ubuntu-latest]
+      fail-fast: false
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -22,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Black
-        run: pip install black
+        run: pip install "black[jupyter]"
 
       - name: Run Black
         # run: black $(git ls-files '*.py')
@@ -36,7 +44,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add --all
           git commit -m "Format code"
-      
+
       - name: Create Pull Request
         if: steps.commitback.outcome == 'success'
         continue-on-error: true
