@@ -154,6 +154,7 @@ for name in os.listdir(weight_uvr5_root):
 
 cpt = None
 
+
 def vc_single(
     sid,
     input_audio_path,
@@ -426,7 +427,8 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
                 else:
                     net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del net_g, cpt
-            if torch.cuda.is_available(): torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
         return {"visible": False, "__type__": "update"}
     person = "%s/%s" % (weight_root, sid)
     print("loading %s" % person)
