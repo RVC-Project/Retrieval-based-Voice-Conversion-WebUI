@@ -8,9 +8,17 @@ on:
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
   push_format:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        os: [ubuntu-latest]
+      fail-fast: false
+
     steps:
       - uses: actions/checkout@v3
         with:
