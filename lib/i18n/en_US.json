@@ -55,6 +55,7 @@
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Enter the GPU index(es) separated by '-', e.g., 0-1-2 to use GPU 0, 1, and 2:",
     "显卡信息": "GPU Information",
     "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢": "Select the pitch extraction algorithm ('pm': faster extraction but lower-quality speech; 'dio': improved speech but slower extraction; 'harvest': better quality but slower extraction):",
+    "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "Enter the GPU index(es) separated by '-', e.g., 0-0-1 to use 2 processes in GPU0 and 1 process in GPU1",
     "特征提取": "Feature extraction",
     "step3: 填写训练设置, 开始训练模型和索引": "Step 3: Fill in the training settings and start training the model and index",
     "保存频率save_every_epoch": "Save frequency (save_every_epoch):",
@@ -127,6 +128,5 @@
     "index文件路径不可包含中文": "index文件路径不可包含中文",
     "重载设备列表": "Reload device list",
     "音高算法": "pitch detection algorithm",
-    "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "Enter the GPU index(es) separated by '-', e.g., 0-0-1 to use 2 processes in GPU0 and 1 process in GPU1",
     "harvest进程数": "Number of CPU processes used for harvest pitch algorithm"
 }

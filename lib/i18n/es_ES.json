@@ -55,6 +55,7 @@
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Separe los números de identificación de la GPU con '-' al ingresarlos. Por ejemplo, '0-1-2' significa usar GPU 0, GPU 1 y GPU 2.",
     "显卡信息": "información de la GPU",
     "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢": "Seleccione el algoritmo de extracción de tono: utilice 'pm' para un procesamiento más rápido de la voz cantada, 'dio' para un discurso de alta calidad pero un procesamiento más lento y 'cosecha' para obtener la mejor calidad pero un procesamiento más lento.",
+    "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程",
     "特征提取": "Extracción de características",
     "step3: 填写训练设置, 开始训练模型和索引": "Paso 3: complete la configuración de entrenamiento y comience a entrenar el modelo y el índice.",
     "保存频率save_every_epoch": "Frecuencia de guardado (save_every_epoch)",
