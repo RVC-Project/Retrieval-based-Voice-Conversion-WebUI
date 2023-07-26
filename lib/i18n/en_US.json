@@ -16,7 +16,7 @@
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Recommended +12 key for male to female conversion, and -12 key for female to male conversion. If the sound range goes too far and the voice is distorted, you can also adjust it to the appropriate range by yourself.",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Transpose (integer, number of semitones, raise by an octave: 12, lower by an octave: -12):",
     "输入待处理音频文件路径(默认是正确格式示例)": "Enter the path of the audio file to be processed (default is the correct format example):",
-    "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU": "Select the pitch extraction algorithm ('pm': faster extraction but lower-quality speech; 'harvest': better bass but extremely slow; 'crepe': better quality but GPU intensive):",
+    "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU": "Select the pitch extraction algorithm ('pm': faster extraction but lower-quality speech; 'harvest': better bass but extremely slow; 'crepe': better quality but GPU intensive), 'rmvpe': best quality, and little GPU requirement",
     ">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音": "If >=3: apply median filtering to the harvested pitch results. The value represents the filter radius and can reduce breathiness.",
     "特征检索库文件路径,为空则使用下拉的选择结果": "Path to the feature index file. Leave blank to use the selected result from the dropdown:",
     "自动检测index路径,下拉式选择(dropdown)": "Auto-detect index path and select from the dropdown:",
@@ -126,6 +126,7 @@
     "pth文件路径不可包含中文": "pth文件路径不可包含中文",
     "index文件路径不可包含中文": "index文件路径不可包含中文",
     "重载设备列表": "Reload device list",
-    "音高算法": "音高算法",
-    "harvest进程数": "harvest进程数"
+    "音高算法": "pitch detection algorithm",
+    "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "Enter the GPU index(es) separated by '-', e.g., 0-0-1 to use 2 processes in GPU0 and 1 process in GPU1",
+    "harvest进程数": "Number of CPU processes used for harvest pitch algorithm"
 }
