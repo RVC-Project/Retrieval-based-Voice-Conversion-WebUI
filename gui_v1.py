@@ -556,9 +556,10 @@ if __name__ == "__main__":
                 + 1e-8
             )
             if sys.platform == "darwin":
-                cor_nom = cor_nom.cpu()
-                cor_den = cor_den.cpu()
-            sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
+                _, sola_offset = torch.max(cor_nom[0, 0] / cor_den[0, 0])
+                sola_offset = sola_offset.item()
+            else:
+                sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
             print("sola offset: " + str(int(sola_offset)))
             self.output_wav[:] = infer_wav[sola_offset : sola_offset + self.block_frame]
             self.output_wav[: self.crossfade_frame] *= self.fade_in_window
