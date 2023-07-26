@@ -91,5 +91,14 @@ Too many processes and your memory is not enough. You may fix it by:
 
 2、pre-cut trainset to shorter audio files.
 
+## Q15: How to continue training using more data
+
+step1: put all wav data to path2.
+
+step2: exp_name2+path2 -> process dataset and extract feature.
+
+step3: copy the latest G and D file of exp_name1 (your previous experiment) into exp_name2 folder.
+
+step4: click "train the model", and it will continue training from the beginning of your previous exp model epoch.
 
 
