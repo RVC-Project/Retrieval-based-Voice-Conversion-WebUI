@@ -55,6 +55,7 @@
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "GPU indekslerini '-' ile ayırarak girin, örneğin 0-1-2, GPU 0, 1 ve 2'yi kullanmak için:",
     "显卡信息": "GPU Bilgisi",
     "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢": "Ses yüksekliği (Pitch) çıkartma algoritmasını seçin ('pm': daha hızlı çıkartma, ancak düşük kaliteli konuşma; 'dio': geliştirilmiş konuşma kalitesi, ancak daha yavaş çıkartma; 'harvest': daha iyi kalite, ancak daha da yavaş çıkartma):",
+    "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程",
     "特征提取": "Özellik çıkartma",
     "step3: 填写训练设置, 开始训练模型和索引": "Adım 3: Eğitim ayarlarını doldurun ve modeli ve dizini eğitmeye başlayın",
     "保存频率save_every_epoch": "Kaydetme sıklığı (save_every_epoch):",
