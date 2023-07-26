@@ -5,7 +5,7 @@ from multiprocessing import cpu_count
 
 
 def use_fp32_config():
-    for config_file in ["32k.json", "40k.json", "48k.json"]:
+    for config_file in ["32k.json", "40k.json", "48k.json", "48k_v2.json", "32k_v2.json"]:
         with open(f"configs/{config_file}", "r") as f:
             strr = f.read().replace("true", "false")
         with open(f"configs/{config_file}", "w") as f:
