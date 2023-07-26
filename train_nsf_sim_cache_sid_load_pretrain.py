@@ -4,7 +4,6 @@ sys.path.append(os.path.join(now_dir))
 sys.path.append(os.path.join(now_dir, "train"))
 
 from lib.train import utils
-from lib.train import utils
 import datetime
 
 hps = utils.get_hparams()

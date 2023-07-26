@@ -3,7 +3,7 @@ from scipy import signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-
+print(sys.argv)
 inp_root = sys.argv[1]
 sr = int(sys.argv[2])
 n_p = int(sys.argv[3])

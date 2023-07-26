@@ -7,9 +7,13 @@ import pyworld
 import numpy as np, logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
-from multiprocessing import Process
 
-exp_dir = sys.argv[1]
+n_part = int(sys.argv[1])
+i_part = int(sys.argv[2])
+i_gpu = sys.argv[3]
+os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
+exp_dir = sys.argv[4]
+is_half = sys.argv[5]
 f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
 
 
@@ -18,9 +22,6 @@ def printt(strr):
     f.write("%s\n" % strr)
     f.flush()
 
-
-n_p = int(sys.argv[2])
-f0method = sys.argv[3]
 
 
 class FeatureInput(object):
@@ -37,50 +38,13 @@ class FeatureInput(object):
     def compute_f0(self, path, f0_method):
         x = load_audio(path, self.fs)
         p_len = x.shape[0] // self.hop
-        if f0_method == "pm":
-            time_step = 160 / 16000 * 1000
-            f0_min = 50
-            f0_max = 1100
-            f0 = (
-                parselmouth.Sound(x, self.fs)
-                .to_pitch_ac(
-                    time_step=time_step / 1000,
-                    voicing_threshold=0.6,
-                    pitch_floor=f0_min,
-                    pitch_ceiling=f0_max,
-                )
-                .selected_array["frequency"]
-            )
-            pad_size = (p_len - len(f0) + 1) // 2
-            if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-                f0 = np.pad(
-                    f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
-                )
-        elif f0_method == "harvest":
-            f0, t = pyworld.harvest(
-                x.astype(np.double),
-                fs=self.fs,
-                f0_ceil=self.f0_max,
-                f0_floor=self.f0_min,
-                frame_period=1000 * self.hop / self.fs,
-            )
-            f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
-        elif f0_method == "dio":
-            f0, t = pyworld.dio(
-                x.astype(np.double),
-                fs=self.fs,
-                f0_ceil=self.f0_max,
-                f0_floor=self.f0_min,
-                frame_period=1000 * self.hop / self.fs,
-            )
-            f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
-        elif f0_method == "rmvpe":
+        if(f0_method=="rmvpe"):
             if hasattr(self, "model_rmvpe") == False:
                 from lib.rmvpe import RMVPE
 
                 print("loading rmvpe model")
                 self.model_rmvpe = RMVPE(
-                    "rmvpe.pt", is_half=False, device="cpu"
+                    "rmvpe.pt", is_half=True, device="cuda"
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         return f0
@@ -152,17 +116,20 @@ if __name__ == "__main__":
         opt_path1 = "%s/%s" % (opt_root1, name)
         opt_path2 = "%s/%s" % (opt_root2, name)
         paths.append([inp_path, opt_path1, opt_path2])
-
-    ps = []
-    for i in range(n_p):
-        p = Process(
-            target=featureInput.go,
-            args=(
-                paths[i::n_p],
-                f0method,
-            ),
-        )
-        ps.append(p)
-        p.start()
-    for i in range(n_p):
-        ps[i].join()
+    try:
+        featureInput.go(paths[i_part::n_part],"rmvpe")
+    except:
+        printt("f0_all_fail-%s" % (traceback.format_exc()))
+    # ps = []
+    # for i in range(n_p):
+    #     p = Process(
+    #         target=featureInput.go,
+    #         args=(
+    #             paths[i::n_p],
+    #             f0method,
+    #         ),
+    #     )
+    #     ps.append(p)
+    #     p.start()
+    # for i in range(n_p):
+    #     ps[i].join()
