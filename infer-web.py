@@ -43,9 +43,7 @@ logging.getLogger("numba").setLevel(logging.WARNING)
 now_dir = os.getcwd()
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree(
-    "%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True
-)
+shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
@@ -570,13 +568,13 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
 
 
 # but2.click(extract_f0,[gpus6,np7,f0method8,if_f0_3,trainset_dir4],[info2])
-def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19,gpus_rmvpe):
+def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvpe):
     gpus = gpus.split("-")
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
     f.close()
     if if_f0:
-        if(f0method!="rmvpe_gpu"):
+        if f0method != "rmvpe_gpu":
             cmd = config.python_cmd + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
                 now_dir,
                 exp_dir,
@@ -584,7 +582,9 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19,gpus_rmvpe
                 f0method,
             )
             print(cmd)
-            p = Popen(cmd, shell=True, cwd=now_dir)  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
+            p = Popen(
+                cmd, shell=True, cwd=now_dir
+            )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
             ###煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
             done = [False]
             threading.Thread(
@@ -602,7 +602,9 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19,gpus_rmvpe
                 sleep(1)
                 if done[0]:
                     break
-            with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+            with open(
+                "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+            ) as f:
                 log = f.read()
             print(log)
             yield log
@@ -612,16 +614,9 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19,gpus_rmvpe
             ps = []
             for idx, n_g in enumerate(gpus_rmvpe):
                 cmd = (
-                        config.python_cmd
-                        + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
-                        % (
-                            leng,
-                            idx,
-                            n_g,
-                            now_dir,
-                            exp_dir,
-                            config.is_half
-                        )
+                    config.python_cmd
+                    + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
+                    % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
                 )
                 print(cmd)
                 p = Popen(
@@ -638,12 +633,16 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19,gpus_rmvpe
                 ),
             ).start()
             while 1:
-                with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+                with open(
+                    "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+                ) as f:
                     yield (f.read())
                 sleep(1)
                 if done[0]:
                     break
-            with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+            with open(
+                "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+            ) as f:
                 log = f.read()
             print(log)
             yield log
@@ -1037,7 +1036,8 @@ def train1key(
     gpus16,
     if_cache_gpu17,
     if_save_every_weights18,
-    version19,gpus_rmvpe
+    version19,
+    gpus_rmvpe,
 ):
     infos = []
 
@@ -1074,7 +1074,7 @@ def train1key(
     open(extract_f0_feature_log_path, "w")
     if if_f0_3:
         yield get_info_str("step2a:正在提取音高")
-        if(f0method8!="rmvpe_gpu"):
+        if f0method8 != "rmvpe_gpu":
             cmd = config.python_cmd + ' extract_f0_print.py "%s" %s %s' % (
                 model_log_dir,
                 np7,
@@ -1088,16 +1088,12 @@ def train1key(
             leng = len(gpus_rmvpe)
             ps = []
             for idx, n_g in enumerate(gpus_rmvpe):
-                cmd = (
-                        config.python_cmd
-                        + ' extract_f0_rmvpe.py %s %s %s "%s" %s '
-                        % (
-                            leng,
-                            idx,
-                            n_g,
-                            model_log_dir,
-                            config.is_half
-                        )
+                cmd = config.python_cmd + ' extract_f0_rmvpe.py %s %s %s "%s" %s ' % (
+                    leng,
+                    idx,
+                    n_g,
+                    model_log_dir,
+                    config.is_half,
                 )
                 yield get_info_str(cmd)
                 p = Popen(
@@ -1318,10 +1314,14 @@ def change_info_(ckpt_path):
         traceback.print_exc()
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
+
 def change_f0_method(f0method8):
-    if(f0method8=="rmvpe_gpu"):visible=True
-    else:visible=False
+    if f0method8 == "rmvpe_gpu":
+        visible = True
+    else:
+        visible = False
     return {"visible": visible, "__type__": "update"}
+
 
 def export_onnx(ModelPath, ExportedPath):
     global cpt
@@ -1755,10 +1755,12 @@ with gr.Blocks(title="RVC WebUI") as app:
                             interactive=True,
                         )
                         gpus_rmvpe = gr.Textbox(
-                            label=i18n("rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程"),
-                            value="%s-%s"%(gpus,gpus),
+                            label=i18n(
+                                "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程"
+                            ),
+                            value="%s-%s" % (gpus, gpus),
                             interactive=True,
-                            visible=True
+                            visible=True,
                         )
                     but2 = gr.Button(i18n("特征提取"), variant="primary")
                     info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
@@ -1769,7 +1771,15 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
                     but2.click(
                         extract_f0_feature,
-                        [gpus6, np7, f0method8, if_f0_3, exp_dir1, version19,gpus_rmvpe],
+                        [
+                            gpus6,
+                            np7,
+                            f0method8,
+                            if_f0_3,
+                            exp_dir1,
+                            version19,
+                            gpus_rmvpe,
+                        ],
                         [info2],
                     )
             with gr.Group():
@@ -1894,7 +1904,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                             gpus16,
                             if_cache_gpu17,
                             if_save_every_weights18,
-                            version19,gpus_rmvpe
+                            version19,
+                            gpus_rmvpe,
                         ],
                         info3,
                     )

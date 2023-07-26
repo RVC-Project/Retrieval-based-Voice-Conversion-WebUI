@@ -1,4 +1,5 @@
-import os,sys,pdb,torch
+import os, sys, pdb, torch
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import argparse
@@ -9,35 +10,36 @@ import numpy as np
 from multiprocessing import cpu_count
 
 ####
-#USAGE
+# USAGE
 #
-#In your Terminal or CMD or whatever
-#python infer_cli.py [TRANSPOSE_VALUE] "[INPUT_PATH]" "[OUTPUT_PATH]" "[MODEL_PATH]" "[INDEX_FILE_PATH]" "[INFERENCE_DEVICE]" "[METHOD]"
+# In your Terminal or CMD or whatever
+# python infer_cli.py [TRANSPOSE_VALUE] "[INPUT_PATH]" "[OUTPUT_PATH]" "[MODEL_PATH]" "[INDEX_FILE_PATH]" "[INFERENCE_DEVICE]" "[METHOD]"
 
 using_cli = False
 device = "cuda:0"
 is_half = False
 
-if(len(sys.argv) > 0):
-    f0_up_key=int(sys.argv[1]) #transpose value
-    input_path=sys.argv[2]
-    output_path=sys.argv[3]
-    model_path=sys.argv[4]
-    file_index=sys.argv[5] #.index file
-    device=sys.argv[6]
-    f0_method=sys.argv[7] #pm or harvest or crepe
-    
+if len(sys.argv) > 0:
+    f0_up_key = int(sys.argv[1])  # transpose value
+    input_path = sys.argv[2]
+    output_path = sys.argv[3]
+    model_path = sys.argv[4]
+    file_index = sys.argv[5]  # .index file
+    device = sys.argv[6]
+    f0_method = sys.argv[7]  # pm or harvest or crepe
+
     using_cli = True
 
-    #file_index2=sys.argv[8] 
-    #index_rate=float(sys.argv[10]) #search feature ratio
-    #filter_radius=float(sys.argv[11]) #median filter
-    #resample_sr=float(sys.argv[12]) #resample audio in post processing
-    #rms_mix_rate=float(sys.argv[13]) #search feature
+    # file_index2=sys.argv[8]
+    # index_rate=float(sys.argv[10]) #search feature ratio
+    # filter_radius=float(sys.argv[11]) #median filter
+    # resample_sr=float(sys.argv[12]) #resample audio in post processing
+    # rms_mix_rate=float(sys.argv[13]) #search feature
     print(sys.argv)
 
+
 class Config:
-    def __init__(self,device,is_half):
+    def __init__(self, device, is_half):
         self.device = device
         self.is_half = is_half
         self.n_cpu = 0
@@ -113,8 +115,9 @@ class Config:
 
         return x_pad, x_query, x_center, x_max
 
-config=Config(device,is_half)
-now_dir=os.getcwd()
+
+config = Config(device, is_half)
+now_dir = os.getcwd()
 sys.path.append(now_dir)
 from vc_infer_pipeline import VC
 from infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono
@@ -122,7 +125,9 @@ from my_utils import load_audio
 from fairseq import checkpoint_utils
 from scipy.io import wavfile
 
-hubert_model=None
+hubert_model = None
+
+
 def load_hubert():
     global hubert_model
     models, _, _ = checkpoint_utils.load_model_ensemble_and_task(
@@ -137,41 +142,42 @@ def load_hubert():
         hubert_model = hubert_model.float()
     hubert_model.eval()
 
+
 def vc_single(
     sid=0,
     input_audio_path=None,
-    f0_up_key=0, 
+    f0_up_key=0,
     f0_file=None,
-    f0_method="pm", 
-    file_index="", #.index file
+    f0_method="pm",
+    file_index="",  # .index file
     file_index2="",
     # file_big_npy,
-    index_rate=1.0, 
-    filter_radius=3, 
-    resample_sr=0, 
-    rms_mix_rate=1.0, 
+    index_rate=1.0,
+    filter_radius=3,
+    resample_sr=0,
+    rms_mix_rate=1.0,
     model_path="",
     output_path="",
-    protect=0.33
+    protect=0.33,
 ):
     global tgt_sr, net_g, vc, hubert_model, version
     get_vc(model_path)
     if input_audio_path is None:
         return "You need to upload an audio file", None
-    
+
     f0_up_key = int(f0_up_key)
     audio = load_audio(input_audio_path, 16000)
     audio_max = np.abs(audio).max() / 0.95
-    
+
     if audio_max > 1:
         audio /= audio_max
     times = [0, 0, 0]
-    
+
     if hubert_model == None:
         load_hubert()
-    
+
     if_f0 = cpt.get("f0", 1)
-    
+
     file_index = (
         (
             file_index.strip(" ")
@@ -184,7 +190,7 @@ def vc_single(
         if file_index != ""
         else file_index2
     )
-    
+
     audio_opt = vc.pipeline(
         hubert_model,
         net_g,
@@ -204,32 +210,49 @@ def vc_single(
         rms_mix_rate,
         version,
         f0_file=f0_file,
-        protect=protect
+        protect=protect,
     )
     wavfile.write(output_path, tgt_sr, audio_opt)
-    return('processed')
+    return "processed"
 
 
 def get_vc(model_path):
-    global n_spk,tgt_sr,net_g,vc,cpt,device,is_half, version
-    print("loading pth %s"%model_path)
+    global n_spk, tgt_sr, net_g, vc, cpt, device, is_half, version
+    print("loading pth %s" % model_path)
     cpt = torch.load(model_path, map_location="cpu")
     tgt_sr = cpt["config"][-1]
-    cpt["config"][-3]=cpt["weight"]["emb_g.weight"].shape[0]#n_spk
-    if_f0=cpt.get("f0",1)
+    cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
+    if_f0 = cpt.get("f0", 1)
     version = cpt.get("version", "v1")
-    if(if_f0==1):
+    if if_f0 == 1:
         net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=is_half)
     else:
         net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
     del net_g.enc_q
     print(net_g.load_state_dict(cpt["weight"], strict=False))
     net_g.eval().to(device)
-    if (is_half):net_g = net_g.half()
-    else:net_g = net_g.float()
+    if is_half:
+        net_g = net_g.half()
+    else:
+        net_g = net_g.float()
     vc = VC(tgt_sr, config)
-    n_spk=cpt["config"][-3]
+    n_spk = cpt["config"][-3]
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
-if(using_cli):
-    vc_single(sid=0,input_audio_path=input_path,f0_up_key=f0_up_key,f0_file=None,f0_method=f0_method,file_index=file_index,file_index2="",index_rate=1,filter_radius=3,resample_sr=0,rms_mix_rate=0,model_path=model_path,output_path=output_path)
+
+if using_cli:
+    vc_single(
+        sid=0,
+        input_audio_path=input_path,
+        f0_up_key=f0_up_key,
+        f0_file=None,
+        f0_method=f0_method,
+        file_index=file_index,
+        file_index2="",
+        index_rate=1,
+        filter_radius=3,
+        resample_sr=0,
+        rms_mix_rate=0,
+        model_path=model_path,
+        output_path=output_path,
+    )
