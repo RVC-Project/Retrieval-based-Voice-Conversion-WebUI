@@ -23,7 +23,6 @@ def printt(strr):
     f.flush()
 
 
-
 class FeatureInput(object):
     def __init__(self, samplerate=16000, hop_size=160):
         self.fs = samplerate
@@ -38,14 +37,12 @@ class FeatureInput(object):
     def compute_f0(self, path, f0_method):
         x = load_audio(path, self.fs)
         p_len = x.shape[0] // self.hop
-        if(f0_method=="rmvpe"):
+        if f0_method == "rmvpe":
             if hasattr(self, "model_rmvpe") == False:
                 from lib.rmvpe import RMVPE
 
                 print("loading rmvpe model")
-                self.model_rmvpe = RMVPE(
-                    "rmvpe.pt", is_half=True, device="cuda"
-                )
+                self.model_rmvpe = RMVPE("rmvpe.pt", is_half=True, device="cuda")
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         return f0
 
@@ -117,7 +114,7 @@ if __name__ == "__main__":
         opt_path2 = "%s/%s" % (opt_root2, name)
         paths.append([inp_path, opt_path1, opt_path2])
     try:
-        featureInput.go(paths[i_part::n_part],"rmvpe")
+        featureInput.go(paths[i_part::n_part], "rmvpe")
     except:
         printt("f0_all_fail-%s" % (traceback.format_exc()))
     # ps = []
