@@ -38,6 +38,8 @@ from lib.train.process_ckpt import change_info, extract_small_model, merge, show
 from vc_infer_pipeline import VC
 from sklearn.cluster import MiniBatchKMeans
 
+import re
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 now_dir = os.getcwd()
@@ -399,6 +401,15 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             torch.cuda.empty_cache()
     yield "\n".join(infos)
 
+def get_index_path_from_model(sid):
+    sel_index_path = ""
+    name = os.path.join("logs", sid.split(".")[0])
+    for f in index_paths:
+        if name in f:
+            print("selected index path:", f)
+            sel_index_path = f
+            break
+    return sel_index_path
 
 # 一个选项卡全局只能有一个音色
 def get_vc(sid, to_return_protect0, to_return_protect1):
@@ -435,12 +446,6 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
     person = "%s/%s" % (weight_root, sid)
     print("loading %s" % person)
 
-    name = sid.split(".")[0]
-    for f in index_paths:
-        if name in f:
-            print("selected index path:", f)
-            to_return_index_path = f
-            break
     cpt = torch.load(person, map_location="cpu")
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
@@ -486,7 +491,7 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
         {"visible": True, "maximum": n_spk, "__type__": "update"},
         to_return_protect0,
         to_return_protect1,
-        to_return_index_path,
+        get_index_path_from_model(sid),
     )
 
 
