@@ -44,9 +44,10 @@
 + 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题。效果最好（显著地）但比crepe_full更快、资源占用更小
 
 ## 环境配置
-可以使用poetry配置环境。
+以下指令需在 Python 版本大于3.8的环境中执行。  
 
-以下指令需在Python版本大于3.8的环境中执行:
+(Windows/Linux)  
+首先通过 pip 安装主要依赖:
 ```bash
 # 安装Pytorch及其核心依赖，若已安装则跳过
 # 参考自: https://pytorch.org/get-started/locally/
@@ -54,7 +55,10 @@ pip install torch torchvision torchaudio
 
 #如果是win系统+Nvidia Ampere架构(RTX30xx)，根据 #21 的经验，需要指定pytorch对应的cuda版本
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+```
 
+可以使用 poetry 来安装依赖：
+```bash
 # 安装 Poetry 依赖管理工具, 若已安装则跳过
 # 参考自: https://python-poetry.org/docs/#installation
 curl -sSL https://install.python-poetry.org | python3 -
@@ -63,9 +67,15 @@ curl -sSL https://install.python-poetry.org | python3 -
 poetry install
 ```
 
-你也可以通过pip来安装依赖：
+你也可以通过 pip 来安装依赖：
 ```bash
 pip install -r requirements.txt
+```
+
+------
+Mac 用户可以通过 `run.sh` 来安装依赖：
+```bash
+sh ./run.sh
 ```
 
 ## 其他预模型准备
@@ -85,7 +95,7 @@ hubert_base.pt
 
 ./pretrained_v2 
 
-如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库
+如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库, Mac 用户则可以通过brew install ffmpeg来安装 (需要预先安装brew)
 
 ./ffmpeg
 
@@ -104,7 +114,8 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
 ```bash
 python infer-web.py
 ```
-如果你正在使用Windows，你可以直接下载并解压`RVC-beta.7z`，运行`go-web.bat`以启动WebUI。
+
+如果你正在使用Windows 或 macOS，你可以直接下载并解压`RVC-beta.7z`，前者可以运行`go-web.bat`以启动WebUI，后者则运行命令`sh ./run.sh`以启动WebUI。
 
 仓库内还有一份`小白简易教程.doc`以供参考。
 
