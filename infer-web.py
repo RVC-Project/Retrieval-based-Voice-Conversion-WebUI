@@ -404,10 +404,10 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
 def get_index_path_from_model(sid):
     sel_index_path = ""
     name = os.path.join("logs", sid.split(".")[0], "")
-    print(name)
+    # print(name)
     for f in index_paths:
         if name in f:
-            print("selected index path:", f)
+            # print("selected index path:", f)
             sel_index_path = f
             break
     return sel_index_path
