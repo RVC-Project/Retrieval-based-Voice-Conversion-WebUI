@@ -38,8 +38,6 @@ from lib.train.process_ckpt import change_info, extract_small_model, merge, show
 from vc_infer_pipeline import VC
 from sklearn.cluster import MiniBatchKMeans
 
-import re
-
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 now_dir = os.getcwd()
