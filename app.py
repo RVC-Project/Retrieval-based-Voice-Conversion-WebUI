@@ -236,9 +236,7 @@ with app:
             vc_input3 = gr.Audio(label="上传音频（长度小于90秒）")
             vc_transform0 = gr.Number(label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"), value=0)
             f0method0 = gr.Radio(
-                label=i18n(
-                    "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"
-                ),
+                label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
                 choices=["pm", "harvest", "crepe", "rmvpe"],
                 value="pm",
                 interactive=True,

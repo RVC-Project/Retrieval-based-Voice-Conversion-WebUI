@@ -399,6 +399,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             torch.cuda.empty_cache()
     yield "\n".join(infos)
 
+
 def get_index_path_from_model(sid):
     sel_index_path = ""
     name = os.path.join("logs", sid.split(".")[0], "")
@@ -409,6 +410,7 @@ def get_index_path_from_model(sid):
             sel_index_path = f
             break
     return sel_index_path
+
 
 # 一个选项卡全局只能有一个音色
 def get_vc(sid, to_return_protect0, to_return_protect1):
