@@ -234,16 +234,12 @@ def get_vc(model_path):
     version = cpt.get("version", "v1")
     if version == "v1":
         if if_f0 == 1:
-            net_g = SynthesizerTrnMs256NSFsid(
-                *cpt["config"], is_half=is_half
-            )
+            net_g = SynthesizerTrnMs256NSFsid(*cpt["config"], is_half=is_half)
         else:
             net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
     elif version == "v2":
         if if_f0 == 1:
-            net_g = SynthesizerTrnMs768NSFsid(
-                *cpt["config"], is_half=is_half
-            )
+            net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=is_half)
         else:
             net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
     del net_g.enc_q
