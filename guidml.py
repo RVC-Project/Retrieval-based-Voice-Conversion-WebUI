@@ -145,7 +145,7 @@ class RVC:
         ) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
-        f0_coarse = np.rint(f0_mel).astype(np.int)
+        f0_coarse = np.rint(f0_mel).astype(np.int32)
         return f0_coarse, f0bak  # 1-0
 
     def infer(self, feats: torch.Tensor) -> np.ndarray:
