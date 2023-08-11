@@ -104,22 +104,9 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
 
         audio_norm = audio_norm.unsqueeze(0)
         spec_filename = filename.replace(".wav", ".spec.pt")
-        if os.path.exists(spec_filename):
-            try:
-                spec = torch.load(spec_filename)
-            except:
-                print(spec_filename, traceback.format_exc())
-                spec = spectrogram_torch(
-                    audio_norm,
-                    self.filter_length,
-                    self.sampling_rate,
-                    self.hop_length,
-                    self.win_length,
-                    center=False,
-                )
-                spec = torch.squeeze(spec, 0)
-                torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
-        else:
+
+        # 每次训练重新生成spec.pt文件，防止小白在同一个实验里使用不同的采样率，导致错误
+        try:
             spec = spectrogram_torch(
                 audio_norm,
                 self.filter_length,
@@ -130,6 +117,9 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
             )
             spec = torch.squeeze(spec, 0)
             torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
+        except:
+            print(spec_filename, traceback.format_exc())
+
         return spec, audio_norm
 
     def __getitem__(self, index):

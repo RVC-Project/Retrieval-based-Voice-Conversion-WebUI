@@ -1246,8 +1246,10 @@ def train1key(
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
-    yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
+    # 直接说“训练结束”会有歧义，这里坑了好多小白。还有这train.log吊用没有，光记录正常信息有啥用啊？
+    yield get_info_str(i18n("模型训练完成, 您可查看控制台训练日志或实验文件夹下的train.log"))
     #######step3b:训练索引
+    yield get_info_str(i18n("正在训练索引"))
     npys = []
     listdir_res = list(os.listdir(feature_dir))
     for name in sorted(listdir_res):

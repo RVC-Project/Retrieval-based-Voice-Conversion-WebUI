@@ -76,6 +76,10 @@ class PreProcess:
 
     def pipeline(self, path, idx0):
         try:
+            # 防止小白拷路径头尾带了空格和"和回车
+            path = path.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+            if not os.path.exists(path):
+                raise RuntimeError(f"未找到指定文件(The file was not found)：{path}")
             audio = load_audio(path, self.sr)
             # zero phased digital filter cause pre-ringing noise...
             # audio = signal.filtfilt(self.bh, self.ah, audio)
@@ -97,8 +101,9 @@ class PreProcess:
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
             println("%s->Suc." % path)
-        except:
-            println("%s->%s" % (path, traceback.format_exc()))
+        except Exception as e:
+            println(e)
+
 
     def pipeline_mp(self, infos):
         for path, idx0 in infos:
@@ -107,7 +112,7 @@ class PreProcess:
     def pipeline_mp_inp_dir(self, inp_root, n_p):
         try:
             infos = [
-                ("%s/%s" % (inp_root, name), idx)
+                (os.path.join(inp_root, name), idx)
                 for idx, name in enumerate(sorted(list(os.listdir(inp_root))))
             ]
             if noparallel:
