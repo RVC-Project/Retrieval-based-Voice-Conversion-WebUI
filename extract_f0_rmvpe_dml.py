@@ -8,12 +8,9 @@ import numpy as np, logging
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
-n_part = int(sys.argv[1])
-i_part = int(sys.argv[2])
-i_gpu = sys.argv[3]
-os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
-exp_dir = sys.argv[4]
-is_half = sys.argv[5]
+exp_dir = sys.argv[1]
+import torch_directml
+device = torch_directml.device(torch_directml.default_device())
 f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
 
 
@@ -42,7 +39,7 @@ class FeatureInput(object):
                 from lib.rmvpe import RMVPE
 
                 print("loading rmvpe model")
-                self.model_rmvpe = RMVPE("rmvpe.pt", is_half=is_half, device="cuda")
+                self.model_rmvpe = RMVPE("rmvpe.pt", is_half=False, device=device)
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
         return f0
 
@@ -114,7 +111,7 @@ if __name__ == "__main__":
         opt_path2 = "%s/%s" % (opt_root2, name)
         paths.append([inp_path, opt_path1, opt_path2])
     try:
-        featureInput.go(paths[i_part::n_part], "rmvpe")
+        featureInput.go(paths, "rmvpe")
     except:
         printt("f0_all_fail-%s" % (traceback.format_exc()))
     # ps = []

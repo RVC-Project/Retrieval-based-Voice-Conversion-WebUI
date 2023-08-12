@@ -1,0 +1,1 @@
+{"pth_path": "weights/kikiV1.pth", "index_path": "logs/kikiV1.index", "sg_input_device": "VoiceMeeter Output (VB-Audio Vo (MME)", "sg_output_device": "VoiceMeeter Aux Input (VB-Audio (MME)", "threhold": -45.0, "pitch": 0.0, "index_rate": 1.0, "block_time": 0.09, "crossfade_length": 0.15, "extra_time": 5.0, "n_cpu": 8.0, "f0method": "rmvpe"}

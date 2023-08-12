@@ -1,7 +1,6 @@
 import soundfile as sf
 import torch, pdb, os, warnings, librosa
 import numpy as np
-import onnxruntime as ort
 from tqdm import tqdm
 import torch
 
@@ -83,13 +82,19 @@ def get_models(device, dim_f, dim_t, n_fft):
 
 
 warnings.filterwarnings("ignore")
+import sys
+now_dir = os.getcwd()
+sys.path.append(now_dir)
+from config import Config
+
 cpu = torch.device("cpu")
-if torch.cuda.is_available():
-    device = torch.device("cuda:0")
-elif torch.backends.mps.is_available():
-    device = torch.device("mps")
-else:
-    device = torch.device("cpu")
+device=Config().device
+# if torch.cuda.is_available():
+#     device = torch.device("cuda:0")
+# elif torch.backends.mps.is_available():
+#     device = torch.device("mps")
+# else:
+#     device = torch.device("cpu")
 
 
 class Predictor:
@@ -98,9 +103,11 @@ class Predictor:
         self.model_ = get_models(
             device=cpu, dim_f=args.dim_f, dim_t=args.dim_t, n_fft=args.n_fft
         )
+        import onnxruntime as ort
+        print(ort.get_available_providers())
         self.model = ort.InferenceSession(
             os.path.join(args.onnx, self.model_.target_name + ".onnx"),
-            providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+            providers=["CUDAExecutionProvider", "DmlExecutionProvider","CPUExecutionProvider"],
         )
         print("onnx load done")
 

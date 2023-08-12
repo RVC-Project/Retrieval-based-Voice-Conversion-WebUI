@@ -36,10 +36,10 @@ class Config:
             self.noparallel,
             self.noautoopen,
         ) = self.arg_parse()
+        self.instead=""
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
-    @staticmethod
-    def arg_parse() -> tuple:
+    def arg_parse(self) -> tuple:
         exe = sys.executable or "python"
         parser = argparse.ArgumentParser()
         parser.add_argument("--port", type=int, default=7865, help="Listen port")
@@ -53,10 +53,15 @@ class Config:
             action="store_true",
             help="Do not open in browser automatically",
         )
+        parser.add_argument(
+            "--dml",
+            action="store_true",
+            help="torch_dml",
+        )
         cmd_opts = parser.parse_args()
 
         cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
-
+        self.dml=cmd_opts.dml
         return (
             cmd_opts.pycmd,
             cmd_opts.port,
@@ -106,13 +111,13 @@ class Config:
                 with open("trainset_preprocess_pipeline_print.py", "w") as f:
                     f.write(strr)
         elif self.has_mps():
-            print("No supported Nvidia GPU found, use MPS instead")
-            self.device = "mps"
+            print("No supported Nvidia GPU found")
+            self.device = self.instead="mps"
             self.is_half = False
             use_fp32_config()
         else:
-            print("No supported Nvidia GPU found, use CPU instead")
-            self.device = "cpu"
+            print("No supported Nvidia GPU found")
+            self.device = self.instead="cpu"
             self.is_half = False
             use_fp32_config()
 
@@ -137,5 +142,20 @@ class Config:
             x_query = 5
             x_center = 30
             x_max = 32
-
+        if(self.dml==True):
+            print("use DirectML instead")
+            try:os.rename("runtime\Lib\site-packages\onnxruntime","runtime\Lib\site-packages\onnxruntime-cuda")
+            except:pass
+            try:os.rename("runtime\Lib\site-packages\onnxruntime-dml","runtime\Lib\site-packages\onnxruntime")
+            except:pass
+            import torch_directml
+            self.device= torch_directml.device(torch_directml.default_device())
+            self.is_half=False
+        else:
+            if(self.instead):
+                print("use %s instead"%self.instead)
+            try:os.rename("runtime\Lib\site-packages\onnxruntime","runtime\Lib\site-packages\onnxruntime-cuda")
+            except:pass
+            try:os.rename("runtime\Lib\site-packages\onnxruntime-dml","runtime\Lib\site-packages\onnxruntime")
+            except:pass
         return x_pad, x_query, x_center, x_max

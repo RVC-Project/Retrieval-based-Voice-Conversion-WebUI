@@ -130,12 +130,17 @@ class VC(object):
         elif f0_method == "rmvpe":
             if hasattr(self, "model_rmvpe") == False:
                 from lib.rmvpe import RMVPE
-
                 print("loading rmvpe model")
                 self.model_rmvpe = RMVPE(
                     "rmvpe.pt", is_half=self.is_half, device=self.device
                 )
+
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
+            if("privateuseone"in str(self.device)):#clean ortruntime memory
+                del self.model_rmvpe.model
+                del self.model_rmvpe
+                print("cleaning ortruntime memory")
+
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         tf0 = self.sr // self.window  # 每秒f0点数

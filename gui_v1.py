@@ -1,5 +1,5 @@
-import os, sys
-
+import os, sys,pdb
+os.environ["OMP_NUM_THREADS"]="2"
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
@@ -46,20 +46,21 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     import torchaudio.transforms as tat
     from i18n import I18nAuto
-
+    import rvc_for_realtime
     i18n = I18nAuto()
-    device = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        else ("mps" if torch.backends.mps.is_available() else "cpu")
-    )
+    device=rvc_for_realtime.config.device
+    # device = torch.device(
+    #     "cuda"
+    #     if torch.cuda.is_available()
+    #     else ("mps" if torch.backends.mps.is_available() else "cpu")
+    # )
     current_dir = os.getcwd()
     inp_q = Queue()
     opt_q = Queue()
     n_cpu = min(cpu_count(), 8)
     for _ in range(n_cpu):
         Harvest(inp_q, opt_q).start()
-    from rvc_for_realtime import RVC
+
 
     class GUIConfig:
         def __init__(self) -> None:
@@ -75,7 +76,7 @@ if __name__ == "__main__":
             self.I_noise_reduce = False
             self.O_noise_reduce = False
             self.index_rate = 0.3
-            self.n_cpu = min(n_cpu, 8)
+            self.n_cpu = min(n_cpu, 6)
             self.f0method = "harvest"
             self.sg_input_device = ""
             self.sg_output_device = ""
@@ -239,7 +240,7 @@ if __name__ == "__main__":
                             [
                                 sg.Text(i18n("采样长度")),
                                 sg.Slider(
-                                    range=(0.12, 2.4),
+                                    range=(0.09, 2.4),
                                     key="block_time",
                                     resolution=0.03,
                                     orientation="h",
@@ -271,7 +272,7 @@ if __name__ == "__main__":
                             [
                                 sg.Text(i18n("额外推理时长")),
                                 sg.Slider(
-                                    range=(0.05, 3.00),
+                                    range=(0.05, 5.00),
                                     key="extra_time",
                                     resolution=0.01,
                                     orientation="h",
@@ -391,7 +392,7 @@ if __name__ == "__main__":
         def start_vc(self):
             torch.cuda.empty_cache()
             self.flag_vc = True
-            self.rvc = RVC(
+            self.rvc = rvc_for_realtime.RVC(
                 self.config.pitch,
                 self.config.pth_path,
                 self.config.index_path,
@@ -510,7 +511,6 @@ if __name__ == "__main__":
             self.input_wav[:] = np.append(self.input_wav[self.block_frame :], indata)
             # infer
             inp = torch.from_numpy(self.input_wav).to(device)
-            ##0
             res1 = self.resampler(inp)
             ###55%
             rate1 = self.block_frame / (

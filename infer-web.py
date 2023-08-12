@@ -23,7 +23,7 @@ import ffmpeg
 import gradio as gr
 import soundfile as sf
 from config import Config
-from fairseq import checkpoint_utils
+import fairseq
 from i18n import I18nAuto
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
@@ -43,7 +43,9 @@ logging.getLogger("numba").setLevel(logging.WARNING)
 now_dir = os.getcwd()
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
+shutil.rmtree(
+    "%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True
+)
 shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
@@ -54,6 +56,12 @@ torch.manual_seed(114514)
 
 
 config = Config()
+if(config.dml==True):
+    def forward_dml(ctx, x, scale):
+        ctx.scale = scale
+        res = x.clone().detach()
+        return res
+    fairseq.modules.grad_multiply.GradMultiply.forward=forward_dml
 i18n = I18nAuto()
 i18n.print()
 # 判断是否有能用来训练和加速推理的N卡
@@ -124,7 +132,7 @@ hubert_model = None
 
 def load_hubert():
     global hubert_model
-    models, _, _ = checkpoint_utils.load_model_ensemble_and_task(
+    models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
         ["hubert_base.pt"],
         suffix="",
     )
@@ -443,7 +451,15 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
             del net_g, cpt
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-        return {"visible": False, "__type__": "update"}
+        return {"visible": False, "__type__": "update"},{
+            "visible": True,
+            "value": to_return_protect0,
+            "__type__": "update",
+        },{
+            "visible": True,
+            "value": to_return_protect1,
+            "__type__": "update",
+        },"",""
     person = "%s/%s" % (weight_root, sid)
     print("loading %s" % person)
 
@@ -454,7 +470,7 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
     if if_f0 == 0:
         to_return_protect0 = to_return_protect1 = {
             "visible": False,
-            "value": 0.5,
+            "value": 0.33,
             "__type__": "update",
         }
     else:
@@ -488,11 +504,15 @@ def get_vc(sid, to_return_protect0, to_return_protect1):
         net_g = net_g.float()
     vc = VC(tgt_sr, config)
     n_spk = cpt["config"][-3]
+    index={
+        "value":get_index_path_from_model(sid),
+        "__type__": "update"
+    }
     return (
         {"visible": True, "maximum": n_spk, "__type__": "update"},
         to_return_protect0,
         to_return_protect1,
-        get_index_path_from_model(sid),
+        index,index
     )
 
 
@@ -608,58 +628,55 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     p,
                 ),
             ).start()
-            while 1:
-                with open(
-                    "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
-                ) as f:
-                    yield (f.read())
-                sleep(1)
-                if done[0]:
-                    break
-            with open(
-                "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
-            ) as f:
-                log = f.read()
-            print(log)
-            yield log
         else:
-            gpus_rmvpe = gpus_rmvpe.split("-")
-            leng = len(gpus_rmvpe)
-            ps = []
-            for idx, n_g in enumerate(gpus_rmvpe):
-                cmd = (
-                    config.python_cmd
-                    + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
-                    % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
+            if(gpus_rmvpe!="-"):
+                gpus_rmvpe = gpus_rmvpe.split("-")
+                leng = len(gpus_rmvpe)
+                ps = []
+                for idx, n_g in enumerate(gpus_rmvpe):
+                    cmd = (
+                        config.python_cmd
+                        + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
+                        % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
+                    )
+                    print(cmd)
+                    p = Popen(
+                        cmd, shell=True, cwd=now_dir
+                    )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
+                    ps.append(p)
+                ###煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
+                done = [False]
+                threading.Thread(
+                    target=if_done_multi,#
+                    args=(
+                        done,
+                        ps,
+                    ),
+                ).start()
+            else:
+                cmd = config.python_cmd + ' extract_f0_rmvpe_dml.py "%s/logs/%s" ' % (
+                    now_dir, exp_dir
                 )
                 print(cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
-                ps.append(p)
-            ###煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
-            done = [False]
-            threading.Thread(
-                target=if_done_multi,
-                args=(
-                    done,
-                    ps,
-                ),
-            ).start()
-            while 1:
-                with open(
-                    "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
-                ) as f:
-                    yield (f.read())
-                sleep(1)
-                if done[0]:
-                    break
+                p.wait()
+                done = [True]
+        while 1:
             with open(
                 "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
             ) as f:
-                log = f.read()
-            print(log)
-            yield log
+                yield (f.read())
+            sleep(1)
+            if done[0]:
+                break
+        with open(
+            "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+        ) as f:
+            log = f.read()
+        print(log)
+        yield log
     ####对不同part分别开多进程
     """
     n_part=int(sys.argv[1])
@@ -937,8 +954,8 @@ def click_train(
                 batch_size12,
                 total_epoch11,
                 save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "\b",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "\b",
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
                 1 if if_save_latest13 == i18n("是") else 0,
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
@@ -953,7 +970,8 @@ def click_train(
 
 # but4.click(train_index, [exp_dir1], info3)
 def train_index(exp_dir1, version19):
-    exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
+    # exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
+    exp_dir = "logs/%s" % ( exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
     feature_dir = (
         "%s/3_feature256" % (exp_dir)
@@ -975,7 +993,6 @@ def train_index(exp_dir1, version19):
     np.random.shuffle(big_npy_idx)
     big_npy = big_npy[big_npy_idx]
     if big_npy.shape[0] > 2e5:
-        # if(1):
         infos.append("Trying doing kmeans %s shape to 10k centers." % big_npy.shape[0])
         yield "\n".join(infos)
         try:
@@ -1012,7 +1029,7 @@ def train_index(exp_dir1, version19):
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
-    # faiss.write_index(index, '%s/trained_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
+
     infos.append("adding")
     yield "\n".join(infos)
     batch_size_add = 8192
@@ -1098,23 +1115,33 @@ def train1key(
             p = Popen(cmd, shell=True, cwd=now_dir)
             p.wait()
         else:
-            gpus_rmvpe = gpus_rmvpe.split("-")
-            leng = len(gpus_rmvpe)
-            ps = []
-            for idx, n_g in enumerate(gpus_rmvpe):
-                cmd = config.python_cmd + ' extract_f0_rmvpe.py %s %s %s "%s" %s ' % (
-                    leng,
-                    idx,
-                    n_g,
-                    model_log_dir,
-                    config.is_half,
+            if(gpus_rmvpe!="-"):
+                gpus_rmvpe = gpus_rmvpe.split("-")
+                leng = len(gpus_rmvpe)
+                ps = []
+                for idx, n_g in enumerate(gpus_rmvpe):
+                    cmd = config.python_cmd + ' extract_f0_rmvpe.py %s %s %s "%s" %s ' % (
+                        leng,
+                        idx,
+                        n_g,
+                        model_log_dir,
+                        config.is_half,
+                    )
+                    yield get_info_str(cmd)
+                    p = Popen(
+                        cmd, shell=True, cwd=now_dir
+                    )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
+                    ps.append(p)
+                for p in ps:
+                    p.wait()
+            else:#dml
+                cmd = config.python_cmd + ' extract_f0_rmvpe_dml.py "%s" ' % (
+                    model_log_dir
                 )
                 yield get_info_str(cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
-                ps.append(p)
-            for p in ps:
                 p.wait()
         with open(extract_f0_feature_log_path, "r") as f:
             print(f.read())
@@ -1282,8 +1309,6 @@ def train1key(
             yield get_info_str(info)
 
     np.save("%s/total_fea.npy" % model_log_dir, big_npy)
-
-    # n_ivf =  big_npy.shape[0] // 39
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     yield get_info_str("%s,%s" % (big_npy.shape, n_ivf))
     index = faiss.index_factory(256 if version19 == "v1" else 768, "IVF%s,Flat" % n_ivf)
@@ -1291,11 +1316,7 @@ def train1key(
     index_ivf = faiss.extract_index_ivf(index)  #
     index_ivf.nprobe = 1
     index.train(big_npy)
-    faiss.write_index(
-        index,
-        "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
-    )
+    faiss.write_index(index,"%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"% (model_log_dir.replace(now_dir+"/",""), n_ivf, index_ivf.nprobe, exp_dir1, version19))
     yield get_info_str("adding index")
     batch_size_add = 8192
     for i in range(0, big_npy.shape[0], batch_size_add):
@@ -1303,7 +1324,7 @@ def train1key(
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-        % (model_log_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+        % (model_log_dir.replace(now_dir+"/",""), n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     yield get_info_str(
         "成功构建索引, added_IVF%s_Flat_nprobe_%s_%s_%s.index"
@@ -1329,9 +1350,10 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
 
 
+F0GPUVisible = config.dml == False
 def change_f0_method(f0method8):
     if f0method8 == "rmvpe_gpu":
-        visible = True
+        visible = F0GPUVisible
     else:
         visible = False
     return {"visible": visible, "__type__": "update"}
@@ -1428,7 +1450,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             label=i18n(
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
                             ),
-                            choices=["pm", "harvest", "crepe", "rmvpe"],
+                            choices=["pm", "harvest", "crepe", "rmvpe"]if config.dml==False else ["pm", "harvest", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1534,7 +1556,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             label=i18n(
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
                             ),
-                            choices=["pm", "harvest", "crepe", "rmvpe"],
+                            choices=["pm", "harvest", "crepe", "rmvpe"]if config.dml==False else ["pm", "harvest", "rmvpe"],
                             value="pm",
                             interactive=True,
                         )
@@ -1643,7 +1665,7 @@ with gr.Blocks(title="RVC WebUI") as app:
             sid0.change(
                 fn=get_vc,
                 inputs=[sid0, protect0, protect1],
-                outputs=[spk_item, protect0, protect1, file_index2],
+                outputs=[spk_item, protect0, protect1, file_index2, file_index4],
             )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():
@@ -1768,13 +1790,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                         gpus6 = gr.Textbox(
                             label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),
                             value=gpus,
-                            interactive=True,
+                            interactive=True,visible=F0GPUVisible
                         )
-                        gpu_info9 = gr.Textbox(label=i18n("显卡信息"), value=gpu_info)
+                        gpu_info9 = gr.Textbox(label=i18n("显卡信息"), value=gpu_info,visible=F0GPUVisible)
                     with gr.Column():
                         f0method8 = gr.Radio(
                             label=i18n(
-                                "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢"
+                                "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢,rmvpe效果最好且微吃CPU/GPU"
                             ),
                             choices=["pm", "harvest", "dio", "rmvpe", "rmvpe_gpu"],
                             value="rmvpe_gpu",
@@ -1786,7 +1808,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             ),
                             value="%s-%s" % (gpus, gpus),
                             interactive=True,
-                            visible=True,
+                            visible=F0GPUVisible,
                         )
                     but2 = gr.Button(i18n("特征提取"), variant="primary")
                     info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
