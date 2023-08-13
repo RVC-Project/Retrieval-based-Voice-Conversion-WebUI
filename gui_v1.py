@@ -1,5 +1,6 @@
-import os, sys,pdb
-os.environ["OMP_NUM_THREADS"]="2"
+import os, sys, pdb
+
+os.environ["OMP_NUM_THREADS"] = "2"
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
@@ -47,8 +48,9 @@ if __name__ == "__main__":
     import torchaudio.transforms as tat
     from i18n import I18nAuto
     import rvc_for_realtime
+
     i18n = I18nAuto()
-    device=rvc_for_realtime.config.device
+    device = rvc_for_realtime.config.device
     # device = torch.device(
     #     "cuda"
     #     if torch.cuda.is_available()
@@ -60,7 +62,6 @@ if __name__ == "__main__":
     n_cpu = min(cpu_count(), 8)
     for _ in range(n_cpu):
         Harvest(inp_q, opt_q).start()
-
 
     class GUIConfig:
         def __init__(self) -> None:
