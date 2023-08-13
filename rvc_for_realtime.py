@@ -18,12 +18,16 @@ from multiprocessing import Manager as M
 
 mm = M()
 config = Config()
-if(config.dml==True):
+if config.dml == True:
+
     def forward_dml(ctx, x, scale):
         ctx.scale = scale
         res = x.clone().detach()
         return res
-    fairseq.modules.grad_multiply.GradMultiply.forward=forward_dml
+
+    fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+
+
 # config.device=torch.device("cpu")########强制cpu测试
 # config.is_half=False########强制cpu测试
 class RVC:
@@ -183,8 +187,8 @@ class RVC:
         return self.get_f0_post(f0bak)
 
     def get_f0_crepe(self, x, f0_up_key):
-        if self.device.type == "privateuseone":###不支持dml，cpu又太慢用不成，拿pm顶替
-            return self.get_f0(x, f0_up_key,1,"pm")
+        if self.device.type == "privateuseone":  ###不支持dml，cpu又太慢用不成，拿pm顶替
+            return self.get_f0(x, f0_up_key, 1, "pm")
         audio = torch.tensor(np.copy(x))[None].float()
         # print("using crepe,device:%s"%self.device)
         f0, pd = torchcrepe.predict(
@@ -209,12 +213,15 @@ class RVC:
     def get_f0_rmvpe(self, x, f0_up_key):
         if hasattr(self, "model_rmvpe") == False:
             from lib.rmvpe import RMVPE
+
             print("loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
                 #  "rmvpe.pt", is_half=False, device=self.device####dml配置
-                   # "rmvpe.pt", is_half=False, device="cpu"####锁定cpu配置
-                 "rmvpe.pt", is_half=self.is_half, device=self.device####正常逻辑
+                # "rmvpe.pt", is_half=False, device="cpu"####锁定cpu配置
+                "rmvpe.pt",
+                is_half=self.is_half,
+                device=self.device,  ####正常逻辑
             )
             # self.model_rmvpe = RMVPE("aug2_58000_half.pt", is_half=self.is_half, device=self.device)
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
