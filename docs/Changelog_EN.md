@@ -1,3 +1,20 @@
+### 2023-08-13
+1-Regular bug fix
+- Change the minimum total epoch number to 1, and change the minimum total epoch number to 2
+- Fix training errors of not using pre-train models
+- After accompaniment vocals separation, clear graphics memory
+- Change faiss save path absolute path to relative path
+- Support path containing spaces (both training set path and experiment name are supported, and errors will no longer be reported)
+- Filelist cancels mandatory utf8 encoding
+- Solve the CPU consumption problem caused by faiss searching during real-time voice changes
+
+2-Key updates
+- Train the current strongest open-source vocal pitch extraction model RMVPE, and use it for RVC training, offline/real-time inference, supporting PyTorch/Onnx/DirectML
+- Support for AMD and Intel graphics cards through Pytorch_DML
+
+(1) Real time voice change (2) Inference (3) Separation of vocal accompaniment (4) Training not currently supported, will switch to CPU training; supports RMVPE inference of gpu by Onnx_Dml
+
+
 ### 2023-06-18
 - New pretrained v2 models: 32k and 48k
 - Fix non-f0 model inference errors
@@ -12,9 +29,9 @@ Failed experiments:
 - ~~Random data augmentation when training: not effective~~
 
 todolist：
-- Vocos-RVC (tiny vocoder)
-- Crepe support for training
-- Half precision crepe inference
+- ~~Vocos-RVC (tiny vocoder): not effective~~
+- ~~Crepe support for training：replaced by RMVPE~~
+- ~~Half precision crepe inference：replaced by RMVPE. And hard to achive.~~
 - F0 editor support
 
 ### 2023-05-28
