@@ -30,7 +30,7 @@ Realtime Voice Conversion Software using RVC : [w-okada/voice-changer](https://g
 
 > High quality licensed song datasets will be added to training-set one after another for your use, without worrying about copyright infringement.
 
-> Please look forward to the pretrained base model of RVCv3, which has larger parameters, larger data, better results, unchanged inference speed, and requires less training data for training.
+> Please look forward to the pretrained base model of RVCv3, which has larger parameters, more training data, better results, unchanged inference speed, and requires less training data for training.
 
 ## Summary
 This repository has the following features:
