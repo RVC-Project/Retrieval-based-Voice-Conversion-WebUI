@@ -1,0 +1,29 @@
+#1.Install torch from pytorch.org:
+#torch 2.0 with cuda 11.8
+#pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#torch 1.11.0 with cuda 11.3
+#pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
+einops
+fairseq
+flask
+flask_cors
+gin
+gin_config
+librosa
+local_attention
+matplotlib
+praat-parselmouth
+pyworld
+PyYAML
+resampy
+scikit_learn
+scipy
+SoundFile
+tensorboard
+tqdm
+wave
+PySimpleGUI
+sounddevice
+gradio
+noisereduce
+onnxruntime-directml
