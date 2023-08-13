@@ -141,7 +141,7 @@ class Config:
             x_center = 38
             x_max = 41
 
-        if not self.gpu_mem and self.gpu_mem <= 4:
+        if self.gpu_mem is not None and self.gpu_mem <= 4:
             x_pad = 1
             x_query = 5
             x_center = 30
