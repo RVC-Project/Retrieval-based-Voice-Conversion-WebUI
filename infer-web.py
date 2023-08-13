@@ -1835,7 +1835,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 gr.Markdown(value=i18n("step3: 填写训练设置, 开始训练模型和索引"))
                 with gr.Row():
                     save_epoch10 = gr.Slider(
-                        minimum=0,
+                        minimum=1,
                         maximum=50,
                         step=1,
                         label=i18n("保存频率save_every_epoch"),
@@ -1843,7 +1843,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         interactive=True,
                     )
                     total_epoch11 = gr.Slider(
-                        minimum=0,
+                        minimum=2,
                         maximum=1000,
                         step=1,
                         label=i18n("总训练轮数total_epoch"),
