@@ -25,13 +25,12 @@ Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
 
 Realtime Voice Conversion Software using RVC : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> A online demo using RVC that convert Vocal to Acoustic Guitar audio：https://huggingface.co/spaces/lj1995/vocal2guitar
-
-> Vocal2Guitar demo video：https://www.bilibili.com/video/BV19W4y1D7tT/
 
 > The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source dataset.
 
 > High quality licensed song datasets will be added to training-set one after another for your use, without worrying about copyright infringement.
+
+> Please look forward to the pretrained base model of RVCv3, which has larger parameters, more training data, better results, unchanged inference speed, and requires less training data for training.
 
 ## Summary
 This repository has the following features:
@@ -42,6 +41,7 @@ This repository has the following features:
 + Easy-to-use Webui interface;
 + Use the UVR5 model to quickly separate vocals and instruments.
 + Use the most powerful High-pitch Voice Extraction Algorithm [InterSpeech2023-RMVPE](#Credits) to prevent the muted sound problem. Provides the best results (significantly) and is faster, with even lower resource consumption than Crepe_full.
++ AMD/Intel graphics cards acceleration supported.
 
 ## Preparing the environment
 The following commands need to be executed in the environment of Python version 3.8 or higher.
@@ -69,7 +69,13 @@ poetry install
 
 You can also use pip to install them:
 ```bash
-pip install -r requirements.txt
+
+for Nvidia graphics cards
+  pip install -r requirements.txt
+
+for AMD/Intel graphics cards：
+  pip install -r requirements-dml.txt
+
 ```
 
 ------
@@ -95,16 +101,29 @@ If you want to test the v2 version model (the v2 version model has changed the i
 
 ./pretrained_v2
 
-#If you are using Windows, you may also need this dictionary, skip if FFmpeg is installed
+#If you are using Windows, you may also need these two files, skip if FFmpeg and FFprobe are installed
 ffmpeg.exe
+
+https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe
+
+ffprobe.exe
+
+https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
+
+If you want to use the latest SOTA RMVPE vocal pitch extraction algorithm, you need to download the RMVPE weights and place them in the RVC root directory
+
+https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
+
+    For AMD/Intel graphics cards users you need download:
+
+    https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
+
 ```
 Then use this command to start Webui:
 ```bash
 python infer-web.py
 ```
 If you are using Windows or macOS, you can download and extract `RVC-beta.7z` to use RVC directly by using `go-web.bat` on windows or `sh ./run.sh` on macOS to start Webui.
-
-There's also a tutorial on RVC in Chinese and you can check it out if needed.
 
 ## Credits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)

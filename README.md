@@ -26,13 +26,9 @@
 
 > 使用了RVC的实时语音转换: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> 使用了RVC变声器训练的人声转木吉他模型在线demo ：https://huggingface.co/spaces/lj1995/vocal2guitar
-
-> RVC人声转吉他效果展示视频 ：https://www.bilibili.com/video/BV19W4y1D7tT/
-
 > 底模使用接近50小时的开源高质量VCTK训练集训练，无版权方面的顾虑，请大家放心使用
 
-> 后续会陆续加入高质量有授权歌声训练集训练底模
+> 请期待RVCv3的底模，参数更大，数据更大，效果更好，基本持平的推理速度，需要训练数据量更少。
 
 ## 简介
 本仓库具有以下特点
@@ -43,6 +39,7 @@
 + 简单易用的网页界面
 + 可调用UVR5模型来快速分离人声和伴奏
 + 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题。效果最好（显著地）但比crepe_full更快、资源占用更小
++ A卡I卡加速支持
 
 ## 环境配置
 以下指令需在 Python 版本大于3.8的环境中执行。  
@@ -70,7 +67,13 @@ poetry install
 
 你也可以通过 pip 来安装依赖：
 ```bash
+N卡：
+
 pip install -r requirements.txt
+
+A卡/I卡：
+pip install -r requirements-dml.txt
+
 ```
 
 ------
@@ -109,6 +112,10 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
 如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于RVC根目录
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
+
+    A卡I卡用户需要的dml环境要请下载
+
+    https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
 
 ```
 之后使用以下指令来启动WebUI:
