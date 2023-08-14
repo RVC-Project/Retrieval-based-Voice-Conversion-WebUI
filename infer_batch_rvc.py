@@ -123,10 +123,10 @@ from scipy.io import wavfile
 hubert_model = None
 
 
-def load_hubert():
+def load_hubert(hubert_model_path="hubert_base.pt"):
     global hubert_model
     models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
-        ["hubert_base.pt"],
+        [hubert_model_path],
         suffix="",
     )
     hubert_model = models[0]
@@ -203,13 +203,14 @@ def get_vc(model_path):
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 
-get_vc(model_path)
-audios = os.listdir(input_path)
-for file in tq.tqdm(audios):
-    if file.endswith(".wav"):
-        file_path = input_path + "/" + file
-        wav_opt = vc_single(
-            0, file_path, f0up_key, None, f0method, index_path, index_rate
-        )
-        out_path = opt_path + "/" + file
-        wavfile.write(out_path, tgt_sr, wav_opt)
+if __name__ == "__main__":
+    get_vc(model_path)
+    audios = os.listdir(input_path)
+    for file in tq.tqdm(audios):
+        if file.endswith(".wav"):
+            file_path = os.path.join(input_path, file)
+            wav_opt = vc_single(
+                0, file_path, f0up_key, None, f0method, index_path, index_rate
+            )
+            out_path = os.path.join(opt_path, file)
+            wavfile.write(out_path, tgt_sr, wav_opt)
