@@ -203,13 +203,14 @@ def get_vc(model_path):
     # return {"visible": True,"maximum": n_spk, "__type__": "update"}
 
 
-get_vc(model_path)
-audios = os.listdir(input_path)
-for file in tq.tqdm(audios):
-    if file.endswith(".wav"):
-        file_path = os.path.join(input_path, file)
-        wav_opt = vc_single(
-            0, file_path, f0up_key, None, f0method, index_path, index_rate
-        )
-        out_path = os.path.join(opt_path, file)
-        wavfile.write(out_path, tgt_sr, wav_opt)
+if __name__ == "__main__":
+    get_vc(model_path)
+    audios = os.listdir(input_path)
+    for file in tq.tqdm(audios):
+        if file.endswith(".wav"):
+            file_path = os.path.join(input_path, file)
+            wav_opt = vc_single(
+                0, file_path, f0up_key, None, f0method, index_path, index_rate
+            )
+            out_path = os.path.join(opt_path, file)
+            wavfile.write(out_path, tgt_sr, wav_opt)
