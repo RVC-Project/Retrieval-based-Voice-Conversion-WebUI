@@ -784,7 +784,8 @@ if __name__ == "__main__":
             self.flag_vc = True
             if self.ad_features:
                 self.config.pth_path=self.mix_model(values)
-                self.config.index_rate=0
+                index_path=values["path_index"]
+                self.config.index_path = index_path if index_path!="" else self.config.index_path
             print(f"loading model from {self.config.pth_path}")
             if self.config.index_rate==0:
                 print(f"index disabled!")
