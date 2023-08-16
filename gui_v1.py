@@ -647,7 +647,7 @@ if __name__ == "__main__":
                 if len(values["pth_path"].strip()) == 0:
                     sg.popup(i18n("请选择pth文件"))
                     return False
-                if len(values["index_path"].strip()) == 0 and not self.ad_features:
+                if len(values["index_path"].strip()) == 0:
                     sg.popup(i18n("请选择index文件"))
                     return False
                 if pattern.findall(values["pth_path"]):
