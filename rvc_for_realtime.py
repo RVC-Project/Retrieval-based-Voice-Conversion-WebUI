@@ -88,7 +88,8 @@ class RVC:
                     )
                 else:
                     self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
-            del self.net_g.enc_q
+            if hasattr(self.net_g,"enc_q"):
+                del self.net_g.enc_q
             print(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
             # print(2333333333,device,config.device,self.device)#net_g是device，hubert是config.device

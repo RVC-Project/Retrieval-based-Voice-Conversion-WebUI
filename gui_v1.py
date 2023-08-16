@@ -713,11 +713,11 @@ if __name__ == "__main__":
                         m = m["weight"]
                     return m
                 cfg={}
-                cfg["config"] = ckpt_a["config"]
-                cfg["sr"] = ckpt_a["sr"]
-                cfg["f0"] = ckpt_a["f0"]
-                cfg["version"] = ckpt_a["version"]
-                cfg["info"] = ckpt_a["info"]
+                cfg["config"] = ckpt_a.get("config", "")
+                cfg["sr"] = ckpt_a.get("sr", 40000)
+                cfg["f0"] = ckpt_a.get("f0", 1)
+                cfg["version"] = ckpt_a.get("version", "v1")
+                cfg["info"] = ckpt_a.get("info", "")
                 ckpt_a = f1(ckpt_a)
                 ckpt_b = f1(ckpt_b)
                 ckpt_c = f1(ckpt_c) if ckpt_c else None
@@ -795,7 +795,9 @@ if __name__ == "__main__":
             if self.ad_features:
                 self.config.pth_path=self.mix_model(values)
                 index_path=values["path_index"]
-                self.config.index_path = index_path if index_path!="" else self.config.index_path
+                self.config.index_path = index_path
+                self.config.index_rate = 0 if index_path=="" else self.config.index_rate
+                
             print(f"loading model from {self.config.pth_path}")
             if self.config.index_rate==0:
                 print(f"index disabled!")
