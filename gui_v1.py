@@ -351,7 +351,7 @@ if __name__ == "__main__":
                                                         [
                                                             sg.Frame(title=i18n("模型C"),
                                                                      key="model_c",
-                                                                     visible=False,
+                                                                     visible=False if data.get("pth_path_c","")=="" else True,
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
@@ -372,7 +372,7 @@ if __name__ == "__main__":
                                                         [
                                                             sg.Frame(title=i18n("模型D"),
                                                                      key="model_d",
-                                                                     visible=False,
+                                                                     visible=False if data.get("pth_path_d","")=="" else True,
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
