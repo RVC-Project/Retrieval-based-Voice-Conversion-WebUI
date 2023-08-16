@@ -191,19 +191,22 @@ if __name__ == "__main__":
             self.flag_vc = False
             self.ad_features = False
             self.window_size = None
-            self.num_models= 2
+            self.num_models = 2
+
 
             self.launcher()
 
-        def load(self):
+        def load(self)->dict:
             input_devices, output_devices, _, _ = self.get_devices()
             try:
                 with open("values1.json", "r") as j:
-                    data = json.load(j)
+                    data:dict = json.load(j)
                     data["pm"] = data["f0method"] == "pm"
                     data["harvest"] = data["f0method"] == "harvest"
                     data["crepe"] = data["f0method"] == "crepe"
                     data["rmvpe"] = data["f0method"] == "rmvpe"
+                    self.num_models+=1 if data.get("pth_path_c","")!="" else 0
+                    self.num_models+=1 if data.get("pth_path_d","")!="" else 0
             except:
                 with open("values1.json", "w") as j:
                     data = {
@@ -218,6 +221,15 @@ if __name__ == "__main__":
                         "crossfade_length": "0.04",
                         "extra_time": "1",
                         "f0method": "rmvpe",
+                        "pth_path_a": "",
+                        "pth_path_b": "",
+                        "pth_path_c": "",
+                        "pth_path_d": "",
+                        "path_index": "",
+                        "weight_a": 0.5,
+                        "weight_b": 0.5,
+                        "weight_c": 0.0,
+                        "weight_d": 0.0
                     }
             return data
 
@@ -563,7 +575,7 @@ if __name__ == "__main__":
                                                         [
                                                             sg.Frame(title=i18n("模型C权重"),
                                                                      key="weight_c_frame",
-                                                                     visible=False if data.get("pth_path_d","")=="" else True,
+                                                                     visible=False if data.get("pth_path_c","")=="" else True,
                                                                 layout=[
                                                                         [
                                                                             sg.Slider(
