@@ -567,7 +567,9 @@ def if_done_multi(done, ps):
         if flag == 1:
             break
     done[0] = True
-
+    
+def get_quoted_python_cmd():
+    return f'"{config.python_cmd}"'
 
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
@@ -575,7 +577,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
     cmd = (
-        config.python_cmd
+        get_quoted_python_cmd()
         + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s/logs/%s" '
         % (trainset_dir, sr, n_p, now_dir, exp_dir)
         + str(config.noparallel)
