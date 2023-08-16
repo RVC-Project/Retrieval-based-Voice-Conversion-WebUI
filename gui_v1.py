@@ -99,8 +99,43 @@ if __name__ == "__main__":
             #     self.is_half=True
             # else:
             #     self.is_half=False
-        
-            self.dml=False if device_name.find("(DML)")==-1 else True
+
+            # 下列代码防止onnxruntime-cuda和onnxruntime-dml打架，
+            # 但似乎在实时推理没有用到onnxruntime-cuda, 
+            # 不安装onnxruntime-cuda，且注释掉下列代码是可行的，实时推理不受影响
+
+            if device_name.find("(DML)")!=-1:
+                self.dml=True
+                try:
+                    os.rename(
+                        "runtime\Lib\site-packages\onnxruntime",
+                        "runtime\Lib\site-packages\onnxruntime-cuda",
+                    )
+                except:
+                    pass
+                try:
+                    os.rename(
+                        "runtime\Lib\site-packages\onnxruntime-dml",
+                        "runtime\Lib\site-packages\onnxruntime",
+                    )
+                except:
+                    pass
+            else:
+                self.dml=False
+                try:
+                    os.rename(
+                        "runtime\Lib\site-packages\onnxruntime",
+                        "runtime\Lib\site-packages\onnxruntime-dml",
+                    )
+                except:
+                    pass
+                try:
+                    os.rename(
+                        "runtime\Lib\site-packages\onnxruntime-cuda",
+                        "runtime\Lib\site-packages\onnxruntime",
+                    )
+                except:
+                    pass
 
             return device
         
