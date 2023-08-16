@@ -563,7 +563,7 @@ if __name__ == "__main__":
                                                         [
                                                             sg.Frame(title=i18n("模型C权重"),
                                                                      key="weight_c_frame",
-                                                                     visible=False,
+                                                                     visible=False if data.get("pth_path_d","")=="" else True,
                                                                 layout=[
                                                                         [
                                                                             sg.Slider(
@@ -580,7 +580,7 @@ if __name__ == "__main__":
                                                             ),
                                                             sg.Frame(title=i18n("模型D权重"),
                                                                      key="weight_d_frame",
-                                                                     visible=False,
+                                                                     visible=False if data.get("pth_path_d","")=="" else True,
                                                                 layout=[
                                                                         [
                                                                             sg.Slider(
