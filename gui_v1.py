@@ -762,7 +762,7 @@ if __name__ == "__main__":
                 
                 model_list=[path_a,path_b]
                 model_list.append(path_c) if path_c!="" else None
-                model_list.append(path_b) if path_b!="" else None
+                model_list.append(path_d) if path_d!="" else None
                 alpha_list = [w_a,w_b]
                 alpha_list.append(w_c) if path_c!="" else None
                 alpha_list.append(w_d) if path_d!="" else None
