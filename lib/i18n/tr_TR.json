@@ -128,5 +128,21 @@
     "index文件路径不可包含中文": ".index dosya yolu Çince karakter içeremez",
     "重载设备列表": "Cihaz listesini yeniden yükle",
     "音高算法": "音高算法",
-    "harvest进程数": "harvest进程数"
+    "harvest进程数": "harvest进程数",
+    "模型融合":"Model Fusion",
+    "开启":"Enable",
+    "使用模型融合功能时，模型版本、模型采样率必须一致！":"When using the model fusion function, the model version and sampling rate must be consistent!",
+    "模型A":"Model A",
+    "模型B":"Model B",
+    "模型C":"Model C",
+    "模型D":"Model D",
+    "权重调节":"Weight adjustment",
+    "模型A权重":"Weight of A",
+    "模型B权重":"Weight of B",
+    "模型C权重":"Weight of C",
+    "模型D权重":"Weight of D",
+    "锁定":"Lock",
+    "增加模型":"Add model",
+    "删除最后一个模型":"Delete last model",
+    "最多4个模型, 最少2个模型, 权重和必须为1":"4 more models, at least 2 models, and the sum of weights must be 1"
 }

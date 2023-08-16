@@ -299,25 +299,25 @@ if __name__ == "__main__":
                             ],
                         ),
                         sg.Frame(
-                            title="ModelMix",
+                            title=i18n("模型融合"),
                             key="ModelMix",
                             layout=[
                                     [       
-                                        sg.Checkbox("开启", key="ad_features",enable_events=True),
+                                        sg.Checkbox(i18n("开启"), key="ad_features",enable_events=True),
                                     ],
                                     [
-                                        sg.Text("使用ModelMix功能时，模型版本、模型采样率必须一致！"),
+                                        sg.Text(i18n("使用模型融合功能时，模型版本、模型采样率必须一致！")),
                                     ],
                                     [
-                                        sg.Frame(title="模型路径",
+                                        sg.Frame(title=i18n("模型路径"),
                                                     layout=[
                                                         [
-                                                            sg.Frame(title="模型A",
+                                                            sg.Frame(title=i18n("模型A"),
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
                                                                             sg.Input(
-                                                                                default_text="",
+                                                                                default_text=data.get("pth_path_a",""),
                                                                                 key="pth_path_a",
                                                                             ),
                                                                             sg.FileBrowse(
@@ -331,12 +331,12 @@ if __name__ == "__main__":
                                                             
                                                         ],
                                                         [
-                                                            sg.Frame(title="模型B",
+                                                            sg.Frame(title=i18n("模型B"),
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
                                                                             sg.Input(
-                                                                                default_text="",
+                                                                                default_text=data.get("pth_path_b",""),
                                                                                 key="pth_path_b",
                                                                             ),
                                                                             sg.FileBrowse(
@@ -349,14 +349,14 @@ if __name__ == "__main__":
                                                             ),
                                                         ],
                                                         [
-                                                            sg.Frame(title="模型C",
+                                                            sg.Frame(title=i18n("模型C"),
                                                                      key="model_c",
                                                                      visible=False,
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
                                                                             sg.Input(
-                                                                                default_text="",
+                                                                                default_text=data.get("pth_path_c",""),
                                                                                 key="pth_path_c",
                                                                             ),
                                                                             sg.FileBrowse(
@@ -370,14 +370,14 @@ if __name__ == "__main__":
                                                             
                                                         ],
                                                         [
-                                                            sg.Frame(title="模型D",
+                                                            sg.Frame(title=i18n("模型D"),
                                                                      key="model_d",
                                                                      visible=False,
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A"),
                                                                             sg.Input(
-                                                                                default_text="",
+                                                                                default_text=data.get("pth_path_d",""),
                                                                                 key="pth_path_d",
                                                                             ),
                                                                             sg.FileBrowse(
@@ -395,7 +395,7 @@ if __name__ == "__main__":
                                                                         [
                                                                             # sg.Text("模型A"),
                                                                             sg.Input(
-                                                                                default_text="",
+                                                                                default_text=data.get("path_index",""),
                                                                                 key="path_index",
                                                                             ),
                                                                             sg.FileBrowse(
@@ -412,10 +412,10 @@ if __name__ == "__main__":
                                         )
                                     ],
                                     [
-                                        sg.Frame(title="权重调节",
+                                        sg.Frame(title=i18n("权重调节"),
                                                     layout=[
                                                         [
-                                                            sg.Frame(title="模型A权重",
+                                                            sg.Frame(title=i18n("模型A权重"),
                                                                 layout=[
                                                                         [
                                                                             # sg.Text("模型A权重"),
@@ -424,14 +424,14 @@ if __name__ == "__main__":
                                                                                 key="weight_a",
                                                                                 resolution=0.0001,
                                                                                 orientation="h",
-                                                                                default_value=0.5,
+                                                                                default_value=data.get("weight_a",0.5),
                                                                                 enable_events=True
                                                                             ),
-                                                                            sg.Checkbox("锁定", key="lock_a"),
+                                                                            sg.Checkbox(i18n("锁定"), key="lock_a"),
                                                                         ],
                                                                     ]
                                                             ),
-                                                            sg.Frame(title="模型B权重",
+                                                            sg.Frame(title=i18n("模型B权重"),
                                                                 layout=[
                                                                         [
                                                                             sg.Slider(
@@ -439,16 +439,16 @@ if __name__ == "__main__":
                                                                                 key="weight_b",
                                                                                 resolution=0.0001,
                                                                                 orientation="h",
-                                                                                default_value=0.5,
+                                                                                default_value=data.get("weight_b",0.5),
                                                                                 enable_events=True
                                                                             ),
-                                                                            sg.Checkbox("锁定", key="lock_b"),
+                                                                            sg.Checkbox(i18n("锁定"), key="lock_b"),
                                                                         ],
                                                                     ]
                                                             ),
                                                         ],
                                                         [
-                                                            sg.Frame(title="模型C权重",
+                                                            sg.Frame(title=i18n("模型C权重"),
                                                                      key="weight_c_frame",
                                                                      visible=False,
                                                                 layout=[
@@ -458,14 +458,14 @@ if __name__ == "__main__":
                                                                                 key="weight_c",
                                                                                 resolution=0.0001,
                                                                                 orientation="h",
-                                                                                default_value=0,
+                                                                                default_value=data.get("weight_c",0),
                                                                                 enable_events=True
                                                                             ),
-                                                                            sg.Checkbox("锁定", key="lock_c"),
+                                                                            sg.Checkbox(i18n("锁定"), key="lock_c"),
                                                                         ],
                                                                     ]
                                                             ),
-                                                            sg.Frame(title="模型D权重",
+                                                            sg.Frame(title=i18n("模型D权重"),
                                                                      key="weight_d_frame",
                                                                      visible=False,
                                                                 layout=[
@@ -475,10 +475,10 @@ if __name__ == "__main__":
                                                                                 key="weight_d",
                                                                                 resolution=0.0001,
                                                                                 orientation="h",
-                                                                                default_value=0,
+                                                                                default_value=data.get("weight_d",0),
                                                                                 enable_events=True
                                                                             ),
-                                                                            sg.Checkbox("锁定", key="lock_d"),
+                                                                            sg.Checkbox(i18n("锁定"), key="lock_d"),
                                                                         ],
                                                                     ]
                                                             ),
@@ -487,11 +487,11 @@ if __name__ == "__main__":
                                             ])
                                     ],
                                     [
-                                        sg.Button("增加模型", key="add_model"),
-                                        sg.Button("删除最后一个模型", key="delete_model"),
+                                        sg.Button(i18n("增加模型"), key="add_model"),
+                                        sg.Button(i18n("删除最后一个模型"), key="delete_model"),
                                     ],
                                     [
-                                        sg.Text("最多4个模型, 最少2个模型, 权重和必须为1"),
+                                        sg.Text(i18n("最多4个模型, 最少2个模型, 权重和必须为1")),
                                     ]
    
                             ])
@@ -558,6 +558,15 @@ if __name__ == "__main__":
                                     values["rmvpe"],
                                 ].index(True)
                             ],
+                            "pth_path_a":values["pth_path_a"],
+                            "pth_path_b":values["pth_path_b"],
+                            "pth_path_c":values["pth_path_c"],
+                            "pth_path_d":values["pth_path_d"],
+                            "path_index":values["path_index"],
+                            "weight_a":values["weight_a"],
+                            "weight_b":values["weight_b"],
+                            "weight_c":values["weight_c"],
+                            "weight_d":values["weight_d"],
                         }
                         with open("values1.json", "w") as j:
                             json.dump(settings, j)
@@ -588,6 +597,7 @@ if __name__ == "__main__":
                         if self.window[f"weight_{i}_frame"].visible:
                             self.window[f"weight_{i}_frame"].update(visible=False)
                             self.window[f"model_{i}"].update(visible=False)
+                            self.window[f"pth_path_{i}"].update("")
                             self.num_models-=1
                             break
                     self.set_mix_weight("a",values)
