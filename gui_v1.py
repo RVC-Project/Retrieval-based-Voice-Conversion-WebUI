@@ -576,10 +576,10 @@ if __name__ == "__main__":
                 if event == "ad_features":
                     self.ad_features = not self.ad_features
                     if self.ad_features:
-                        self.window["load_model"].update(visible=not self.ad_features)
+                        # self.window["load_model"].update(visible=not self.ad_features)
                         print("ModelMix已开启！")
                     else:
-                        self.window["load_model"].update(visible=not self.ad_features)
+                        # self.window["load_model"].update(visible=not self.ad_features)
                         print("ModelMix已关闭！")
                         
                 if event == "add_model":
@@ -808,6 +808,8 @@ if __name__ == "__main__":
                 index_path=values["path_index"]
                 self.config.index_path = index_path
                 self.config.index_rate = 0 if index_path=="" else self.config.index_rate
+                self.window["pth_path"].update(self.config.pth_path)
+                self.window["index_path"].update(index_path)
                 
             print(f"loading model from {self.config.pth_path}")
             if self.config.index_rate==0:
