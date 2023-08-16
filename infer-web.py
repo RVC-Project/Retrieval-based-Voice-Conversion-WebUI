@@ -229,8 +229,6 @@ def vc_single(
             protect,
             f0_file=f0_file,
         )
-        if tgt_sr != resample_sr >= 16000:
-            tgt_sr = resample_sr
         index_info = (
             "Using index:%s." % file_index
             if os.path.exists(file_index)
@@ -241,7 +239,7 @@ def vc_single(
             times[0],
             times[1],
             times[2],
-        ), (tgt_sr, audio_opt)
+        ), (resample_sr if resample_sr >= 16000 and tgt_sr != resample_sr else tgt_sr, audio_opt)
     except:
         info = traceback.format_exc()
         print(info)
