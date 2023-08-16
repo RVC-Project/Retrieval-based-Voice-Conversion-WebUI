@@ -713,29 +713,40 @@ if __name__ == "__main__":
                         m = m["weight"]
                     return m
                 cfg={}
-                cfg["config"] = ckpt_a.get("config", "")
-                cfg["sr"] = ckpt_a.get("sr", 40000)
+                cfg["config"] = ckpt_a.get("config", [])
+                cfg["sr"] = ckpt_a.get("config")[-1]
                 cfg["f0"] = ckpt_a.get("f0", 1)
                 cfg["version"] = ckpt_a.get("version", "v1")
                 cfg["info"] = ckpt_a.get("info", "")
+
+                same_arch_flag = True
+                same_sr_flag = True
+                if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_b.keys())):
+                    same_arch_flag = False
+                if ckpt_a.get("config")[-1] != ckpt_b.get("config")[-1]:
+                    same_sr_flag = False
+
+                if ckpt_c:
+                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_c.keys())):
+                        same_arch_flag = False
+                    if ckpt_a.get("config")[-1] != ckpt_c.get("config")[-1]:
+                        same_sr_flag = False
+                if ckpt_d:
+                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_d.keys())):
+                        same_arch_flag = False
+                    if ckpt_a.get("config")[-1] != ckpt_d.get("config")[-1]:
+                        same_sr_flag = False
+
+                if not same_arch_flag:
+                    raise ValueError("模型架构不一致，无法融合！(Fail to merge the models. The model architectures are not the same.)")
+                if not same_sr_flag:
+                    raise ValueError("模型采样率不一致，无法融合！(Fail to merge the models. The sample rate of model are not the same.)")
+                
                 ckpt_a = f1(ckpt_a)
                 ckpt_b = f1(ckpt_b)
                 ckpt_c = f1(ckpt_c) if ckpt_c else None
                 ckpt_d = f1(ckpt_d) if ckpt_d else None
 
-                same_flag = True
-                if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_b.keys())):
-                    same_flag = False
-                if ckpt_c:
-                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_c.keys())):
-                        same_flag = False
-                if ckpt_d:
-                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_d.keys())):
-                        same_flag = False
-                        
-                if not same_flag:
-                    raise ValueError("模型架构不同，无法融合！(Fail to merge the models. The model architectures are not the same.)")
-                
                 def merge(m1,m2,m3=None,m4=None,alpha1=0.5,alpha2=0.5,alpha3=0,alpha4=0):
                     opt = OrderedDict()
                     opt["weight"] = {}
