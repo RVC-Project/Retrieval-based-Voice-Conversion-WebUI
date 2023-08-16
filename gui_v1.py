@@ -642,19 +642,35 @@ if __name__ == "__main__":
                     self.window[f"weight_{i}"].update(str(w_unlock/len(n)))
                     
         def set_values(self, values):
-            if len(values["pth_path"].strip()) == 0:
-                sg.popup(i18n("请选择pth文件"))
-                return False
-            if len(values["index_path"].strip()) == 0:
-                sg.popup(i18n("请选择index文件"))
-                return False
             pattern = re.compile("[^\x00-\x7F]+")
-            if pattern.findall(values["pth_path"]):
-                sg.popup(i18n("pth文件路径不可包含中文"))
-                return False
-            if pattern.findall(values["index_path"]):
-                sg.popup(i18n("index文件路径不可包含中文"))
-                return False
+            if not self.ad_features:
+                if len(values["pth_path"].strip()) == 0:
+                    sg.popup(i18n("请选择pth文件"))
+                    return False
+                if len(values["index_path"].strip()) == 0 and not self.ad_features:
+                    sg.popup(i18n("请选择index文件"))
+                    return False
+                if pattern.findall(values["pth_path"]):
+                    sg.popup(i18n("pth文件路径不可包含中文"))
+                    return False
+                if pattern.findall(values["index_path"]):
+                    sg.popup(i18n("index文件路径不可包含中文"))
+                    return False
+            else:
+                n=["a","b","c","d"][:self.num_models]
+                for i in n:
+                    if len(values[f"pth_path_{i}"].strip()) == 0:
+                        sg.popup(i18n(f"请选择Model {i.upper()}"))
+                        return False
+                for i in n:
+                    if pattern.findall(values[f"pth_path_{i}"]):
+                        sg.popup(i18n("pth文件路径不可包含中文"))
+                        return False
+                    if pattern.findall(values["path_index"]) and len(values["path_index"].strip()) != 0 :
+                        sg.popup(i18n("index文件路径不可包含中文"))
+                        return False
+
+
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
             self.config.pth_path = values["pth_path"]
             self.config.index_path = values["index_path"]
