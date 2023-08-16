@@ -48,8 +48,75 @@ if __name__ == "__main__":
     import torchaudio.transforms as tat
     from i18n import I18nAuto
     import rvc_for_realtime
+    from config import Config
+
+    class DeviceConfig:
+        def __init__(self) -> None:
+            self.is_half=False
+            self.dml=False
+            self.all_device = self.get_all_device()
+            self.device_index:dict={self.all_device[i][0]:i for i in range(len(self.all_device))}
+            self.device = self.set_device_by_index(0)
+
+        def get_all_device(self)->list:
+
+            def has_dml():
+                try:
+                    import torch_directml
+                    return True
+                except:
+                    return False
+                    
+            def has_mps() -> bool:
+                if not torch.backends.mps.is_available():
+                    return False
+                try:
+                    torch.zeros(1).to(torch.device("mps"))
+                    return True
+                except Exception:
+                    return False
+
+            device=[]
+            if torch.cuda.is_available():
+                device.extend([[f"{torch.cuda.get_device_name(i)} (CUDA)", torch.device(f"cuda:{i}")] for i in range(torch.cuda.device_count())])
+            if has_mps():
+                device.extend([["MPS",torch.device("mps")]])
+            if has_dml():
+                import torch_directml
+                device.extend([[f"{torch_directml.device_name(i)} (DML)",torch_directml.device(i)] for i in range(torch_directml.device_count())])
+
+            device.append(["CPU",torch.device("cpu")])
+            return device
+        
+        def set_device_by_index(self,index):
+            if index>len(self.all_device) or index<len(self.all_device):
+                ValueError("Out of index range.")
+            
+            device_name, device=self.all_device[index]
+            print(F"Select {device_name} to inference")
+
+            # if device_name == "CPU":
+            #     self.is_half=True
+            # else:
+            #     self.is_half=False
+        
+            self.dml=False if device_name.find("(DML)")==-1 else True
+
+            return device
+        
+        def get_device_by_name(self,device_name):
+            if device_name not in list(self.device_index.keys()):
+                return None
+            return self.set_device_by_index(self.device_index[device_name])
+        
+        def set_device_by_name(self,device_name):
+            self.device=self.get_device_by_name(device_name)
+        
+
+
     i18n = I18nAuto()
-    device=rvc_for_realtime.config.device
+    # device=rvc_for_realtime.config.device
+    device_config = DeviceConfig()
     # device = torch.device(
     #     "cuda"
     #     if torch.cuda.is_available()
@@ -81,6 +148,7 @@ if __name__ == "__main__":
             self.f0method = "harvest"
             self.sg_input_device = ""
             self.sg_output_device = ""
+            self.device_config=device_config
 
     class GUI:
         def __init__(self) -> None:
@@ -166,6 +234,7 @@ if __name__ == "__main__":
                                                 input_devices,
                                                 key="sg_input_device",
                                                 default_value=data.get("sg_input_device", ""),
+                                                enable_events=True
                                             ),
                                         ],
                                         [
@@ -184,6 +253,15 @@ if __name__ == "__main__":
                             [
                                 sg.Frame(
                                     layout=[
+                                        [
+                                            sg.Text(i18n("推理设备")),
+                                            sg.Combo(
+                                                    values=([item[0] for item in self.config.device_config.all_device]),
+                                                    default_value = self.config.device_config.all_device[0][0],
+                                                    key="select_infer_device",
+                                                    enable_events=True
+                                            )
+                                        ],
                                         [
                                             sg.Text(i18n("响应阈值")),
                                             sg.Slider(
@@ -573,6 +651,10 @@ if __name__ == "__main__":
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
 
+                if event == "select_infer_device" and self.flag_vc == False:
+                    device_name = values["select_infer_device"]
+                    self.config.device_config.set_device_by_name(device_name)
+
                 if event == "ad_features":
                     self.ad_features = not self.ad_features
                     if self.ad_features:
@@ -839,7 +921,8 @@ if __name__ == "__main__":
                 self.config.n_cpu,
                 inp_q,
                 opt_q,
-                device,
+                self.config.device_config.device,
+                self.config.device_config
             )
             self.config.samplerate = self.rvc.tgt_sr
             self.config.crossfade_time = min(
@@ -880,7 +963,7 @@ if __name__ == "__main__":
                     )
                     * self.zc
                 ),
-                device=device,
+                device=self.config.device_config.device,
                 dtype=torch.float32,
             )
             self.pitch: np.ndarray = np.zeros(
@@ -892,18 +975,18 @@ if __name__ == "__main__":
                 dtype="float64",
             )
             self.output_wav: torch.Tensor = torch.zeros(
-                self.block_frame, device=device, dtype=torch.float32
+                self.block_frame, device=self.config.device_config.device, dtype=torch.float32
             )
             self.sola_buffer: torch.Tensor = torch.zeros(
-                self.crossfade_frame, device=device, dtype=torch.float32
+                self.crossfade_frame, device=self.config.device_config.device, dtype=torch.float32
             )
             self.fade_in_window: torch.Tensor = torch.linspace(
-                0.0, 1.0, steps=self.crossfade_frame, device=device, dtype=torch.float32
+                0.0, 1.0, steps=self.crossfade_frame, device=self.config.device_config.device, dtype=torch.float32
             )
             self.fade_out_window: torch.Tensor = 1 - self.fade_in_window
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
-            ).to(device)
+            ).to(self.config.device_config.device)
             thread_vc = threading.Thread(target=self.soundinput)
             thread_vc.start()
 
@@ -949,7 +1032,7 @@ if __name__ == "__main__":
                         indata[i * hop_length : (i + 1) * hop_length] = 0
             self.input_wav[:] = np.append(self.input_wav[self.block_frame :], indata)
             # infer
-            inp = torch.from_numpy(self.input_wav).to(device)
+            inp = torch.from_numpy(self.input_wav).to(self.config.device_config.device)
             res1 = self.resampler(inp)
             ###55%
             rate1 = self.block_frame / (
@@ -990,7 +1073,7 @@ if __name__ == "__main__":
                         None, None, : self.crossfade_frame + self.sola_search_frame
                     ]
                     ** 2,
-                    torch.ones(1, 1, self.crossfade_frame, device=device),
+                    torch.ones(1, 1, self.crossfade_frame, device=self.config.device_config.device),
                 )
                 + 1e-8
             )

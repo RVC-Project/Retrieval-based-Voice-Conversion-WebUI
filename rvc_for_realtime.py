@@ -17,28 +17,36 @@ from config import Config
 from multiprocessing import Manager as M
 
 mm = M()
-config = Config()
-if config.dml == True:
+# config = Config()
+# if config.dml == True:
 
-    def forward_dml(ctx, x, scale):
-        ctx.scale = scale
-        res = x.clone().detach()
-        return res
+#     def forward_dml(ctx, x, scale):
+#         ctx.scale = scale
+#         res = x.clone().detach()
+#         return res
 
-    fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+#     fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
 
 
 # config.device=torch.device("cpu")########强制cpu测试
 # config.is_half=False########强制cpu测试
 class RVC:
     def __init__(
-        self, key, pth_path, index_path, index_rate, n_cpu, inp_q, opt_q, device
+        self, key, pth_path, index_path, index_rate, n_cpu, inp_q, opt_q, device,config
     ) -> None:
         """
         初始化
         """
         try:
-            global config
+            # global config
+            self.config=config
+            if config.dml == True:
+                def forward_dml(ctx, x, scale):
+                    ctx.scale = scale
+                    res = x.clone().detach()
+                    return res
+                fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+
             self.inp_q = inp_q
             self.opt_q = opt_q
             # device="cpu"########强制cpu测试
@@ -240,7 +248,7 @@ class RVC:
         f0method,
     ) -> np.ndarray:
         feats = feats.view(1, -1)
-        if config.is_half:
+        if self.config.is_half:
             feats = feats.half()
         else:
             feats = feats.float()
@@ -266,7 +274,7 @@ class RVC:
                 weight = np.square(1 / score)
                 weight /= weight.sum(axis=1, keepdims=True)
                 npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
-                if config.is_half:
+                if self.config.is_half:
                     npy = npy.astype("float16")
                 feats[0][-leng_replace_head:] = (
                     torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
