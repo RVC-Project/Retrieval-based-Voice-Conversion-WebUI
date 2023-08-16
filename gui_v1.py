@@ -662,13 +662,12 @@ if __name__ == "__main__":
                     if len(values[f"pth_path_{i}"].strip()) == 0:
                         sg.popup(i18n(f"请选择Model {i.upper()}"))
                         return False
-                for i in n:
                     if pattern.findall(values[f"pth_path_{i}"]):
                         sg.popup(i18n("pth文件路径不可包含中文"))
                         return False
-                    if pattern.findall(values["path_index"]) and len(values["path_index"].strip()) != 0 :
-                        sg.popup(i18n("index文件路径不可包含中文"))
-                        return False
+                if pattern.findall(values["path_index"]) and len(values["path_index"].strip()) != 0 :
+                    sg.popup(i18n("index文件路径不可包含中文"))
+                    return False
 
 
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
