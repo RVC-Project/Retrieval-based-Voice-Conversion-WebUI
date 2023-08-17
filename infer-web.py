@@ -928,7 +928,7 @@ def click_train(
         print("no pretrained Discriminator")
     if gpus16:
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
