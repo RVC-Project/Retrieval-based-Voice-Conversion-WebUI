@@ -1093,7 +1093,7 @@ def train1key(
     #########step1:处理数据
     open(preprocess_log_path, "w").close()
     cmd = (
-        config.python_cmd
+        get_quoted_python_cmd()
         + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s" '
         % (trainset_dir4, sr_dict[sr2], np7, model_log_dir)
         + str(config.noparallel)
@@ -1124,7 +1124,7 @@ def train1key(
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
+                        get_quoted_python_cmd()
                         + ' extract_f0_rmvpe.py %s %s %s "%s" %s '
                         % (
                             leng,
@@ -1160,7 +1160,7 @@ def train1key(
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = config.python_cmd + ' extract_feature_print.py %s %s %s %s "%s" %s' % (
+        cmd = get_quoted_python_cmd() + ' extract_feature_print.py %s %s %s %s "%s" %s' % (
             config.device,
             leng,
             idx,
@@ -1240,7 +1240,7 @@ def train1key(
     yield get_info_str("write filelist done")
     if gpus16:
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
