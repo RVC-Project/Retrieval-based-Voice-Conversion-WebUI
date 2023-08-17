@@ -639,7 +639,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
+                        get_quoted_python_cmd()
                         + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
                         % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
                     )
@@ -692,7 +692,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
             % (
                 config.device,
