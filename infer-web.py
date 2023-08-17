@@ -613,7 +613,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     f.close()
     if if_f0:
         if f0method != "rmvpe_gpu":
-            cmd = config.python_cmd + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
+            cmd = get_quoted_python_cmd() + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
                 now_dir,
                 exp_dir,
                 n_p,
