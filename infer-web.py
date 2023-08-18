@@ -1,30 +1,33 @@
+import logging
 import os
 import shutil
 import sys
-
-now_dir = os.getcwd()
-sys.path.append(now_dir)
-import traceback, pdb
-import warnings
-
-import numpy as np
-import torch
-
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
-import logging
 import threading
+import traceback
+import warnings
 from random import shuffle
 from subprocess import Popen
 from time import sleep
 
-import faiss
-import ffmpeg
-import gradio as gr
-import soundfile as sf
-from config import Config
 import fairseq
+import faiss
+import gradio as gr
+import numpy as np
+import soundfile as sf
+import torch
+from sklearn.cluster import MiniBatchKMeans
+
+from infer_web_ui.faq_tab.functions import load_faq
+from infer_web_ui.onnx.functions import load_onnx_tab
+
+sys.path.append(os.getcwd())
+
+from config import Config
 from i18n import I18nAuto
+from infer_web_ui.gradio_tools import clean, sr_dict, if_done, if_done_multi
+from infer_web_ui.separation_tab.functions import load_separation_tab
+from infer_web_ui.utils import check_gpu, check_names_and_index
+from lib.audio import load_audio
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
@@ -32,102 +35,55 @@ from lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid_nono,
 )
 from lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
-from infer_uvr5 import _audio_pre_, _audio_pre_new
-from lib.audio import load_audio
 from lib.train.process_ckpt import change_info, extract_small_model, merge, show_info
 from vc_infer_pipeline import VC
-from sklearn.cluster import MiniBatchKMeans
 
+# Get logger
 logging.getLogger("numba").setLevel(logging.WARNING)
 
+# Manage paths
 now_dir = os.getcwd()
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
-shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % now_dir, ignore_errors=True)
+shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % now_dir, ignore_errors=True)
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "weights"), exist_ok=True)
-os.environ["TEMP"] = tmp
+
+# Set random seed
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
+# Environment
+os.environ["TEMP"] = tmp
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["no_proxy"] = "localhost, 127.0.0.1, ::1"
 
+# Set config
 config = Config()
-if config.dml == True:
-
+if config.dml:
     def forward_dml(ctx, x, scale):
         ctx.scale = scale
         res = x.clone().detach()
         return res
 
+
     fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+
+# Load language
 i18n = I18nAuto()
 i18n.print()
-# 判断是否有能用来训练和加速推理的N卡
-ngpu = torch.cuda.device_count()
-gpu_infos = []
-mem = []
-if_gpu_ok = False
 
-if torch.cuda.is_available() or ngpu != 0:
-    for i in range(ngpu):
-        gpu_name = torch.cuda.get_device_name(i)
-        if any(
-            value in gpu_name.upper()
-            for value in [
-                "10",
-                "16",
-                "20",
-                "30",
-                "40",
-                "A2",
-                "A3",
-                "A4",
-                "P4",
-                "A50",
-                "500",
-                "A60",
-                "70",
-                "80",
-                "90",
-                "M4",
-                "T4",
-                "TITAN",
-            ]
-        ):
-            # A10#A100#V100#A40#P40#M40#K80#A4500
-            if_gpu_ok = True  # 至少有一张能用的N卡
-            gpu_infos.append("%s\t%s" % (i, gpu_name))
-            mem.append(
-                int(
-                    torch.cuda.get_device_properties(i).total_memory
-                    / 1024
-                    / 1024
-                    / 1024
-                    + 0.4
-                )
-            )
-if if_gpu_ok and len(gpu_infos) > 0:
-    gpu_info = "\n".join(gpu_infos)
-    default_batch_size = min(mem) // 2
-else:
-    gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
-    default_batch_size = 1
-gpus = "-".join([i[0] for i in gpu_infos])
+# Check GPU
+gpu_info, default_batch_size, gpus = check_gpu(i18n)
 
+# Check names and index
+names, index_paths, index_root, weight_root, weight_uvr5_root, uvr5_names = check_names_and_index(now_dir)
 
-class ToolButton(gr.Button, gr.components.FormComponent):
-    """Small button with single emoji as text, fits inside gradio forms"""
-
-    def __init__(self, **kwargs):
-        super().__init__(variant="tool", **kwargs)
-
-    def get_block_name(self):
-        return "button"
-
-
+# Hubert model
 hubert_model = None
+cpt = None
 
 
 def load_hubert():
@@ -145,40 +101,20 @@ def load_hubert():
     hubert_model.eval()
 
 
-weight_root = "weights"
-weight_uvr5_root = "uvr5_weights"
-index_root = "logs"
-names = []
-for name in os.listdir(weight_root):
-    if name.endswith(".pth"):
-        names.append(name)
-index_paths = []
-for root, dirs, files in os.walk(index_root, topdown=False):
-    for name in files:
-        if name.endswith(".index") and "trained" not in name:
-            index_paths.append("%s/%s" % (root, name))
-uvr5_names = []
-for name in os.listdir(weight_uvr5_root):
-    if name.endswith(".pth") or "onnx" in name:
-        uvr5_names.append(name.replace(".pth", ""))
-
-cpt = None
-
-
 def vc_single(
-    sid,
-    input_audio_path,
-    f0_up_key,
-    f0_file,
-    f0_method,
-    file_index,
-    file_index2,
-    # file_big_npy,
-    index_rate,
-    filter_radius,
-    resample_sr,
-    rms_mix_rate,
-    protect,
+        sid,
+        input_audio_path,
+        f0_up_key,
+        f0_file,
+        f0_method,
+        file_index,
+        file_index2,
+        # file_big_npy,
+        index_rate,
+        filter_radius,
+        resample_sr,
+        rms_mix_rate,
+        protect,
 ):  # spk_item, input_audio0, vc_transform0,f0_file,f0method0
     global tgt_sr, net_g, vc, hubert_model, version, cpt
     if input_audio_path is None:
@@ -247,21 +183,21 @@ def vc_single(
 
 
 def vc_multi(
-    sid,
-    dir_path,
-    opt_root,
-    paths,
-    f0_up_key,
-    f0_method,
-    file_index,
-    file_index2,
-    # file_big_npy,
-    index_rate,
-    filter_radius,
-    resample_sr,
-    rms_mix_rate,
-    protect,
-    format1,
+        sid,
+        dir_path,
+        opt_root,
+        paths,
+        f0_up_key,
+        f0_method,
+        file_index,
+        file_index2,
+        # file_big_npy,
+        index_rate,
+        filter_radius,
+        resample_sr,
+        rms_mix_rate,
+        protect,
+        format1,
 ):
     try:
         dir_path = (
@@ -322,88 +258,6 @@ def vc_multi(
         yield "\n".join(infos)
     except:
         yield traceback.format_exc()
-
-
-def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format0):
-    infos = []
-    try:
-        inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-        save_root_vocal = (
-            save_root_vocal.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-        )
-        save_root_ins = (
-            save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-        )
-        if model_name == "onnx_dereverb_By_FoxJoy":
-            from MDXNet import MDXNetDereverb
-
-            pre_fun = MDXNetDereverb(15)
-        else:
-            func = _audio_pre_ if "DeEcho" not in model_name else _audio_pre_new
-            pre_fun = func(
-                agg=int(agg),
-                model_path=os.path.join(weight_uvr5_root, model_name + ".pth"),
-                device=config.device,
-                is_half=config.is_half,
-            )
-        if inp_root != "":
-            paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
-        else:
-            paths = [path.name for path in paths]
-        for path in paths:
-            inp_path = os.path.join(inp_root, path)
-            need_reformat = 1
-            done = 0
-            try:
-                info = ffmpeg.probe(inp_path, cmd="ffprobe")
-                if (
-                    info["streams"][0]["channels"] == 2
-                    and info["streams"][0]["sample_rate"] == "44100"
-                ):
-                    need_reformat = 0
-                    pre_fun._path_audio_(
-                        inp_path, save_root_ins, save_root_vocal, format0
-                    )
-                    done = 1
-            except:
-                need_reformat = 1
-                traceback.print_exc()
-            if need_reformat == 1:
-                tmp_path = "%s/%s.reformatted.wav" % (tmp, os.path.basename(inp_path))
-                os.system(
-                    "ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"
-                    % (inp_path, tmp_path)
-                )
-                inp_path = tmp_path
-            try:
-                if done == 0:
-                    pre_fun._path_audio_(
-                        inp_path, save_root_ins, save_root_vocal, format0
-                    )
-                infos.append("%s->Success" % (os.path.basename(inp_path)))
-                yield "\n".join(infos)
-            except:
-                infos.append(
-                    "%s->%s" % (os.path.basename(inp_path), traceback.format_exc())
-                )
-                yield "\n".join(infos)
-    except:
-        infos.append(traceback.format_exc())
-        yield "\n".join(infos)
-    finally:
-        try:
-            if model_name == "onnx_dereverb_By_FoxJoy":
-                del pre_fun.pred.model
-                del pre_fun.pred.model_
-            else:
-                del pre_fun.model
-                del pre_fun
-        except:
-            traceback.print_exc()
-        print("clean_empty_cache")
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-    yield "\n".join(infos)
 
 
 def get_index_path_from_model(sid):
@@ -534,51 +388,16 @@ def change_choices():
     }
 
 
-def clean():
-    return {"value": "", "__type__": "update"}
-
-
-sr_dict = {
-    "32k": 32000,
-    "40k": 40000,
-    "48k": 48000,
-}
-
-
-def if_done(done, p):
-    while 1:
-        if p.poll() is None:
-            sleep(0.5)
-        else:
-            break
-    done[0] = True
-
-
-def if_done_multi(done, ps):
-    while 1:
-        # poll==None代表进程未结束
-        # 只要有一个进程未结束都不停
-        flag = 1
-        for p in ps:
-            if p.poll() is None:
-                flag = 0
-                sleep(0.5)
-                break
-        if flag == 1:
-            break
-    done[0] = True
-
-
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
     cmd = (
-        config.python_cmd
-        + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s/logs/%s" '
-        % (trainset_dir, sr, n_p, now_dir, exp_dir)
-        + str(config.noparallel)
+            config.python_cmd
+            + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s/logs/%s" '
+            % (trainset_dir, sr, n_p, now_dir, exp_dir)
+            + str(config.noparallel)
     )
     print(cmd)
     p = Popen(cmd, shell=True)  # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
@@ -637,9 +456,9 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
-                        + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
-                        % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
+                            config.python_cmd
+                            + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
+                            % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
                     )
                     print(cmd)
                     p = Popen(
@@ -668,7 +487,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 done = [True]
         while 1:
             with open(
-                "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+                    "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
             ) as f:
                 yield (f.read())
             sleep(1)
@@ -690,17 +509,17 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            config.python_cmd
-            + ' extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
-            % (
-                config.device,
-                leng,
-                idx,
-                n_g,
-                now_dir,
-                exp_dir,
-                version19,
-            )
+                config.python_cmd
+                + ' extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+                % (
+                    config.device,
+                    leng,
+                    idx,
+                    n_g,
+                    now_dir,
+                    exp_dir,
+                    version19,
+                )
         )
         print(cmd)
         p = Popen(
@@ -835,20 +654,20 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
 
 # but3.click(click_train,[exp_dir1,sr2,if_f0_3,save_epoch10,total_epoch11,batch_size12,if_save_latest13,pretrained_G14,pretrained_D15,gpus16])
 def click_train(
-    exp_dir1,
-    sr2,
-    if_f0_3,
-    spk_id5,
-    save_epoch10,
-    total_epoch11,
-    batch_size12,
-    if_save_latest13,
-    pretrained_G14,
-    pretrained_D15,
-    gpus16,
-    if_cache_gpu17,
-    if_save_every_weights18,
-    version19,
+        exp_dir1,
+        sr2,
+        if_f0_3,
+        spk_id5,
+        save_epoch10,
+        total_epoch11,
+        batch_size12,
+        if_save_latest13,
+        pretrained_G14,
+        pretrained_D15,
+        gpus16,
+        if_cache_gpu17,
+        if_save_every_weights18,
+        version19,
 ):
     # 生成filelist
     exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
@@ -863,10 +682,10 @@ def click_train(
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
         names = (
-            set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
-            & set([name.split(".")[0] for name in os.listdir(feature_dir)])
-            & set([name.split(".")[0] for name in os.listdir(f0_dir)])
-            & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
+                set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
+                & set([name.split(".")[0] for name in os.listdir(feature_dir)])
+                & set([name.split(".")[0] for name in os.listdir(f0_dir)])
+                & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
         )
     else:
         names = set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)]) & set(
@@ -926,42 +745,42 @@ def click_train(
         print("no pretrained Discriminator")
     if gpus16:
         cmd = (
-            config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                gpus16,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+                config.python_cmd
+                + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+                % (
+                    exp_dir1,
+                    sr2,
+                    1 if if_f0_3 else 0,
+                    batch_size12,
+                    gpus16,
+                    total_epoch11,
+                    save_epoch10,
+                    "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                    "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+                    1 if if_save_latest13 == i18n("是") else 0,
+                    1 if if_cache_gpu17 == i18n("是") else 0,
+                    1 if if_save_every_weights18 == i18n("是") else 0,
+                    version19,
+                )
         )
     else:
         cmd = (
-            config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+                config.python_cmd
+                + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+                % (
+                    exp_dir1,
+                    sr2,
+                    1 if if_f0_3 else 0,
+                    batch_size12,
+                    total_epoch11,
+                    save_epoch10,
+                    "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                    "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+                    1 if if_save_latest13 == i18n("是") else 0,
+                    1 if if_cache_gpu17 == i18n("是") else 0,
+                    1 if if_save_every_weights18 == i18n("是") else 0,
+                    version19,
+                )
         )
     print(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
@@ -1035,7 +854,7 @@ def train_index(exp_dir1, version19):
     yield "\n".join(infos)
     batch_size_add = 8192
     for i in range(0, big_npy.shape[0], batch_size_add):
-        index.add(big_npy[i : i + batch_size_add])
+        index.add(big_npy[i: i + batch_size_add])
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
@@ -1050,26 +869,25 @@ def train_index(exp_dir1, version19):
     yield "\n".join(infos)
 
 
-# but5.click(train1key, [exp_dir1, sr2, if_f0_3, trainset_dir4, spk_id5, gpus6, np7, f0method8, save_epoch10, total_epoch11, batch_size12, if_save_latest13, pretrained_G14, pretrained_D15, gpus16, if_cache_gpu17], info3)
 def train1key(
-    exp_dir1,
-    sr2,
-    if_f0_3,
-    trainset_dir4,
-    spk_id5,
-    np7,
-    f0method8,
-    save_epoch10,
-    total_epoch11,
-    batch_size12,
-    if_save_latest13,
-    pretrained_G14,
-    pretrained_D15,
-    gpus16,
-    if_cache_gpu17,
-    if_save_every_weights18,
-    version19,
-    gpus_rmvpe,
+        exp_dir1,
+        sr2,
+        if_f0_3,
+        trainset_dir4,
+        spk_id5,
+        np7,
+        f0method8,
+        save_epoch10,
+        total_epoch11,
+        batch_size12,
+        if_save_latest13,
+        pretrained_G14,
+        pretrained_D15,
+        gpus16,
+        if_cache_gpu17,
+        if_save_every_weights18,
+        version19,
+        gpus_rmvpe,
 ):
     infos = []
 
@@ -1091,10 +909,10 @@ def train1key(
     #########step1:处理数据
     open(preprocess_log_path, "w").close()
     cmd = (
-        config.python_cmd
-        + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s" '
-        % (trainset_dir4, sr_dict[sr2], np7, model_log_dir)
-        + str(config.noparallel)
+            config.python_cmd
+            + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s" '
+            % (trainset_dir4, sr_dict[sr2], np7, model_log_dir)
+            + str(config.noparallel)
     )
     yield get_info_str(i18n("step1:正在处理数据"))
     yield get_info_str(cmd)
@@ -1122,15 +940,15 @@ def train1key(
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
-                        + ' extract_f0_rmvpe.py %s %s %s "%s" %s '
-                        % (
-                            leng,
-                            idx,
-                            n_g,
-                            model_log_dir,
-                            config.is_half,
-                        )
+                            config.python_cmd
+                            + ' extract_f0_rmvpe.py %s %s %s "%s" %s '
+                            % (
+                                leng,
+                                idx,
+                                n_g,
+                                model_log_dir,
+                                config.is_half,
+                            )
                     )
                     yield get_info_str(cmd)
                     p = Popen(
@@ -1182,10 +1000,10 @@ def train1key(
         f0_dir = "%s/2a_f0" % model_log_dir
         f0nsf_dir = "%s/2b-f0nsf" % model_log_dir
         names = (
-            set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
-            & set([name.split(".")[0] for name in os.listdir(feature_dir)])
-            & set([name.split(".")[0] for name in os.listdir(f0_dir)])
-            & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
+                set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)])
+                & set([name.split(".")[0] for name in os.listdir(feature_dir)])
+                & set([name.split(".")[0] for name in os.listdir(f0_dir)])
+                & set([name.split(".")[0] for name in os.listdir(f0nsf_dir)])
         )
     else:
         names = set([name.split(".")[0] for name in os.listdir(gt_wavs_dir)]) & set(
@@ -1238,42 +1056,42 @@ def train1key(
     yield get_info_str("write filelist done")
     if gpus16:
         cmd = (
-            config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                gpus16,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+                config.python_cmd
+                + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+                % (
+                    exp_dir1,
+                    sr2,
+                    1 if if_f0_3 else 0,
+                    batch_size12,
+                    gpus16,
+                    total_epoch11,
+                    save_epoch10,
+                    "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                    "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+                    1 if if_save_latest13 == i18n("是") else 0,
+                    1 if if_cache_gpu17 == i18n("是") else 0,
+                    1 if if_save_every_weights18 == i18n("是") else 0,
+                    version19,
+                )
         )
     else:
         cmd = (
-            config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+                config.python_cmd
+                + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+                % (
+                    exp_dir1,
+                    sr2,
+                    1 if if_f0_3 else 0,
+                    batch_size12,
+                    total_epoch11,
+                    save_epoch10,
+                    "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                    "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+                    1 if if_save_latest13 == i18n("是") else 0,
+                    1 if if_cache_gpu17 == i18n("是") else 0,
+                    1 if if_save_every_weights18 == i18n("是") else 0,
+                    version19,
+                )
         )
     yield get_info_str(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
@@ -1335,7 +1153,7 @@ def train1key(
     yield get_info_str("adding index")
     batch_size_add = 8192
     for i in range(0, big_npy.shape[0], batch_size_add):
-        index.add(big_npy[i : i + batch_size_add])
+        index.add(big_npy[i: i + batch_size_add])
     faiss.write_index(
         index,
         "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
@@ -1360,7 +1178,7 @@ def change_info_(ckpt_path):
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
     try:
         with open(
-            ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r"
+                ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r"
         ) as f:
             info = eval(f.read().strip("\n").split("\n")[0].split("\t")[-1])
             sr, f0 = info["sample_rate"], info["if_f0"]
@@ -1433,12 +1251,13 @@ def export_onnx(ModelPath, ExportedPath):
 
 
 with gr.Blocks(title="RVC WebUI") as app:
+    # Presentation tab
     gr.Markdown(
-        value=i18n(
-            "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>."
-        )
+        value="## RVC WebUI\n"
     )
+
     with gr.Tabs():
+        # Inference tab
         with gr.TabItem(i18n("模型推理")):
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
@@ -1504,11 +1323,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                             outputs=[sid0, file_index2],
                             api_name="infer_refresh",
                         )
-                        # file_big_npy1 = gr.Textbox(
-                        #     label=i18n("特征文件路径"),
-                        #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                        #     interactive=True,
-                        # )
                         index_rate1 = gr.Slider(
                             minimum=0,
                             maximum=1,
@@ -1569,7 +1383,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
             with gr.Group():
                 gr.Markdown(
-                    value=i18n("批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ")
+                    value=i18n(
+                        "批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ")
                 )
                 with gr.Row():
                     with gr.Column():
@@ -1582,7 +1397,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
                             ),
                             choices=["pm", "harvest", "crepe", "rmvpe"]
-                            if config.dml == False
+                            if not config.dml
                             else ["pm", "harvest", "rmvpe"],
                             value="pm",
                             interactive=True,
@@ -1612,11 +1427,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                             outputs=file_index4,
                             api_name="infer_refresh_batch",
                         )
-                        # file_big_npy2 = gr.Textbox(
-                        #     label=i18n("特征文件路径"),
-                        #     value="E:\\codes\\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                        #     interactive=True,
-                        # )
                         index_rate2 = gr.Slider(
                             minimum=0,
                             maximum=1,
@@ -1653,7 +1463,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     with gr.Column():
                         dir_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
-                            value="E:\codes\py39\\test-20230416b\\todo-songs",
+                            value=r"E:\codes\py39\\test-20230416b\\todo-songs",
                         )
                         inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
@@ -1694,61 +1504,12 @@ with gr.Blocks(title="RVC WebUI") as app:
                 inputs=[sid0, protect0, protect1],
                 outputs=[spk_item, protect0, protect1, file_index2, file_index4],
             )
+
+        # Separation & Reverb Removal tab
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
-            with gr.Group():
-                gr.Markdown(
-                    value=i18n(
-                        "人声伴奏分离批量处理， 使用UVR5模型。 <br>合格的文件夹路径格式举例： E:\\codes\\py39\\vits_vc_gpu\\白鹭霜华测试样例(去文件管理器地址栏拷就行了)。 <br>模型分为三类： <br>1、保留人声：不带和声的音频选这个，对主人声保留比HP5更好。内置HP2和HP3两个模型，HP3可能轻微漏伴奏但对主人声保留比HP2稍微好一丁点； <br>2、仅保留主人声：带和声的音频选这个，对主人声可能有削弱。内置HP5一个模型； <br> 3、去混响、去延迟模型（by FoxJoy）：<br>  (1)MDX-Net(onnx_dereverb):对于双通道混响是最好的选择，不能去除单通道混响；<br>&emsp;(234)DeEcho:去除延迟效果。Aggressive比Normal去除得更彻底，DeReverb额外去除混响，可去除单声道混响，但是对高频重的板式混响去不干净。<br>去混响/去延迟，附：<br>1、DeEcho-DeReverb模型的耗时是另外2个DeEcho模型的接近2倍；<br>2、MDX-Net-Dereverb模型挺慢的；<br>3、个人推荐的最干净的配置是先MDX-Net再DeEcho-Aggressive。"
-                    )
-                )
-                with gr.Row():
-                    with gr.Column():
-                        dir_wav_input = gr.Textbox(
-                            label=i18n("输入待处理音频文件夹路径"),
-                            value="E:\\codes\\py39\\test-20230416b\\todo-songs\\todo-songs",
-                        )
-                        wav_inputs = gr.File(
-                            file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
-                        )
-                    with gr.Column():
-                        model_choose = gr.Dropdown(label=i18n("模型"), choices=uvr5_names)
-                        agg = gr.Slider(
-                            minimum=0,
-                            maximum=20,
-                            step=1,
-                            label="人声提取激进程度",
-                            value=10,
-                            interactive=True,
-                            visible=False,  # 先不开放调整
-                        )
-                        opt_vocal_root = gr.Textbox(
-                            label=i18n("指定输出主人声文件夹"), value="opt"
-                        )
-                        opt_ins_root = gr.Textbox(
-                            label=i18n("指定输出非主人声文件夹"), value="opt"
-                        )
-                        format0 = gr.Radio(
-                            label=i18n("导出文件格式"),
-                            choices=["wav", "flac", "mp3", "m4a"],
-                            value="flac",
-                            interactive=True,
-                        )
-                    but2 = gr.Button(i18n("转换"), variant="primary")
-                    vc_output4 = gr.Textbox(label=i18n("输出信息"))
-                    but2.click(
-                        uvr,
-                        [
-                            model_choose,
-                            dir_wav_input,
-                            opt_vocal_root,
-                            wav_inputs,
-                            opt_ins_root,
-                            agg,
-                            format0,
-                        ],
-                        [vc_output4],
-                        api_name="uvr_convert",
-                    )
+            load_separation_tab(i18n, uvr5_names, weight_uvr5_root, tmp, config)
+
+        # Train tab
         with gr.TabItem(i18n("训练")):
             gr.Markdown(
                 value=i18n(
@@ -1991,6 +1752,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         api_name="train_start_all",
                     )
 
+        # ckpt tab
         with gr.TabItem(i18n("ckpt处理")):
             with gr.Group():
                 gr.Markdown(value=i18n("模型融合, 可用于测试音色融合"))
@@ -2131,38 +1893,21 @@ with gr.Blocks(title="RVC WebUI") as app:
                     api_name="ckpt_extract",
                 )
 
+        # Onnx tab
         with gr.TabItem(i18n("Onnx导出")):
-            with gr.Row():
-                ckpt_dir = gr.Textbox(label=i18n("RVC模型路径"), value="", interactive=True)
-            with gr.Row():
-                onnx_dir = gr.Textbox(
-                    label=i18n("Onnx输出路径"), value="", interactive=True
-                )
-            with gr.Row():
-                infoOnnx = gr.Label(label="info")
-            with gr.Row():
-                butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
-            butOnnx.click(
-                export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx"
-            )
+            load_onnx_tab(i18n, export_onnx)
 
+        # Faq tab
         tab_faq = i18n("常见问题解答")
         with gr.TabItem(tab_faq):
-            try:
-                if tab_faq == "常见问题解答":
-                    with open("docs/faq.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                else:
-                    with open("docs/faq_en.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                gr.Markdown(value=info)
-            except:
-                gr.Markdown(traceback.format_exc())
+            load_faq(tab_faq)
 
-        # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
-        #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
-        # with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
-        #     gr.Markdown(value=i18n("xxxxx"))
+    # License
+    gr.Markdown(
+        value=i18n(
+            "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>."
+        )
+    )
 
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
