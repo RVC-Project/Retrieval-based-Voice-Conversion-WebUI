@@ -31,4 +31,3 @@ def load_hubert(config):
     else:
         hubert_model = hubert_model.float()
     return hubert_model.eval()
-
