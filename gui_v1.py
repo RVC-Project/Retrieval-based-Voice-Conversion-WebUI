@@ -192,6 +192,7 @@ if __name__ == "__main__":
             self.ad_features = False
             self.window_size = None
             self.num_models = 2
+            self.model_map = {f"pth_path_{k}":None for k in ["a", "b", "c", "d"]}
 
 
             self.launcher()
@@ -444,13 +445,23 @@ if __name__ == "__main__":
                                                                             sg.Input(
                                                                                 default_text=data.get("pth_path_a",""),
                                                                                 key="pth_path_a",
+                                                                                change_submits=True
                                                                             ),
                                                                             sg.FileBrowse(
                                                                                 i18n("选择.pth文件"),
                                                                                 initial_folder=os.path.join(os.getcwd(), "weights"),
                                                                                 file_types=((". pth"),),
                                                                             ),
+                                                                            
                                                                         ],
+                                                                        [
+                                                                            sg.Text("版本:"),
+                                                                            sg.Text("", key="model_version_a"),
+                                                                            sg.Text("采样率:"),
+                                                                            sg.Text("", key="model_sr_a"),
+                                                                            sg.Text("音高:"),
+                                                                            sg.Text("", key="model_f0_a"),
+                                                                        ]
                                                                 ],
                                                             ),
                                                             
@@ -463,6 +474,7 @@ if __name__ == "__main__":
                                                                             sg.Input(
                                                                                 default_text=data.get("pth_path_b",""),
                                                                                 key="pth_path_b",
+                                                                                change_submits=True
                                                                             ),
                                                                             sg.FileBrowse(
                                                                                 i18n("选择.pth文件"),
@@ -470,6 +482,14 @@ if __name__ == "__main__":
                                                                                 file_types=((". pth"),),
                                                                             ),
                                                                         ],
+                                                                        [
+                                                                            sg.Text("版本:"),
+                                                                            sg.Text("", key="model_version_b"),
+                                                                            sg.Text("采样率:"),
+                                                                            sg.Text("", key="model_sr_b"),
+                                                                            sg.Text("音高:"),
+                                                                            sg.Text("", key="model_f0_b"),
+                                                                        ]
                                                                 ],
                                                             ),
                                                         ],
@@ -483,6 +503,7 @@ if __name__ == "__main__":
                                                                             sg.Input(
                                                                                 default_text=data.get("pth_path_c",""),
                                                                                 key="pth_path_c",
+                                                                                change_submits=True
                                                                             ),
                                                                             sg.FileBrowse(
                                                                                 i18n("选择.pth文件"),
@@ -490,6 +511,14 @@ if __name__ == "__main__":
                                                                                 file_types=((". pth"),),
                                                                             ),
                                                                         ],
+                                                                        [
+                                                                            sg.Text("版本:"),
+                                                                            sg.Text("", key="model_version_c"),
+                                                                            sg.Text("采样率:"),
+                                                                            sg.Text("", key="model_sr_c"),
+                                                                            sg.Text("音高:"),
+                                                                            sg.Text("", key="model_f0_c"),
+                                                                        ]
                                                                 ],
                                                             ),
                                                             
@@ -504,6 +533,7 @@ if __name__ == "__main__":
                                                                             sg.Input(
                                                                                 default_text=data.get("pth_path_d",""),
                                                                                 key="pth_path_d",
+                                                                                change_submits=True
                                                                             ),
                                                                             sg.FileBrowse(
                                                                                 i18n("选择.pth文件"),
@@ -511,6 +541,14 @@ if __name__ == "__main__":
                                                                                 file_types=((". pth"),),
                                                                             ),
                                                                         ],
+                                                                        [
+                                                                            sg.Text("版本:"),
+                                                                            sg.Text("", key="model_version_d"),
+                                                                            sg.Text("采样率:"),
+                                                                            sg.Text("", key="model_sr_d"),
+                                                                            sg.Text("音高:"),
+                                                                            sg.Text("", key="model_f0_d"),
+                                                                        ]
                                                                 ],
                                                             ),
                                                         ],
@@ -629,9 +667,23 @@ if __name__ == "__main__":
                     ],
 
             ]
-            self.window = sg.Window("RVC - GUI", layout=self.layout)
+            self.window = sg.Window("RVC - GUI", layout=self.layout, finalize=True)
+            
+            for key in ["a","b","c","d"]:
+                path=data.get(f"pth_path_{key}",None)
+                if not path:
+                    continue
+                self.init_model_config(key,path)
             
             self.event_handler()
+
+        def init_model_config(self,key,path):
+            model=self.load_model(path)
+            if not model:   
+                self.window[f"pth_path_{key}"].update("")
+                return
+            self.model_map[f"pth_path_{key}"]= model
+            self.set_model_info(key,model)
 
         def event_handler(self):
             while True:
@@ -705,10 +757,10 @@ if __name__ == "__main__":
                 if event == "ad_features":
                     self.ad_features = not self.ad_features
                     if self.ad_features:
-                        # self.window["load_model"].update(visible=not self.ad_features)
+                        self.window["load_model"].update(visible=not self.ad_features)
                         print("ModelMix已开启！")
                     else:
-                        # self.window["load_model"].update(visible=not self.ad_features)
+                        self.window["load_model"].update(visible=not self.ad_features)
                         print("ModelMix已关闭！")
                         
                 if event == "add_model":
@@ -727,18 +779,53 @@ if __name__ == "__main__":
                             self.window[f"weight_{i}_frame"].update(visible=False)
                             self.window[f"model_{i}"].update(visible=False)
                             self.window[f"pth_path_{i}"].update("")
+                            self.model_map[f"pth_path_{i}"]=None
                             self.num_models-=1
                             break
                     self.set_mix_weight("a",values)
 
-                if event == "weight_a" and self.flag_vc == False:
-                    self.set_mix_weight("a",values)
-                elif event == "weight_b" and self.flag_vc == False:
-                    self.set_mix_weight("b",values)
-                elif event == "weight_c" and self.flag_vc == False:
-                    self.set_mix_weight("c",values)
-                elif event == "weight_d" and self.flag_vc == False:
-                    self.set_mix_weight("d",values)
+                if event in ["weight_a", "weight_b", "weight_c", "weight_d"] \
+                    and self.flag_vc == False:
+                    self.set_mix_weight(event.split("_")[1],values)
+
+                if event in ["pth_path_a", "pth_path_b","pth_path_c","pth_path_d"]\
+                    and self.flag_vc == False:
+                    path=values[event]
+                    if path =="":
+                        continue
+                    model=self.load_model(path)
+                    if not model:
+                        self.window[event].update("")
+                    self.model_map[event] = model
+                    self.set_model_info(event.split("_")[-1],model)
+
+
+                    
+                    
+        def load_model(self,path):
+            pattern = re.compile("[^\x00-\x7F]+")
+            if pattern.findall(path):
+                sg.popup(i18n("pth文件路径不可包含中文"))
+                return None
+            model = None
+            try:
+                model = torch.load(path, map_location="cpu")
+            except:
+                return None
+
+            return model
+        
+        def get_model_info(self, model):
+            sr = model.get("config")[-1]
+            f0 = model.get("f0", 1) 
+            version = model.get("version", "v1")
+            return version,sr,f0
+        
+        def set_model_info(self,key,model):
+            v,sr,f0=self.get_model_info(model)
+            self.window[f"model_version_{key}"].update(v)
+            self.window[f"model_sr_{key}"].update(str(sr))
+            self.window[f"model_f0_{key}"].update("是" if f0 else "否")
 
         def set_mix_weight(self,x,values):
             w = 1
@@ -791,12 +878,16 @@ if __name__ == "__main__":
                     if len(values[f"pth_path_{i}"].strip()) == 0:
                         sg.popup(i18n(f"请选择Model {i.upper()}"))
                         return False
-                    if pattern.findall(values[f"pth_path_{i}"]):
-                        sg.popup(i18n("pth文件路径不可包含中文"))
-                        return False
+                    # if pattern.findall(values[f"pth_path_{i}"]):
+                    #     sg.popup(i18n("pth文件路径不可包含中文"))
+                    #     return False
                 if pattern.findall(values["path_index"]) and len(values["path_index"].strip()) != 0 :
                     sg.popup(i18n("index文件路径不可包含中文"))
                     return False
+    
+                if not self.check_model():
+                    return False
+                
 
 
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
@@ -820,6 +911,32 @@ if __name__ == "__main__":
                 ].index(True)
             ]
             return True
+        
+        def check_model(self,):
+            def check(m1,m2):
+                v_a,sr_a,f0_a= self.get_model_info(m1)
+                v_b,sr_b,f0_b= self.get_model_info(m2)
+                eq_sr = (sr_a==sr_b)
+                eq_arch = (f0_a == f0_b) and (v_a == v_b)
+                return eq_arch, eq_sr
+
+            ckpt_a = self.model_map["pth_path_a"]
+            ckpt_b = self.model_map["pth_path_b"]
+            ckpt_c = self.model_map["pth_path_c"]
+            ckpt_d = self.model_map["pth_path_d"]
+                    
+            same_arch, same_sr = check(ckpt_a, ckpt_b)
+            same_arch, same_sr = check(ckpt_a, ckpt_c) if ckpt_c else (same_arch, same_sr)
+            same_arch, same_sr = check(ckpt_a, ckpt_d) if ckpt_d else (same_arch, same_sr)
+
+            if not same_arch:
+                sg.popup("模型架构不一致，无法融合！\n(Fail to merge the models. The model architectures are not the same.)",title="警告")
+                return False
+            if not same_sr:
+                sg.popup("模型采样率不一致，无法融合！\n(Fail to merge the models. The sample rate of model are not the same.)",title="警告")
+                return False
+            return True
+            
         
         def mix_model(self,values):
             print("正在融合模型...")
@@ -845,10 +962,11 @@ if __name__ == "__main__":
                         opt["weight"][key] = a[key]
                     return opt
 
-                ckpt_a = torch.load(path_a, map_location="cpu")
-                ckpt_b = torch.load(path_b, map_location="cpu")
-                ckpt_c = torch.load(path_c, map_location="cpu") if path_c!="" else None
-                ckpt_d = torch.load(path_d, map_location="cpu") if path_d!="" else None
+                ckpt_a = self.model_map["pth_path_a"]
+                ckpt_b = self.model_map["pth_path_b"]
+                ckpt_c = self.model_map["pth_path_c"]
+                ckpt_d = self.model_map["pth_path_d"]
+
                 
                 def f1(m):
                     if "model" in m:
@@ -863,29 +981,6 @@ if __name__ == "__main__":
                 cfg["version"] = ckpt_a.get("version", "v1")
                 cfg["info"] = ckpt_a.get("info", "")
 
-                same_arch_flag = True
-                same_sr_flag = True
-                if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_b.keys())):
-                    same_arch_flag = False
-                if ckpt_a.get("config")[-1] != ckpt_b.get("config")[-1]:
-                    same_sr_flag = False
-
-                if ckpt_c:
-                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_c.keys())):
-                        same_arch_flag = False
-                    if ckpt_a.get("config")[-1] != ckpt_c.get("config")[-1]:
-                        same_sr_flag = False
-                if ckpt_d:
-                    if sorted(list(ckpt_a.keys())) != sorted(list(ckpt_d.keys())):
-                        same_arch_flag = False
-                    if ckpt_a.get("config")[-1] != ckpt_d.get("config")[-1]:
-                        same_sr_flag = False
-
-                if not same_arch_flag:
-                    raise ValueError("模型架构不一致，无法融合！(Fail to merge the models. The model architectures are not the same.)")
-                if not same_sr_flag:
-                    raise ValueError("模型采样率不一致，无法融合！(Fail to merge the models. The sample rate of model are not the same.)")
-                
                 ckpt_a = f1(ckpt_a)
                 ckpt_b = f1(ckpt_b)
                 ckpt_c = f1(ckpt_c) if ckpt_c else None
