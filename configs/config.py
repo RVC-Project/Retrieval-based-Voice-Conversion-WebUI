@@ -17,9 +17,9 @@ def use_fp32_config():
             strr = f.read().replace("true", "false")
         with open(f"configs/{config_file}", "w") as f:
             f.write(strr)
-    with open("trainset_preprocess_pipeline_print.py", "r") as f:
+    with open("infer/modules/train/preprocess.py", "r") as f:
         strr = f.read().replace("3.7", "3.0")
-    with open("trainset_preprocess_pipeline_print.py", "w") as f:
+    with open("infer/modules/train/preprocess.py", "w") as f:
         f.write(strr)
 
 
@@ -110,9 +110,9 @@ class Config:
                 + 0.4
             )
             if self.gpu_mem <= 4:
-                with open("trainset_preprocess_pipeline_print.py", "r") as f:
+                with open("infer/modules/train/preprocess.py", "r") as f:
                     strr = f.read().replace("3.7", "3.0")
-                with open("trainset_preprocess_pipeline_print.py", "w") as f:
+                with open("infer/modules/train/preprocess.py", "w") as f:
                     f.write(strr)
         elif self.has_mps():
             print("No supported Nvidia GPU found")
