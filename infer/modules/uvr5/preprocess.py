@@ -205,7 +205,7 @@ class AudioPreDeEcho:
         self.model = model
 
     def _path_audio_(
-            self, music_file, vocal_root=None, ins_root=None, format="flac"
+        self, music_file, vocal_root=None, ins_root=None, format="flac"
     ):  # 3个VR模型vocal和ins是反的
         if ins_root is None and vocal_root is None:
             return "No save root."
@@ -222,7 +222,7 @@ class AudioPreDeEcho:
             if d == bands_n:  # high-end band
                 (
                     X_wave[d],
-                            _,
+                    _,
                 ) = librosa.core.load(  # 理论上librosa读取可能对某些音频有bug，应该上ffmpeg读取，但是太麻烦了弃坑
                     music_file,
                     bp["sr"],

@@ -27,7 +27,9 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             func = AudioPre if "DeEcho" not in model_name else AudioPreDeEcho
             pre_fun = func(
                 agg=int(agg),
-                model_path=os.path.join(os.getenv("weight_uvr5_root"), model_name + ".pth"),
+                model_path=os.path.join(
+                    os.getenv("weight_uvr5_root"), model_name + ".pth"
+                ),
                 device=config.device,
                 is_half=config.is_half,
             )
@@ -54,7 +56,10 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 need_reformat = 1
                 traceback.print_exc()
             if need_reformat == 1:
-                tmp_path = "%s/%s.reformatted.wav" % (os.path.join("tmp"), os.path.basename(inp_path))
+                tmp_path = "%s/%s.reformatted.wav" % (
+                    os.path.join("tmp"),
+                    os.path.basename(inp_path),
+                )
                 os.system(
                     "ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"
                     % (inp_path, tmp_path)
@@ -89,4 +94,3 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     yield "\n".join(infos)
-    

@@ -13,7 +13,7 @@ cpu = torch.device("cpu")
 
 class ConvTDFNetTrim:
     def __init__(
-            self, device, model_name, target_name, L, dim_f, dim_t, n_fft, hop=1024
+        self, device, model_name, target_name, L, dim_f, dim_t, n_fft, hop=1024
     ):
         super(ConvTDFNetTrim, self).__init__()
 
@@ -83,7 +83,7 @@ def get_models(device, dim_f, dim_t, n_fft):
         dim_f=dim_f,
         dim_t=dim_t,
         n_fft=n_fft,
-        )
+    )
 
 
 class Predictor:
@@ -95,7 +95,11 @@ class Predictor:
         )
         self.model = ort.InferenceSession(
             os.path.join(args.onnx, self.model_.target_name + ".onnx"),
-            providers=["CUDAExecutionProvider", "DmlExecutionProvider", "CPUExecutionProvider"],
+            providers=[
+                "CUDAExecutionProvider",
+                "DmlExecutionProvider",
+                "CPUExecutionProvider",
+            ],
         )
         print("onnx load done")
 
