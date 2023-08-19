@@ -1,4 +1,4 @@
-from lib.infer_pack.modules.F0Predictor.F0Predictor import F0Predictor
+from infer.lib.infer_pack.modules.F0Predictor.F0Predictor import F0Predictor
 import parselmouth
 import numpy as np
 
