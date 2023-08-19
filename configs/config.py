@@ -7,11 +7,11 @@ from multiprocessing import cpu_count
 
 def use_fp32_config():
     for config_file in [
-        "32k.json",
-        "40k.json",
-        "48k.json",
-        "48k_v2.json",
-        "32k_v2.json",
+        "v1/32k.json",
+        "v1/40k.json",
+        "v1/48k.json",
+        "v2/48k.json",
+        "v2/32k.json",
     ]:
         with open(f"configs/{config_file}", "r") as f:
             strr = f.read().replace("true", "false")
@@ -148,7 +148,7 @@ class Config:
             x_max = 32
         if self.dml:
             print("use DirectML instead")
-            if(os.path.exists("runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll")==False):
+            if os.path.exists("runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll")==False:
                 try:
                     os.rename("runtime\Lib\site-packages\onnxruntime", "runtime\Lib\site-packages\onnxruntime-cuda")
                 except:
