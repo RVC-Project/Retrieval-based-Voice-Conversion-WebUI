@@ -11,7 +11,7 @@ from functools import lru_cache
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-    
+
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 input_audio_path2wav = {}
@@ -71,18 +71,18 @@ class Pipeline(object):
         self.t_center = self.sr * self.x_center  # 查询切点位置
         self.t_max = self.sr * self.x_max  # 免查询时长阈值
         self.device = config.device
-        
+
         self.model_rmvpe = None
 
     def get_f0(
-            self,
-            input_audio_path,
-            x,
-            p_len,
-            f0_up_key,
-            f0_method,
-            filter_radius,
-            inp_f0=None,
+        self,
+        input_audio_path,
+        x,
+        p_len,
+        f0_up_key,
+        f0_method,
+        filter_radius,
+        inp_f0=None,
     ):
         global input_audio_path2wav
         time_step = self.window / self.sr * 1000
@@ -141,12 +141,12 @@ class Pipeline(object):
                     "rmvpe.pt", is_half=self.is_half, device=self.device
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
-            
+
         if "privateuseone" in str(self.device):  # clean ortruntime memory
             del self.model_rmvpe.model
             del self.model_rmvpe
             print("cleaning ortruntime memory")
-            
+
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
         tf0 = self.sr // self.window  # 每秒f0点数
@@ -157,8 +157,8 @@ class Pipeline(object):
             replace_f0 = np.interp(
                 list(range(delta_t)), inp_f0[:, 0] * 100, inp_f0[:, 1]
             )
-            shape = f0[self.x_pad * tf0: self.x_pad * tf0 + len(replace_f0)].shape[0]
-            f0[self.x_pad * tf0: self.x_pad * tf0 + len(replace_f0)] = replace_f0[
+            shape = f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)].shape[0]
+            f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)] = replace_f0[
                 :shape
             ]
         # with open("test_opt.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
@@ -173,19 +173,19 @@ class Pipeline(object):
         return f0_coarse, f0bak  # 1-0
 
     def vc(
-            self,
-            model,
-            net_g,
-            sid,
-            audio0,
-            pitch,
-            pitchf,
-            times,
-            index,
-            big_npy,
-            index_rate,
-            version,
-            protect,
+        self,
+        model,
+        net_g,
+        sid,
+        audio0,
+        pitch,
+        pitchf,
+        times,
+        index,
+        big_npy,
+        index_rate,
+        version,
+        protect,
     ):  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio0)
         if self.is_half:
@@ -275,26 +275,26 @@ class Pipeline(object):
         return audio1
 
     def pipeline(
-            self,
-            model,
-            net_g,
-            sid,
-            audio,
-            input_audio_path,
-            times,
-            f0_up_key,
-            f0_method,
-            file_index,
-            # file_big_npy,
-            index_rate,
-            if_f0,
-            filter_radius,
-            tgt_sr,
-            resample_sr,
-            rms_mix_rate,
-            version,
-            protect,
-            f0_file=None,
+        self,
+        model,
+        net_g,
+        sid,
+        audio,
+        input_audio_path,
+        times,
+        f0_up_key,
+        f0_method,
+        file_index,
+        # file_big_npy,
+        index_rate,
+        if_f0,
+        filter_radius,
+        tgt_sr,
+        resample_sr,
+        rms_mix_rate,
+        version,
+        protect,
+        f0_file=None,
     ):
         print(file_index)
         if (
@@ -319,14 +319,14 @@ class Pipeline(object):
         if audio_pad.shape[0] > self.t_max:
             audio_sum = np.zeros_like(audio)
             for i in range(self.window):
-                audio_sum += audio_pad[i: i - self.window]
+                audio_sum += audio_pad[i : i - self.window]
             for t in range(self.t_center, audio.shape[0], self.t_center):
                 opt_ts.append(
                     t
                     - self.t_query
                     + np.where(
-                        np.abs(audio_sum[t - self.t_query: t + self.t_query])
-                        == np.abs(audio_sum[t - self.t_query: t + self.t_query]).min()
+                        np.abs(audio_sum[t - self.t_query : t + self.t_query])
+                        == np.abs(audio_sum[t - self.t_query : t + self.t_query]).min()
                     )[0][0]
                 )
         s = 0
@@ -374,16 +374,16 @@ class Pipeline(object):
                         model,
                         net_g,
                         sid,
-                        audio_pad[s: t + self.t_pad2 + self.window],
-                        pitch[:, s // self.window: (t + self.t_pad2) // self.window],
-                        pitchf[:, s // self.window: (t + self.t_pad2) // self.window],
+                        audio_pad[s : t + self.t_pad2 + self.window],
+                        pitch[:, s // self.window : (t + self.t_pad2) // self.window],
+                        pitchf[:, s // self.window : (t + self.t_pad2) // self.window],
                         times,
                         index,
                         big_npy,
                         index_rate,
                         version,
                         protect,
-                    )[self.t_pad_tgt: -self.t_pad_tgt]
+                    )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
                 audio_opt.append(
@@ -391,7 +391,7 @@ class Pipeline(object):
                         model,
                         net_g,
                         sid,
-                        audio_pad[s: t + self.t_pad2 + self.window],
+                        audio_pad[s : t + self.t_pad2 + self.window],
                         None,
                         None,
                         times,
@@ -400,7 +400,7 @@ class Pipeline(object):
                         index_rate,
                         version,
                         protect,
-                    )[self.t_pad_tgt: -self.t_pad_tgt]
+                    )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
         if if_f0 == 1:
@@ -410,15 +410,15 @@ class Pipeline(object):
                     net_g,
                     sid,
                     audio_pad[t:],
-                    pitch[:, t // self.window:] if t is not None else pitch,
-                    pitchf[:, t // self.window:] if t is not None else pitchf,
+                    pitch[:, t // self.window :] if t is not None else pitch,
+                    pitchf[:, t // self.window :] if t is not None else pitchf,
                     times,
                     index,
                     big_npy,
                     index_rate,
                     version,
                     protect,
-                )[self.t_pad_tgt: -self.t_pad_tgt]
+                )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
             audio_opt.append(
@@ -435,7 +435,7 @@ class Pipeline(object):
                     index_rate,
                     version,
                     protect,
-                )[self.t_pad_tgt: -self.t_pad_tgt]
+                )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         audio_opt = np.concatenate(audio_opt)
         if rms_mix_rate != 1:
@@ -453,4 +453,3 @@ class Pipeline(object):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return audio_opt
-    
