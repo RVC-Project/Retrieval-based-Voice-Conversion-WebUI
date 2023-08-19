@@ -6,7 +6,7 @@ from collections import OrderedDict
 standard_file = "zh_CN.json"
 
 # Find all JSON files in the directory
-dir_path = "./"
+dir_path = "i18n/locale"
 languages = [
     f for f in os.listdir(dir_path) if f.endswith(".json") and f != standard_file
 ]
