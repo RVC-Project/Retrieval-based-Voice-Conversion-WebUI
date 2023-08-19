@@ -140,6 +140,7 @@ for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth") or "onnx" in name:
         uvr5_names.append(name.replace(".pth", ""))
 
+
 def change_choices():
     names = []
     for name in os.listdir(weight_root):
@@ -1002,8 +1003,6 @@ def change_f0_method(f0method8):
     else:
         visible = False
     return {"visible": visible, "__type__": "update"}
-
-
 
 
 with gr.Blocks(title="RVC WebUI") as app:
