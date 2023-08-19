@@ -123,7 +123,7 @@ class VC:
                 else file_index2
             )  # 防止小白写错，自动帮他替换掉
 
-            audio_opt = Pipeline.pipeline(
+            audio_opt = self.pipeline.pipeline(
                 self.hubert_model,
                 self.net_g,
                 sid,

@@ -285,7 +285,6 @@ class Pipeline(object):
         f0_up_key,
         f0_method,
         file_index,
-        # file_big_npy,
         index_rate,
         if_f0,
         filter_radius,
@@ -296,7 +295,6 @@ class Pipeline(object):
         protect,
         f0_file=None,
     ):
-        print(file_index)
         if (
             file_index != ""
             # and file_big_npy != ""
