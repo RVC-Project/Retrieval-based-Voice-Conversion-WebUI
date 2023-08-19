@@ -6,7 +6,19 @@ from fairseq import checkpoint_utils
 
 
 def get_index_path_from_model(sid):
-    return next((f for f in [os.path.join(root, name) for root, dirs, files in os.walk(os.getenv("index_root"), topdown=False) for name in files if name.endswith(".index") and "trained" not in name] if sid.split(".")[0] in f), "")
+    return next(
+        (
+            f
+            for f in [
+                os.path.join(root, name)
+                for root, dirs, files in os.walk(os.getenv("index_root"), topdown=False)
+                for name in files
+                if name.endswith(".index") and "trained" not in name
+            ]
+            if sid.split(".")[0] in f
+        ),
+        "",
+    )
 
 
 def load_hubert(config):
@@ -21,8 +33,8 @@ def load_hubert(config):
     else:
         hubert_model = hubert_model.float()
     return hubert_model.eval()
-    
-    
+
+
 def load_audio(file, sr):
     try:
         # https://github.com/openai/whisper/blob/main/whisper/audio.py#L26
