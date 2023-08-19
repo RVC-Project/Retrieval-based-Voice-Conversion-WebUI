@@ -5,6 +5,14 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: rvc
+    command: sleep infinity
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
     volumes:
       - ./weights:/app/weights
       - ./opt:/app/opt

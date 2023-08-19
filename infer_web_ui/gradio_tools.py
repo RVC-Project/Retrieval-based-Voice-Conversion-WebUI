@@ -1,12 +1,5 @@
 from time import sleep
 
-# Constants
-sr_dict = {
-    "32k": 32000,
-    "40k": 40000,
-    "48k": 48000,
-}
-
 
 # Functions
 def clean():

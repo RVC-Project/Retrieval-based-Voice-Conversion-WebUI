@@ -2,6 +2,18 @@ import os
 
 import torch
 
+from config import Config
+from i18n import I18nAuto
+
+# Load language
+i18n = I18nAuto()
+i18n.print()
+
+# Initialize vars
+now_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+tmp = os.path.join(now_dir, "TEMP")
+config = Config()
+
 
 # Check GPU
 def check_gpu(i18n):
@@ -60,20 +72,29 @@ def check_gpu(i18n):
 
 
 # Check paths
-def check_names_and_index(now_dir):
-    weight_root = "weights"
-    weight_uvr5_root = "uvr5_weights"
-    index_root = "logs"
-    names = index_paths = uvr5_names = []
-    for name in os.listdir(os.path.join(now_dir, weight_root)):
-        if name.endswith(".pth"):
-            names.append(name)
-    for root, dirs, files in os.walk(os.path.join(now_dir, index_root), topdown=False):
-        for name in files:
-            if name.endswith(".index") and "trained" not in name:
-                index_paths.append("%s/%s" % (root, name))
-    for name in os.listdir(os.path.join(now_dir, weight_uvr5_root)):
-        if name.endswith(".pth") or "onnx" in name:
-            uvr5_names.append(name.replace(".pth", ""))
+weight_root = os.path.join(now_dir, "weights")
+weight_uvr5_root = os.path.join(now_dir, "uvr5_weights")
+index_root = os.path.join(now_dir, "logs")
+names = []
+index_paths = []
+uvr5_names = []
+for name in os.listdir(weight_root):
+    if name.endswith(".pth"):
+        names.append(name)
+for root, dirs, files in os.walk(index_root, topdown=False):
+    for name in files:
+        if name.endswith(".index") and "trained" not in name:
+            index_paths.append("%s/%s" % (root, name))
+for name in os.listdir(weight_uvr5_root):
+    if name.endswith(".pth") or "onnx" in name:
+        uvr5_names.append(name.replace(".pth", ""))
 
-    return names, index_paths, index_root, weight_root, weight_uvr5_root, uvr5_names
+
+def get_index_path_from_model(sid, index_paths):
+    sel_index_path = ""
+    name = os.path.join("logs", sid.split(".")[0], "")
+    for f in index_paths:
+        if name in f:
+            sel_index_path = f
+            break
+    return sel_index_path
