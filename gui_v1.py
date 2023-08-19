@@ -106,36 +106,39 @@ if __name__ == "__main__":
 
             if device_name.find("(DML)")!=-1:
                 self.dml=True
-                try:
-                    os.rename(
-                        "runtime\Lib\site-packages\onnxruntime",
-                        "runtime\Lib\site-packages\onnxruntime-cuda",
-                    )
-                except:
-                    pass
-                try:
-                    os.rename(
-                        "runtime\Lib\site-packages\onnxruntime-dml",
-                        "runtime\Lib\site-packages\onnxruntime",
-                    )
-                except:
-                    pass
+                if(os.path.exists("runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll")==False):
+                
+                    try:
+                        os.rename(
+                            "runtime\Lib\site-packages\onnxruntime",
+                            "runtime\Lib\site-packages\onnxruntime-cuda",
+                        )
+                    except:
+                        pass
+                    try:
+                        os.rename(
+                            "runtime\Lib\site-packages\onnxruntime-dml",
+                            "runtime\Lib\site-packages\onnxruntime",
+                        )
+                    except:
+                        pass
             else:
                 self.dml=False
-                try:
-                    os.rename(
-                        "runtime\Lib\site-packages\onnxruntime",
-                        "runtime\Lib\site-packages\onnxruntime-dml",
-                    )
-                except:
-                    pass
-                try:
-                    os.rename(
-                        "runtime\Lib\site-packages\onnxruntime-cuda",
-                        "runtime\Lib\site-packages\onnxruntime",
-                    )
-                except:
-                    pass
+                if(os.path.exists("runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll")==False):
+                    try:
+                        os.rename(
+                            "runtime\Lib\site-packages\onnxruntime",
+                            "runtime\Lib\site-packages\onnxruntime-dml",
+                        )
+                    except:
+                        pass
+                    try:
+                        os.rename(
+                            "runtime\Lib\site-packages\onnxruntime-cuda",
+                            "runtime\Lib\site-packages\onnxruntime",
+                        )
+                    except:
+                        pass
 
             return device
         
