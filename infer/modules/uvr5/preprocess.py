@@ -26,7 +26,7 @@ class AudioPre:
             "agg": agg,
             "high_end_process": "mirroring",
         }
-        mp = ModelParameters("lib/uvr5_pack/lib_v5/modelparams/4band_v2.json")
+        mp = ModelParameters("infer/lib/uvr5_pack/lib_v5/modelparams/4band_v2.json")
         model = Nets.CascadedASPPNet(mp.param["bins"] * 2)
         cpk = torch.load(model_path, map_location="cpu")
         model.load_state_dict(cpk)
