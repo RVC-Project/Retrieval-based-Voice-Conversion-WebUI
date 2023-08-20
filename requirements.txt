@@ -43,3 +43,6 @@ onnxruntime-gpu; sys_platform != 'darwin'
 torchcrepe==0.0.20
 fastapi==0.88
 ffmpy==0.3.1
+#下面是使用go-realtime-gui.bat需要依赖的包
+PySimpleGUI=4.60.5
+noisereduce=2.0.1
