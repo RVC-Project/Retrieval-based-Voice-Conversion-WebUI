@@ -1535,7 +1535,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         info3,
                         api_name="train_start",
                     )
-                    but4.click(train_index, [exp_dir1, version19, config.n_cpu], info3)
+                    but4.click(train_index, [exp_dir1, version19], info3)
                     but5.click(
                         train1key,
                         [
