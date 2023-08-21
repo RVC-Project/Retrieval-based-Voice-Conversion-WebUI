@@ -4,10 +4,15 @@ import json
 
 from collections import OrderedDict
 
+
 def extract_i18n_strings(node):
     i18n_strings = []
 
-    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "i18n":
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "i18n"
+    ):
         for arg in node.args:
             if isinstance(arg, ast.Str):
                 i18n_strings.append(arg.s)
@@ -17,13 +22,14 @@ def extract_i18n_strings(node):
 
     return i18n_strings
 
+
 # scan the directory for all .py files (recursively)
 # for each file, parse the code into an AST
 # for each AST, extract the i18n strings
 
 strings = []
-for filename in glob.iglob('**/*.py', recursive=True):
-    with open(filename, 'r') as f:
+for filename in glob.iglob("**/*.py", recursive=True):
+    with open(filename, "r") as f:
         code = f.read()
         if "I18nAuto" in code:
             tree = ast.parse(code)
@@ -31,7 +37,7 @@ for filename in glob.iglob('**/*.py', recursive=True):
             print(filename, len(i18n_strings))
             strings.extend(i18n_strings)
 code_keys = set(strings)
-'''
+"""
 n_i18n.py
 gui_v1.py 26
 app.py 16
@@ -39,10 +45,9 @@ infer-web.py 147
 scan_i18n.py 0
 i18n.py 0
 lib/train/process_ckpt.py 1
-'''
+"""
 print()
-print('Total unique:', len(code_keys))
-
+print("Total unique:", len(code_keys))
 
 
 standard_file = "zh_CN.json"
@@ -52,17 +57,11 @@ standard_keys = set(standard_data.keys())
 
 # Define the standard file name
 unused_keys = standard_keys - code_keys
-print('Unused keys:', len(unused_keys))
+print("Unused keys:", len(unused_keys))
 for unused_key in unused_keys:
-    print('\t', unused_key)
+    print("\t", unused_key)
 
 missing_keys = code_keys - standard_keys
-print('Missing keys:', len(missing_keys))
+print("Missing keys:", len(missing_keys))
 for missing_key in missing_keys:
-    print('\t', missing_key)
-
-
-
-
-
-
+    print("\t", missing_key)

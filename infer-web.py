@@ -239,7 +239,10 @@ def vc_single(
             times[0],
             times[1],
             times[2],
-        ), (resample_sr if resample_sr >= 16000 and tgt_sr != resample_sr else tgt_sr, audio_opt)
+        ), (
+            resample_sr if resample_sr >= 16000 and tgt_sr != resample_sr else tgt_sr,
+            audio_opt,
+        )
     except:
         info = traceback.format_exc()
         print(info)
