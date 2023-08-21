@@ -20,8 +20,13 @@ import faiss
 import gradio as gr
 from configs.config import Config
 import fairseq
-from i18n import I18nAuto
-from lib.train.process_ckpt import change_info, extract_small_model, merge, show_info
+from i18n.i18n import I18nAuto
+from infer.lib.train.process_ckpt import (
+    change_info,
+    extract_small_model,
+    merge,
+    show_info,
+)
 from sklearn.cluster import MiniBatchKMeans
 
 from dotenv import load_dotenv
@@ -197,7 +202,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     f.close()
     cmd = (
         config.python_cmd
-        + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s/logs/%s" '
+        + ' infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" '
         % (trainset_dir, sr, n_p, now_dir, exp_dir)
         + str(config.noparallel)
     )
@@ -232,11 +237,15 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     f.close()
     if if_f0:
         if f0method != "rmvpe_gpu":
-            cmd = config.python_cmd + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
-                now_dir,
-                exp_dir,
-                n_p,
-                f0method,
+            cmd = (
+                config.python_cmd
+                + ' infer/modules/train/extract/extract_f0_print.py "%s/logs/%s" %s %s'
+                % (
+                    now_dir,
+                    exp_dir,
+                    n_p,
+                    f0method,
+                )
             )
             print(cmd)
             p = Popen(
@@ -259,7 +268,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
                         config.python_cmd
-                        + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
+                        + ' infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
                         % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
                     )
                     print(cmd)
@@ -277,9 +286,13 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     ),
                 ).start()
             else:
-                cmd = config.python_cmd + ' extract_f0_rmvpe_dml.py "%s/logs/%s" ' % (
-                    now_dir,
-                    exp_dir,
+                cmd = (
+                    config.python_cmd
+                    + ' infer/modules/train/extract/extract_f0_rmvpe_dml.py "%s/logs/%s" '
+                    % (
+                        now_dir,
+                        exp_dir,
+                    )
                 )
                 print(cmd)
                 p = Popen(
@@ -312,7 +325,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     for idx, n_g in enumerate(gpus):
         cmd = (
             config.python_cmd
-            + ' extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+            + ' infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
             % (
                 config.device,
                 leng,
@@ -353,26 +366,26 @@ def change_sr2(sr2, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
     if_pretrained_generator_exist = os.access(
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
+        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if_pretrained_discriminator_exist = os.access(
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
         print(
-            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
         print(
-            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_generator_exist
         else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_discriminator_exist
         else "",
     )
@@ -389,26 +402,26 @@ def change_version19(sr2, if_f0_3, version19):
     )
     f0_str = "f0" if if_f0_3 else ""
     if_pretrained_generator_exist = os.access(
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
+        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if_pretrained_discriminator_exist = os.access(
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
+        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
         print(
-            "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
+            "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
         print(
-            "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
+            "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     return (
-        "pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
+        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_generator_exist
         else "",
-        "pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
+        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
         if if_pretrained_discriminator_exist
         else "",
         to_return_sr2,
@@ -418,37 +431,37 @@ def change_version19(sr2, if_f0_3, version19):
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
     if_pretrained_generator_exist = os.access(
-        "pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK
+        "assets/pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK
     )
     if_pretrained_discriminator_exist = os.access(
-        "pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
+        "assets/pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
         print(
-            "pretrained%s/f0G%s.pth" % (path_str, sr2),
+            "assets/pretrained%s/f0G%s.pth" % (path_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
         print(
-            "pretrained%s/f0D%s.pth" % (path_str, sr2),
+            "assets/pretrained%s/f0D%s.pth" % (path_str, sr2),
             "not exist, will not use pretrained model",
         )
     if if_f0_3:
         return (
             {"visible": True, "__type__": "update"},
-            "pretrained%s/f0G%s.pth" % (path_str, sr2)
+            "assets/pretrained%s/f0G%s.pth" % (path_str, sr2)
             if if_pretrained_generator_exist
             else "",
-            "pretrained%s/f0D%s.pth" % (path_str, sr2)
+            "assets/pretrained%s/f0D%s.pth" % (path_str, sr2)
             if if_pretrained_discriminator_exist
             else "",
         )
     return (
         {"visible": False, "__type__": "update"},
-        ("pretrained%s/G%s.pth" % (path_str, sr2))
+        ("assets/pretrained%s/G%s.pth" % (path_str, sr2))
         if if_pretrained_generator_exist
         else "",
-        ("pretrained%s/D%s.pth" % (path_str, sr2))
+        ("assets/pretrained%s/D%s.pth" % (path_str, sr2))
         if if_pretrained_discriminator_exist
         else "",
     )
@@ -548,7 +561,7 @@ def click_train(
     if gpus16:
         cmd = (
             config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
                 sr2,
@@ -568,7 +581,7 @@ def click_train(
     else:
         cmd = (
             config.python_cmd
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
                 sr2,
@@ -1482,12 +1495,12 @@ with gr.Blocks(title="RVC WebUI") as app:
                 with gr.Row():
                     pretrained_G14 = gr.Textbox(
                         label=i18n("加载预训练底模G路径"),
-                        value="pretrained_v2/f0G40k.pth",
+                        value="assets/pretrained_v2/f0G40k.pth",
                         interactive=True,
                     )
                     pretrained_D15 = gr.Textbox(
                         label=i18n("加载预训练底模D路径"),
-                        value="pretrained_v2/f0D40k.pth",
+                        value="assets/pretrained_v2/f0D40k.pth",
                         interactive=True,
                     )
                     sr2.change(
