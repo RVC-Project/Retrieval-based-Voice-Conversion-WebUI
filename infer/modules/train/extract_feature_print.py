@@ -91,8 +91,9 @@ models, saved_cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task(
 model = models[0]
 model = model.to(device)
 printt("move model to %s" % device)
-if device not in ["mps", "cpu"]:
-    model = model.half()
+if is_half:
+    if device not in ["mps", "cpu"]:
+        model = model.half()
 model.eval()
 
 todo = sorted(list(os.listdir(wavPath)))[i_part::n_part]
@@ -113,9 +114,7 @@ else:
                 feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
-                    "source": feats.half().to(device)
-                    if device not in ["mps", "cpu"]
-                    else feats.to(device),
+                    "source": feats.half().to(device) if is_half and device not in ["mps", "cpu"] else feats.to(device),
                     "padding_mask": padding_mask.to(device),
                     "output_layer": 9 if version == "v1" else 12,  # layer 9
                 }
