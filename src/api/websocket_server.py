@@ -9,16 +9,17 @@ from websockets.server import serve
 
 
 async def _handle_generate(websocket, message):
-    result = vc_single_json(message)
+    message['result'] = vc_single_json(message)
 
-    # wipe the audio data by default
+    # wipe the audio data in the response by default
     if not message.get('send_audio', False):
-        result.pop('audio')
+        message['result'].pop('audio')
 
-    await websocket.send(json.dumps(result))
+    await websocket.send(json.dumps(message))
 
 async def _handle_get_voice_weights(websocket, message):
-    await websocket.send(json.dumps(get_voice_weights()))
+    message['result'] = get_voice_weights()
+    await websocket.send(json.dumps(message))
 
 async def _handle_message(websocket, message):
     if message.get('action') and message['action'] == 'generate':
