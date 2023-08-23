@@ -168,10 +168,11 @@ class Config:
                     )
                 except:
                     pass
-            import torch_directml
-
-            self.device = torch_directml.device(torch_directml.default_device())
-            self.is_half = False
+            if(self.device!="cpu"):
+                import torch_directml
+    
+                self.device = torch_directml.device(torch_directml.default_device())
+                self.is_half = False
         else:
             if self.instead:
                 print(f"use {self.instead} instead")
