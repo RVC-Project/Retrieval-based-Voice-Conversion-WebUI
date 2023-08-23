@@ -376,6 +376,8 @@ def vc_single_json(data):
         # format, if you want to keep the meta you have to take care of that yourself
         if data.get('meta_write_data', True):
             tags = {}
+            dataCopy = {}
+            dataCopy.update(data)
 
             # store source file tags
             if data.get('meta_copy_source_meta', True):
@@ -384,18 +386,18 @@ def vc_single_json(data):
 
             with taglib.File(data['output_path'], save_on_exit=True) as audio_file:
                 # unnecessary flag for meta data
-                if data.get('action'):
-                    data.pop('action')
+                if dataCopy.get('action'):
+                    dataCopy.pop('action')
 
                 # strip any path information by default
                 if data.get('meta_strip_path', True):
-                    data['output_path'] = os.path.basename(data['output_path'])
-                    data['model_path'] = os.path.basename(data['model_path'])
-                    data['input_audio_path'] = os.path.basename(data['input_audio_path'])
+                    dataCopy['output_path'] = os.path.basename(data['output_path'])
+                    dataCopy['model_path'] = os.path.basename(data['model_path'])
+                    dataCopy['input_audio_path'] = os.path.basename(data['input_audio_path'])
 
                 audio_file.tags = tags
-                audio_file.tags['rvc'] = json.dumps(data)
+                audio_file.tags['rvc'] = json.dumps(dataCopy)
 
-    # ! dont use values from 'data' here, writing the tags may have modified it's content !
+
 
     return resultPretty
