@@ -1,7 +1,10 @@
+
+
+
 <div align="center">
 
-<h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-一个基于VITS的简单易用的语音转换（变声器）框架<br><br>
+<h1>Çekme Tabanlı Ses Dönüşümü Web Arayüzü</h1>
+Kolay kullanımlı VITS tabanlı ses dönüşümü (ses değiştirme) çerçevesi<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
 )](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
@@ -9,85 +12,87 @@
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
 [![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
-[![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
+[![Lisans](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
 [![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-[![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
+[![Discord](https://img.shields.io/badge/RVC%20Geliştiricileri-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
-[**更新日志**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_CN.md) | [**常见问题解答**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94) | [**AutoDL·5毛钱训练AI歌手**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**对照实验记录**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95)) | [**在线演示**](https://huggingface.co/spaces/Ricecake123/RVC-demo)
+[**Güncelleme Günlüğü**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_TR.md) | [**Sıkça Sorulan Sorular**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/S%C4%B1k%C3%A7a-Sorulan-Sorular) | [**AutoDL·5 Kuruşla AI Şarkıcısı Eğitme**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E2%80%A25-Kuru%C5%9Fla-AI-%C5%9Eark%C4%B1c%C4%B1s%C4%B1-E%C4%9Fitme) | [**Karşılaştırmalı Deney Kayıtları**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E2%80%A25-Kuru%C5%9Fla-AI-%C5%9Eark%C4%B1c%C4%B1s%C4%B1-E%C4%9Fitme) | [**Çevrimiçi Demo**](https://huggingface.co/spaces/Ricecake123/RVC-demo)
 
 </div>
 
 ------
 
-[**English**](./docs/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/README.ja.md) | [**한국어**](./docs/README.ko.md) ([**韓國語**](./docs/README.ko.han.md)) | [**Türkçe**](./docs/README.tr.md)
+[**İngilizce**](./docs/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/README.ja.md) | [**한국어**](./docs/README.ko.md) ([**韓國語**](./docs/README.ko.han.md)) | [**Türkçe**](./docs/README.tr.md)
 
-点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
+[Demo videosunu buradan izleyin](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
-> 使用了RVC的实时语音转换: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
+> Gerçek zamanlı ses dönüşümü RVC kullanılarak gerçekleştirilmiştir: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
 
-> 底模使用接近50小时的开源高质量VCTK训练集训练，无版权方面的顾虑，请大家放心使用
+> Temel model, telif hakkı endişesi olmaksızın yaklaşık 50 saatlik açık kaynaklı yüksek kaliteli VCTK eğitim seti ile eğitilmiştir. 
 
-> 请期待RVCv3的底模，参数更大，数据更大，效果更好，基本持平的推理速度，需要训练数据量更少。
+> RVCv3 modelini bekleyin, daha büyük parametreler, daha fazla veri, daha iyi sonuçlar, temel hızı korurken daha az eğitim verisi gerektirir.
 
-## 简介
-本仓库具有以下特点
-+ 使用top1检索替换输入源特征为训练集特征来杜绝音色泄漏
-+ 即便在相对较差的显卡上也能快速训练
-+ 使用少量数据进行训练也能得到较好结果(推荐至少收集10分钟低底噪语音数据)
-+ 可以通过模型融合来改变音色(借助ckpt处理选项卡中的ckpt-merge)
-+ 简单易用的网页界面
-+ 可调用UVR5模型来快速分离人声和伴奏
-+ 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题。效果最好（显著地）但比crepe_full更快、资源占用更小
-+ A卡I卡加速支持
+## Tanıtım
+Bu depo aşağıdaki özelliklere sahiptir:
++ Ses renk sızdırmasını önlemek için giriş kaynağı özelliklerini eğitim seti özellikleri ile değiştirme üzerine en iyi 1 öğeyi kullanma
++ Daha düşük kaliteli ekran kartlarında bile hızlı eğitim yapabilme
++ Az miktarda veri ile bile iyi sonuçlar elde edebilme (en azından 10 dakika düşük gürültülü ses verisi toplamanızı öneririz)
++ Model birleştirme ile ses rengini değiştirebilme (ckpt işleme sekmesindeki ckpt-merge seçeneği ile)
++ Kullanımı kolay web arayüzü
++ İnsan sesini hızla ayırmak için UVR5 modelini çağırabilme
++ İleri seviyede [Ses Yüksekliği Çıkarma Algoritması InterSpeech2023-RMVPE](#Referans-Projeler) ile sessiz dönüşüme son verme. En iyi sonuç (belirgin şekilde) sunar, ancak crepe_full'den daha hızlı ve daha az kaynak tüketir
++ Nvidia A ve I kart hızlandırma desteği
 
-## 环境配置
-以下指令需在 Python 版本大于3.8的环境中执行。  
+## Ortam Kurulumu
+Aşağıdaki komutları Python sürümünün 3.8'den büyük olduğu bir ortamda çalıştırmanız gerekmektedir.  
 
 (Windows/Linux)  
-首先通过 pip 安装主要依赖:
+Önce ana bağımlılıkları pip ile kurun:
 ```bash
-# 安装Pytorch及其核心依赖，若已安装则跳过
-# 参考自: https://pytorch.org/get-started/locally/
+# Pytorch ve temel bağımlılıkları yükleyin, zaten yüklüyse atlayabilirsiniz
+# Referans: https://pytorch.org/get-started/locally/
 pip install torch torchvision torchaudio
 
-#如果是win系统+Nvidia Ampere架构(RTX30xx)，根据 #21 的经验，需要指定pytorch对应的cuda版本
+# Eğer Windows işletim sistemi kullanıyorsanız ve Nvidia Ampere mimarisine (RTX30xx) sahipseniz, #21 numaralı işlemin deneyimine göre, pytorch'un doğru cuda sürümünü belirtmeniz
+
+ gerekebilir.
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 ```
 
-可以使用 poetry 来安装依赖：
+Bağımlılıkları poetry kullanarak kurmak isterseniz:
 ```bash
-# 安装 Poetry 依赖管理工具, 若已安装则跳过
-# 参考自: https://python-poetry.org/docs/#installation
+# Poetry bağımlılık yönetim aracını yükleyin, zaten yüklüyse atlayabilirsiniz
+# Referans: https://python-poetry.org/docs/#installation
 curl -sSL https://install.python-poetry.org | python3 -
 
-# 通过poetry安装依赖
+# Poetry ile bağımlılıkları kurun
 poetry install
 ```
 
-你也可以通过 pip 来安装依赖：
+Bağımlılıkları pip kullanarak kurmak isterseniz:
 ```bash
-N卡：
+N kartı kullanıyorsanız:
 
 pip install -r requirements.txt
 
-A卡/I卡：
+A kartı/I kartı kullanıyorsanız:
 pip install -r requirements-dml.txt
 
 ```
 
 ------
-Mac 用户可以通过 `run.sh` 来安装依赖：
+Mac kullanıcıları `run.sh` dosyasını kullanarak bağımlılıkları kurabilir:
 ```bash
 sh ./run.sh
 ```
 
-## 其他预模型准备
-RVC需要其他一些预模型来推理和训练。
+## Diğer Ön Model Hazırlıkları
+RVC, çıkarım ve eğitim için bazı önceden eğitilmiş modellere ihtiyaç duyar.
 
-你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。
+Bu modelleri [Hugging Face alanımızdan](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/) indirebilirsiniz.
 
-以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称:
+Aşağıda, RVC'nin gerektirdiği ön model ve diğer dosyaların adlarını içeren bir liste bulunmaktadır:
 ```bash
 hubert_base.pt
 
@@ -95,11 +100,11 @@ hubert_base.pt
 
 ./uvr5_weights
 
-想测试v2版本模型的话，需要额外下载
+v2 sürümü modelini test etmek isterseniz, ek olarak indirmeniz gerekebilir
 
 ./pretrained_v2 
 
-如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库, Mac 用户则可以通过brew install ffmpeg来安装 (需要预先安装brew)
+Eğer Windows kullanıyorsanız, muhtemelen bu dosyaya ihtiyacınız olacaktır. Ffmpeg ve ffprobe zaten kuruluysa bu adımı atlayabilirsiniz; Ubuntu/Debian kullanıcıları apt install ffmpeg komutunu kullanarak bu kütüphaneleri kurabilirler, Mac kullanıcıları ise brew install ffmpeg komutunu kullanarak kurabilirler (önceden Brew'ı kurmanız gerekebilir).
 
 ./ffmpeg
 
@@ -109,25 +114,25 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
 
-如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于RVC根目录
+Eğer en son RMVPE insan sesi yüksekliği çıkarma algoritmasını kullanmak isterseniz, ses yüksekliği çıkarma modeli parametrelerini indirip RVC ana dizinine koymalısınız.
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
 
-    A卡I卡用户需要的dml环境要请下载
+    A kartı/I kartı kullanıcıları için dml ortamında kullanmak üzere, aşağıdaki dosyayı indirin
 
     https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
 
 ```
-之后使用以下指令来启动WebUI:
+Daha sonra aşağıdaki komutu kullanarak WebUI'yi başlatabilirsiniz:
 ```bash
 python infer-web.py
 ```
 
-如果你正在使用Windows 或 macOS，你可以直接下载并解压`RVC-beta.7z`，前者可以运行`go-web.bat`以启动WebUI，后者则运行命令`sh ./run.sh`以启动WebUI。
+Windows veya macOS kullanıyorsanız, `RVC-beta.7z` dosyasını indirebilir ve çıkarabilirsiniz. Windows kullanıcıları `go-web.bat` dosyasını çalıştırarak WebUI'yi başlatabilirler, macOS kullanıcıları ise `sh ./run.sh` komutunu kullanarak başlatabilirler.
 
-仓库内还有一份`小白简易教程.doc`以供参考。
+Reponun içinde `Kolay Kullanım Kılavuzu.doc` adında bir belge de bulunmaktadır.
 
-## 参考项目
+## Referans Projeler
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)
 + [HIFIGAN](https://github.com/jik876/hifi-gan)
@@ -135,10 +140,11 @@ python infer-web.py
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
-+ [Vocal pitch extraction:RMVPE](https://github.com/Dream-High/RMVPE)
-  + The pretrained model is trained and tested by [yxlllc](https://github.com/yxlllc/RMVPE) and [RVC-Boss](https://github.com/RVC-Boss).
++ [Vocal pitch extraction: RMVPE](https://github.com/Dream-High/RMVPE)
+  + Önceden eğitilmiş model [yxlllc](https://github.com/yxlllc/RMVPE) ve [RVC-Boss](https://github.com/RVC-Boss) tarafından eğitilmiş ve test edilmiştir.
 
-## 感谢所有贡献者作出的努力
+## Katkı Sağlayan Tüm Kişilere Teşekkürler
 <a href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=RVC-Project/Retrieval-based-Voice-Conversion-WebUI" />
 </a>
+```
