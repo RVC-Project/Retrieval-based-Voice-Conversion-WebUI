@@ -376,13 +376,37 @@ def vc_single_json(data):
 
     # optional write to wave file
     if data.get('output_path'):
+        output_filename = data['output_path']
+
+        def GetValidFilename(filename: str, index: int):
+            filename_base = os.path.splitext(os.path.basename(filename))[0]
+            filename_extension = os.path.splitext(os.path.basename(filename))[-1][1:]
+
+            filename_new = os.path.dirname(filename) + '/' + filename_base + '_' + str(index).zfill(5) + '.' + filename_extension
+
+            if os.path.exists(filename_new):
+                return GetValidFilename(filename, index + 1)
+
+            return filename_new
+
+        if os.path.exists(output_filename):
+            if data.get('existing_file_rule', "overwrite") == "fail":
+                return {
+                    'info': "File \"" + output_filename + "\" exists already. [existing_file_rule == fail]",
+                    'error': "File exists"
+                }
+            elif data.get('existing_file_rule', "overwrite") == "increment":
+                output_filename = GetValidFilename(output_filename, 0)
+
         try:
-            wavfile.write(data['output_path'], resultPretty['sample_rate'], resultPretty['audio'])
+            wavfile.write(output_filename, resultPretty['sample_rate'], resultPretty['audio'])
         except PermissionError:
             return {
-                'info': "Permission denied, couldn't create output file \"" + data['output_path'] + '"',
+                'info': "Permission denied, couldn't create output file \"" + output_filename + '"',
                 'error': "Permission denied"
             }
+
+        resultPretty['file'] = output_filename
 
         # meta data is written by default, keep in mind that it will be lost after converting the file to another
         # format, if you want to keep the meta you have to take care of that yourself
@@ -396,7 +420,7 @@ def vc_single_json(data):
                 with taglib.File(data['input_audio_path'], save_on_exit=False) as audio_file_source:
                     tags = audio_file_source.tags
 
-            with taglib.File(data['output_path'], save_on_exit=True) as audio_file:
+            with taglib.File(output_filename, save_on_exit=True) as audio_file:
                 # unnecessary flag for meta data
                 if dataCopy.get('action'):
                     dataCopy.pop('action')

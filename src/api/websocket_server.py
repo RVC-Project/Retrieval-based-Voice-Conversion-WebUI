@@ -1,7 +1,7 @@
 import asyncio
 import json
 from threading import Thread
-
+import numpy as np
 from vc_infer_utils import vc_single_json
 from src.utils import get_voice_weights
 
@@ -12,7 +12,7 @@ async def _handle_generate(websocket, message):
     message['result'] = vc_single_json(message)
 
     # wipe the audio data in the response by default
-    if not message.get('send_audio', False) and message['result'].get('audio'):
+    if not message.get('send_audio', False) and isinstance(message['result'].get('audio'), np.ndarray):
         message['result'].pop('audio')
 
     await websocket.send(json.dumps(message))
@@ -36,8 +36,11 @@ async def _handle_connection(websocket, path):
     async for message in websocket:
         try:
             await _handle_message(websocket, json.loads(message))
-        except ValueError:
+        except ValueError as e:
             print("websocket: malformed json received")
+            print(message)
+            print(e.with_traceback())
+
 
 
 async def _run(host: str, port: int):
