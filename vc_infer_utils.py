@@ -342,7 +342,10 @@ def get_vc_from_model_path(model_path):
 
 def vc_single_json(data):
     if not data.get('input_audio_path'):
-        return { "info": "no input file specified" }
+        return {
+            'info': "no input file specified",
+            'error': "no input file specified"
+        }
 
     # load model if provided
     if data.get('model_path'):
@@ -366,11 +369,20 @@ def vc_single_json(data):
     resultPretty = { 'info': result[0], 'sample_rate': result[1][0], 'audio': result[1][1]}
 
     if not isinstance(resultPretty['audio'], np.ndarray):
-        return { "info": resultPretty['info'] }
+        return {
+            "info": resultPretty['info'],
+            "error": "no audio generated"
+        }
 
     # optional write to wave file
     if data.get('output_path'):
-        wavfile.write(data['output_path'], resultPretty['sample_rate'], resultPretty['audio'])
+        try:
+            wavfile.write(data['output_path'], resultPretty['sample_rate'], resultPretty['audio'])
+        except PermissionError:
+            return {
+                'info': "Permission denied, couldn't create output file \"" + data['output_path'] + '"',
+                'error': "Permission denied"
+            }
 
         # meta data is written by default, keep in mind that it will be lost after converting the file to another
         # format, if you want to keep the meta you have to take care of that yourself

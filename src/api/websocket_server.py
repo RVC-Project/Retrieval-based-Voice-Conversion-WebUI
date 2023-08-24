@@ -12,7 +12,7 @@ async def _handle_generate(websocket, message):
     message['result'] = vc_single_json(message)
 
     # wipe the audio data in the response by default
-    if not message.get('send_audio', False):
+    if not message.get('send_audio', False) and message['result'].get('audio'):
         message['result'].pop('audio')
 
     await websocket.send(json.dumps(message))
