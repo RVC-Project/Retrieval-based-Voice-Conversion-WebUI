@@ -92,7 +92,7 @@ class Config:
             self.gpu_name = torch.cuda.get_device_name(i_device)
             if (
                 ("16" in self.gpu_name and "V100" not in self.gpu_name.upper())
-                or "P40" in self.gpu_name.upper()
+                or "P40" in self.gpu_name.upper()or "P10" in self.gpu_name.upper()
                 or "1060" in self.gpu_name
                 or "1070" in self.gpu_name
                 or "1080" in self.gpu_name
