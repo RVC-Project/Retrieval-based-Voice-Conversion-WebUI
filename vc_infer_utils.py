@@ -11,7 +11,7 @@ from src.configuration import *
 from scipy.io import wavfile
 import json
 import taglib
-
+from datetime import datetime
 
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
@@ -376,26 +376,31 @@ def vc_single_json(data):
 
     # optional write to wave file
     if data.get('output_path'):
-        output_filename = data['output_path']
 
-        def GetValidFilename(filename: str, index: int):
+        def AddFileSuffix(filename, suffix):
             filename_base = os.path.splitext(os.path.basename(filename))[0]
             filename_extension = os.path.splitext(os.path.basename(filename))[-1][1:]
 
-            filename_new = os.path.dirname(filename) + '/' + filename_base + '_' + str(index).zfill(5) + '.' + filename_extension
+            return os.path.dirname(filename) + '/' + filename_base + '_' + suffix + '.' + filename_extension
+
+        def GetValidFilename(filename: str, index: int):
+            filename_new = AddFileSuffix(filename, str(index).zfill(5))
 
             if os.path.exists(filename_new):
                 return GetValidFilename(filename, index + 1)
 
             return filename_new
 
+        # set output filename with timestamp suffix
+        output_filename = AddFileSuffix(data['output_path'], datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
         if os.path.exists(output_filename):
-            if data.get('existing_file_rule', "overwrite") == "fail":
+            if data.get('existing_file_rule', "fail") == "fail":
                 return {
                     'info': "File \"" + output_filename + "\" exists already. [existing_file_rule == fail]",
                     'error': "File exists"
                 }
-            elif data.get('existing_file_rule', "overwrite") == "increment":
+            elif data.get('existing_file_rule', "fail") == "increment":
                 output_filename = GetValidFilename(output_filename, 0)
 
         try:
