@@ -570,9 +570,11 @@ def if_done_multi(done, ps):
         if flag == 1:
             break
     done[0] = True
-    
+
+
 def get_quoted_python_cmd():
     return f'"{config.python_cmd}"'
+
 
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
@@ -616,11 +618,15 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     f.close()
     if if_f0:
         if f0method != "rmvpe_gpu":
-            cmd = get_quoted_python_cmd() + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
-                now_dir,
-                exp_dir,
-                n_p,
-                f0method,
+            cmd = (
+                get_quoted_python_cmd()
+                + ' extract_f0_print.py "%s/logs/%s" %s %s'
+                % (
+                    now_dir,
+                    exp_dir,
+                    n_p,
+                    f0method,
+                )
             )
             print(cmd)
             p = Popen(
@@ -930,24 +936,20 @@ def click_train(
     if pretrained_D15 == "":
         print("no pretrained Discriminator")
     if gpus16:
-        cmd = (
-            get_quoted_python_cmd()
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                gpus16,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+        cmd = get_quoted_python_cmd() + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
+            exp_dir1,
+            sr2,
+            1 if if_f0_3 else 0,
+            batch_size12,
+            gpus16,
+            total_epoch11,
+            save_epoch10,
+            "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+            "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+            1 if if_save_latest13 == i18n("是") else 0,
+            1 if if_cache_gpu17 == i18n("是") else 0,
+            1 if if_save_every_weights18 == i18n("是") else 0,
+            version19,
         )
     else:
         cmd = (
@@ -1163,13 +1165,17 @@ def train1key(
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = get_quoted_python_cmd() + ' extract_feature_print.py %s %s %s %s "%s" %s' % (
-            config.device,
-            leng,
-            idx,
-            n_g,
-            model_log_dir,
-            version19,
+        cmd = (
+            get_quoted_python_cmd()
+            + ' extract_feature_print.py %s %s %s %s "%s" %s'
+            % (
+                config.device,
+                leng,
+                idx,
+                n_g,
+                model_log_dir,
+                version19,
+            )
         )
         yield get_info_str(cmd)
         p = Popen(
@@ -1242,24 +1248,20 @@ def train1key(
         f.write("\n".join(opt))
     yield get_info_str("write filelist done")
     if gpus16:
-        cmd = (
-            get_quoted_python_cmd()
-            + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                gpus16,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+        cmd = get_quoted_python_cmd() + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
+            exp_dir1,
+            sr2,
+            1 if if_f0_3 else 0,
+            batch_size12,
+            gpus16,
+            total_epoch11,
+            save_epoch10,
+            "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+            "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+            1 if if_save_latest13 == i18n("是") else 0,
+            1 if if_cache_gpu17 == i18n("是") else 0,
+            1 if if_save_every_weights18 == i18n("是") else 0,
+            version19,
         )
     else:
         cmd = (
