@@ -92,14 +92,14 @@ if __name__ == "__main__":
         def load(self):
             input_devices, output_devices, _, _ = self.get_devices()
             try:
-                with open("values1.json", "r") as j:
+                with open("configs/config.json", "r") as j:
                     data = json.load(j)
                     data["pm"] = data["f0method"] == "pm"
                     data["harvest"] = data["f0method"] == "harvest"
                     data["crepe"] = data["f0method"] == "crepe"
                     data["rmvpe"] = data["f0method"] == "rmvpe"
             except:
-                with open("values1.json", "w") as j:
+                with open("configs/config.json", "w") as j:
                     data = {
                         "pth_path": " ",
                         "index_path": " ",
@@ -349,7 +349,7 @@ if __name__ == "__main__":
                                 ].index(True)
                             ],
                         }
-                        with open("values1.json", "w") as j:
+                        with open("configs/config.json", "w") as j:
                             json.dump(settings, j)
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
