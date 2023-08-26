@@ -22,9 +22,6 @@ def process(fn: str):
 print("processing infer-web.py")
 process("infer-web.py")
 
-print("processing gui_v0.py")
-process("gui_v0.py")
-
 print("processing gui_v1.py")
 process("gui_v1.py")
 
