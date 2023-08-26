@@ -22,7 +22,7 @@ import faiss
 import ffmpeg
 import gradio as gr
 import soundfile as sf
-from config import Config
+from config import defaultconfig as config
 import fairseq
 from i18n import I18nAuto
 from lib.infer_pack.models import (
@@ -53,7 +53,6 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
 
-config = Config()
 if config.dml == True:
 
     def forward_dml(ctx, x, scale):

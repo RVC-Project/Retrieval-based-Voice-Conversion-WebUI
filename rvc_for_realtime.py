@@ -13,11 +13,10 @@ import scipy.signal as signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from config import Config
+from config import defaultconfig as config
 from multiprocessing import Manager as M
 
 mm = M()
-config = Config()
 if config.dml == True:
 
     def forward_dml(ctx, x, scale):

@@ -198,3 +198,5 @@ class Config:
                 except:
                     pass
         return x_pad, x_query, x_center, x_max
+
+defaultconfig = Config()
