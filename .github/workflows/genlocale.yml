@@ -13,7 +13,7 @@ jobs:
 
       - name: Run locale generation
         run: |
-          python3 extract_locale.py
+          python3 lib/i18n/scan_i18n.py
           cd lib/i18n && python3 locale_diff.py
 
       - name: Commit back
