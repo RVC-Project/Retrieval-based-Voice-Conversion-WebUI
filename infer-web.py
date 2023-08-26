@@ -570,7 +570,9 @@ def if_done_multi(done, ps):
         if flag == 1:
             break
     done[0] = True
-
+    
+def get_quoted_python_cmd():
+    return f'"{config.python_cmd}"'
 
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
@@ -578,7 +580,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
     cmd = (
-        config.python_cmd
+        get_quoted_python_cmd()
         + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s/logs/%s" '
         % (trainset_dir, sr, n_p, now_dir, exp_dir)
         + str(config.noparallel)
@@ -614,7 +616,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     f.close()
     if if_f0:
         if f0method != "rmvpe_gpu":
-            cmd = config.python_cmd + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
+            cmd = get_quoted_python_cmd() + ' extract_f0_print.py "%s/logs/%s" %s %s' % (
                 now_dir,
                 exp_dir,
                 n_p,
@@ -640,7 +642,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
+                        get_quoted_python_cmd()
                         + ' extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
                         % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
                     )
@@ -693,7 +695,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
             % (
                 config.device,
@@ -929,7 +931,7 @@ def click_train(
         print("no pretrained Discriminator")
     if gpus16:
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
@@ -1094,7 +1096,7 @@ def train1key(
     #########step1:处理数据
     open(preprocess_log_path, "w").close()
     cmd = (
-        config.python_cmd
+        get_quoted_python_cmd()
         + ' trainset_preprocess_pipeline_print.py "%s" %s %s "%s" '
         % (trainset_dir4, sr_dict[sr2], np7, model_log_dir)
         + str(config.noparallel)
@@ -1125,7 +1127,7 @@ def train1key(
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
                     cmd = (
-                        config.python_cmd
+                        get_quoted_python_cmd()
                         + ' extract_f0_rmvpe.py %s %s %s "%s" %s '
                         % (
                             leng,
@@ -1161,7 +1163,7 @@ def train1key(
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = config.python_cmd + ' extract_feature_print.py %s %s %s %s "%s" %s' % (
+        cmd = get_quoted_python_cmd() + ' extract_feature_print.py %s %s %s %s "%s" %s' % (
             config.device,
             leng,
             idx,
@@ -1241,7 +1243,7 @@ def train1key(
     yield get_info_str("write filelist done")
     if gpus16:
         cmd = (
-            config.python_cmd
+            get_quoted_python_cmd()
             + ' train_nsf_sim_cache_sid_load_pretrain.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
                 exp_dir1,
