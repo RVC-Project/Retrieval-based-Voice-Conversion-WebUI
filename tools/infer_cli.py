@@ -1,19 +1,17 @@
 import argparse
 import os
 import sys
-
-print("Command-line arguments:", sys.argv)
-
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-import sys
-
-import tqdm as tq
-from dotenv import load_dotenv
 from scipy.io import wavfile
 
 from configs.config import Config
 from infer.modules.vc.modules import VC
+from dotenv import load_dotenv
+####
+# USAGE
+#
+# In your Terminal or CMD or whatever
 
 
 def arg_parse() -> tuple:
@@ -46,26 +44,21 @@ def main():
     config.is_half = args.is_half if args.is_half else config.is_half
     vc = VC(config)
     vc.get_vc(args.model_name)
-    audios = os.listdir(args.input_path)
-    for file in tq.tqdm(audios):
-        if file.endswith(".wav"):
-            file_path = os.path.join(args.input_path, file)
-            _, wav_opt = vc.vc_single(
-                0,
-                file_path,
-                args.f0up_key,
-                None,
-                args.f0method,
-                args.index_path,
-                None,
-                args.index_rate,
-                args.filter_radius,
-                args.resample_sr,
-                args.rms_mix_rate,
-                args.protect,
+    _, wav_opt = vc.vc_single(
+        0,
+        args.input_path,
+        args.f0up_key,
+        None,
+        args.f0method,
+        args.index_path,
+        None,
+        args.index_rate,
+        args.filter_radius,
+        args.resample_sr,
+        args.rms_mix_rate,
+        args.protect,
             )
-            out_path = os.path.join(args.opt_path, file)
-            wavfile.write(out_path, wav_opt[0], wav_opt[1])
+    wavfile.write(args.opt_path, wav_opt[0], wav_opt[1])
 
 
 if __name__ == "__main__":
