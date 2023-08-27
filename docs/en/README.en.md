@@ -18,7 +18,7 @@ An easy-to-use Voice Conversion framework based on VITS.<br><br>
 ------
 [**Changelog**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_EN.md) | [**FAQ (Frequently Asked Questions)**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/FAQ-(Frequently-Asked-Questions)) 
 
-[**English**](./docs/en/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/jp/README.ja.md) | [**한국어**](./docs/kr/README.ko.md) ([**韓國語**](./docs/kr/README.ko.han.md)) | [**Türkçe**](./docs/tr/README.tr.md)
+[**English**](../en/README.en.md) | [**中文简体**](../../README.md) | [**日本語**](../jp/README.ja.md) | [**한국어**](../docs/kr/README.ko.md) ([**韓國語**](../docs/kr/README.ko.han.md)) | [**Türkçe**](../docs/tr/README.tr.md)
 
 
 Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
