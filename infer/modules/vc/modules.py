@@ -30,8 +30,6 @@ class VC:
         self.config = config
 
     def get_vc(self, sid, *to_return_protect):
-        print("aosdijfaofjoaij")
-        print(to_return_protect)
         person = f'{os.getenv("weight_root")}/{sid}'
         print(f"loading {person}")
 
