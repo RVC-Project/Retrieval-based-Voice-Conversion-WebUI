@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 from scipy.io import wavfile
@@ -8,6 +9,7 @@ from scipy.io import wavfile
 from configs.config import Config
 from infer.modules.vc.modules import VC
 from dotenv import load_dotenv
+
 ####
 # USAGE
 #
@@ -57,7 +59,7 @@ def main():
         args.resample_sr,
         args.rms_mix_rate,
         args.protect,
-            )
+    )
     wavfile.write(args.opt_path, wav_opt[0], wav_opt[1])
 
 
