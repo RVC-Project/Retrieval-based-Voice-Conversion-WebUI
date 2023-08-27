@@ -1,28 +1,22 @@
+import logging
 import os
 import shutil
-import sys
-
-now_dir = os.getcwd()
-sys.path.append(now_dir)
+import threading
 import traceback
 import warnings
-
-import numpy as np
-import torch
-
-import logging
-import threading
 from random import shuffle
 from subprocess import Popen
 from time import sleep
 
+import fairseq
 import faiss
 import gradio as gr
+import numpy as np
+import torch
+from dotenv import load_dotenv
+from sklearn.cluster import MiniBatchKMeans
 
 from configs.config import Config
-import soundfile as sf
-
-import fairseq
 from i18n.i18n import I18nAuto
 from infer.lib.train.process_ckpt import (
     change_info,
@@ -30,14 +24,9 @@ from infer.lib.train.process_ckpt import (
     merge,
     show_info,
 )
-
-from sklearn.cluster import MiniBatchKMeans
-
-from dotenv import load_dotenv
-
-from infer.modules.vc.modules import VC
-from infer.modules.uvr5.modules import uvr
 from infer.modules.onnx.export import export_onnx
+from infer.modules.uvr5.modules import uvr
+from infer.modules.vc.modules import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
