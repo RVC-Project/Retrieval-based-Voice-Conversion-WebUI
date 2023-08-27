@@ -213,7 +213,6 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     cmd = (
         get_quoted_python_cmd()
         + ' infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" '
-
         % (trainset_dir, sr, n_p, now_dir, exp_dir)
         + str(config.noparallel)
     )
@@ -251,7 +250,6 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
             cmd = (
                 get_quoted_python_cmd()
                 + ' infer/modules/train/extract/extract_f0_print.py "%s/logs/%s" %s %s'
-
                 % (
                     now_dir,
                     exp_dir,
@@ -278,11 +276,13 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 leng = len(gpus_rmvpe)
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
-                    cmd = (
-                        get_quoted_python_cmd()
-                        + ' infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
-
-                        % (leng, idx, n_g, now_dir, exp_dir, config.is_half)
+                    cmd = get_quoted_python_cmd() + ' infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s ' % (
+                        leng,
+                        idx,
+                        n_g,
+                        now_dir,
+                        exp_dir,
+                        config.is_half,
                     )
                     print(cmd)
                     p = Popen(
@@ -336,19 +336,14 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = (
-            get_quoted_python_cmd()
-            + ' infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
-
-            % (
-                config.device,
-                leng,
-                idx,
-                n_g,
-                now_dir,
-                exp_dir,
-                version19,
-            )
+        cmd = get_quoted_python_cmd() + ' infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s' % (
+            config.device,
+            leng,
+            idx,
+            n_g,
+            now_dir,
+            exp_dir,
+            version19,
         )
         print(cmd)
         p = Popen(
@@ -573,24 +568,20 @@ def click_train(
     if pretrained_D15 == "":
         print("no pretrained Discriminator")
     if gpus16:
-        cmd = (
-            get_quoted_python_cmd()
-            + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
-            % (
-                exp_dir1,
-                sr2,
-                1 if if_f0_3 else 0,
-                batch_size12,
-                gpus16,
-                total_epoch11,
-                save_epoch10,
-                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-                1 if if_save_latest13 == i18n("是") else 0,
-                1 if if_cache_gpu17 == i18n("是") else 0,
-                1 if if_save_every_weights18 == i18n("是") else 0,
-                version19,
-            )
+        cmd = get_quoted_python_cmd() + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
+            exp_dir1,
+            sr2,
+            1 if if_f0_3 else 0,
+            batch_size12,
+            gpus16,
+            total_epoch11,
+            save_epoch10,
+            "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+            "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+            1 if if_save_latest13 == i18n("是") else 0,
+            1 if if_cache_gpu17 == i18n("是") else 0,
+            1 if if_save_every_weights18 == i18n("是") else 0,
+            version19,
         )
     else:
         cmd = (
