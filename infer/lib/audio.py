@@ -1,3 +1,4 @@
+import librosa
 import ffmpeg
 import numpy as np
 
@@ -15,7 +16,13 @@ def load_audio(file, sr):
             .output("-", format="f32le", acodec="pcm_f32le", ac=1, ar=sr)
             .run(cmd=["ffmpeg", "-nostdin"], capture_stdout=True, capture_stderr=True)
         )
+        return np.frombuffer(out, np.float32).flatten()
+
+    except AttributeError:
+        audio = file[1] / 32768.0
+        if len(audio.shape) == 2:
+            audio = np.mean(audio, -1)
+        return librosa.resample(audio, orig_sr=file[0], target_sr=16000)
+
     except Exception as e:
         raise RuntimeError(f"Failed to load audio: {e}")
-
-    return np.frombuffer(out, np.float32).flatten()
