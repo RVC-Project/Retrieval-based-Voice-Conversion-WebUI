@@ -7,7 +7,7 @@ from lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from vc_infer_pipeline import VC
+from lib.train.vc_infer_pipeline import VC
 from multiprocessing import cpu_count
 import numpy as np
 import torch

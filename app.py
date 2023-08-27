@@ -7,9 +7,9 @@ import librosa
 import numpy as np
 import logging
 from fairseq import checkpoint_utils
-from vc_infer_pipeline import VC
+from lib.train.vc_infer_pipeline import VC
 import traceback
-from config import Config
+from config import defaultconfig as config
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
@@ -25,8 +25,6 @@ logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 i18n = I18nAuto()
 i18n.print()
-
-config = Config()
 
 weight_root = "weights"
 weight_uvr5_root = "uvr5_weights"

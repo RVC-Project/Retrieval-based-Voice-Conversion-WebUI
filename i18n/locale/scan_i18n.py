@@ -65,3 +65,12 @@ missing_keys = code_keys - standard_keys
 print("Missing keys:", len(missing_keys))
 for missing_key in missing_keys:
     print("\t", missing_key)
+
+code_keys_dict = OrderedDict()
+for s in strings:
+    code_keys_dict[s] = s
+
+# write back
+with open(f"lib/i18n/{standard_file}", "w", encoding="utf-8") as f:
+    json.dump(code_keys_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
+    f.write("\n")

@@ -524,7 +524,7 @@ else
 fi
 
 echo checking $hb
-if [ -f "./pretrained/$hb" ]; then
+if [ -f "./$hb" ]; then
     echo $hb in ./pretrained checked.
 else
     echo failed. starting download from huggingface.
@@ -543,4 +543,3 @@ else
 fi
 
 echo required files check finished.
-read -p "Press any key to continue..." -n1 -s

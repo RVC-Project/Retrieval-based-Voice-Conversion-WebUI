@@ -93,6 +93,7 @@ class Config:
             if (
                 ("16" in self.gpu_name and "V100" not in self.gpu_name.upper())
                 or "P40" in self.gpu_name.upper()
+                or "P10" in self.gpu_name.upper()
                 or "1060" in self.gpu_name
                 or "1070" in self.gpu_name
                 or "1080" in self.gpu_name
@@ -168,10 +169,11 @@ class Config:
                     )
                 except:
                     pass
-            import torch_directml
+            if self.device != "cpu":
+                import torch_directml
 
-            self.device = torch_directml.device(torch_directml.default_device())
-            self.is_half = False
+                self.device = torch_directml.device(torch_directml.default_device())
+                self.is_half = False
         else:
             if self.instead:
                 print(f"use {self.instead} instead")
@@ -196,3 +198,6 @@ class Config:
                 except:
                     pass
         return x_pad, x_query, x_center, x_max
+
+
+defaultconfig = Config()
