@@ -49,12 +49,12 @@ if __name__ == "__main__":
     import noisereduce as nr
     import numpy as np
     import PySimpleGUI as sg
-    import rvc_for_realtime
     import sounddevice as sd
     import torch
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
+    import tools.rvc_for_realtime as rvc_for_realtime
     from i18n import I18nAuto
 
     i18n = I18nAuto()
