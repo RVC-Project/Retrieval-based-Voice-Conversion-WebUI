@@ -91,11 +91,15 @@ You need to download them from our [Huggingface space](https://huggingface.co/lj
 
 Here's a list of Pre-models and other files that RVC needs:
 ```bash
-hubert_base.pt
+./assets/hubert/hubert_base.pt
 
-./pretrained 
+./assets/pretrained 
 
-./uvr5_weights
+./assets/uvr5_weights
+
+Additional downloads are required if you want to test the v2 version of the model.
+
+./assets/pretrained_v2
 
 If you want to test the v2 version model (the v2 version model has changed the input from the 256 dimensional feature of 9-layer Hubert+final_proj to the 768 dimensional feature of 12-layer Hubert, and has added 3 period discriminators), you will need to download additional features
 

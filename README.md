@@ -89,15 +89,15 @@ RVC需要其他一些预模型来推理和训练。
 
 以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称:
 ```bash
-hubert_base.pt
+./assets/hubert/hubert_base.pt
 
-./pretrained 
+./assets/pretrained 
 
-./uvr5_weights
+./assets/uvr5_weights
 
 想测试v2版本模型的话，需要额外下载
 
-./pretrained_v2 
+./assets/pretrained_v2
 
 如果你正在使用Windows，则你可能需要这个文件，若ffmpeg和ffprobe已安装则跳过; ubuntu/debian 用户可以通过apt install ffmpeg来安装这2个库, Mac 用户则可以通过brew install ffmpeg来安装 (需要预先安装brew)
 

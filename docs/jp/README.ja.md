@@ -72,11 +72,15 @@ modelsは[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI
 
 以下は、RVCに必要な基底モデルやその他のファイルの一覧です。
 ```bash
-hubert_base.pt
+./assets/hubert/hubert_base.pt
 
-./pretrained 
+./assets/pretrained 
 
-./uvr5_weights
+./assets/uvr5_weights
+
+V2のモデルを使用するには、追加でファイルをダウンロードする必要があります
+
+./assets/pretrained_v2
 
 # ffmpegがすでにinstallされている場合は省略
 ./ffmpeg

@@ -77,11 +77,15 @@ RVC 모델은 추론과 훈련을 위하여 다른 사전 모델이 필요합니
 다음은 RVC에 필요한 사전 모델 및 기타 파일 목록입니다:
 
 ```bash
-hubert_base.pt
+./assets/hubert/hubert_base.pt
 
-./pretrained
+./assets/pretrained 
 
-./uvr5_weights
+./assets/uvr5_weights
+
+V2 버전 모델을 테스트하려면 추가 다운로드가 필요합니다.
+
+./assets/pretrained_v2
 
 # Windows를 사용하는 경우 이 사전도 필요할 수 있습니다. FFmpeg가 설치되어 있으면 건너뛰어도 됩니다.
 ffmpeg.exe

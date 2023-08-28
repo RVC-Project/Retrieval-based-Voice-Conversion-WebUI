@@ -88,15 +88,15 @@ Onları [Huggingface alanımızdan](https://huggingface.co/lj1995/VoiceConversio
 
 İşte RVC'nin ihtiyaç duyduğu Diğer Ön-Modellerin ve diğer dosyaların listesi:
 ```bash
-hubert_base.pt
+./assets/hubert/hubert_base.pt
 
-./pretrained 
+./assets/pretrained 
 
-./uvr5_weights
+./assets/uvr5_weights
 
 V2 sürümü modelini test etmek istiyorsanız (v2 sürümü modeli girişi 256 boyutlu 9 katmanlı Hubert+final_proj'dan 768 boyutlu 12 katmanlı Hubert'ın özelliğine ve 3 dönem ayrımına değiştirilmiştir), ek özellikleri indirmeniz gerekecektir.
 
-./pretrained_v2
+./assets/pretrained_v2
 
 #Eğer Windows kullanıyorsanız, FFmpeg yüklü değilse bu dictionariyaya da ihtiyacınız olabilir, FFmpeg yüklüyse atlayın
 ffmpeg.exe
