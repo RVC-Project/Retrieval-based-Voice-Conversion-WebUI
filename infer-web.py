@@ -711,11 +711,31 @@ def train1key(
 
     ####### step2a:提取音高
     yield get_info_str(i18n("step2:正在提取音高&正在提取特征"))
-    [get_info_str(_) for _ in extract_f0_feature(gpus16, np7, f0method8, if_f0_3, exp_dir1, version19, gpus_rmvpe)]
+    [
+        get_info_str(_)
+        for _ in extract_f0_feature(
+            gpus16, np7, f0method8, if_f0_3, exp_dir1, version19, gpus_rmvpe
+        )
+    ]
 
     ####### step3a:训练模型
     yield get_info_str(i18n("step3a:正在训练模型"))
-    click_train(exp_dir1, sr2, if_f0_3, spk_id5, save_epoch10, total_epoch11, batch_size12, if_save_latest13, pretrained_G14, pretrained_D15, gpus16, if_cache_gpu17, if_save_every_weights18, version19)
+    click_train(
+        exp_dir1,
+        sr2,
+        if_f0_3,
+        spk_id5,
+        save_epoch10,
+        total_epoch11,
+        batch_size12,
+        if_save_latest13,
+        pretrained_G14,
+        pretrained_D15,
+        gpus16,
+        if_cache_gpu17,
+        if_save_every_weights18,
+        version19,
+    )
     yield get_info_str(i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"))
 
     ####### step3b:训练索引

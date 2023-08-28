@@ -10,6 +10,7 @@ import logging
 
 import numpy as np
 import pyworld
+
 from infer.lib.audio import load_audio
 
 logging.getLogger("numba").setLevel(logging.WARNING)
