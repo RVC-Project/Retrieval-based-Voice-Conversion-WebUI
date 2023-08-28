@@ -1,20 +1,33 @@
-import os, sys
-import faiss, torch, traceback, parselmouth, numpy as np, torchcrepe, torch.nn as nn, pyworld
+import os
+import sys
+import traceback
+from time import time as ttime
+
 import fairseq
-from lib.infer_pack.models import (
+import faiss
+import numpy as np
+import parselmouth
+import pyworld
+import scipy.signal as signal
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchcrepe
+
+from infer.lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from time import time as ttime
-import torch.nn.functional as F
-import scipy.signal as signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from config import defaultconfig as config
 from multiprocessing import Manager as M
+
+from configs.config import Config
+
+Config()
 
 mm = M()
 if config.dml == True:

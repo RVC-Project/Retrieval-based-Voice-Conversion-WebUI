@@ -1,14 +1,12 @@
+import logging
 import os
 
 # os.system("wget -P cvec/ https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt")
 import gradio as gr
-import logging
-
-from configs.config import Config
-
-from i18n.i18n import I18nAuto
 from dotenv import load_dotenv
 
+from configs.config import Config
+from i18n.i18n import I18nAuto
 from infer.modules.vc.modules import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
