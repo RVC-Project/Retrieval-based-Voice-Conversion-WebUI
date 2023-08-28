@@ -1,5 +1,5 @@
-import locale
 import json
+import locale
 import os
 
 

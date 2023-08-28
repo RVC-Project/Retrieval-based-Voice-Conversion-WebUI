@@ -1,5 +1,5 @@
-import librosa
 import ffmpeg
+import librosa
 import numpy as np
 
 

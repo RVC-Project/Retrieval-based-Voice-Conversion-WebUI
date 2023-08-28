@@ -1,8 +1,12 @@
-import os, librosa
+import hashlib
+import json
+import math
+import os
+
+import librosa
 import numpy as np
 import soundfile as sf
 from tqdm import tqdm
-import json, math, hashlib
 
 
 def crop_center(h1, h2):
@@ -519,10 +523,11 @@ def istft(spec, hl):
 
 
 if __name__ == "__main__":
-    import cv2
+    import argparse
     import sys
     import time
-    import argparse
+
+    import cv2
     from model_param_init import ModelParameters
 
     p = argparse.ArgumentParser()

@@ -1,11 +1,11 @@
-import torch, numpy as np, pdb
+import pdb
+
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch, pdb
-import numpy as np
-import torch.nn.functional as F
+from librosa.util import normalize, pad_center, tiny
 from scipy.signal import get_window
-from librosa.util import pad_center, tiny, normalize
 
 
 ###stft codes from https://github.com/pseeth/torch-stft/blob/master/torch_stft/util.py
@@ -670,7 +670,8 @@ class RMVPE:
 
 
 if __name__ == "__main__":
-    import soundfile as sf, librosa
+    import librosa
+    import soundfile as sf
 
     audio, sampling_rate = sf.read(r"C:\Users\liujing04\Desktop\Z\冬之花clip1.wav")
     if len(audio.shape) > 1:

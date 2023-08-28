@@ -1,17 +1,17 @@
-import math, pdb, os
+import math
+import os
+import pdb
 from time import time as ttime
+
+import numpy as np
 import torch
 from torch import nn
+from torch.nn import AvgPool1d, Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
-from infer.lib.infer_pack import modules
-from infer.lib.infer_pack import attentions
-from infer.lib.infer_pack import commons
-from infer.lib.infer_pack.commons import init_weights, get_padding
-from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
-from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
-from infer.lib.infer_pack.commons import init_weights
-import numpy as np
-from infer.lib.infer_pack import commons
+from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
+
+from infer.lib.infer_pack import attentions, commons, modules
+from infer.lib.infer_pack.commons import get_padding, init_weights
 
 
 class TextEncoder256(nn.Module):

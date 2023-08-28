@@ -1,8 +1,9 @@
-import os
 import argparse
+import os
 import sys
-import torch
 from multiprocessing import cpu_count
+
+import torch
 
 
 def use_fp32_config():
@@ -198,6 +199,3 @@ class Config:
                 except:
                     pass
         return x_pad, x_query, x_center, x_max
-
-
-defaultconfig = Config()

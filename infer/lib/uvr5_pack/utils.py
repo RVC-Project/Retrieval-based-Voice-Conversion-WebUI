@@ -1,7 +1,8 @@
-import torch
-import numpy as np
-from tqdm import tqdm
 import json
+
+import numpy as np
+import torch
+from tqdm import tqdm
 
 
 def load_data(file_name: str = "./infer/lib/uvr5_pack/name_params.json") -> dict:

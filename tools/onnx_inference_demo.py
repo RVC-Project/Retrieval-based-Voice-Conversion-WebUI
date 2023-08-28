@@ -1,4 +1,5 @@
 import soundfile
+
 from ..lib.infer_pack.onnx_inference import OnnxRVC
 
 hop_size = 512

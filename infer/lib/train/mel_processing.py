@@ -2,7 +2,6 @@ import torch
 import torch.utils.data
 from librosa.filters import mel as librosa_mel_fn
 
-
 MAX_WAV_VALUE = 32768.0
 
 

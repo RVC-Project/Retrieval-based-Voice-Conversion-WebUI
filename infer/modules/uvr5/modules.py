@@ -1,12 +1,12 @@
 import os
 import traceback
 
-import torch
 import ffmpeg
+import torch
 
 from configs.config import Config
-from infer.modules.uvr5.preprocess import AudioPre, AudioPreDeEcho
 from infer.modules.uvr5.mdxnet import MDXNetDereverb
+from infer.modules.uvr5.preprocess import AudioPre, AudioPreDeEcho
 
 config = Config()
 

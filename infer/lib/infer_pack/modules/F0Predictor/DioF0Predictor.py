@@ -1,6 +1,7 @@
-from infer.lib.infer_pack.modules.F0Predictor.F0Predictor import F0Predictor
-import pyworld
 import numpy as np
+import pyworld
+
+from infer.lib.infer_pack.modules.F0Predictor.F0Predictor import F0Predictor
 
 
 class DioF0Predictor(F0Predictor):

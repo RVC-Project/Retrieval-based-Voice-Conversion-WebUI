@@ -2,33 +2,35 @@
 
 对源特征进行检索
 """
-import torch, pdb, os, parselmouth
+import os
+import pdb
+
+import parselmouth
+import torch
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# import torchcrepe
+from time import time as ttime
+
+# import pyworld
+import librosa
 import numpy as np
+import scipy.signal as signal
 import soundfile as sf
+import torch.nn.functional as F
+from fairseq import checkpoint_utils
 
 # from models import SynthesizerTrn256#hifigan_nonsf
 # from lib.infer_pack.models import SynthesizerTrn256NSF as SynthesizerTrn256#hifigan_nsf
 from lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid as SynthesizerTrn256,
 )  # hifigan_nsf
+from scipy.io import wavfile
 
 # from lib.infer_pack.models import SynthesizerTrnMs256NSFsid_sim as SynthesizerTrn256#hifigan_nsf
 # from models import SynthesizerTrn256NSFsim as SynthesizerTrn256#hifigan_nsf
 # from models import SynthesizerTrn256NSFsimFlow as SynthesizerTrn256#hifigan_nsf
 
-
-from scipy.io import wavfile
-from fairseq import checkpoint_utils
-
-# import pyworld
-import librosa
-import torch.nn.functional as F
-import scipy.signal as signal
-
-# import torchcrepe
-from time import time as ttime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = r"E:\codes\py39\vits_vc_gpu_train\hubert_base.pt"  #

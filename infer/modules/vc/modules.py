@@ -1,9 +1,10 @@
 import traceback
 
 import numpy as np
-import torch
 import soundfile as sf
+import torch
 
+from infer.lib.audio import load_audio
 from infer.lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
@@ -12,7 +13,6 @@ from infer.lib.infer_pack.models import (
 )
 from infer.modules.vc.pipeline import Pipeline
 from infer.modules.vc.utils import *
-from infer.lib.audio import load_audio
 
 
 class VC:
