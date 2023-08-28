@@ -18,8 +18,8 @@ import traceback
 
 import librosa
 import numpy as np
-from lib.audio import load_audio
-from lib.slicer2 import Slicer
+from infer.lib.audio import load_audio
+from infer.lib.slicer2 import Slicer
 from scipy.io import wavfile
 
 mutex = multiprocessing.Lock()
