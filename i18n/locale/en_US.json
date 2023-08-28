@@ -15,6 +15,7 @@
     "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "Enter the GPU index(es) separated by '-', e.g., 0-0-1 to use 2 processes in GPU0 and 1 process in GPU1",
     "step1: 填写实验配置. 实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件. ": "Step 1: Fill in the experimental configuration. Experimental data is stored in the 'logs' folder, with each experiment having a separate folder. Manually enter the experiment name path, which contains the experimental configuration, logs, and trained model files.",
     "step1:正在处理数据": "Step 1: Processing data",
+    "step2:正在提取音高&正在提取特征": "step2:Pitch extraction & feature extraction",
     "step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. ": "Step 2a: Automatically traverse all files in the training folder that can be decoded into audio and perform slice normalization. Generates 2 wav folders in the experiment directory. Currently, only single-singer/speaker training is supported.",
     "step2a:无需提取音高": "Step 2a: Skipping pitch extraction",
     "step2b: 使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)": "Step 2b: Use CPU to extract pitch (if the model has pitch), use GPU to extract features (select GPU index):",

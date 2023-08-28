@@ -15,6 +15,7 @@
     "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程": "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程",
     "step1: 填写实验配置. 实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件. ": "paso 1: Complete la configuración del experimento. Los datos del experimento se almacenan en el directorio 'logs', con cada experimento en una carpeta separada. La ruta del nombre del experimento debe ingresarse manualmente y debe contener la configuración del experimento, los registros y los archivos del modelo entrenado.",
     "step1:正在处理数据": "Paso 1: Procesando datos",
+    "step2:正在提取音高&正在提取特征": "step2:正在提取音高&正在提取特征",
     "step2a: 自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练. ": "paso 2a: recorra automáticamente la carpeta de capacitación y corte y normalice todos los archivos de audio que se pueden decodificar en audio. Se generarán dos carpetas 'wav' en el directorio del experimento. Actualmente, solo se admite la capacitación de una sola persona.",
     "step2a:无需提取音高": "Paso 2a: No es necesario extraer el tono",
     "step2b: 使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号)": "paso 2b: use la CPU para extraer el tono (si el modelo tiene guía de tono) y la GPU para extraer características (seleccione el número de tarjeta).",
