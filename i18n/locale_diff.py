@@ -8,7 +8,9 @@ standard_file = "i18n/locale/zh_CN.json"
 # Find all JSON files in the directory
 dir_path = "i18n/locale/"
 languages = [
-    f for f in os.listdir(dir_path) if f.endswith(".json") and f != standard_file
+    os.path.join(dir_path, f)
+    for f in os.listdir(dir_path)
+    if f.endswith(".json") and f != standard_file
 ]
 
 # Load the standard file
@@ -18,7 +20,7 @@ with open(standard_file, "r", encoding="utf-8") as f:
 # Loop through each language file
 for lang_file in languages:
     # Load the language file
-    with open(dir_path + lang_file, "r", encoding="utf-8") as f:
+    with open(lang_file, "r", encoding="utf-8") as f:
         lang_data = json.load(f, object_pairs_hook=OrderedDict)
 
     # Find the difference between the language file and the standard file
@@ -40,6 +42,6 @@ for lang_file in languages:
     )
 
     # Save the updated language file
-    with open(dir_path + lang_file, "w", encoding="utf-8") as f:
+    with open(lang_file, "w", encoding="utf-8") as f:
         json.dump(lang_data, f, ensure_ascii=False, indent=4, sort_keys=True)
         f.write("\n")
