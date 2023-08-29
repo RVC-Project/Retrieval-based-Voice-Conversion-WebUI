@@ -1,5 +1,5 @@
 {
-  "pth_path": "weights/kikiV1.pth",
+  "pth_path": "assets/weights/kikiV1.pth",
   "index_path": "logs/kikiV1.index",
   "sg_input_device": "VoiceMeeter Output (VB-Audio Vo (MME)",
   "sg_output_device": "VoiceMeeter Aux Input (VB-Audio (MME)",
