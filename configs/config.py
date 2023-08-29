@@ -23,7 +23,15 @@ def use_fp32_config():
     with open("infer/modules/train/preprocess.py", "w") as f:
         f.write(strr)
 
+def singleton_variable(func):
+    def wrapper(*args, **kwargs):
+        if not wrapper.instance:
+            wrapper.instance = func(*args, **kwargs)
+        return wrapper.instance
+    wrapper.instance = None
+    return wrapper
 
+@singleton_variable
 class Config:
     def __init__(self):
         self.device = "cuda:0"

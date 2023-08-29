@@ -1,9 +1,7 @@
 import os
-import warnings
 
 import librosa
 import numpy as np
-import onnxruntime as ort
 import soundfile as sf
 import torch
 from tqdm import tqdm
@@ -88,6 +86,7 @@ def get_models(device, dim_f, dim_t, n_fft):
 
 class Predictor:
     def __init__(self, args):
+        import onnxruntime as ort
         print(ort.get_available_providers())
         self.args = args
         self.model_ = get_models(

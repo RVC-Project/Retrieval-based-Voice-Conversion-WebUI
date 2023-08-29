@@ -24,7 +24,6 @@ from infer.lib.train.process_ckpt import (
     merge,
     show_info,
 )
-from infer.modules.onnx.export import export_onnx
 from infer.modules.uvr5.modules import uvr
 from infer.modules.vc.modules import VC
 
@@ -158,6 +157,9 @@ def change_choices():
 def clean():
     return {"value": "", "__type__": "update"}
 
+def export_onnx():
+    from infer.modules.onnx.export import export_onnx as eo
+    eo()
 
 sr_dict = {
     "32k": 32000,
