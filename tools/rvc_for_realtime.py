@@ -70,7 +70,7 @@ class RVC:
                 print("index search enabled")
             self.index_rate = index_rate
             models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
-                ["hubert_base.pt"],
+                ["assets/hubert/hubert_base.pt"],
                 suffix="",
             )
             hubert_model = models[0]
@@ -224,14 +224,14 @@ class RVC:
 
     def get_f0_rmvpe(self, x, f0_up_key):
         if hasattr(self, "model_rmvpe") == False:
-            from lib.rmvpe import RMVPE
+            from infer.lib.rmvpe import RMVPE
 
             print("loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
                 #  "rmvpe.pt", is_half=False, device=self.device####dml配置
                 # "rmvpe.pt", is_half=False, device="cpu"####锁定cpu配置
-                "rmvpe.pt",
+                "assets/rmvpe/rmvpe.pt",
                 is_half=self.is_half,
                 device=self.device,  ####正常逻辑
             )
