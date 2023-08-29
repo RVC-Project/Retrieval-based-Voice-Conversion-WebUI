@@ -1,7 +1,10 @@
 """
 格式：直接cid为自带的index位；aid放不下了，通过字典来查，反正就5w个
 """
-import faiss, numpy as np, os
+import os
+
+import faiss
+import numpy as np
 
 # ###########如果是原始特征要先写save
 inp_root = r"E:\codes\py39\dataset\mi\2-co256"

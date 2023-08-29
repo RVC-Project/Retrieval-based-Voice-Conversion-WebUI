@@ -1,4 +1,6 @@
-import os, sys, pdb
+import os
+import pdb
+import sys
 
 os.environ["OMP_NUM_THREADS"] = "2"
 if sys.platform == "darwin":
@@ -16,7 +18,8 @@ class Harvest(multiprocessing.Process):
         self.opt_q = opt_q
 
     def run(self):
-        import numpy as np, pyworld
+        import numpy as np
+        import pyworld
 
         while 1:
             idx, x, res_f0, n_cpu, ts = self.inp_q.get()
@@ -33,21 +36,26 @@ class Harvest(multiprocessing.Process):
 
 
 if __name__ == "__main__":
-    from multiprocessing import Queue
-    from queue import Empty
-    import numpy as np
-    import multiprocessing
-    import traceback, re
     import json
+    import multiprocessing
+    import re
+    import threading
+    import time
+    import traceback
+    from multiprocessing import Queue, cpu_count
+    from queue import Empty
+
+    import librosa
+    import noisereduce as nr
+    import numpy as np
     import PySimpleGUI as sg
     import sounddevice as sd
-    import noisereduce as nr
-    from multiprocessing import cpu_count
-    import librosa, torch, time, threading
+    import torch
     import torch.nn.functional as F
     import torchaudio.transforms as tat
-    from i18n import I18nAuto
-    import rvc_for_realtime
+
+    import tools.rvc_for_realtime as rvc_for_realtime
+    from i18n.i18n import I18nAuto
 
     i18n = I18nAuto()
     device = rvc_for_realtime.config.device
@@ -131,7 +139,9 @@ if __name__ == "__main__":
                                 ),
                                 sg.FileBrowse(
                                     i18n("选择.pth文件"),
-                                    initial_folder=os.path.join(os.getcwd(), "weights"),
+                                    initial_folder=os.path.join(
+                                        os.getcwd(), "assets/weights"
+                                    ),
                                     file_types=((". pth"),),
                                 ),
                             ],

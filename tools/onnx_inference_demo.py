@@ -1,5 +1,6 @@
 import soundfile
-from ..lib.infer_pack.onnx_inference import OnnxRVC
+
+from ..infer.lib.infer_pack.onnx_inference import OnnxRVC
 
 hop_size = 512
 sampling_rate = 40000  # 采样率

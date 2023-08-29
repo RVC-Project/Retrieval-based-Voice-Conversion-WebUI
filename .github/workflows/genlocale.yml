@@ -13,8 +13,9 @@ jobs:
 
       - name: Run locale generation
         run: |
-          python3 lib/i18n/scan_i18n.py
-          cd lib/i18n && python3 locale_diff.py
+          python3 i18n/scan_i18n.py
+          cd i18n
+          python3 locale_diff.py
 
       - name: Commit back
         if: ${{ !github.head_ref }}
