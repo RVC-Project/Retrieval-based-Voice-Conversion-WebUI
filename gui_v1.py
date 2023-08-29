@@ -55,7 +55,7 @@ if __name__ == "__main__":
     import torchaudio.transforms as tat
 
     import tools.rvc_for_realtime as rvc_for_realtime
-    from i18n import I18nAuto
+    from i18n.i18n import I18nAuto
 
     i18n = I18nAuto()
     device = rvc_for_realtime.config.device

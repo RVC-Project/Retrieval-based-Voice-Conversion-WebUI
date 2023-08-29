@@ -27,7 +27,7 @@ from multiprocessing import Manager as M
 
 from configs.config import Config
 
-Config()
+config = Config()
 
 mm = M()
 if config.dml == True:
