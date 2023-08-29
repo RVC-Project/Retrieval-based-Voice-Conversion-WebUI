@@ -199,7 +199,7 @@ class RVC:
         return self.get_f0_post(f0bak)
 
     def get_f0_crepe(self, x, f0_up_key):
-        if self.device.type == "privateuseone":  ###不支持dml，cpu又太慢用不成，拿pm顶替
+        if "privateuseone" in str(self.device):  ###不支持dml，cpu又太慢用不成，拿pm顶替
             return self.get_f0(x, f0_up_key, 1, "pm")
         audio = torch.tensor(np.copy(x))[None].float()
         # print("using crepe,device:%s"%self.device)
