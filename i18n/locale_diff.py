@@ -3,10 +3,10 @@ import os
 from collections import OrderedDict
 
 # Define the standard file name
-standard_file = "i18n/locale/zh_CN.json"
+standard_file = "locale/zh_CN.json"
 
 # Find all JSON files in the directory
-dir_path = "i18n/locale/"
+dir_path = "locale/"
 languages = [
     os.path.join(dir_path, f)
     for f in os.listdir(dir_path)
