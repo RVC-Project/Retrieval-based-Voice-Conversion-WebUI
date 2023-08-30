@@ -139,9 +139,13 @@ class Pipeline(object):
             if not hasattr(self, "model_rmvpe"):
                 from infer.lib.rmvpe import RMVPE
 
-                print("loading rmvpe model,%s"%"%s/rmvpe.pt"%os.environ["rmvpe_root"])
+                print(
+                    "loading rmvpe model,%s" % "%s/rmvpe.pt" % os.environ["rmvpe_root"]
+                )
                 self.model_rmvpe = RMVPE(
-                    "%s/rmvpe.pt"%os.environ["rmvpe_root"], is_half=self.is_half, device=self.device
+                    "%s/rmvpe.pt" % os.environ["rmvpe_root"],
+                    is_half=self.is_half,
+                    device=self.device,
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
 
