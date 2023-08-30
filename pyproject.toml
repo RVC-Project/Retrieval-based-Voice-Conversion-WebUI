@@ -54,6 +54,7 @@ audioread = "^3.0.0"
 uvicorn = "^0.21.1"
 colorama = "^0.4.6"
 torchcrepe = "0.0.20"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 
