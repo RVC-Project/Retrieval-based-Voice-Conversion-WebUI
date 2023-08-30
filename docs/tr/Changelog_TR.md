@@ -1,80 +1,97 @@
+
+### 2023-08-13
+1- Düzenli hata düzeltmeleri
+- Minimum toplam epoch sayısını 1 olarak değiştirin ve minimum toplam epoch sayısını 2 olarak değiştirin
+- Ön eğitim modellerini kullanmama nedeniyle oluşan eğitim hatalarını düzeltin
+- Eşlik eden vokallerin ayrılmasından sonra grafik belleğini temizleyin
+- Faiss kaydetme yolu mutlak yoldan göreli yola değiştirilmiştir
+- Boşluk içeren yolu destekleyin (hem eğitim kümesi yolu hem de deney adı desteklenir ve artık hata rapor edilmez)
+- Filelist, zorunlu utf8 kodlamasını iptal eder
+- Gerçek zamanlı ses değişikliği sırasında faiss aramasından kaynaklanan CPU tüketim sorununu çözün
+
+2- Temel güncellemeler
+- Geçerli en güçlü açık kaynak vokal ton çıkarma modeli RMVPE'yi eğitin ve RVC eğitimi, çevrimdışı/gerçek zamanlı çıkarım için kullanın, PyTorch/Onnx/DirectML destekler
+- Pytorch_DML aracılığıyla AMD ve Intel grafik kartları için destek ekleyin
+
+(1) Gerçek zamanlı ses değişimi (2) Çıkarım (3) Vokal eşlik ayrımı (4) Şu anda desteklenmeyen eğitim, CPU eğitimine geçiş yapacaktır; Onnx_Dml ile gpu için RMVPE çıkarımını destekler
+
+
 ### 2023-06-18
-- Yeni önceden eğitilmiş v2 modelleri: 32k ve 48k
-- F0 olmayan model çıkarımlarındaki hatalar düzeltildi
-- Eğitim kümesi 1 saatini aşarsa, özelliğin boyutunu azaltmak için otomatik minibatch-kmeans yapılır, böylece indeks eğitimi, ekleme ve arama işlemleri çok daha hızlı olur.
-- Oyuncak sesden gitar huggingface alanı sağlanır
-- Aykırı kısa kesme eğitim kümesi sesleri otomatik olarak silinir
+- Yeni ön eğitilmiş v2 modeller: 32k ve 48k
+- F0 modeli çıkarım hatalarını düzeltme
+- Eğitim kümesi 1 saati aşarsa, özelliği şekil açısından küçültmek için otomatik minibatch-kmeans yapın, böylece indeks eğitimi, eklemesi ve araması çok daha hızlı olur.
+- Bir oyunca vokal2guitar huggingface alanı sağlama
+- Aykırı kısa kesim eğitim kümesi seslerini otomatik olarak silme
 - Onnx dışa aktarma sekmesi
 
 Başarısız deneyler:
 - ~~Özellik çıkarımı: zamansal özellik çıkarımı ekleme: etkili değil~~
-- ~~Özellik çıkarımı: PCAR boyut indirgeme ekleme: arama daha da yavaş~~
-- ~~Eğitimde rastgele veri artırma: etkili değil~~
+- ~~Özellik çıkarımı: PCAR boyut azaltma ekleme: arama daha yavaş~~
+- ~~Eğitim sırasında rastgele veri artırma: etkili değil~~
 
 Yapılacaklar listesi:
-- Vocos-RVC (küçük vokoder)
-- Eğitim için Crepe desteği
-- Yarı hassas Crepe çıkarımı
+- ~~Vocos-RVC (küçük vokoder): etkili değil~~
+- ~~Eğitim için Crepe desteği: RMVPE ile değiştirildi~~
+- ~~Yarı hassas Crepe çıkarımı: RMVPE ile değiştirildi. Ve zor gerçekleştirilebilir.~~
 - F0 düzenleyici desteği
 
 ### 2023-05-28
-- v2 jupyter not defteri eklendi, korece değişiklik günlüğü eklendi, bazı ortam gereksinimleri düzeltildi
-- Sesli olmayan ünsüz ve nefes koruma modu eklendi
-- Crepe-full pitch algılama desteği eklendi
-- UVR5 vokal ayırma: dereverb ve de-echo modellerini destekler
-- İndeksin adında deney adı ve sürümünü ekleyin
-- Toplu ses dönüşüm işlemi ve UVR5 vokal ayırma sırasında çıktı seslerinin ihracat formatını manuel olarak seçme desteği eklendi
+- v2 jupyter notebook, korece değişiklik günlüğü, bazı çevre gereksinimlerini düzeltme
+- Sesli olmayan ünsüz ve nefes koruma modu ekleme
+- Crepe-full ton algılama desteği ekleme
+- UVR5 vokal ayrımı: yankı kaldırma modelleri ve yankı kaldırma modelleri destekleme
+- İndeks adında deney adı ve sürüm ekleme
+- Toplu ses dönüşüm işleme ve UVR5 vokal ayrımı sırasında çıkış seslerinin ihracat formatını kullanıcıların manuel olarak seçmelerine olanak tanıma
 - v1 32k model eğitimi artık desteklenmiyor
 
 ### 2023-05-13
-- Tek tıklamalı paketin eski sürümündeki gereksiz kodlar temizlendi: lib.infer_pack ve uvr5_pack
-- Eğitim kümesi ön işlemesinde sahte çok işlem hatası düzeltildi
-- Harvest pitch algı algoritması için median filtre yarıçapı ayarlama eklendi
-- Ses ihracatı için yeniden örnekleme desteği eklendi
-- Eğitimde "n_cpu" için çoklu işlem ayarı "f0 çıkarma" dan "veri ön işleme ve f0 çıkarma" olarak değiştirildi
-- İndex yolu otomatik olarak algılanır ve açılır liste işlevi sağlanır
-- Sekme sayfasında "Sık Sorulan Sorular ve Cevaplar" eklendi (ayrıca github RVC wiki'ye bakabilirsiniz)
-- Çıkarım sırasında, aynı giriş sesi yolu kullanıldığında harvest pitch önbelleğe alınır (amaç: harvest pitch çıkarma kullanılırken, tüm işlem süreci uzun ve tekrarlayan bir pitch çıkarma sürecinden geçer. Önbellek kullanılmazsa, farklı timbre, index ve pitch median filtre yarıçapı ayarlarıyla deney yapan kullanıcılar ilk çıkarımın ardından çok acı verici bir bekleme süreci yaşayacaktır)
+- Tek tıklamayla paketin eski sürümündeki çalışma zamanındaki gereksiz kodları temizleme: lib.infer_pack ve uvr5_pack
+- Eğitim seti ön işleme içindeki sahte çoklu işlem hatasını düzeltme
+- Harvest ton tanıma algoritması için ortanca filtre yarıçap ayarı ekleme
+- Çıkış sesi için örnek alma örneği için yeniden örnekleme desteği ekleme
+- Eğitim için "n_cpu" çoklu işlem ayarı, "f0 çıkarma" yerine "veri ön işleme ve f0 çıkarma" için değiştirildi
+- Günlükler klasörü altındaki indeks yollarını otomatik olarak tespit etme ve bir açılır liste işlevi sağlama
+- Sekme sayfasına "Sıkça Sorulan Sorular ve Cevaplar"ı ekleme (ayrıca github RVC wiki'ye de bakabilirsiniz)
+- Çıkarım sırasında aynı giriş sesi yolunu kullanırken harvest tonunu önbelleğe alma (amaç: harvest ton çıkarımı kullanırken, tüm işlem hattı uzun ve tekrarlayan bir ton çıkarım işlemi geçirecektir. Önbellekleme kullanılmazsa, farklı timbre, indeks ve ton ortanca filtreleme yarıçapı ayarlarıyla deney yapan kullanıcılar, ilk çıkarım sonrası çok acı verici bir bekleme süreci yaşayacaktır)
 
 ### 2023-05-14
-- Girişin ses hacmini çıkışın ses hacmiyle karıştırma veya değiştirme seçeneği eklendi ( "giriş sessiz ve çıkış düşük amplitütlü gürültü" sorununu hafifletmeye yardımcı olur. Giriş sesinin arka plan gürültüsü yüksekse, önerilmez ve varsayılan olarak kapalıdır (1 kapalı olarak düşünülebilir)
-- Çıkarılan küçük modellerin belirli bir sıklıkta kaydedilmesini destekler (farklı epoch altındaki performansı görmek istiyorsanız, ancak tüm büyük kontrol noktalarını kaydetmek istemiyor ve her seferinde ckpt-processing ile küçük modelleri manuel olarak çıkarmak istemiyorsanız, bu özellik oldukça pratik olacaktır)
-- Sunucunun genel proxy'sinin neden olduğu "bağlantı hataları" sorununu, çevre değişkenleri ayarlayarak çözer
-- Önceden eğitilmiş v2 modelleri destekler (şu anda sadece 40k sürümleri test için kamuya açıktır ve diğer iki örnekleme hızı henüz tam olarak eğitilmemiştir)
-- İnferans öncesi aşırı ses hacmi 1'i aşmasını engeller
-- Eğitim kümesinin ayarlarını hafifçe düzeltildi
+- Girişin hacim zarfını çıktının hacim zarfıyla karıştırmak veya değiştirmek için girişin hacim zarfını kullanma (problemi "giriş sessizleştirme ve çıktı küçük
 
-#######################
+ amplitüdlü gürültü" sorununu hafifletebilir. Giriş sesi arka plan gürültüsü yüksekse, açık olması önerilmez ve varsayılan olarak açık değildir (1 varsayılan olarak kapalı olarak kabul edilir)
+- Belirli bir frekansta filtreleme uygulama eğitim ve çıkarım için 50Hz'nin altındaki frekans bantları için
+- Pyworld'un varsayılan 80'den 50'ye minimum ton çıkarma sınırlamasını eğitim ve çıkarım için düşürme, 50-80Hz arasındaki erkek alçak seslerin sessizleştirilmemesine izin verme
+- WebUI, sistem yereli diline göre dil değiştirme (şu anda en_US, ja_JP, zh_CN, zh_HK, zh_SG, zh_TW'yi destekliyor; desteklenmeyen durumda varsayılan olarak en_US'ye geçer)
+- Belirli bir giriş sesi yolunu kullanırken harvest tonunu önbelleğe alma (amaç: harvest ton çıkarma kullanırken, tüm işlem hattı uzun ve tekrarlayan bir ton çıkarma süreci geçirecektir. Önbellekleme kullanılmazsa, farklı timbre, indeks ve ton ortanca filtreleme yarıçapı ayarlarıyla deney yapan kullanıcılar, ilk çıkarım sonrası çok acı verici bir bekleme süreci yaşayacaktır)
 
-Geçmiş değişiklik günlükleri:
-
-### 2023-04-09
-- GPU kullanım oranını artırmak için eğitim parametreleri düzeltilerek: A100% 25'ten yaklaşık 90'a, V100: %50'den yaklaşık 90'a, 2060S: %60'dan yaklaşık 85'e, P40: %25'ten yaklaşık 95'e; eğitim hızı önemli ölçüde artırıldı
-- Parametre değiştirildi: toplam batch_size artık her GPU için batch_size
-- Toplam_epoch değiştirildi: maksimum sınır 100'den 1000'e yükseltildi; varsayılan 10'dan 20'ye yükseltildi
-- Ckpt çıkarımı sırasında pitch yanlış tanıma nedeniyle oluşan anormal çıkarım sorunu
-
- düzeltildi
-- Dağıtılmış eğitimde her sıra için ckpt kaydetme sorunu düzeltildi
-- Özellik çıkarımında nan özellik filtreleme uygulandı
-- Giriş/çıkış sessiz üretildiğinde rastgele ünsüzler veya gürültü üretme sorunu düzeltildi (eski modeller yeni bir veri kümesiyle yeniden eğitilmelidir)
+### 2023-04-09 Güncellemesi
+- GPU kullanım oranını artırmak için eğitim parametrelerini düzeltme: A100, %25'ten yaklaşık %90'a, V100: %50'den yaklaşık %90'a, 2060S: %60'tan yaklaşık %85'e, P40: %25'ten yaklaşık %95'e; eğitim hızını önemli ölçüde artırma
+- Parametre değişti: toplam_batch_size artık GPU başına batch_size
+- Toplam_epoch değişti: maksimum sınırı 1000'e yükseltildi; varsayılan 10'dan 20'ye yükseltildi
+- ckpt çıkarımı ile çalma tanıma hatasını düzeltme, anormal çıkarım oluşturan
+- Dağıtılmış eğitimde her sıra için ckpt kaydetme sorununu düzeltme
+- Özellik çıkarımı için NaN özellik filtrelemesi uygulama
+- Sessiz giriş/çıkışın rastgele ünsüzler veya gürültü üretme sorununu düzeltme (eski modeller yeni bir veri kümesiyle tekrar eğitilmelidir)
 
 ### 2023-04-16 Güncellemesi
-- Yerel gerçek zamanlı ses değiştirme mini-GUI eklendi, go-realtime-gui.bat dosyasını çift tıklatarak başlayın
-- Eğitim ve çıkarımda 50Hz'nin altındaki frekans bantları için filtreleme uygulandı
-- Eğitim ve çıkarımda pyworld'ün varsayılan 80'den 50'ye düşürüldü, böylece 50-80Hz aralığındaki erkek düşük perdeli seslerin sessiz kalmaması sağlandı
-- WebUI, sistem yereli diline göre dil değiştirme desteği ekledi (şu anda en_US, ja_JP, zh_CN, zh_HK, zh_SG, zh_TW'yi desteklemektedir; desteklenmezse varsayılan olarak en_US kullanılır)
-- Bazı GPU'ların tanınmasında sorun giderildi (örneğin, V100-16G tanınma hatası, P4 tanınma hatası)
+- Yerel gerçek zamanlı ses değiştirme mini-GUI'si ekleme, çift tıklayarak go-realtime-gui.bat ile başlayın
+- Eğitim ve çıkarım sırasında 50Hz'nin altındaki frekans bantlarını filtreleme uygulama
+- Pyworld'deki varsayılan 80'den 50'ye minimum ton çıkarma sınırlamasını eğitim ve çıkarım için düşürme, 50-80Hz arasındaki erkek alçak seslerin sessizleştirilmemesine izin verme
+- WebUI, sistem yereli diline göre dil değiştirme (şu anda en_US, ja_JP, zh_CN, zh_HK, zh_SG, zh_TW'yi destekliyor; desteklenmeyen durumda varsayılan olarak en_US'ye geçer)
+- Bazı GPU'ların tanınmasını düzeltme (örneğin, V100-16G tanınmama sorunu, P4 tanınmama sorunu)
 
 ### 2023-04-28 Güncellemesi
-- Daha hızlı hız ve daha yüksek kalite için faiss indeks ayarları yükseltildi
-- total_npy bağımlılığı kaldırıldı; gelecekteki model paylaşımı total_npy girişi gerektirmeyecek
-- 16 serisi GPU'lar için kısıtlamalar kaldırıldı, 4GB VRAM GPU'ları için 4GB çıkarım ayarları sağlanıyor
-- Belirli ses biçimleri için UVR5 vokal eşlik ayırma hatası düzeltildi
-- Gerçek zamanlı ses değiştirme mini-GUI, 40k dışında ve tembelleştirilmemiş pitch modellerini destekler hale geldi
+- Daha hızlı hız ve daha yüksek kalite için faiss indeks ayarlarını yükseltme
+- Toplam_npy bağımlılığını kaldırma; gelecekteki model paylaşımları için total_npy girdisi gerekmeyecek
+- 16-serisi GPU'lar için kısıtlamaları açma, 4GB VRAM GPU'lar için 4GB çıkarım ayarları sağlama
+- Belirli ses biçimlerine yönelik UVR5 vokal eşlik ayrımındaki hata düzeltme
+- Gerçek zamanlı ses değiştirme mini-GUI şimdi 40k dışı ve tembel ton modellerini destekler
 
-### Gelecek Planlar:
+### Gelecekteki Planlar:
 Özellikler:
-- Her epoch kaydetmek için küçük modelleri çıkarma seçeneği ekle
-- Çıkarım sırasında çıktı sesleri için belirli bir yola ekstra mp3'leri kaydetme seçeneği ekle
-- Birden çok kişi eğitim sekmesini destekle (en fazla 4 kişiye kadar)
+- Her epoch kaydetmek için küçük modeller çıkar seçeneğini ekleme
+- Çıkarım sırasında çıkış seslerini belirtilen yolda ekstra mp3 olarak kaydetme seçeneğini ekleme
+- Birden fazla kişinin eğitim sekmesini destekleme (en fazla 4 kişiye kadar)
+  
+Temel model:
+- Bozuk nefes seslerinin sorununu düzeltmek için nefes alma wav dosyalarını eğitim veri kümesine eklemek
+- Şu anda genişletilmiş bir şarkı veri kümesiyle temel model eğitimi yapıyoruz ve gelecekte yayınlanacak

@@ -1,96 +1,103 @@
-## Soru 1: FFmpeg hatası/utf8 hatası.
-Muhtemelen bir FFmpeg sorunu değil, ses yolunda bir sorun var;
+## Q1: FFmpeg Hatası/UTF8 Hatası
+Büyük olasılıkla bu bir FFmpeg sorunu değil, daha çok ses dosyası yolunda bir sorun;
 
-FFmpeg, boşluklar ve () gibi özel karakterler içeren yolları okurken bir hata ile karşılaşabilir ve FFmpeg hatası oluşturabilir; ve eğitim setinin sesleri Çince yollar içeriyorsa, bunları filelist.txt'ye yazmak utf8 hatasına neden olabilir.
+FFmpeg, boşluklar ve () gibi özel karakterler içeren yolları okurken bir hata ile karşılaşabilir; ve eğitim setinin ses dosyaları Çin karakterleri içeriyorsa, bunlar filelist.txt'ye yazıldığında utf8 hatasına neden olabilir.<br>
 
-## Soru 2: "Tek Tıklamayla Eğitim" sonrasında indeks dosyası bulunamıyor.
-"Training is done. The program is closed" şeklinde görüntüleniyorsa, model başarılı bir şekilde eğitilmiş demektir ve sonraki hatalar yanıltıcı olabilir;
+## Q2: "Tek Tıklamayla Eğitim" Sonrası İndeks Dosyası Bulunamıyor
+Eğer "Eğitim tamamlandı. Program kapatıldı." mesajını görüyorsa, model başarıyla eğitilmiş demektir ve sonraki hatalar sahte;
 
-Tek tıklamalı eğitim sonrasında "added" indeks dosyasının eksik olması, eğitim setinin çok büyük olmasından kaynaklanabilir ve indeksin eklenmesinin takılmasına neden olabilir; bunun çözümü, indeksi eklerken bellek aşımı sorununu çözen toplu işlemi kullanmaktır. Geçici bir çözüm olarak, "Train Index" düğmesine tekrar tıklamayı deneyin.
+"Added" dizini oluşturulduğu halde "Tek Tıklamayla Eğitim" sonrası indeks dosyası bulunamıyorsa, bu genellikle eğitim setinin çok büyük olmasından kaynaklanabilir ve indeksin eklenmesi sıkışabilir. Bu sorun indeks eklerken bellek yükünü azaltmak için toplu işlem yaparak çözülmüştür. Geçici bir çözüm olarak, "Eğitim İndeksini Eğit" düğmesine tekrar tıklamayı deneyin.<br>
 
-## Soru 3: Eğitim sonrasında "Timbre Inferencing" bölümünde model bulunamıyor
-"Refresh timbre list"e tıklayın ve tekrar kontrol edin; hala görünmüyorsa, eğitim sırasında hatalar olup olmadığını kontrol edin ve geliştiricilere ek analiz için konsol, web UI ve logs/experiment_name/*.log ekran görüntüleri gönderin.
+## Q3: Eğitim Sonrası "Tonlama İnceleniyor" Bölümünde Model Bulunamıyor
+"Lanetleme İstemi Listesini Yenile" düğmesine tıklayarak tekrar kontrol edin; hala görünmüyorsa, eğitim sırasında herhangi bir hata olup olmadığını kontrol edin ve geliştiricilere daha fazla analiz için konsol, web arayüzü ve logs/experiment_name/*.log ekran görüntülerini gönderin.<br>
 
-## Soru 4: Bir modeli nasıl paylaşabilirim/Başkalarının modellerini nasıl kullanabilirim?
-rvc_root/logs/experiment_name klasöründe depolanan pth dosyaları, paylaşım veya çıkarım için değil, yeniden üretilebilirlik ve daha fazla eğitim için deney kontrol noktalarını depolamak içindir. Paylaşılacak model, weights klasöründeki 60+MB pth dosyası olmalıdır;
+## Q4: Bir Model Nasıl Paylaşılır/Başkalarının Modelleri Nasıl Kullanılır?
+rvc_root/logs/experiment_name dizininde saklanan pth dosyaları paylaşım veya çıkarım için değildir, bunlar deney checkpoint'larıdır ve çoğaltılabilirlik ve daha fazla eğitim için saklanır. Paylaşılacak olan model, weights klasöründeki 60+MB'lık pth dosyası olmalıdır;
 
-Gelecekte, weights/exp_name.pth ve logs/exp_name/added_xxx.index birleştirilerek, manuel indeks girişi gerektirmeyen bir tek weights/exp_name.zip dosyası oluşturulacak; bu nedenle, farklı bir makinede eğitime devam etmek istemiyorsanız, pth dosyasını değil zip dosyasını paylaşın;
+Gelecekte, weights/exp_name.pth ve logs/exp_name/added_xxx.index birleştirilerek tek bir weights/exp_name.zip dosyasına dönüştürülecek ve manuel indeks girişi gereksinimini ortadan kaldıracaktır; bu nedenle pth dosyasını değil, farklı bir makinede eğitime devam etmek istemezseniz zip dosyasını paylaşın;
 
-Logs klasöründen weights klasörüne birkaç yüz MB'lık pth dosyalarını zorlama çıkarım için kopyalamak/paylaşmak, eksik f0, tgt_sr veya diğer anahtarlar gibi hatalara neden olabilir. Alt kısımdaki ckpt sekmesini kullanarak manuel veya otomatik olarak (bilgiler logs/exp_name'de bulunuyorsa) ton infomasyonu ve hedef ses örnekleme hızı seçmeyi deneyin ve ardından daha küçük modeli çıkarın. Çıkarıldıktan sonra weights klasöründe 60+ MB'lık bir pth dosyası olacak ve sesleri yenileyerek kullanabilirsiniz.
+Çıkarılmış modelleri zorlama çıkarım için logs klasöründen weights klasörüne birkaç yüz MB'lık pth dosyalarını kopyalamak/paylaşmak, eksik f0, tgt_sr veya diğer anahtarlar gibi hatalara neden olabilir. Smaller modeli manuel veya otomatik olarak çıkarmak için alttaki ckpt sekmesini kullanmanız gerekmektedir (eğer bilgi logs/exp_name içinde bulunuyorsa), pitch bilgisini ve hedef ses örnekleme oranı seçeneklerini seçmeli ve ardından daha küçük modele çıkarmalısınız. Çıkardıktan sonra weights klasöründe 60+ MB'lık bir pth dosyası olacaktır ve sesleri yeniden güncelleyebilirsiniz.<br>
 
-## Soru 5: Bağlantı Hatası.
-Muhtemelen konsolu (siyah komut satırı penceresini) kapattınız.
+## Q5: Bağlantı Hatası
+Büyük ihtimalle konsolu (siyah komut satırı penceresi) kapatmış olabilirsiniz.<br>
 
-## Soru 6: WebUI'de 'Expecting value: line 1 column 1 (char 0)' hatası.
-Sistem LAN proxy/global proxy'yi devre dışı bırakın ve sonra yenileyin.
+## Q6: Web Arayüzünde 'Beklenen Değer: Satır 1 Sütun 1 (Karakter 0)' Hatası
+Lütfen sistem LAN proxy/global proxy'sini devre dışı bırakın ve ardından sayfayı yenileyin.<br>
 
-## Soru 7: WebUI olmadan nasıl eğitilir ve sonuçlandırılır?
-Eğitim betiği:
-Eğitimi WebUI'de çalıştırabilirsiniz, ve mesaj penceresinde veri seti ön işleme ve eğitiminin komut satırı sürümleri gösterilecektir.
+## Q7: WebUI Olmadan Nasıl Eğitim Yapılır ve Tahmin Yapılır?
+Eğitim komut dosyası:<br>
+Önce WebUI'de eğitimi çalıştırabilirsiniz, ardından veri seti önişleme ve eğitiminin komut satırı sürümleri mesaj penceresinde görüntülenecektir.<br>
 
-Sonuçlandırma betiği:
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/myinfer.py
+Tahmin komut dosyası:<br>
+https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/myinfer.py<br>
 
-Örneğin:
 
-```bash
-runtime\python.exe myinfer.py 0 "E:\codes\py39\RVC-beta\todo-songs\1111.wav" "E:\codes\py39\logs\mi-test\added_IVF677_Flat_nprobe_7.index" harvest "test.wav" "weights/mi-test.pth" 0.6 cuda:0 True
-```
+örn:<br>
 
-f0up_key=sys.argv[1]
-input_path=sys.argv[2]
-index_path=sys.argv[3]
-f0method=sys.argv[4]#harvest or pm
-opt_path=sys.argv[5]
-model_path=sys.argv[6]
-index_rate=float(sys.argv[7])
-device=sys.argv[8]
-is_half=bool(sys.argv[9])
+runtime\python.exe myinfer.py 0 "E:\codes\py39\RVC-beta\todo-songs\1111.wav" "E:\codes\py39\logs\mi-test\added_IVF677_Flat_nprobe_7.index" harvest "test.wav" "weights/mi-test.pth" 0.6 cuda:0 True<br>
 
-## Soru 8: Cuda hatası/Cuda bellek dışı.
-Küçük bir olasılıkla CUDA yapılandırmasında bir sorun olabilir veya cihaz desteklenmiyor olabilir; daha olası bir şekilde, yeterli belleğiniz yoktur (bellek dışı).
 
-Eğitim için, toplu boyutunu azaltın (1'e düşürmek hala yeterli değilse, grafik kartını değiştirmeniz gerekebilir); sonuçlandırma için, config.py dosyasında x_pad, x_query, x_center ve x_max ayarlarını ihtiyaca göre ayarlayın. 4G veya daha düşük bellekli kartlar (örn. 1060(3G) ve çeşitli 2G kartlar) terk edilebilir, ancak 4G bellekli kartların hala bir şansı vardır.
+f0up_key=sys.argv[1]<br>
+input_path=sys.argv[2]<br>
+index_path=sys.argv[3]<br>
+f0method=sys.argv[4]#harvest or pm<br>
+opt_path=sys.argv[5]<br>
+model_path=sys.argv[6]<br>
+index_rate=float(sys.argv[7])<br>
+device=sys.argv[8]<br>
+is_half=bool(sys.argv[9])<br>
 
-## Soru 9: Optimal kaç total_epoch kullanmalıyım?
-Eğitim veri setinin ses kalitesi düşük ve gürültü seviyesi yüksekse, 20-30 epoch yeterlidir. Çok yüksek bir değer ayarlamak, düşük kaliteli eğitim setinizin ses kalitesini artırmaz.
+## Q8: Cuda Hatası/Cuda Bellek Yetersizliği
+Küçük bir ihtimalle CUDA konfigürasyonunda bir problem olabilir veya cihaz desteklenmiyor olabilir; daha muhtemel olarak yetersiz bellek olabilir (bellek yetersizliği).<br>
 
-Eğitim setinin ses kalitesi yüksek, gürültü sevi
+Eğitim için toplu işlem boyutunu azaltın (1'e indirgemek yeterli değilse, grafik kartını değiştirmeniz gerekebilir); çıkarım için ise config.py dosyasındaki x_pad, x_query, x_center ve x_max ayarlarını ihtiyaca göre düzenleyin. 4GB veya daha düşük bellekli kartlar (örneğin 1060(3G) ve çeşit
 
-yesi düşük ve yeterli süresi varsa, artırabilirsiniz. 200 kabul edilebilir (çünkü eğitim hızlıdır ve yüksek kaliteli bir eğitim seti hazırlayabiliyorsanız, GPU'nuz muhtemelen sorunsuz bir şekilde daha uzun bir eğitim süresini işleyebilir).
+li 2GB kartlar) terk edilebilir, 4GB bellekli kartlar hala bir şansı vardır.<br>
 
-## Soru 10: Ne kadar eğitim verisi süresine ihtiyacım var?
-Yaklaşık 10 dakika ile 50 dakika arasında bir veri seti önerilir.
+## Q9: Optimal Olarak Kaç total_epoch Gerekli?
+Eğitim veri setinin ses kalitesi düşük ve gürültü seviyesi yüksekse, 20-30 dönem yeterlidir. Fazla yüksek bir değer belirlemek, düşük kaliteli eğitim setinizin ses kalitesini artırmaz.<br>
 
-Sağlam ses kalitesi ve düşük taban gürültü garantiliyse, veri seti seslerinin homojen olması durumunda daha fazla ekleyebilirsiniz.
+Eğitim setinin ses kalitesi yüksek, gürültü seviyesi düşük ve yeterli süre varsa, bu değeri artırabilirsiniz. 200 kabul edilebilir bir değerdir (çünkü eğitim hızlıdır ve yüksek kaliteli bir eğitim seti hazırlayabiliyorsanız, GPU'nuz muhtemelen uzun bir eğitim süresini sorunsuz bir şekilde yönetebilir).<br>
 
-Yüksek seviye bir eğitim seti için (düzgün + belirgin bir ton), 5 dakika ile 10 dakika arasında yeterlidir.
+## Q10: Kaç Dakika Eğitim Verisi Süresi Gerekli?
 
-1 dakika ile 2 dakika veriyle başarıyla eğitim yapan bazı insanlar var, ancak başarı başkaları tarafından tekrarlanabilir değil ve çok bilgi verici değil. Bu, eğitim setinin çok belirgin bir tona sahip olmasını (örneğin yüksek frekanslı havadar anime kız sesi gibi) ve ses kalitesinin yüksek olmasını gerektirir; 1 dakikadan daha kısa veriler şu ana kadar başarılı bir şekilde deneme yapılmamıştır. Bu önerilmez.
+10 ila 50 dakika arası bir veri seti önerilir.<br>
 
-## Soru 11: İndeks oranı nedir ve nasıl ayarlanır?
-Önceden eğitilmiş modelin ve çıkarım kaynağının ton kalitesi, eğitim setinin ton kalitesinden daha yüksekse, bunlar çıkarım sonucunun ton kalitesini artırabilir, ancak eğitim setinin tonuna göre değil, genellikle "ton sızıntısı" olarak adlandırılan eğitim setinin tonuna göre bir ton eğilimine yol açabilir.
+Garantili yüksek ses kalitesi ve düşük arka plan gürültüsü varsa, veri setinin tonlaması homojen ise daha fazlası eklenebilir.<br>
 
-İndeks oranı, ton sızıntı sorununu azaltmak/çözmek için kullanılır. İndeks oranı 1 olarak ayarlandığında, teorik olarak çıkarım kaynağından hiç ton sızıntısı olmaz ve ton kalitesi daha çok eğitim setine yönlendirilir. Eğitim seti, çıkarım kaynağından ses kalitesi açısından daha düşükse, daha yüksek bir indeks oranı ses kalitesini azaltabilir. 0'a indirildiğinde, eğitim seti tonlarını korumak için çıkarım karışımı kullanma etkisi yoktur.
+Yüksek seviyede bir eğitim seti (zarif ve belirgin tonlama), 5 ila 10 dakika arası uygundur.<br>
 
-Eğitim seti iyi ses kalitesine sahipse ve uzun süreliyse, total_epoch'ı artırın, modelin kendi başına çıkarım kaynağına ve önceden eğitilmiş temel modeline başvurma olasılığı azaldığında ve "ton sızıntısı" çok az olduğunda, indeks oranı önemli değildir ve hatta indeks dosyası oluşturmak/paylaşmak zorunda kalmazsınız.
+1 ila 2 dakika veri ile başarılı bir şekilde eğitim yapan bazı insanlar olsa da, başarı diğerleri tarafından tekrarlanabilir değil ve çok bilgilendirici değil. Bu, eğitim setinin çok belirgin bir tonlamaya sahip olmasını (örneğin yüksek frekansta havadar bir anime kız sesi gibi) ve ses kalitesinin yüksek olmasını gerektirir; 1 dakikadan daha kısa süreli veri denenmemiştir ve önerilmez.<br>
 
-## Soru 12: Çıkarırken hangi gpu'yu seçmeliyim?
-config.py dosyasında, "device cuda:" dan sonra kart numarasını seçin.
 
-Kart numarası ile grafik kartı arasındaki eşleştirmeyi eğitim sekmesinin grafik kartı bilgisi bölümünde görebilirsiniz.
+## Q11: İndeks Oranı Nedir ve Nasıl Ayarlanır?
+Eğer önceden eğitilmiş model ve tahmin kaynağının ton kalitesi, eğitim setinden daha yüksekse, tahmin sonucunun ton kalitesini yükseltebilirler, ancak altta yatan modelin/tahmin kaynağının tonu yerine eğitim setinin tonuna yönelik olası bir ton önyargısıyla sonuçlanır, bu genellikle "ton sızıntısı" olarak adlandırılır.<br>
 
-## Soru 13: Eğitimin ortasında kaydedilen modeli nasıl kullanabilirim?
-Çıkartma modeli, ckpt processing sekmesinin alt kısmında kaydedin.
+İndeks oranı, ton sızıntı sorununu azaltmak/çözmek için kullanılır. İndeks oranı 1 olarak ayarlandığında, teorik olarak tahmin kaynağından ton sızıntısı olmaz ve ton kalitesi daha çok eğitim setine yönelik olur. Eğer eğitim seti, tahmin kaynağından daha düşük ses kalitesine sahipse, daha yüksek bir indeks oranı ses kalitesini azaltabilir. Oranı 0'a düşürmek, eğitim seti tonlarını korumak için getirme karıştırmasını kullanmanın etkisine sahip değildir.<br>
 
-## Soru 14: Dosya/bellek hatası (eğitim sırasında)?
-Çok fazla işlem ve belleğiniz yeterli değil. Bunun düzeltilmesi için:
+Eğer eğitim seti iyi ses kalitesine ve uzun süreye sahipse, total_epoch'u artırın. Model, tahmin kaynağına ve önceden eğitilmiş alt modeline daha az başvurduğunda ve "ton sızıntısı" daha az olduğunda, indeks oranı önemli değil ve hatta indeks dosyası oluşturmak/paylaşmak gerekli değildir.<br>
 
-1. "Threads of CPU" alanında girişi azaltın.
-2. Eğitim setini daha kısa ses dosyalarına önceden kesin.
+## Q12: Tahmin Yaparken Hangi GPU'yu Seçmeli?
+config.py dosyasında "device cuda:" ardından kart numarasını seçin.<br>
 
-## Soru 15: Daha fazla veri kullanarak nasıl eğitime devam ederim?
-Adım 1: Tüm wav verilerini path2'ye koyun.
-Adım 2: exp_name2+path2 -> veri kümesini işleyin ve özellik çıkarın.
-Adım 3: exp_name1 (önceki deneyiminiz) en son G ve D dosyalarını exp_name2 klasörüne kopyalayın.
-Adım 4: "train the model" düğmesine tıklayın ve önceki deneyiminiz model epoğunun başlangıcından itibaren eğitime devam edecektir.
+Kart numarası ile grafik kartı arasındaki eşleme, eğitim sekmesinin grafik kartı bilgileri bölümünde görülebilir.<br>
+
+## Q13: Eğitimin Ortasında Kaydedilen Model Nasıl Kullanılır?
+Kaydetme işlemini ckpt işleme sekmesinin altında yer alan model çıkarımı ile yapabilirsiniz.
+
+## Q14: Dosya/Bellek Hatası (Eğitim Sırasında)?
+Çok fazla işlem ve yetersiz bellek olabilir. Bu sorunu düzeltebilirsiniz:
+
+1. "CPU İş Parçacıkları" alanındaki girişi azaltarak.
+
+2. Eğitim verisini daha kısa ses dosyalarına önceden keserek.
+
+## Q15: Daha Fazla Veri Kullanarak Eğitime Nasıl Devam Edilir?
+
+Adım 1: Tüm wav verilerini path2 dizinine yerleştirin.
+
+Adım 2: exp_name2+path2 -> veri setini önişleme ve özellik çıkarma.
+
+Adım 3: exp_name1 (önceki deneyinizin) en son G ve D dosyalarını exp_name2 klasörüne kopyalayın.
+
+Adım 4: "modeli eğit" düğmesine tıklayın ve önceki deneyinizin model döneminden başlayarak eğitime devam edecektir.
