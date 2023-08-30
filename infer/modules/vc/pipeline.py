@@ -77,8 +77,6 @@ class Pipeline(object):
         self.t_max = self.sr * self.x_max  # 免查询时长阈值
         self.device = config.device
 
-        self.model_rmvpe = None
-
     def get_f0(
         self,
         input_audio_path,
@@ -141,9 +139,9 @@ class Pipeline(object):
             if not hasattr(self, "model_rmvpe"):
                 from infer.lib.rmvpe import RMVPE
 
-                print("loading rmvpe model")
+                print("loading rmvpe model,%s"%"%s/rmvpe.pt"%os.environ["rmvpe_root"])
                 self.model_rmvpe = RMVPE(
-                    "rmvpe.pt", is_half=self.is_half, device=self.device
+                    "%s/rmvpe.pt"%os.environ["rmvpe_root"], is_half=self.is_half, device=self.device
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
 
