@@ -1,68 +1,67 @@
-RVC Eğitimi için Talimatlar ve İpuçları
-===========================================
+## RVC Eğitimi için Talimatlar ve İpuçları
+======================================
+Bu TALİMAT, veri eğitiminin nasıl yapıldığını açıklamaktadır.
 
-Bu TIPS, veri eğitiminin nasıl yapıldığını açıklar.
-
-# Eğitim Süreci
-Eğitim sekmesinde adımları takip ederek açıklayacağım.
+# Eğitim Akışı
+Eğitim sekmesindeki adımları takip ederek açıklayacağım.
 
 ## Adım 1
-Burada deney adını ayarlayın.
+Deney adını burada belirleyin.
 
-Ayrıca burada modelin pitch'i dikkate alıp almayacağını da belirtebilirsiniz.
-Eğer model pitch'i dikkate almazsa, model daha hafif olacak ancak şarkı söyleme için uygun olmayacaktır.
+Ayrıca burada modelin pitch'i dikkate alıp almayacağını da belirleyebilirsiniz.
+Eğer model pitch'i dikkate almazsa, model daha hafif olacak, ancak şarkı söyleme için uygun olmayacaktır.
 
-Her deney için veriler `/logs/deney-adınız/` klasörüne yerleştirilir.
+Her deney için veriler `/logs/your-experiment-name/` dizinine yerleştirilir.
 
 ## Adım 2a
-Ses yüklenir ve ön işlem yapılır.
+Ses yüklenir ve ön işleme yapılır.
 
-### Ses yükleme
-Ses içeren bir klasörü belirtirseniz, o klasördeki ses dosyaları otomatik olarak okunacaktır.
-Örneğin, `C:Kullanıcılar\hoge\sese` gibi bir klasör belirtirseniz, `C:Kullanıcılar\hoge\sese\voice.mp3` yüklenecek, ancak `C:Kullanıcılar\hoge\sese\klasör\voice.mp3` yüklenecektir.
+### Ses Yükleme
+Ses içeren bir klasör belirtirseniz, bu klasördeki ses dosyaları otomatik olarak okunur.
+Örneğin, `C:Users\hoge\voices` belirtirseniz, `C:Users\hoge\voices\voice.mp3` yüklenecek, ancak `C:Users\hoge\voices\dir\voice.mp3` yüklenmeyecektir.
 
 Ses okumak için dahili olarak ffmpeg kullanıldığından, uzantı ffmpeg tarafından destekleniyorsa otomatik olarak okunacaktır.
-ffmpeg ile int16'ya dönüştürüldükten sonra, float32'ye çevrilir ve -1 ile 1 arasında normalize edilir.
+ffmpeg ile int16'ya dönüştürüldükten sonra float32'ye dönüştürülüp -1 ile 1 arasında normalize edilir.
 
 ### Gürültü Temizleme
-Ses, scipy'nin filtfilt fonksiyonu ile düzeltilir.
+Ses scipy'nin filtfilt işlevi ile yumuşatılır.
 
 ### Ses Ayırma
-Önceki işlemlerin ardından giriş sesi, belirli bir süreden (max_sil_kept=5 saniye?) daha uzun süren sessiz bölümleri algılayarak bölünür. Ses sessizlik üzerinde bölündükten sonra, sesi her 4 saniyede bir 0.3 saniyelik bir örtüşme ile bölünür. 4 saniye içinde ayrılan ses için, sesin ses düzeyi normalize edildikten sonra wav dosyasına çevrilir ve `/logs/deney-adınız/0_gt_wavs` klasörüne kaydedilir ve ardından 16k örnekleme hızında `/logs/deney-adınız/1_16k_wavs` klasörüne kaydedilir.
+İlk olarak, giriş sesi belirli bir süreden (max_sil_kept=5 saniye?) daha uzun süren sessiz kısımları tespit ederek böler. Sessizlik üzerinde ses bölündükten sonra sesi 4 saniyede bir 0.3 saniyelik bir örtüşme ile böler. 4 saniye içinde ayrılan sesler için ses normalleştirildikten sonra wav dosyası olarak `/logs/your-experiment-name/0_gt_wavs`'a, ardından 16 kHz örnekleme hızına dönüştürülerek `/logs/your-experiment-name/1_16k_wavs` olarak kaydedilir.
 
 ## Adım 2b
-### Pitch (Ton Yüksekliği) Çıkarma
-Wav dosyalarından pitch bilgisi çıkarılır. Parselmouth veya pyworld tarafından sağlanan yöntem kullanılarak pitch bilgisi (=f0) çıkarılır ve `/logs/deney-adınız/2a_f0` klasöründe kaydedilir. Daha sonra pitch bilgisi logaritmik olarak 1 ile 255 arasında bir tamsayıya dönüştürülür ve `/logs/deney-adınız/2b-f0nsf` klasöründe kaydedilir.
+### Pitch Çıkarımı
+Wav dosyalarından pitch bilgisi çıkarılır. ParSelMouth veya PyWorld'e dahili olarak yerleştirilmiş yöntemi kullanarak pitch bilgisi (=f0) çıkarılır ve `/logs/your-experiment-name/2a_f0` dizinine kaydedilir. Ardından pitch bilgisi logaritmik olarak 1 ile 255 arasında bir tamsayıya dönüştürülüp `/logs/your-experiment-name/2b-f0nsf` dizinine kaydedilir.
 
-### Özelliklerin Çıkartılması
-Wav dosyası, HuBERT kullanılarak önceden gömme olarak çıkartılır. `/logs/deney-adınız/1_16k_wavs` klasöründe kaydedilen wav dosyası okunur, 256 boyutlu özelliklere HuBERT kullanılarak dönüştürülür ve `/logs/deney-adınız/3_feature256` klasöründe npy formatında kaydedilir.
+### Özellik Çıkarımı
+HuBERT'i kullanarak önceden gömme olarak wav dosyasını çıkarır. `/logs/your-experiment-name/1_16k_wavs`'a kaydedilen wav dosyasını okuyarak, wav dosyasını 256 boyutlu HuBERT özelliklerine dönüştürür ve npy formatında `/logs/your-experiment-name/3_feature256` dizinine kaydeder.
 
 ## Adım 3
-Modeli eğitin.
-### Yeni Başlayanlar İçin Terimler
-Derin öğrenmede, veri kümesi bölmeye ve öğrenmeye azar azar devam eder. Bir model güncellemesinde (adım), batch_size veri alınır ve tahminler ve hata düzeltmeleri yapılır. Bunun bir veri kümesi için bir kez yapılması bir epoch olarak sayılır.
+Modeli eğit.
+### Başlangıç Seviyesi Sözlüğü
+Derin öğrenmede, veri kümesi bölmeye ve öğrenmeye adım adım devam eder. Bir model güncellemesinde (adım), batch_size veri alınır ve tahminler ve hata düzeltmeleri yapılır. Bunun bir defa bir veri kümesi için yapılması bir dönem olarak sayılır.
 
-Bu nedenle, öğrenme süresi adım başına öğrenme süresi x (veri kümesindeki veri sayısı / batch boyutu) x epoch sayısıdır. Genel olarak, batch boyutu ne kadar büyükse, öğrenme daha istikrarlı olur (adım başına öğrenme süresi ÷ batch boyutu) daha küçük olur, ancak daha fazla GPU belleği kullanır. GPU RAM, nvidia-smi komutu ile kontrol edilebilir. Makineye göre mümkün olduğunca batch boyutunu artırarak kısa sürede öğrenme yapılabilir.
+Bu nedenle, öğrenme zamanı adım başına öğrenme zamanı x (veri kümesindeki veri sayısı / batch boyutu) x dönem sayısıdır. Genel olarak, batch boyutu ne kadar büyükse, öğrenme daha istikrarlı hale gelir (adım başına öğrenme süresi ÷ batch boyutu) küçülür, ancak daha fazla GPU belleği kullanır. GPU RAM'ı nvidia-smi komutu ile kontrol edilebilir. Çalışma ortamının makinesine göre batch boyutunu mümkün olduğunca artırarak öğrenme süresini kısa sürede yapabilirsiniz.
 
 ### Önceden Eğitilmiş Modeli Belirtme
-RVC, modeli 0'dan değil önceden eğitilmiş ağırlıklardan başlayarak eğitmeye başlar, bu nedenle küçük bir veri kümesiyle eğitilebilir.
+RVC, modeli 0'dan değil önceden eğitilmiş ağırlıklardan başlatarak eğitir, bu nedenle küçük bir veri kümesi ile eğitilebilir.
 
 Varsayılan olarak
 
-- Eğer pitch'i dikkate alıyorsanız, `rvc-konumu/pretrained/f0G40k.pth` ve `rvc-konumu/pretrained/f0D40k.pth` yüklenir.
-- Eğer pitch'i dikkate almıyorsanız, `rvc-konumu/pretrained/f0G40k.pth` ve `rvc-konumu/pretrained/f0D40k.pth` yüklenir.
+- Eğer pitch'i dikkate alıyorsanız, `rvc-location/pretrained/f0G40k.pth` ve `rvc-location/pretrained/f0D40k.pth` yüklenir.
+- Eğer pitch'i dikkate almıyorsanız, yine `rvc-location/pretrained/f0G40k.pth` ve `rvc-location/pretrained/f0D40k.pth` yüklenir.
 
-Eğitim sırasında, model parametreleri `logs/deney-adınız/G_{}.pth` ve `logs/deney-adınız/D_{}.pth` olarak her save_every_epoch için kaydedilir, ancak bu yolu belirterek eğitimi başlatabilirsiniz. Farklı bir deneyde öğrenilen model ağırlıklarından eğitime yeniden başlatabilir veya yeni başlatabilirsiniz.
+Öğrenirken model parametreleri her save_every_epoch için `logs/your-experiment-name/G_{}.pth` ve `logs/your-experiment-name/D_{}.pth` olarak kaydedilir, ancak bu yolu belirterek öğrenmeye başlayabilirsiniz. Farklı bir deneyde öğrenilen model ağırlıklarından öğrenmeye yeniden başlayabilir veya eğitimi başlatabilirsiniz.
 
 ### Öğrenme İndeksi
-RVC, eğitim sırasında kullanılan HuBERT özellik değerlerini kaydeder ve çıkarım sırasında eğitim sırasında kullanılan özellik değerlerine ben
+RVC, eğitim sırasında kullanılan HuBERT özellik değerlerini kaydeder ve çıkarım sırasında, öğrenme sırasında kullanılan özellik değerlerine benzer özellik değerlerini arayarak çıkarım yapar. Bu aramayı yüksek hızda gerçekleştirebilmek için indeks öğrenilir.
+İndeks öğrenimi için yaklaş
 
-zer özellik değerlerini aramak için çıkarım yapar. Bu aramayı yüksek hızda gerçekleştirmek için indeksi önceden öğrenir.
-İndeks öğrenimi için, yaklaşık komşuluk arama kütüphanesi faiss kullanılır. `/logs/deney-adınız/3_feature256` klasöründe kaydedilen özellik değerini okuyarak indeks öğrenimi yapılır ve `logs/deney-adınız/add_XXX.index` olarak kaydedilir.
+ık komşuluk arama kütüphanesi faiss kullanılır. `/logs/your-experiment-name/3_feature256`'daki özellik değerini okur ve indeksi öğrenmek için kullanır, `logs/your-experiment-name/add_XXX.index` olarak kaydedilir.
 
-(20230428 güncelleme sürümünden itibaren, indeks okunur ve kaydetme / belirtme artık gerekli değildir.)
+(20230428 güncelleme sürümünden itibaren indeks okunur ve kaydetmek/belirtmek artık gerekli değildir.)
 
-### Buton açıklamaları
-- Modeli Eğit: Adım 2b'yi tamamladıktan sonra, modeli eğitmek için bu düğmeye basın.
-- Özellik İndeksini Eğit: Model eğitimini tamamladıktan sonra, indeks öğrenimini yapmak için bu düğmeye basın.
-- Tek Tıkla Eğitim: Adım 2b, model eğitimi ve özellik indeksi eğitimi hepsi bir arada.
+### Düğme Açıklaması
+- Modeli Eğit: Adım 2b'yi çalıştırdıktan sonra, modeli eğitmek için bu düğmeye basın.
+- Özellik İndeksini Eğit: Modeli eğittikten sonra, indeks öğrenme işlemi yapın.
+- Tek Tıklamayla Eğitim: Adım 2b, model eğitimi ve özellik indeks eğitimini bir arada yapar.
