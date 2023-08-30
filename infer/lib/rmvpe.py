@@ -1,4 +1,4 @@
-import pdb
+import pdb,os
 
 import numpy as np
 import torch
@@ -577,7 +577,7 @@ class RMVPE:
             import onnxruntime as ort
 
             ort_session = ort.InferenceSession(
-                "rmvpe.onnx", providers=["DmlExecutionProvider"]
+                "%s/rmvpe.onnx"%os.environ["rmvpe_root"], providers=["DmlExecutionProvider"]
             )
             self.model = ort_session
         else:
