@@ -1,5 +1,7 @@
+import os,sys
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 import logging
-import os
 import shutil
 import threading
 import traceback
@@ -29,7 +31,6 @@ from infer.modules.vc.modules import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
-now_dir = os.getcwd()
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
@@ -37,6 +38,7 @@ shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_error
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "assets/weights"), exist_ok=True)
+os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
@@ -1494,19 +1496,14 @@ with gr.Blocks(title="RVC WebUI") as app:
         with gr.TabItem(tab_faq):
             try:
                 if tab_faq == "常见问题解答":
-                    with open("docs/faq.md", "r", encoding="utf8") as f:
+                    with open("docs/cn/faq.md", "r", encoding="utf8") as f:
                         info = f.read()
                 else:
-                    with open("docs/faq_en.md", "r", encoding="utf8") as f:
+                    with open("docs/en/faq_en.md", "r", encoding="utf8") as f:
                         info = f.read()
                 gr.Markdown(value=info)
             except:
                 gr.Markdown(traceback.format_exc())
-
-        # with gr.TabItem(i18n("招募音高曲线前端编辑器")):
-        #     gr.Markdown(value=i18n("加开发群联系我xxxxx"))
-        # with gr.TabItem(i18n("点击查看交流、问题反馈群号")):
-        #     gr.Markdown(value=i18n("xxxxx"))
 
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
