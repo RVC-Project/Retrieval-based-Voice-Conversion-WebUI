@@ -23,7 +23,7 @@ def get_index_path_from_model(sid):
     sel_index_path = ""
     name = os.path.join("logs", sid.split(".")[0], "")
     # print(name)
-    for f in index_paths:
+    for f in sel_index_path:
         if name in f:
             # print("selected index path:", f)
             sel_index_path = f
