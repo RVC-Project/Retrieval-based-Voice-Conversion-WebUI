@@ -18,6 +18,7 @@ from fairseq import checkpoint_utils
 #         "",
 #     )
 
+
 def get_index_path_from_model(sid):
     sel_index_path = ""
     name = os.path.join("logs", sid.split(".")[0], "")
@@ -28,6 +29,7 @@ def get_index_path_from_model(sid):
             sel_index_path = f
             break
     return sel_index_path
+
 
 def load_hubert(config):
     models, _, _ = checkpoint_utils.load_model_ensemble_and_task(
