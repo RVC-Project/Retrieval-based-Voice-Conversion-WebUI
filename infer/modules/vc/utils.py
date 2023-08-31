@@ -2,22 +2,32 @@ import os
 
 from fairseq import checkpoint_utils
 
+### don't modify the code before you test it
+# def get_index_path_from_model(sid):
+#     return next(
+#         (
+#             f
+#             for f in [
+#                 os.path.join(root, name)
+#                 for root, dirs, files in os.walk(os.getenv("index_root"), topdown=False)
+#                 for name in files
+#                 if name.endswith(".index") and "trained" not in name
+#             ]
+#             if sid.split(".")[0] in f
+#         ),
+#         "",
+#     )
 
 def get_index_path_from_model(sid):
-    return next(
-        (
-            f
-            for f in [
-                os.path.join(root, name)
-                for root, dirs, files in os.walk(os.getenv("index_root"), topdown=False)
-                for name in files
-                if name.endswith(".index") and "trained" not in name
-            ]
-            if sid.split(".")[0] in f
-        ),
-        "",
-    )
-
+    sel_index_path = ""
+    name = os.path.join("logs", sid.split(".")[0], "")
+    # print(name)
+    for f in index_paths:
+        if name in f:
+            # print("selected index path:", f)
+            sel_index_path = f
+            break
+    return sel_index_path
 
 def load_hubert(config):
     models, _, _ = checkpoint_utils.load_model_ensemble_and_task(
