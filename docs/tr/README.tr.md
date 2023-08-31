@@ -4,8 +4,9 @@
 <h1>Çekme Temelli Ses Dönüşümü Web Arayüzü</h1>
 VITS'e dayalı kullanımı kolay bir Ses Dönüşümü çerçevesi.<br><br>
 
-[![madewithlove](https://forthebadge.com/images/badges/built-with-love.svg)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
-  
+[![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
+)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
+
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
   
 [![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
