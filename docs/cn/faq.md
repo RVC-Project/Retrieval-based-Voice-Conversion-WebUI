@@ -91,3 +91,14 @@ config.py文件里device cuda:后面选择卡号；<br>
 2、拷贝上一次的最新的那个G和D文件（或者你想基于哪个中间ckpt训练，也可以拷贝中间的）到新实验名；下<br>
 3、一键训练新实验名，他会继续上一次的最新进度训练。<br>
 
+## Q16: error about llvmlite.dll
+
+OSError: Could not load shared object file: llvmlite.dll
+
+FileNotFoundError: Could not find module lib\site-packages\llvmlite\binding\llvmlite.dll (or one of its dependencies). Try using the full path with constructor syntax.
+
+win平台会报这个错，装上https://aka.ms/vs/17/release/vc_redist.x64.exe这个再重启WebUI就好了。
+
+## Q17：RuntimeError: The expanded size of the tensor (17280) must match the existing size (0) at non-singleton dimension 1.  Target sizes: [1, 17280].  Tensor sizes: [0]
+
+wavs16k文件夹下，找到文件大小显著比其他都小的一些音频文件，删掉，点击训练模型，就不会报错了，不过由于一键流程中断了你训练完模型还要点训练索引。
