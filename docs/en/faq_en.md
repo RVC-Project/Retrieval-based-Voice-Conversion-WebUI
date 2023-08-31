@@ -101,4 +101,16 @@ step3: copy the latest G and D file of exp_name1 (your previous experiment) into
 
 step4: click "train the model", and it will continue training from the beginning of your previous exp model epoch.
 
+## Q16: error about llvmlite.dll
+
+OSError: Could not load shared object file: llvmlite.dll
+
+FileNotFoundError: Could not find module lib\site-packages\llvmlite\binding\llvmlite.dll (or one of its dependencies). Try using the full path with constructor syntax.
+
+The issue will happen in windows, install https://aka.ms/vs/17/release/vc_redist.x64.exe and it will be fixed.
+
+## Q17：RuntimeError: The expanded size of the tensor (17280) must match the existing size (0) at non-singleton dimension 1.  Target sizes: [1, 17280].  Tensor sizes: [0]
+
+Delete the wav files whose size is significantly smaller than others, and that won't happen again. Than click "train the model"and "train the index".
+
 
