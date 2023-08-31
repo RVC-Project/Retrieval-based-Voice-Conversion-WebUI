@@ -99,6 +99,10 @@ FileNotFoundError: Could not find module lib\site-packages\llvmlite\binding\llvm
 
 win平台会报这个错，装上https://aka.ms/vs/17/release/vc_redist.x64.exe这个再重启WebUI就好了。
 
-## Q17：RuntimeError: The expanded size of the tensor (17280) must match the existing size (0) at non-singleton dimension 1.  Target sizes: [1, 17280].  Tensor sizes: [0]
+## Q17: RuntimeError: The expanded size of the tensor (17280) must match the existing size (0) at non-singleton dimension 1.  Target sizes: [1, 17280].  Tensor sizes: [0]
 
 wavs16k文件夹下，找到文件大小显著比其他都小的一些音频文件，删掉，点击训练模型，就不会报错了，不过由于一键流程中断了你训练完模型还要点训练索引。
+
+## Q18: RuntimeError: The size of tensor a (24) must match the size of tensor b (16) at non-singleton dimension 2
+
+不要中途变更采样率继续训练。如果一定要变更，应更换实验名从头训练。当然你也可以把上次提取的音高和特征（0/1/2/2b folders）拷贝过去加速训练流程。
