@@ -356,7 +356,7 @@ if __name__ == "__main__":
                     )
                 if event == "start_vc" and self.flag_vc == False:
                     if self.set_values(values) == True:
-                        print("using_cuda:" + str(torch.cuda.is_available()))
+                        print("Use CUDA:" + str(torch.cuda.is_available()))
                         self.start_vc()
                         settings = {
                             "pth_path": values["pth_path"],
@@ -623,7 +623,7 @@ if __name__ == "__main__":
                 sola_offset = sola_offset.item()
             else:
                 sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-            print("sola offset: " + str(int(sola_offset)))
+            print("sola_offset =" + str(int(sola_offset)))
             self.output_wav[:] = infer_wav[sola_offset : sola_offset + self.block_frame]
             self.output_wav[: self.crossfade_frame] *= self.fade_in_window
             self.output_wav[: self.crossfade_frame] += self.sola_buffer[:]
@@ -663,7 +663,7 @@ if __name__ == "__main__":
                     outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
-            print("infer time:" + str(total_time))
+            print("Infer time:" + str(total_time))
 
         def get_devices(self, update: bool = True):
             """获取设备列表"""
@@ -716,9 +716,9 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            print("input device:" + str(sd.default.device[0]) + ":" + str(input_device))
+            print("Input device:" + str(sd.default.device[0]) + ":" + str(input_device))
             print(
-                "output device:" + str(sd.default.device[1]) + ":" + str(output_device)
+                "Output device:" + str(sd.default.device[1]) + ":" + str(output_device)
             )
 
     gui = GUI()

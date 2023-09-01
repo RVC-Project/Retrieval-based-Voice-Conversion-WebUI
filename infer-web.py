@@ -124,7 +124,7 @@ class ToolButton(gr.Button, gr.components.FormComponent):
 
 weight_root = os.getenv("weight_root")
 weight_uvr5_root = os.getenv("weight_uvr5_root")
-index_root = "logs"
+index_root = os.getenv("index_root")
 
 names = []
 for name in os.listdir(weight_root):
@@ -556,14 +556,14 @@ def click_train(
     shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
-    print("write filelist done")
+    print("Write filelist done")
     # 生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
-    print("use gpus:", gpus16)
+    print("Use gpus:", gpus16)
     if pretrained_G14 == "":
-        print("no pretrained Generator")
+        print("No pretrained Generator")
     if pretrained_D15 == "":
-        print("no pretrained Discriminator")
+        print("No pretrained Discriminator")
     if gpus16:
         cmd = get_quoted_python_cmd() + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
             exp_dir1,

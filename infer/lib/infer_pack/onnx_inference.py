@@ -6,7 +6,7 @@ import soundfile
 
 class ContentVec:
     def __init__(self, vec_path="pretrained/vec-768-layer-12.onnx", device=None):
-        print("load model(s) from {}".format(vec_path))
+        print("Load model(s) from {}".format(vec_path))
         if device == "cpu" or device is None:
             providers = ["CPUExecutionProvider"]
         elif device == "cuda":

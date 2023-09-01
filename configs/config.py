@@ -160,7 +160,7 @@ class Config:
             x_center = 30
             x_max = 32
         if self.dml:
-            print("use DirectML instead")
+            print("Use DirectML instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll"
@@ -188,7 +188,7 @@ class Config:
             self.is_half = False
         else:
             if self.instead:
-                print(f"use {self.instead} instead")
+                print(f"Use {self.instead} instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll"

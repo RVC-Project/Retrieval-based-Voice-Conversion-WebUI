@@ -23,7 +23,7 @@ vc = VC(config)
 
 weight_root = os.getenv("weight_root")
 weight_uvr5_root = os.getenv("weight_uvr5_root")
-index_root = "logs"
+index_root = os.getenv("index_root")
 names = []
 hubert_model = None
 for name in os.listdir(weight_root):

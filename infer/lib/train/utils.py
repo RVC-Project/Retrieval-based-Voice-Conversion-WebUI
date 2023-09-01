@@ -34,7 +34,7 @@ def load_checkpoint_d(checkpoint_path, combd, sbd, optimizer=None, load_opt=1):
                 new_state_dict[k] = saved_state_dict[k]
                 if saved_state_dict[k].shape != state_dict[k].shape:
                     print(
-                        "shape-%s-mismatch|need-%s|get-%s"
+                        "shape-%s-mismatch. need: %s, get: %s"
                         % (k, state_dict[k].shape, saved_state_dict[k].shape)
                     )  #
                     raise KeyError

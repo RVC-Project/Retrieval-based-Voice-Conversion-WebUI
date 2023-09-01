@@ -34,7 +34,7 @@ from scipy.io import wavfile
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = r"E:\codes\py39\vits_vc_gpu_train\assets\hubert\hubert_base.pt"  #
-print("load model(s) from {}".format(model_path))
+print("Load model(s) from {}".format(model_path))
 models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
     suffix="",

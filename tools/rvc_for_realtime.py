@@ -67,7 +67,7 @@ class RVC:
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-                print("index search enabled")
+                print("Index search enabled")
             self.index_path = index_path
             self.index_rate = index_rate
             models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
@@ -120,7 +120,7 @@ class RVC:
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
             self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-            print("index search enabled")
+            print("Index search enabled")
         self.index_rate = new_index_rate
 
     def get_f0_post(self, f0):
@@ -237,7 +237,7 @@ class RVC:
         if hasattr(self, "model_rmvpe") == False:
             from infer.lib.rmvpe import RMVPE
 
-            print("loading rmvpe model")
+            print("Loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
                 #  "rmvpe.pt", is_half=False, device=self.device####dml配置
@@ -295,10 +295,10 @@ class RVC:
                     + (1 - self.index_rate) * feats[0][-leng_replace_head:]
                 )
             else:
-                print("index search FAIL or disabled")
+                print("Index search FAILED or disabled")
         except:
             traceback.print_exc()
-            print("index search FAIL")
+            print("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
         if self.if_f0 == 1:
@@ -338,5 +338,5 @@ class RVC:
                     .float()
                 )
         t5 = ttime()
-        print("time->fea-index-f0-model:", t2 - t1, t3 - t2, t4 - t3, t5 - t4)
+        print("Spent time: fea =", t2 - t1, ", index =", t3 - t2, ", f0 =", t4 - t3, ", model =", t5 - t4)
         return infered_audio

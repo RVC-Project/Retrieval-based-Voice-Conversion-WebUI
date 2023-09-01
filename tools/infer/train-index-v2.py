@@ -50,14 +50,14 @@ np.save("tools/infer/big_src_feature_mi.npy", big_npy)
 # big_npy=np.load("/bili-coeus/jupyter/jupyterhub-liujing04/vits_ch/inference_f0/big_src_feature_mi.npy")
 n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
 index = faiss.index_factory(768, "IVF%s,Flat" % n_ivf)  # mi
-print("training")
+print("Training...")
 index_ivf = faiss.extract_index_ivf(index)  #
 index_ivf.nprobe = 1
 index.train(big_npy)
 faiss.write_index(
     index, "tools/infer/trained_IVF%s_Flat_baseline_src_feat_v2.index" % (n_ivf)
 )
-print("adding")
+print("Adding...")
 batch_size_add = 8192
 for i in range(0, big_npy.shape[0], batch_size_add):
     index.add(big_npy[i : i + batch_size_add])

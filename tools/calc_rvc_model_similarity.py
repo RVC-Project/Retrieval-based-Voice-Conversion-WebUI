@@ -55,7 +55,7 @@ def main(path, root):
     torch.manual_seed(114514)
     model_a = torch.load(path, map_location="cpu")["weight"]
 
-    print("query:\t\t%s\t%s" % (path, model_hash(path)))
+    print("Query:\t\t%s\t%s" % (path, model_hash(path)))
 
     map_attn_a = {}
     map_rand_input = {}
@@ -83,7 +83,7 @@ def main(path, root):
             sims.append(sim)
 
         print(
-            "reference:\t%s\t%s\t%s"
+            "Reference:\t%s\t%s\t%s"
             % (path, model_hash(path), f"{torch.mean(torch.stack(sims)) * 1e2:.2f}%")
         )
 

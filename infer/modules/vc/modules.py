@@ -31,7 +31,7 @@ class VC:
 
     def get_vc(self, sid, *to_return_protect):
         person = f'{os.getenv("weight_root")}/{sid}'
-        print(f"loading {person}")
+        print(f"Loading: {person}")
 
         self.cpt = torch.load(person, map_location="cpu")
         self.tgt_sr = self.cpt["config"][-1]
@@ -77,6 +77,7 @@ class VC:
         self.pipeline = Pipeline(self.tgt_sr, self.config)
         n_spk = self.cpt["config"][-3]
         index = {"value": get_index_path_from_model(sid), "__type__": "update"}
+        print("Select index:", index["value"])
 
         return (
             (

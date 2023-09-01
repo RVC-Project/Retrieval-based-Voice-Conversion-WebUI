@@ -101,7 +101,7 @@ class Predictor:
                 "CPUExecutionProvider",
             ],
         )
-        print("onnx load done")
+        print("ONNX load done")
 
     def demix(self, mix):
         samples = mix.shape[-1]
