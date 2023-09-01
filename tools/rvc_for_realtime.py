@@ -338,5 +338,14 @@ class RVC:
                     .float()
                 )
         t5 = ttime()
-        print("Spent time: fea =", t2 - t1, ", index =", t3 - t2, ", f0 =", t4 - t3, ", model =", t5 - t4)
+        print(
+            "Spent time: fea =",
+            t2 - t1,
+            ", index =",
+            t3 - t2,
+            ", f0 =",
+            t4 - t3,
+            ", model =",
+            t5 - t4,
+        )
         return infered_audio
