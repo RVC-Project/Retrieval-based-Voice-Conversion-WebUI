@@ -303,8 +303,16 @@ if __name__ == "__main__":
                                 ),
                             ],
                             [
-                                sg.Checkbox(i18n("输入降噪"), key="I_noise_reduce", enable_events=True),
-                                sg.Checkbox(i18n("输出降噪"), key="O_noise_reduce", enable_events=True),
+                                sg.Checkbox(
+                                    i18n("输入降噪"),
+                                    key="I_noise_reduce",
+                                    enable_events=True,
+                                ),
+                                sg.Checkbox(
+                                    i18n("输出降噪"),
+                                    key="O_noise_reduce",
+                                    enable_events=True,
+                                ),
                             ],
                         ],
                         title=i18n("性能设置"),
@@ -375,9 +383,9 @@ if __name__ == "__main__":
                             json.dump(settings, j)
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
-                
+
                 # Parameter hot update
-                if event == 'threhold':
+                if event == "threhold":
                     self.config.threhold = values["threhold"]
                 elif event == "pitch":
                     self.config.pitch = values["pitch"]
@@ -389,14 +397,14 @@ if __name__ == "__main__":
                         self.rvc.change_index_rate(values["index_rate"])
                 elif event in ["pm", "harvest", "crepe", "rmvpe"]:
                     self.config.f0method = event
-                elif event == 'I_noise_reduce':
+                elif event == "I_noise_reduce":
                     self.config.I_noise_reduce = values["I_noise_reduce"]
-                elif event == 'O_noise_reduce':
+                elif event == "O_noise_reduce":
                     self.config.O_noise_reduce = values["O_noise_reduce"]
                 elif event != "start_vc" and self.flag_vc == True:
                     # Other parameters do not support hot update
                     self.flag_vc = False
-                    
+
         def set_values(self, values):
             if len(values["pth_path"].strip()) == 0:
                 sg.popup(i18n("请选择pth文件"))
@@ -502,9 +510,20 @@ if __name__ == "__main__":
             self.sola_buffer: torch.Tensor = torch.zeros(
                 self.crossfade_frame, device=device, dtype=torch.float32
             )
-            self.fade_in_window: torch.Tensor = torch.sin(0.5 * np.pi * torch.linspace(
-                0.0, 1.0, steps=self.crossfade_frame, device=device, dtype=torch.float32
-            )) ** 2
+            self.fade_in_window: torch.Tensor = (
+                torch.sin(
+                    0.5
+                    * np.pi
+                    * torch.linspace(
+                        0.0,
+                        1.0,
+                        steps=self.crossfade_frame,
+                        device=device,
+                        dtype=torch.float32,
+                    )
+                )
+                ** 2
+            )
             self.fade_out_window: torch.Tensor = 1 - self.fade_in_window
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
