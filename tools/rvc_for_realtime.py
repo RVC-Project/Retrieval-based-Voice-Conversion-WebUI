@@ -112,17 +112,17 @@ class RVC:
             self.is_half = config.is_half
         except:
             print(traceback.format_exc())
-    
+
     def change_key(self, new_key):
         self.f0_up_key = new_key
-    
+
     def change_index_rate(self, new_index_rate):
         if new_index_rate != 0 and self.index_rate == 0:
-                self.index = faiss.read_index(self.index_path)
-                self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-                print("index search enabled")
+            self.index = faiss.read_index(self.index_path)
+            self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
+            print("index search enabled")
         self.index_rate = new_index_rate
-        
+
     def get_f0_post(self, f0):
         f0_min = self.f0_min
         f0_max = self.f0_max
