@@ -341,5 +341,5 @@ class RVC:
                     .float()
                 )
         t5 = ttime()
-        logger.info("Spent time: fea =", t2 - t1, ", index =", t3 - t2, ", f0 =", t4 - t3, ", model =", t5 - t4)
+        logger.info("Spent time: fea = %s, index = %s, f0 = %s, model = %s", t2 - t1, t3 - t2, t4 - t3, t5 - t4)
         return infered_audio
