@@ -195,6 +195,7 @@ if __name__ == "__main__":
                                     resolution=1,
                                     orientation="h",
                                     default_value=data.get("threhold", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -205,6 +206,7 @@ if __name__ == "__main__":
                                     resolution=1,
                                     orientation="h",
                                     default_value=data.get("pitch", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -215,6 +217,7 @@ if __name__ == "__main__":
                                     resolution=0.01,
                                     orientation="h",
                                     default_value=data.get("index_rate", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -224,24 +227,28 @@ if __name__ == "__main__":
                                     "f0method",
                                     key="pm",
                                     default=data.get("pm", "") == True,
+                                    enable_events=True,
                                 ),
                                 sg.Radio(
                                     "harvest",
                                     "f0method",
                                     key="harvest",
                                     default=data.get("harvest", "") == True,
+                                    enable_events=True,
                                 ),
                                 sg.Radio(
                                     "crepe",
                                     "f0method",
                                     key="crepe",
                                     default=data.get("crepe", "") == True,
+                                    enable_events=True,
                                 ),
                                 sg.Radio(
                                     "rmvpe",
                                     "f0method",
                                     key="rmvpe",
                                     default=data.get("rmvpe", "") == True,
+                                    enable_events=True,
                                 ),
                             ],
                         ],
@@ -257,6 +264,7 @@ if __name__ == "__main__":
                                     resolution=0.03,
                                     orientation="h",
                                     default_value=data.get("block_time", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -269,6 +277,7 @@ if __name__ == "__main__":
                                     default_value=data.get(
                                         "n_cpu", min(self.config.n_cpu, n_cpu)
                                     ),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -279,6 +288,7 @@ if __name__ == "__main__":
                                     resolution=0.01,
                                     orientation="h",
                                     default_value=data.get("crossfade_length", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
@@ -289,11 +299,12 @@ if __name__ == "__main__":
                                     resolution=0.01,
                                     orientation="h",
                                     default_value=data.get("extra_time", ""),
+                                    enable_events=True,
                                 ),
                             ],
                             [
-                                sg.Checkbox(i18n("输入降噪"), key="I_noise_reduce"),
-                                sg.Checkbox(i18n("输出降噪"), key="O_noise_reduce"),
+                                sg.Checkbox(i18n("输入降噪"), key="I_noise_reduce", enable_events=True),
+                                sg.Checkbox(i18n("输出降噪"), key="O_noise_reduce", enable_events=True),
                             ],
                         ],
                         title=i18n("性能设置"),
@@ -306,7 +317,7 @@ if __name__ == "__main__":
                     sg.Text("0", key="infer_time"),
                 ],
             ]
-            self.window = sg.Window("RVC - GUI", layout=layout)
+            self.window = sg.Window("RVC - GUI", layout=layout, finalize=True)
             self.event_handler()
 
         def event_handler(self):
@@ -364,7 +375,28 @@ if __name__ == "__main__":
                             json.dump(settings, j)
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
-
+                
+                # Parameter hot update
+                if event == 'threhold':
+                    self.config.threhold = values["threhold"]
+                elif event == "pitch":
+                    self.config.pitch = values["pitch"]
+                    if hasattr(self, "rvc"):
+                        self.rvc.change_key(values["pitch"])
+                elif event == "index_rate":
+                    self.config.index_rate = values["index_rate"]
+                    if hasattr(self, "rvc"):
+                        self.rvc.change_index_rate(values["index_rate"])
+                elif event in ["pm", "harvest", "crepe", "rmvpe"]:
+                    self.config.f0method = event
+                elif event == 'I_noise_reduce':
+                    self.config.I_noise_reduce = values["I_noise_reduce"]
+                elif event == 'O_noise_reduce':
+                    self.config.O_noise_reduce = values["O_noise_reduce"]
+                elif event != "start_vc" and self.flag_vc == True:
+                    # Other parameters do not support hot update
+                    self.flag_vc = False
+                    
         def set_values(self, values):
             if len(values["pth_path"].strip()) == 0:
                 sg.popup(i18n("请选择pth文件"))
@@ -470,9 +502,9 @@ if __name__ == "__main__":
             self.sola_buffer: torch.Tensor = torch.zeros(
                 self.crossfade_frame, device=device, dtype=torch.float32
             )
-            self.fade_in_window: torch.Tensor = torch.linspace(
+            self.fade_in_window: torch.Tensor = torch.sin(0.5 * np.pi * torch.linspace(
                 0.0, 1.0, steps=self.crossfade_frame, device=device, dtype=torch.float32
-            )
+            )) ** 2
             self.fade_out_window: torch.Tensor = 1 - self.fade_in_window
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
