@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+logger = logging.getLogger(__name__)
 
 now_dir = os.getcwd()
 sys.path.append(os.path.join(now_dir))
@@ -82,7 +84,7 @@ def main():
         n_gpus = 1
     if n_gpus < 1:
         # patch to unblock people without gpus. there is probably a better way.
-        print("NO GPU DETECTED: falling back to CPU - this may take a while")
+        logger.warn("NO GPU DETECTED: falling back to CPU - this may take a while")
         n_gpus = 1
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(randint(20000, 55555))
@@ -209,7 +211,7 @@ def run(rank, n_gpus, hps):
         if hps.pretrainG != "":
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainG))
-            print(
+            logger.info(
                 net_g.module.load_state_dict(
                     torch.load(hps.pretrainG, map_location="cpu")["model"]
                 )
@@ -217,7 +219,7 @@ def run(rank, n_gpus, hps):
         if hps.pretrainD != "":
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainD))
-            print(
+            logger.info(
                 net_d.module.load_state_dict(
                     torch.load(hps.pretrainD, map_location="cpu")["model"]
                 )

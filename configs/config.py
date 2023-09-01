@@ -5,6 +5,10 @@ from multiprocessing import cpu_count
 
 import torch
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def use_fp32_config():
     for config_file in [
@@ -110,11 +114,11 @@ class Config:
                 or "1070" in self.gpu_name
                 or "1080" in self.gpu_name
             ):
-                print("Found GPU", self.gpu_name, ", force to fp32")
+                logger.info("Found GPU", self.gpu_name, ", force to fp32")
                 self.is_half = False
                 use_fp32_config()
             else:
-                print("Found GPU", self.gpu_name)
+                logger.info("Found GPU", self.gpu_name)
             self.gpu_mem = int(
                 torch.cuda.get_device_properties(i_device).total_memory
                 / 1024
@@ -128,12 +132,12 @@ class Config:
                 with open("infer/modules/train/preprocess.py", "w") as f:
                     f.write(strr)
         elif self.has_mps():
-            print("No supported Nvidia GPU found")
+            logger.info("No supported Nvidia GPU found")
             self.device = self.instead = "mps"
             self.is_half = False
             use_fp32_config()
         else:
-            print("No supported Nvidia GPU found")
+            logger.info("No supported Nvidia GPU found")
             self.device = self.instead = "cpu"
             self.is_half = False
             use_fp32_config()
@@ -160,7 +164,7 @@ class Config:
             x_center = 30
             x_max = 32
         if self.dml:
-            print("Use DirectML instead")
+            logger.info("Use DirectML instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll"
@@ -188,7 +192,7 @@ class Config:
             self.is_half = False
         else:
             if self.instead:
-                print(f"Use {self.instead} instead")
+                logger.info(f"Use {self.instead} instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll"

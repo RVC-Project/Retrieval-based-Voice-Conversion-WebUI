@@ -7,6 +7,10 @@ import torch.nn.functional as F
 from librosa.util import normalize, pad_center, tiny
 from scipy.signal import get_window
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 ###stft codes from https://github.com/pseeth/torch-stft/blob/master/torch_stft/util.py
 def window_sumsquare(
@@ -691,4 +695,4 @@ if __name__ == "__main__":
     # f0 = rmvpe.infer_from_audio(audio, thred=thred)
     # f0 = rmvpe.infer_from_audio(audio, thred=thred)
     t1 = ttime()
-    print(f0.shape, t1 - t0)
+    logger.info(f0.shape, t1 - t0)

@@ -1,5 +1,7 @@
 import os
 import traceback
+import logging
+logger = logging.getLogger(__name__)
 
 import ffmpeg
 import torch
@@ -92,5 +94,5 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             traceback.print_exc()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-            print("Executed torch.cuda.empty_cache()")
+            logger.info("Executed torch.cuda.empty_cache()")
     yield "\n".join(infos)

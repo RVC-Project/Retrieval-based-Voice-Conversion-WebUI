@@ -1,6 +1,9 @@
 import os
 import sys
 import traceback
+import logging
+logger = logging.getLogger(__name__)
+
 from time import time as ttime
 
 import fairseq
@@ -67,7 +70,7 @@ class RVC:
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-                print("Index search enabled")
+                logger.info("Index search enabled")
             self.index_path = index_path
             self.index_rate = index_rate
             models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
@@ -102,7 +105,7 @@ class RVC:
                 else:
                     self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
             del self.net_g.enc_q
-            print(self.net_g.load_state_dict(cpt["weight"], strict=False))
+            logger.debug(self.net_g.load_state_dict(cpt["weight"], strict=False))
             self.net_g.eval().to(device)
             # print(2333333333,device,config.device,self.device)#net_g是device，hubert是config.device
             if config.is_half:
@@ -111,7 +114,7 @@ class RVC:
                 self.net_g = self.net_g.float()
             self.is_half = config.is_half
         except:
-            print(traceback.format_exc())
+            logger.warn(traceback.format_exc())
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
@@ -120,7 +123,7 @@ class RVC:
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
             self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-            print("Index search enabled")
+            logger.info("Index search enabled")
         self.index_rate = new_index_rate
 
     def get_f0_post(self, f0):
@@ -237,7 +240,7 @@ class RVC:
         if hasattr(self, "model_rmvpe") == False:
             from infer.lib.rmvpe import RMVPE
 
-            print("Loading rmvpe model")
+            logger.info("Loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
                 #  "rmvpe.pt", is_half=False, device=self.device####dml配置
@@ -295,10 +298,10 @@ class RVC:
                     + (1 - self.index_rate) * feats[0][-leng_replace_head:]
                 )
             else:
-                print("Index search FAILED or disabled")
+                logger.warn("Index search FAILED or disabled")
         except:
             traceback.print_exc()
-            print("Index search FAILED")
+            logger.warn("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
         if self.if_f0 == 1:
@@ -338,5 +341,5 @@ class RVC:
                     .float()
                 )
         t5 = ttime()
-        print("Spent time: fea =", t2 - t1, ", index =", t3 - t2, ", f0 =", t4 - t3, ", model =", t5 - t4)
+        logger.info("Spent time: fea =", t2 - t1, ", index =", t3 - t2, ", f0 =", t4 - t3, ", model =", t5 - t4)
         return infered_audio

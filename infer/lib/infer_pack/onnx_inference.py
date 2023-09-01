@@ -3,10 +3,13 @@ import numpy as np
 import onnxruntime
 import soundfile
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ContentVec:
     def __init__(self, vec_path="pretrained/vec-768-layer-12.onnx", device=None):
-        print("Load model(s) from {}".format(vec_path))
+        logger.info("Load model(s) from {}".format(vec_path))
         if device == "cpu" or device is None:
             providers = ["CPUExecutionProvider"]
         elif device == "cuda":

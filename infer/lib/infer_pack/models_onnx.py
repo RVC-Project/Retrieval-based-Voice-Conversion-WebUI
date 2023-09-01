@@ -1,7 +1,6 @@
 import math
-import os
-import pdb
-from time import time as ttime
+import logging
+logger = logging.getLogger(__name__)
 
 import numpy as np
 import torch
@@ -620,7 +619,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         )
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
         self.speaker_map = None
-        print("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
+        logger.debug("gin_channels:", gin_channels, "self.spk_embed_dim:", self.spk_embed_dim)
 
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()

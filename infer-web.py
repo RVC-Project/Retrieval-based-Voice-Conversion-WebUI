@@ -32,6 +32,8 @@ from infer.modules.vc.modules import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
+logger = logging.getLogger(__name__)
+
 tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
@@ -58,7 +60,7 @@ if config.dml == True:
 
     fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
 i18n = I18nAuto()
-i18n.print()
+logger.info(i18n)
 # 判断是否有能用来训练和加速推理的N卡
 ngpu = torch.cuda.device_count()
 gpu_infos = []
@@ -213,7 +215,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         % (trainset_dir, sr, n_p, now_dir, exp_dir)
         + str(config.noparallel)
     )
-    print(cmd)
+    logger.info(cmd)
     p = Popen(cmd, shell=True)  # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
     ###煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
     done = [False]
@@ -232,7 +234,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
             break
     with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "r") as f:
         log = f.read()
-    print(log)
+    logger.info(log)
     yield log
 
 
@@ -254,7 +256,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     f0method,
                 )
             )
-            print(cmd)
+            logger.info(cmd)
             p = Popen(
                 cmd, shell=True, cwd=now_dir
             )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
@@ -281,7 +283,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                         exp_dir,
                         config.is_half,
                     )
-                    print(cmd)
+                    logger.info(cmd)
                     p = Popen(
                         cmd, shell=True, cwd=now_dir
                     )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -304,7 +306,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                         exp_dir,
                     )
                 )
-                print(cmd)
+                logger.info(cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -320,7 +322,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 break
         with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
             log = f.read()
-        print(log)
+        logger.info(log)
         yield log
     ####对不同part分别开多进程
     """
@@ -342,7 +344,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
             exp_dir,
             version19,
         )
-        print(cmd)
+        logger.info(cmd)
         p = Popen(
             cmd, shell=True, cwd=now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -364,7 +366,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
             break
     with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
         log = f.read()
-    print(log)
+    logger.info(log)
     yield log
 
 
@@ -378,12 +380,12 @@ def change_sr2(sr2, if_f0_3, version19):
         "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
@@ -414,12 +416,12 @@ def change_version19(sr2, if_f0_3, version19):
         "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
             "not exist, will not use pretrained model",
         )
@@ -443,12 +445,12 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
         "assets/pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/f0G%s.pth" % (path_str, sr2),
             "not exist, will not use pretrained model",
         )
     if not if_pretrained_discriminator_exist:
-        print(
+        logger.warn(
             "assets/pretrained%s/f0D%s.pth" % (path_str, sr2),
             "not exist, will not use pretrained model",
         )
@@ -556,14 +558,14 @@ def click_train(
     shuffle(opt)
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
-    print("Write filelist done")
+    logger.debug("Write filelist done")
     # 生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
-    print("Use gpus:", gpus16)
+    logger.info("Use gpus:", gpus16)
     if pretrained_G14 == "":
-        print("No pretrained Generator")
+        logger.info("No pretrained Generator")
     if pretrained_D15 == "":
-        print("No pretrained Discriminator")
+        logger.info("No pretrained Discriminator")
     if gpus16:
         cmd = get_quoted_python_cmd() + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
             exp_dir1,
@@ -599,7 +601,7 @@ def click_train(
                 version19,
             )
         )
-    print(cmd)
+    logger.info(cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
     return "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"
@@ -646,7 +648,7 @@ def train_index(exp_dir1, version19):
             )
         except:
             info = traceback.format_exc()
-            print(info)
+            logger.info(info)
             infos.append(info)
             yield "\n".join(infos)
 

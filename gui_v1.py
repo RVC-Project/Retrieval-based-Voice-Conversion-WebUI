@@ -1,5 +1,5 @@
 import os
-import pdb
+import logging
 import sys
 
 os.environ["OMP_NUM_THREADS"] = "2"
@@ -10,6 +10,8 @@ if sys.platform == "darwin":
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
+
+logger = logging.getLogger(__name__)
 
 
 class Harvest(multiprocessing.Process):
@@ -356,7 +358,7 @@ if __name__ == "__main__":
                     )
                 if event == "start_vc" and self.flag_vc == False:
                     if self.set_values(values) == True:
-                        print("Use CUDA:" + str(torch.cuda.is_available()))
+                        logger.info("Use CUDA:" + str(torch.cuda.is_available()))
                         self.start_vc()
                         settings = {
                             "pth_path": values["pth_path"],
@@ -545,8 +547,8 @@ if __name__ == "__main__":
             ):
                 while self.flag_vc:
                     time.sleep(self.config.block_time)
-                    print("Audio block passed.")
-            print("ENDing VC")
+                    logger.debug("Audio block passed.")
+            logger.debug("ENDing VC")
 
         def audio_callback(
             self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
@@ -623,7 +625,7 @@ if __name__ == "__main__":
                 sola_offset = sola_offset.item()
             else:
                 sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-            print("sola_offset =" + str(int(sola_offset)))
+            logger.debug("sola_offset =" + str(int(sola_offset)))
             self.output_wav[:] = infer_wav[sola_offset : sola_offset + self.block_frame]
             self.output_wav[: self.crossfade_frame] *= self.fade_in_window
             self.output_wav[: self.crossfade_frame] += self.sola_buffer[:]
@@ -663,7 +665,7 @@ if __name__ == "__main__":
                     outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
-            print("Infer time:" + str(total_time))
+            logger.info("Infer time:" + str(total_time))
 
         def get_devices(self, update: bool = True):
             """获取设备列表"""
@@ -716,8 +718,8 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            print("Input device:" + str(sd.default.device[0]) + ":" + str(input_device))
-            print(
+            logger.info("Input device:" + str(sd.default.device[0]) + ":" + str(input_device))
+            logger.info(
                 "Output device:" + str(sd.default.device[1]) + ":" + str(output_device)
             )
 

@@ -1,6 +1,9 @@
 import os
 import sys
 import traceback
+import logging
+logger = logging.getLogger(__name__)
+
 from functools import lru_cache
 from time import time as ttime
 
@@ -139,7 +142,7 @@ class Pipeline(object):
             if not hasattr(self, "model_rmvpe"):
                 from infer.lib.rmvpe import RMVPE
 
-                print(
+                logger.info(
                     "Loading rmvpe model,%s" % "%s/rmvpe.pt" % os.environ["rmvpe_root"]
                 )
                 self.model_rmvpe = RMVPE(
@@ -152,7 +155,7 @@ class Pipeline(object):
         if "privateuseone" in str(self.device):  # clean ortruntime memory
             del self.model_rmvpe.model
             del self.model_rmvpe
-            print("Cleaning ortruntime memory")
+            logger.info("Cleaning ortruntime memory")
 
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))

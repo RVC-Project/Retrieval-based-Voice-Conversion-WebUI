@@ -18,11 +18,10 @@ class I18nAuto:
         if not os.path.exists(f"./i18n/locale/{language}.json"):
             language = "en_US"
         self.language = language
-        # print("Use Language:", language)
         self.language_map = load_language_list(language)
 
     def __call__(self, key):
         return self.language_map.get(key, key)
 
-    def print(self):
-        print("Use Language:", self.language)
+    def __repr__(self):
+        return "Use Language: " + self.language
