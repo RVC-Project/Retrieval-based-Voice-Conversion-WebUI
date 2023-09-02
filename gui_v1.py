@@ -1,9 +1,11 @@
 import os
 import logging
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 os.environ["OMP_NUM_THREADS"] = "2"
-os.environ["rmvpe_root"] = "assets/rmvpe"
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 

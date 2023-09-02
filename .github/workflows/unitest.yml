@@ -30,7 +30,7 @@ jobs:
       run: |
         mkdir -p logs/mi-test
         touch logs/mi-test/preprocess.log
-        python infer/modules/train/preprocess.py logs/mute/0_gt_wavs 48000 8 logs/mi-test True
+        python infer/modules/train/preprocess.py logs/mute/0_gt_wavs 48000 8 logs/mi-test True 3.7
         touch logs/mi-test/extract_f0_feature.log
         python infer/modules/train/extract/extract_f0_print.py logs/mi-test $(nproc) pm
         python infer/modules/train/extract_feature_print.py cpu 1 0 0 logs/mi-test v1
