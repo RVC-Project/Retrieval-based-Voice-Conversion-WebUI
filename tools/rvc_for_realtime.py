@@ -343,7 +343,7 @@ class RVC:
                 )
         t5 = ttime()
         logger.info(
-            "Spent time: fea = %s, index = %s, f0 = %s, model = %s",
+            "Spent time: fea = %.2fs, index = %.2fs, f0 = %.2fs, model = %.2fs",
             t2 - t1,
             t3 - t2,
             t4 - t3,

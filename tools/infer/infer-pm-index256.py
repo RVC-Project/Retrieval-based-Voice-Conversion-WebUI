@@ -199,4 +199,4 @@ for idx, name in enumerate(
     wavfile.write("ft-mi-no_opt-no_dropout-%s.wav" % name, 40000, audio)  ##
 
 
-logger.debug(ta0, ta1, ta2)  #
+logger.debug("%.2fs %.2fs %.2fs", ta0, ta1, ta2)  #
