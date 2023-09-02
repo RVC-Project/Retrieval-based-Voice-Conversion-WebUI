@@ -455,14 +455,17 @@ if __name__ == "__main__":
                 inp_q,
                 opt_q,
                 device,
-                self.rvc if hasattr(self, "rvc") else None
+                self.rvc if hasattr(self, "rvc") else None,
             )
             self.config.samplerate = self.rvc.tgt_sr
             self.config.crossfade_time = min(
                 self.config.crossfade_time, self.config.block_time
             )
             self.zc = self.rvc.tgt_sr // 100
-            self.block_frame = int(np.round(self.config.block_time * self.config.samplerate / self.zc)) * self.zc
+            self.block_frame = (
+                int(np.round(self.config.block_time * self.config.samplerate / self.zc))
+                * self.zc
+            )
             self.block_frame_16k = 160 * self.block_frame // self.zc
             self.crossfade_frame = int(
                 self.config.crossfade_time * self.config.samplerate
@@ -484,7 +487,9 @@ if __name__ == "__main__":
                 ),
                 dtype="float32",
             )
-            self.input_wav_res: torch.Tensor= torch.zeros(160 * len(self.input_wav) // self.zc)
+            self.input_wav_res: torch.Tensor = torch.zeros(
+                160 * len(self.input_wav) // self.zc
+            )
             self.output_wav_cache: torch.Tensor = torch.zeros(
                 int(
                     np.ceil(
@@ -577,12 +582,18 @@ if __name__ == "__main__":
                     if db_threhold[i]:
                         indata[i * hop_length : (i + 1) * hop_length] = 0
             self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :]
-            self.input_wav[-self.block_frame: ] = indata
+            self.input_wav[-self.block_frame :] = indata
 
             # infer
-            inp = torch.from_numpy(self.input_wav[-self.block_frame-2*self.zc :]).to(device)
-            self.input_wav_res[ : -self.block_frame_16k] = self.input_wav_res[self.block_frame_16k :].clone()
-            self.input_wav_res[-self.block_frame_16k-160 :] = self.resampler(inp)[160 :]
+            inp = torch.from_numpy(
+                self.input_wav[-self.block_frame - 2 * self.zc :]
+            ).to(device)
+            self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
+                self.block_frame_16k :
+            ].clone()
+            self.input_wav_res[-self.block_frame_16k - 160 :] = self.resampler(inp)[
+                160:
+            ]
             rate = (
                 self.crossfade_frame + self.sola_search_frame + self.block_frame
             ) / (
@@ -592,11 +603,11 @@ if __name__ == "__main__":
                 + self.block_frame
             )
             f0_extractor_frame = self.block_frame_16k + 800
-            if self.config.f0method == 'rmvpe':
+            if self.config.f0method == "rmvpe":
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1)
             res2 = self.rvc.infer(
                 self.input_wav_res,
-                self.input_wav_res[-f0_extractor_frame :].cpu().numpy(),
+                self.input_wav_res[-f0_extractor_frame:].cpu().numpy(),
                 self.block_frame_16k,
                 rate,
                 self.pitch,
@@ -720,9 +731,7 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            logger.info(
-                "Input device: %s:%d", str(sd.default.device[0]), input_device
-            )
+            logger.info("Input device: %s:%d", str(sd.default.device[0]), input_device)
             logger.info(
                 "Output device: %s:%d", str(sd.default.device[1]), output_device
             )

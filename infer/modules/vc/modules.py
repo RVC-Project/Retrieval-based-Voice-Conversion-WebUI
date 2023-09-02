@@ -215,7 +215,8 @@ class VC:
                 else "Index not used."
             )
             return (
-                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs." % (index_info, *times),
+                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
+                % (index_info, *times),
                 (self.tgt_sr, audio_opt),
             )
         except:

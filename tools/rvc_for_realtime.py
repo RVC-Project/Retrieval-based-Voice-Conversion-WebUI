@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import logging
+
 logger = logging.getLogger(__name__)
 
 from time import time as ttime
@@ -47,7 +48,16 @@ if config.dml == True:
 # config.is_half=False########强制cpu测试
 class RVC:
     def __init__(
-        self, key, pth_path, index_path, index_rate, n_cpu, inp_q, opt_q, device, last_rvc=None,
+        self,
+        key,
+        pth_path,
+        index_path,
+        index_rate,
+        n_cpu,
+        inp_q,
+        opt_q,
+        device,
+        last_rvc=None,
     ) -> None:
         """
         初始化
@@ -74,7 +84,7 @@ class RVC:
             self.pth_path = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
-            
+
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
@@ -90,7 +100,7 @@ class RVC:
                 self.model = hubert_model
             else:
                 self.model = last_rvc.model
-            
+
             if last_rvc is None or last_rvc.pth_path != self.pth_path:
                 cpt = torch.load(self.pth_path, map_location="cpu")
                 self.tgt_sr = cpt["config"][-1]
@@ -126,7 +136,7 @@ class RVC:
                 self.version = last_rvc.version
                 self.net_g = last_rvc.net_g
                 self.is_half = last_rvc.is_half
-            
+
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
         except:
@@ -324,10 +334,10 @@ class RVC:
         if self.if_f0 == 1:
             pitch, pitchf = self.get_f0(indata, self.f0_up_key, self.n_cpu, f0method)
             start_frame = block_frame_16k // 160
-            end_frame = len(cache_pitch) - (pitch.shape[0] - 4) + start_frame 
-            cache_pitch[:] = np.append(cache_pitch[start_frame : end_frame], pitch[3:-1])
+            end_frame = len(cache_pitch) - (pitch.shape[0] - 4) + start_frame
+            cache_pitch[:] = np.append(cache_pitch[start_frame:end_frame], pitch[3:-1])
             cache_pitchf[:] = np.append(
-                cache_pitchf[start_frame : end_frame], pitchf[3:-1]
+                cache_pitchf[start_frame:end_frame], pitchf[3:-1]
             )
             p_len = min(feats.shape[1], 13000, cache_pitch.shape[0])
         else:

@@ -19,6 +19,7 @@ version_config_list = [
     "v2/32k.json",
 ]
 
+
 def singleton_variable(func):
     def wrapper(*args, **kwargs):
         if not wrapper.instance:
@@ -101,7 +102,7 @@ class Config:
             return True
         except Exception:
             return False
-    
+
     def use_fp32_config(self):
         for config_file in version_config_list:
             self.json_config[config_file]["train"]["fp16_run"] = False
