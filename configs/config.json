@@ -4,11 +4,12 @@
   "sg_input_device": "VoiceMeeter Output (VB-Audio Vo (MME)",
   "sg_output_device": "VoiceMeeter Aux Input (VB-Audio (MME)",
   "threhold": -45.0,
-  "pitch": 0.0,
-  "index_rate": 1.0,
-  "block_time": 0.09,
-  "crossfade_length": 0.15,
-  "extra_time": 5.0,
-  "n_cpu": 8.0,
+  "pitch": 12.0,
+  "index_rate": 0.0,
+  "rms_mix_rate": 0.0,
+  "block_time": 0.25,
+  "crossfade_length": 0.04,
+  "extra_time": 2.0,
+  "n_cpu": 6.0,
   "f0method": "rmvpe"
 }
