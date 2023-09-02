@@ -370,9 +370,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     yield log
 
 
-def change_sr2(sr2, if_f0_3, version19):
-    path_str = "" if version19 == "v1" else "_v2"
-    f0_str = "f0" if if_f0_3 else ""
+def get_pretrained_models(path_str, f0_str, sr2):
     if_pretrained_generator_exist = os.access(
         "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
@@ -381,13 +379,13 @@ def change_sr2(sr2, if_f0_3, version19):
     )
     if not if_pretrained_generator_exist:
         logger.warn(
-            "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
-            "not exist, will not use pretrained model",
+            "assets/pretrained%s/%sG%s.pth not exist, will not use pretrained model",
+            path_str, f0_str, sr2
         )
     if not if_pretrained_discriminator_exist:
         logger.warn(
-            "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
-            "not exist, will not use pretrained model",
+            "assets/pretrained%s/%sD%s.pth not exist, will not use pretrained model",
+            path_str, f0_str, sr2
         )
     return (
         "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
@@ -397,6 +395,12 @@ def change_sr2(sr2, if_f0_3, version19):
         if if_pretrained_discriminator_exist
         else "",
     )
+
+
+def change_sr2(sr2, if_f0_3, version19):
+    path_str = "" if version19 == "v1" else "_v2"
+    f0_str = "f0" if if_f0_3 else ""
+    return get_pretrained_models(path_str, f0_str, sr2)
 
 
 def change_version19(sr2, if_f0_3, version19):
@@ -409,71 +413,17 @@ def change_version19(sr2, if_f0_3, version19):
         else {"choices": ["40k", "48k", "32k"], "__type__": "update", "value": sr2}
     )
     f0_str = "f0" if if_f0_3 else ""
-    if_pretrained_generator_exist = os.access(
-        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
-    )
-    if_pretrained_discriminator_exist = os.access(
-        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
-    )
-    if not if_pretrained_generator_exist:
-        logger.warn(
-            "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2),
-            "not exist, will not use pretrained model",
-        )
-    if not if_pretrained_discriminator_exist:
-        logger.warn(
-            "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2),
-            "not exist, will not use pretrained model",
-        )
     return (
-        "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_generator_exist
-        else "",
-        "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2)
-        if if_pretrained_discriminator_exist
-        else "",
+        *get_pretrained_models(path_str, f0_str, sr2),
         to_return_sr2,
     )
 
 
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
-    if_pretrained_generator_exist = os.access(
-        "assets/pretrained%s/f0G%s.pth" % (path_str, sr2), os.F_OK
-    )
-    if_pretrained_discriminator_exist = os.access(
-        "assets/pretrained%s/f0D%s.pth" % (path_str, sr2), os.F_OK
-    )
-    if not if_pretrained_generator_exist:
-        logger.warn(
-            "assets/pretrained%s/f0G%s.pth" % (path_str, sr2),
-            "not exist, will not use pretrained model",
-        )
-    if not if_pretrained_discriminator_exist:
-        logger.warn(
-            "assets/pretrained%s/f0D%s.pth" % (path_str, sr2),
-            "not exist, will not use pretrained model",
-        )
-    if if_f0_3:
-        return (
-            {"visible": True, "__type__": "update"},
-            "assets/pretrained%s/f0G%s.pth" % (path_str, sr2)
-            if if_pretrained_generator_exist
-            else "",
-            "assets/pretrained%s/f0D%s.pth" % (path_str, sr2)
-            if if_pretrained_discriminator_exist
-            else "",
-        )
     return (
-        {"visible": False, "__type__": "update"},
-        ("assets/pretrained%s/G%s.pth" % (path_str, sr2))
-        if if_pretrained_generator_exist
-        else "",
-        ("assets/pretrained%s/D%s.pth" % (path_str, sr2))
-        if if_pretrained_discriminator_exist
-        else "",
+        {"visible": if_f0_3, "__type__": "update"}, *get_pretrained_models(path_str, "f0", sr2)
     )
-
 
 # but3.click(click_train,[exp_dir1,sr2,if_f0_3,save_epoch10,total_epoch11,batch_size12,if_save_latest13,pretrained_G14,pretrained_D15,gpus16])
 def click_train(
@@ -561,7 +511,7 @@ def click_train(
     logger.debug("Write filelist done")
     # 生成config#无需生成config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
-    logger.info("Use gpus:", gpus16)
+    logger.info("Use gpus: %s", str(gpus16))
     if pretrained_G14 == "":
         logger.info("No pretrained Generator")
     if pretrained_D15 == "":

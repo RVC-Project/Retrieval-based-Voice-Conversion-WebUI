@@ -695,4 +695,4 @@ if __name__ == "__main__":
     # f0 = rmvpe.infer_from_audio(audio, thred=thred)
     # f0 = rmvpe.infer_from_audio(audio, thred=thred)
     t1 = ttime()
-    logger.info(f0.shape, t1 - t0)
+    logger.info("%s %.2f", f0.shape, t1 - t0)
