@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import logging
+
 logger = logging.getLogger(__name__)
 
 from functools import lru_cache
@@ -267,9 +268,7 @@ class Pipeline(object):
         with torch.no_grad():
             hasp = pitch is not None and pitchf is not None
             arg = (feats, p_len, pitch, pitchf, sid) if hasp else (feats, p_len, sid)
-            audio1 = (
-                (net_g.infer(*arg)[0][0, 0]).data.cpu().float().numpy()
-            )
+            audio1 = (net_g.infer(*arg)[0][0, 0]).data.cpu().float().numpy()
             del hasp, arg
         del feats, p_len, padding_mask
         if torch.cuda.is_available():

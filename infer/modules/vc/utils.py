@@ -2,6 +2,7 @@ import os
 
 from fairseq import checkpoint_utils
 
+
 def get_index_path_from_model(sid):
     return next(
         (
