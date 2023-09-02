@@ -53,5 +53,9 @@ fi
 # Download models
 ./tools/dlmodels.sh
 
+if [[ $? -ne 0 ]]; then
+  exit 1
+fi
+
 # Run the main script
 python3 infer-web.py --pycmd python3

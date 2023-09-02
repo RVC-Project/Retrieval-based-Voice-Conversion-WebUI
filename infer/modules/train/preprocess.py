@@ -12,6 +12,7 @@ sr = int(sys.argv[2])
 n_p = int(sys.argv[3])
 exp_dir = sys.argv[4]
 noparallel = sys.argv[5] == "True"
+per = float(sys.argv[6])
 import multiprocessing
 import os
 import traceback
@@ -36,7 +37,7 @@ def println(strr):
 
 
 class PreProcess:
-    def __init__(self, sr, exp_dir):
+    def __init__(self, sr, exp_dir, per=3.7):
         self.slicer = Slicer(
             sr=sr,
             threshold=-42,
@@ -47,7 +48,7 @@ class PreProcess:
         )
         self.sr = sr
         self.bh, self.ah = signal.butter(N=5, Wn=48, btype="high", fs=self.sr)
-        self.per = 3.0
+        self.per = per
         self.overlap = 0.3
         self.tail = self.per + self.overlap
         self.max = 0.9
@@ -134,8 +135,8 @@ class PreProcess:
             println("Fail. %s" % traceback.format_exc())
 
 
-def preprocess_trainset(inp_root, sr, n_p, exp_dir):
-    pp = PreProcess(sr, exp_dir)
+def preprocess_trainset(inp_root, sr, n_p, exp_dir, per):
+    pp = PreProcess(sr, exp_dir, per)
     println("start preprocess")
     println(sys.argv)
     pp.pipeline_mp_inp_dir(inp_root, n_p)
@@ -143,4 +144,4 @@ def preprocess_trainset(inp_root, sr, n_p, exp_dir):
 
 
 if __name__ == "__main__":
-    preprocess_trainset(inp_root, sr, n_p, exp_dir)
+    preprocess_trainset(inp_root, sr, n_p, exp_dir, per)

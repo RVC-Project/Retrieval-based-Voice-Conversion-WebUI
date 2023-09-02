@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 import sys
-import traceback
+import shutil
 
 import numpy as np
 import torch
@@ -297,7 +297,6 @@ def get_hparams(init=True):
       -c不要了
     """
     parser = argparse.ArgumentParser()
-    # parser.add_argument('-c', '--config', type=str, default="configs/40k.json",help='JSON file for configuration')
     parser.add_argument(
         "-se",
         "--save_every_epoch",
@@ -360,23 +359,9 @@ def get_hparams(init=True):
     name = args.experiment_dir
     experiment_dir = os.path.join("./logs", args.experiment_dir)
 
-    if not os.path.exists(experiment_dir):
-        os.makedirs(experiment_dir)
-
-    if args.version == "v1" or args.sample_rate == "40k":
-        config_path = "configs/v1/%s.json" % args.sample_rate
-    else:
-        config_path = "configs/v2/%s.json" % args.sample_rate
     config_save_path = os.path.join(experiment_dir, "config.json")
-    if init:
-        with open(config_path, "r") as f:
-            data = f.read()
-        with open(config_save_path, "w") as f:
-            f.write(data)
-    else:
-        with open(config_save_path, "r") as f:
-            data = f.read()
-    config = json.loads(data)
+    with open(config_save_path, "r") as f:
+        config = json.load(f)
 
     hparams = HParams(**config)
     hparams.model_dir = hparams.experiment_dir = experiment_dir

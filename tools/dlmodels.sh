@@ -39,6 +39,7 @@ VR_DeEchoAggressive="VR-DeEchoAggressive.pth"
 VR_DeEchoDeReverb="VR-DeEchoDeReverb.pth"
 VR_DeEchoNormal="VR-DeEchoNormal.pth"
 onnx_dereverb="vocals.onnx"
+rmvpe="rmvpe.pt"
 
 dlhp2_all="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP2_all_vocals.pth"
 dlhp3_all="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP3_all_vocals.pth"
@@ -47,6 +48,7 @@ dlVR_DeEchoAggressive="https://huggingface.co/lj1995/VoiceConversionWebUI/resolv
 dlVR_DeEchoDeReverb="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/VR-DeEchoDeReverb.pth"
 dlVR_DeEchoNormal="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/VR-DeEchoNormal.pth"
 dlonnx_dereverb="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/onnx_dereverb_By_FoxJoy/vocals.onnx"
+dlrmvpe="https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/rmvpe.pt"
 
 hb="hubert_base.pt"
 
@@ -512,6 +514,25 @@ else
     if command -v aria2c &> /dev/null; then
         aria2c --console-log-level=error -c -x 16 -s 16 -k 1M $dlonnx_dereverb -d ./assets/uvr5_weights/onnx_dereverb_By_FoxJoy -o $onnx_dereverb
         if [ -f "./assets/uvr5_weights/onnx_dereverb_By_FoxJoy/$onnx_dereverb" ]; then
+            echo download successful.
+        else
+            echo please try again!
+            exit 1
+        fi
+    else
+        echo aria2c command not found. Please install aria2c and try again.
+        exit 1
+    fi
+fi
+
+echo checking $rmvpe
+if [ -f "./assets/rmvpe/$rmvpe" ]; then
+    echo $rmvpe in ./assets/rmvpe checked.
+else
+    echo failed. starting download from huggingface.
+    if command -v aria2c &> /dev/null; then
+        aria2c --console-log-level=error -c -x 16 -s 16 -k 1M $dlrmvpe -d ./assets/rmvpe -o $rmvpe
+        if [ -f "./assets/rmvpe/$rmvpe" ]; then
             echo download successful.
         else
             echo please try again!

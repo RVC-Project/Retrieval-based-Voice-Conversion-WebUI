@@ -10,6 +10,8 @@ import warnings
 from random import shuffle
 from subprocess import Popen
 from time import sleep
+import json
+import pathlib
 
 import fairseq
 import faiss
@@ -200,20 +202,15 @@ def if_done_multi(done, ps):
     done[0] = True
 
 
-def get_quoted_python_cmd():
-    return f'"{config.python_cmd}"'
-
-
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
+    per = 3.0 if config.is_half else 3.7
     cmd = (
-        get_quoted_python_cmd()
-        + ' infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" '
-        % (trainset_dir, sr, n_p, now_dir, exp_dir)
-        + str(config.noparallel)
+        '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f'
+        % (config.python_cmd, trainset_dir, sr, n_p, now_dir, exp_dir, config.noparallel, per)
     )
     logger.info(cmd)
     p = Popen(cmd, shell=True)  # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
@@ -247,9 +244,9 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     if if_f0:
         if f0method != "rmvpe_gpu":
             cmd = (
-                get_quoted_python_cmd()
-                + ' infer/modules/train/extract/extract_f0_print.py "%s/logs/%s" %s %s'
+                '"%s" infer/modules/train/extract/extract_f0_print.py "%s/logs/%s" %s %s'
                 % (
+                    config.python_cmd,
                     now_dir,
                     exp_dir,
                     n_p,
@@ -275,7 +272,8 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 leng = len(gpus_rmvpe)
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
-                    cmd = get_quoted_python_cmd() + ' infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s ' % (
+                    cmd = '"%s" infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s ' % (
+                        config.python_cmd,
                         leng,
                         idx,
                         n_g,
@@ -335,7 +333,8 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = get_quoted_python_cmd() + ' infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s' % (
+        cmd = '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s' % (
+            config.python_cmd,
             config.device,
             leng,
             idx,
@@ -516,8 +515,18 @@ def click_train(
         logger.info("No pretrained Generator")
     if pretrained_D15 == "":
         logger.info("No pretrained Discriminator")
+    if version19 == "v1" or sr2 == "40k":
+        config_path = "v1/%s.json" % sr2
+    else:
+        config_path = "v2/%s.json" % sr2
+    config_save_path = os.path.join(exp_dir, "config.json")
+    if not pathlib.Path(config_save_path).exists():
+        with open(config_save_path, "w", encoding="utf-8") as f:
+            json.dump(config.json_config[config_path], f, ensure_ascii=False, indent=4, sort_keys=True)
+            f.write("\n")
     if gpus16:
-        cmd = get_quoted_python_cmd() + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
+        cmd = '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
+            config.python_cmd,
             exp_dir1,
             sr2,
             1 if if_f0_3 else 0,
@@ -534,9 +543,9 @@ def click_train(
         )
     else:
         cmd = (
-            config.python_cmd
-            + ' infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
             % (
+                config.python_cmd,
                 exp_dir1,
                 sr2,
                 1 if if_f0_3 else 0,

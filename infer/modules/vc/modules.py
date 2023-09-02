@@ -210,12 +210,12 @@ class VC:
             if self.tgt_sr != resample_sr >= 16000:
                 self.tgt_sr = resample_sr
             index_info = (
-                "Using index:%s." % file_index
+                "Index:\n%s." % file_index
                 if os.path.exists(file_index)
                 else "Index not used."
             )
             return (
-                f"Success.\n {index_info}\nTime:\n npy:{times[0]}s, f0:{times[1]}s, infer:{times[2]}s",
+                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs." % (index_info, *times),
                 (self.tgt_sr, audio_opt),
             )
         except:

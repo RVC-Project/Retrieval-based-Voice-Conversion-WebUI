@@ -358,7 +358,7 @@ if __name__ == "__main__":
                     )
                 if event == "start_vc" and self.flag_vc == False:
                     if self.set_values(values) == True:
-                        logger.info("Use CUDA: %b", torch.cuda.is_available())
+                        logger.info("Use CUDA: %s", torch.cuda.is_available())
                         self.start_vc()
                         settings = {
                             "pth_path": values["pth_path"],
