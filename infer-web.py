@@ -208,9 +208,15 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
     per = 3.0 if config.is_half else 3.7
-    cmd = (
-        '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f'
-        % (config.python_cmd, trainset_dir, sr, n_p, now_dir, exp_dir, config.noparallel, per)
+    cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
+        config.python_cmd,
+        trainset_dir,
+        sr,
+        n_p,
+        now_dir,
+        exp_dir,
+        config.noparallel,
+        per,
     )
     logger.info(cmd)
     p = Popen(cmd, shell=True)  # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
@@ -272,14 +278,17 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 leng = len(gpus_rmvpe)
                 ps = []
                 for idx, n_g in enumerate(gpus_rmvpe):
-                    cmd = '"%s" infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s ' % (
-                        config.python_cmd,
-                        leng,
-                        idx,
-                        n_g,
-                        now_dir,
-                        exp_dir,
-                        config.is_half,
+                    cmd = (
+                        '"%s" infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
+                        % (
+                            config.python_cmd,
+                            leng,
+                            idx,
+                            n_g,
+                            now_dir,
+                            exp_dir,
+                            config.is_half,
+                        )
                     )
                     logger.info(cmd)
                     p = Popen(
@@ -333,15 +342,18 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     leng = len(gpus)
     ps = []
     for idx, n_g in enumerate(gpus):
-        cmd = '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s' % (
-            config.python_cmd,
-            config.device,
-            leng,
-            idx,
-            n_g,
-            now_dir,
-            exp_dir,
-            version19,
+        cmd = (
+            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+            % (
+                config.python_cmd,
+                config.device,
+                leng,
+                idx,
+                n_g,
+                now_dir,
+                exp_dir,
+                version19,
+            )
         )
         logger.info(cmd)
         p = Popen(
@@ -379,12 +391,16 @@ def get_pretrained_models(path_str, f0_str, sr2):
     if not if_pretrained_generator_exist:
         logger.warn(
             "assets/pretrained%s/%sG%s.pth not exist, will not use pretrained model",
-            path_str, f0_str, sr2
+            path_str,
+            f0_str,
+            sr2,
         )
     if not if_pretrained_discriminator_exist:
         logger.warn(
             "assets/pretrained%s/%sD%s.pth not exist, will not use pretrained model",
-            path_str, f0_str, sr2
+            path_str,
+            f0_str,
+            sr2,
         )
     return (
         "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2)
@@ -421,8 +437,10 @@ def change_version19(sr2, if_f0_3, version19):
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
     return (
-        {"visible": if_f0_3, "__type__": "update"}, *get_pretrained_models(path_str, "f0", sr2)
+        {"visible": if_f0_3, "__type__": "update"},
+        *get_pretrained_models(path_str, "f0", sr2),
     )
+
 
 # but3.click(click_train,[exp_dir1,sr2,if_f0_3,save_epoch10,total_epoch11,batch_size12,if_save_latest13,pretrained_G14,pretrained_D15,gpus16])
 def click_train(
@@ -522,24 +540,33 @@ def click_train(
     config_save_path = os.path.join(exp_dir, "config.json")
     if not pathlib.Path(config_save_path).exists():
         with open(config_save_path, "w", encoding="utf-8") as f:
-            json.dump(config.json_config[config_path], f, ensure_ascii=False, indent=4, sort_keys=True)
+            json.dump(
+                config.json_config[config_path],
+                f,
+                ensure_ascii=False,
+                indent=4,
+                sort_keys=True,
+            )
             f.write("\n")
     if gpus16:
-        cmd = '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s' % (
-            config.python_cmd,
-            exp_dir1,
-            sr2,
-            1 if if_f0_3 else 0,
-            batch_size12,
-            gpus16,
-            total_epoch11,
-            save_epoch10,
-            "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
-            "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
-            1 if if_save_latest13 == i18n("是") else 0,
-            1 if if_cache_gpu17 == i18n("是") else 0,
-            1 if if_save_every_weights18 == i18n("是") else 0,
-            version19,
+        cmd = (
+            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            % (
+                config.python_cmd,
+                exp_dir1,
+                sr2,
+                1 if if_f0_3 else 0,
+                batch_size12,
+                gpus16,
+                total_epoch11,
+                save_epoch10,
+                "-pg %s" % pretrained_G14 if pretrained_G14 != "" else "",
+                "-pd %s" % pretrained_D15 if pretrained_D15 != "" else "",
+                1 if if_save_latest13 == i18n("是") else 0,
+                1 if if_cache_gpu17 == i18n("是") else 0,
+                1 if if_save_every_weights18 == i18n("是") else 0,
+                version19,
+            )
         )
     else:
         cmd = (
