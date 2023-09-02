@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import logging
+
 logger = logging.getLogger(__name__)
 
 from time import time as ttime
@@ -341,5 +342,11 @@ class RVC:
                     .float()
                 )
         t5 = ttime()
-        logger.info("Spent time: fea = %s, index = %s, f0 = %s, model = %s", t2 - t1, t3 - t2, t4 - t3, t5 - t4)
+        logger.info(
+            "Spent time: fea = %s, index = %s, f0 = %s, model = %s",
+            t2 - t1,
+            t3 - t2,
+            t4 - t3,
+            t5 - t4,
+        )
         return infered_audio

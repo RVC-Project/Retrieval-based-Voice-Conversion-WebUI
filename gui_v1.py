@@ -718,7 +718,9 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            logger.info("Input device:" + str(sd.default.device[0]) + ":" + str(input_device))
+            logger.info(
+                "Input device:" + str(sd.default.device[0]) + ":" + str(input_device)
+            )
             logger.info(
                 "Output device:" + str(sd.default.device[1]) + ":" + str(output_device)
             )

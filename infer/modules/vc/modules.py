@@ -1,5 +1,6 @@
 import traceback
 import logging
+
 logger = logging.getLogger(__name__)
 
 import numpy as np
@@ -52,8 +53,16 @@ class VC:
         if not sid:
             if self.hubert_model is not None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
                 logger.info("Clean model cache")
-                del self.net_g, self.n_spk, self.vc, self.hubert_model, self.tgt_sr  # ,cpt
-                self.hubert_model = self.net_g = self.n_spk = self.vc = self.hubert_model = self.tgt_sr = None
+                del (
+                    self.net_g,
+                    self.n_spk,
+                    self.vc,
+                    self.hubert_model,
+                    self.tgt_sr,
+                )  # ,cpt
+                self.hubert_model = (
+                    self.net_g
+                ) = self.n_spk = self.vc = self.hubert_model = self.tgt_sr = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 ###楼下不这么折腾清理不干净
