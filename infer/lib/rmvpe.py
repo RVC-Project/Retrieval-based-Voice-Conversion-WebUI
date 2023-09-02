@@ -601,7 +601,7 @@ class RMVPE:
         with torch.no_grad():
             n_frames = mel.shape[-1]
             mel = F.pad(
-                mel, (0, 32 * ((n_frames - 1) // 32 + 1) - n_frames), mode="reflect"
+                mel, (0, 32 * ((n_frames - 1) // 32 + 1) - n_frames), mode="constant"
             )
             if "privateuseone" in str(self.device):
                 onnx_input_name = self.model.get_inputs()[0].name
