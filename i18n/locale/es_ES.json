@@ -43,7 +43,7 @@
     "后处理重采样至最终采样率，0为不进行重采样": "Remuestreo posterior al proceso a la tasa de muestreo final, 0 significa no remuestrear",
     "否": "No",
     "响应阈值": "Umbral de respuesta",
-	"响度因子": "factor de sonoridad",
+    "响度因子": "factor de sonoridad",
     "处理数据": "Procesar datos",
     "导出Onnx模型": "Exportar modelo Onnx",
     "导出文件格式": "Formato de archivo de exportación",
