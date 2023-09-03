@@ -6,8 +6,9 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import soundfile as sf
 import torch
+from io import BytesIO
 
-from infer.lib.audio import load_audio
+from infer.lib.audio import load_audio, wav2
 from infer.lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,
     SynthesizerTrnMs256NSFsid_nono,
@@ -285,17 +286,17 @@ class VC:
                                 tgt_sr,
                             )
                         else:
-                            path = "%s/%s.wav" % (opt_root, os.path.basename(path))
-                            sf.write(
-                                path,
-                                audio_opt,
-                                tgt_sr,
-                            )
-                            if os.path.exists(path):
-                                os.system(
-                                    "ffmpeg -i %s -vn %s -q:a 2 -y"
-                                    % (path, path[:-4] + ".%s" % format1)
+                            path = "%s/%s.%s" % (opt_root, os.path.basename(path), format1)
+                            with BytesIO() as wavf:
+                                sf.write(
+                                    wavf,
+                                    audio_opt,
+                                    tgt_sr,
+                                    format="wav"
                                 )
+                                wavf.seek(0, 0)
+                                with open(path, "wb") as outf:
+                                    wav2(wavf, outf, format1)
                     except:
                         info += traceback.format_exc()
                 infos.append("%s->%s" % (os.path.basename(path), info))
