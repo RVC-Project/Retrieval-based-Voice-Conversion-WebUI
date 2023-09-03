@@ -1,8 +1,15 @@
 import multiprocessing
 import os
-import sys
+import traceback
 
 from scipy import signal
+
+import librosa
+import numpy as np
+from scipy.io import wavfile
+
+from infer.lib.audio import load_audio
+from infer.lib.slicer2 import Slicer
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -13,6 +20,7 @@ n_p = int(sys.argv[3])
 exp_dir = sys.argv[4]
 noparallel = sys.argv[5] == "True"
 per = float(sys.argv[6])
+
 import multiprocessing
 import os
 import traceback
@@ -25,16 +33,15 @@ from infer.lib.audio import load_audio
 from infer.lib.slicer2 import Slicer
 
 mutex = multiprocessing.Lock()
-f = open("%s/preprocess.log" % exp_dir, "a+")
-
+log_file_path = os.path.join(exp_dir, "preprocess.log")
 
 def println(strr):
     mutex.acquire()
     print(strr)
-    f.write("%s\n" % strr)
-    f.flush()
+    with open(log_file_path, "a+") as f:
+        f.write("%s\n" % strr)
+        f.flush()
     mutex.release()
-
 
 class PreProcess:
     def __init__(self, sr, exp_dir, per=3.7):
@@ -142,6 +149,8 @@ def preprocess_trainset(inp_root, sr, n_p, exp_dir, per):
     pp.pipeline_mp_inp_dir(inp_root, n_p)
     println("end preprocess")
 
-
 if __name__ == "__main__":
+    # Ensure the 'exp_dir' directory exists
+    os.makedirs(exp_dir, exist_ok=True)
+    
     preprocess_trainset(inp_root, sr, n_p, exp_dir, per)
