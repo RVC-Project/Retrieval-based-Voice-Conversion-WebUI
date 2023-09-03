@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from queue import Empty
 
     import librosa
-    import noisereduce as nr
+    from tools.torchgate import TorchGate
     import numpy as np
     import PySimpleGUI as sg
     import sounddevice as sd
@@ -80,15 +80,16 @@ if __name__ == "__main__":
         def __init__(self) -> None:
             self.pth_path: str = ""
             self.index_path: str = ""
-            self.pitch: int = 12
+            self.pitch: int = 0
             self.samplerate: int = 40000
             self.block_time: float = 1.0  # s
             self.buffer_num: int = 1
-            self.threhold: int = -30
-            self.crossfade_time: float = 0.08
-            self.extra_time: float = 0.04
+            self.threhold: int = -60
+            self.crossfade_time: float = 0.04
+            self.extra_time: float = 2.0
             self.I_noise_reduce = False
             self.O_noise_reduce = False
+            self.rms_mix_rate = 0.0
             self.index_rate = 0.3
             self.n_cpu = min(n_cpu, 6)
             self.f0method = "harvest"
@@ -118,14 +119,19 @@ if __name__ == "__main__":
                         "index_path": " ",
                         "sg_input_device": input_devices[sd.default.device[0]],
                         "sg_output_device": output_devices[sd.default.device[1]],
-                        "threhold": "-45",
+                        "threhold": "-60",
                         "pitch": "0",
                         "index_rate": "0",
-                        "block_time": "1",
+                        "rms_mix_rate": "0",
+                        "block_time": "0.25",
                         "crossfade_length": "0.04",
-                        "extra_time": "1",
+                        "extra_time": "2",
                         "f0method": "rmvpe",
                     }
+                    data["pm"] = data["f0method"] == "pm"
+                    data["harvest"] = data["f0method"] == "harvest"
+                    data["crepe"] = data["f0method"] == "crepe"
+                    data["rmvpe"] = data["f0method"] == "rmvpe"
             return data
 
         def launcher(self):
@@ -198,7 +204,7 @@ if __name__ == "__main__":
                                     key="threhold",
                                     resolution=1,
                                     orientation="h",
-                                    default_value=data.get("threhold", ""),
+                                    default_value=data.get("threhold", "-60"),
                                     enable_events=True,
                                 ),
                             ],
@@ -209,7 +215,7 @@ if __name__ == "__main__":
                                     key="pitch",
                                     resolution=1,
                                     orientation="h",
-                                    default_value=data.get("pitch", ""),
+                                    default_value=data.get("pitch", "0"),
                                     enable_events=True,
                                 ),
                             ],
@@ -220,7 +226,18 @@ if __name__ == "__main__":
                                     key="index_rate",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("index_rate", ""),
+                                    default_value=data.get("index_rate", "0"),
+                                    enable_events=True,
+                                ),
+                            ],
+                            [
+                                sg.Text(i18n("响度因子")),
+                                sg.Slider(
+                                    range=(0.0, 1.0),
+                                    key="rms_mix_rate",
+                                    resolution=0.01,
+                                    orientation="h",
+                                    default_value=data.get("rms_mix_rate", "0"),
                                     enable_events=True,
                                 ),
                             ],
@@ -267,7 +284,7 @@ if __name__ == "__main__":
                                     key="block_time",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("block_time", ""),
+                                    default_value=data.get("block_time", "0.25"),
                                     enable_events=True,
                                 ),
                             ],
@@ -291,7 +308,7 @@ if __name__ == "__main__":
                                     key="crossfade_length",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("crossfade_length", ""),
+                                    default_value=data.get("crossfade_length", "0.04"),
                                     enable_events=True,
                                 ),
                             ],
@@ -302,7 +319,7 @@ if __name__ == "__main__":
                                     key="extra_time",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("extra_time", ""),
+                                    default_value=data.get("extra_time", "2.0"),
                                     enable_events=True,
                                 ),
                             ],
@@ -369,6 +386,7 @@ if __name__ == "__main__":
                             "sg_output_device": values["sg_output_device"],
                             "threhold": values["threhold"],
                             "pitch": values["pitch"],
+                            "rms_mix_rate": values["rms_mix_rate"],
                             "index_rate": values["index_rate"],
                             "block_time": values["block_time"],
                             "crossfade_length": values["crossfade_length"],
@@ -399,6 +417,8 @@ if __name__ == "__main__":
                     self.config.index_rate = values["index_rate"]
                     if hasattr(self, "rvc"):
                         self.rvc.change_index_rate(values["index_rate"])
+                elif event == "rms_mix_rate":
+                    self.config.rms_mix_rate = values["rms_mix_rate"]
                 elif event in ["pm", "harvest", "crepe", "rmvpe"]:
                     self.config.f0method = event
                 elif event == "I_noise_reduce":
@@ -433,6 +453,7 @@ if __name__ == "__main__":
             self.config.extra_time = values["extra_time"]
             self.config.I_noise_reduce = values["I_noise_reduce"]
             self.config.O_noise_reduce = values["O_noise_reduce"]
+            self.config.rms_mix_rate = values["rms_mix_rate"]
             self.config.index_rate = values["index_rate"]
             self.config.n_cpu = values["n_cpu"]
             self.config.f0method = ["pm", "harvest", "crepe", "rmvpe"][
@@ -457,17 +478,14 @@ if __name__ == "__main__":
                 inp_q,
                 opt_q,
                 device,
-                self.rvc if hasattr(self, "rvc") else None,
+                self.rvc if hasattr(self, "rvc") else None
             )
             self.config.samplerate = self.rvc.tgt_sr
             self.config.crossfade_time = min(
                 self.config.crossfade_time, self.config.block_time
             )
             self.zc = self.rvc.tgt_sr // 100
-            self.block_frame = (
-                int(np.round(self.config.block_time * self.config.samplerate / self.zc))
-                * self.zc
-            )
+            self.block_frame = int(np.round(self.config.block_time * self.config.samplerate / self.zc)) * self.zc
             self.block_frame_16k = 160 * self.block_frame // self.zc
             self.crossfade_frame = int(
                 self.config.crossfade_time * self.config.samplerate
@@ -489,9 +507,7 @@ if __name__ == "__main__":
                 ),
                 dtype="float32",
             )
-            self.input_wav_res: torch.Tensor = torch.zeros(
-                160 * len(self.input_wav) // self.zc
-            )
+            self.input_wav_res: torch.Tensor= torch.zeros(160 * len(self.input_wav) // self.zc, device=device,dtype=torch.float32)
             self.output_wav_cache: torch.Tensor = torch.zeros(
                 int(
                     np.ceil(
@@ -540,6 +556,8 @@ if __name__ == "__main__":
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
             ).to(device)
+            self.input_tg = TorchGate(sr=16000, nonstationary=True, n_fft=640).to(device)
+            self.output_tg = TorchGate(sr=self.config.samplerate, nonstationary=True, n_fft=4*self.zc).to(device)
             thread_vc = threading.Thread(target=self.soundinput)
             thread_vc.start()
 
@@ -568,9 +586,6 @@ if __name__ == "__main__":
             """
             start_time = time.perf_counter()
             indata = librosa.to_mono(indata.T)
-            if self.config.I_noise_reduce:
-                indata[:] = nr.reduce_noise(y=indata, sr=self.config.samplerate)
-            """noise gate"""
             frame_length = 2048
             hop_length = 1024
             rms = librosa.feature.rms(
@@ -584,18 +599,13 @@ if __name__ == "__main__":
                     if db_threhold[i]:
                         indata[i * hop_length : (i + 1) * hop_length] = 0
             self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :]
-            self.input_wav[-self.block_frame :] = indata
-
+            self.input_wav[-self.block_frame: ] = indata
             # infer
-            inp = torch.from_numpy(
-                self.input_wav[-self.block_frame - 2 * self.zc :]
-            ).to(device)
-            self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
-                self.block_frame_16k :
-            ].clone()
-            self.input_wav_res[-self.block_frame_16k - 160 :] = self.resampler(inp)[
-                160:
-            ]
+            inp = torch.from_numpy(self.input_wav[-self.block_frame-2*self.zc :]).to(device)
+            self.input_wav_res[ : -self.block_frame_16k] = self.input_wav_res[self.block_frame_16k :].clone()
+            self.input_wav_res[-self.block_frame_16k-160 :] = self.resampler(inp)[160 :]
+            if self.config.I_noise_reduce:
+                self.input_wav_res[-self.block_frame_16k-320 :] = self.input_tg(self.input_wav_res[None, -self.block_frame_16k-800 :])[0, 480 : ]
             rate = (
                 self.crossfade_frame + self.sola_search_frame + self.block_frame
             ) / (
@@ -605,11 +615,11 @@ if __name__ == "__main__":
                 + self.block_frame
             )
             f0_extractor_frame = self.block_frame_16k + 800
-            if self.config.f0method == "rmvpe":
+            if self.config.f0method == 'rmvpe':
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1)
             res2 = self.rvc.infer(
                 self.input_wav_res,
-                self.input_wav_res[-f0_extractor_frame:].cpu().numpy(),
+                self.input_wav_res[-f0_extractor_frame :].cpu().numpy(),
                 self.block_frame_16k,
                 rate,
                 self.pitch,
@@ -620,6 +630,27 @@ if __name__ == "__main__":
             infer_wav = self.output_wav_cache[
                 -self.crossfade_frame - self.sola_search_frame - self.block_frame :
             ]
+            if self.config.O_noise_reduce:
+                infer_wav = self.output_tg(infer_wav.unsqueeze(0)).squeeze(0)
+            if self.config.rms_mix_rate < 1:
+                rms1 = librosa.feature.rms(
+                y=self.input_wav[-self.crossfade_frame - self.sola_search_frame - self.block_frame :], 
+                frame_length=frame_length, 
+                hop_length=hop_length
+                )
+                rms1 = torch.from_numpy(rms1).to(device)
+                rms1 = F.interpolate(
+                    rms1.unsqueeze(0), size=infer_wav.shape[0], mode="linear"
+                ).squeeze()
+                rms2 = librosa.feature.rms(
+                y=infer_wav[:].cpu().numpy(), frame_length=frame_length, hop_length=hop_length
+                )
+                rms2 = torch.from_numpy(rms2).to(device)
+                rms2 = F.interpolate(
+                    rms2.unsqueeze(0), size=infer_wav.shape[0], mode="linear"
+                ).squeeze()
+                rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-3)
+                infer_wav *= torch.pow(rms1 / rms2, torch.tensor(1 - self.config.rms_mix_rate))
             # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
             cor_nom = F.conv1d(
                 infer_wav[None, None, : self.crossfade_frame + self.sola_search_frame],
@@ -659,25 +690,10 @@ if __name__ == "__main__":
                 self.sola_buffer[:] = (
                     infer_wav[-self.crossfade_frame :] * self.fade_out_window
                 )
-            if self.config.O_noise_reduce:
-                if sys.platform == "darwin":
-                    noise_reduced_signal = nr.reduce_noise(
-                        y=self.output_wav[:].cpu().numpy(), sr=self.config.samplerate
-                    )
-                    outdata[:] = noise_reduced_signal[:, np.newaxis]
-                else:
-                    outdata[:] = np.tile(
-                        nr.reduce_noise(
-                            y=self.output_wav[:].cpu().numpy(),
-                            sr=self.config.samplerate,
-                        ),
-                        (2, 1),
-                    ).T
+            if sys.platform == "darwin":
+                outdata[:] = self.output_wav[:].cpu().numpy()[:, np.newaxis]
             else:
-                if sys.platform == "darwin":
-                    outdata[:] = self.output_wav[:].cpu().numpy()[:, np.newaxis]
-                else:
-                    outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
+                outdata[:] = self.output_wav[:].repeat(2, 1).t().cpu().numpy()
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
             logger.info("Infer time: %.2f", total_time)
@@ -733,7 +749,9 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            logger.info("Input device: %s:%d", str(sd.default.device[0]), input_device)
+            logger.info(
+                "Input device: %s:%d", str(sd.default.device[0]), input_device
+            )
             logger.info(
                 "Output device: %s:%d", str(sd.default.device[1]), output_device
             )

@@ -43,6 +43,7 @@
     "后处理重采样至最终采样率，0为不进行重采样": "Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling:",
     "否": "No",
     "响应阈值": "Response threshold",
+    "响度因子": "loudness factor",
     "处理数据": "Process data",
     "导出Onnx模型": "Export Onnx Model",
     "导出文件格式": "Export file format",

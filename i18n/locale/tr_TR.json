@@ -43,6 +43,7 @@
     "后处理重采样至最终采样率，0为不进行重采样": "Son işleme aşamasında çıktı sesini son örnekleme hızına yeniden örnekle. 0 değeri için yeniden örnekleme yapılmaz:",
     "否": "Hayır",
     "响应阈值": "Tepki eşiği",
+    "响度因子": "ses yüksekliği faktörü",
     "处理数据": "Verileri işle",
     "导出Onnx模型": "Onnx Modeli Dışa Aktar",
     "导出文件格式": "Dışa aktarma dosya formatı",

@@ -43,6 +43,7 @@
     "后处理重采样至最终采样率，0为不进行重采样": "Ricampiona l'audio di output in post-elaborazione alla frequenza di campionamento finale. ",
     "否": "NO",
     "响应阈值": "Soglia di risposta",
+    "响度因子": "fattore di sonorità",
     "处理数据": "Processa dati",
     "导出Onnx模型": "Esporta modello Onnx",
     "导出文件格式": "Formato file di esportazione",
