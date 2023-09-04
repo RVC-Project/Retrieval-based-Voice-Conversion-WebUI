@@ -91,7 +91,7 @@ class RVC:
                     suffix="",
                 )
                 hubert_model = models[0]
-                hubert_model = hubert_model.to(config.device)
+                hubert_model = hubert_model.to(device)
                 if config.is_half:
                     hubert_model = hubert_model.half()
                 else:
@@ -309,6 +309,7 @@ class RVC:
             feats = (
                 self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
             )
+            feats = F.pad(feats, (0, 0, 1, 0))
         t2 = ttime()
         try:
             if hasattr(self, "index") and self.index_rate != 0:
@@ -360,13 +361,13 @@ class RVC:
                     self.net_g.infer(
                         feats, p_len, cache_pitch, cache_pitchf, sid, rate
                     )[0][0, 0]
-                    .data.cpu()
+                    .data
                     .float()
                 )
             else:
                 infered_audio = (
                     self.net_g.infer(feats, p_len, sid, rate)[0][0, 0]
-                    .data.cpu()
+                    .data
                     .float()
                 )
         t5 = ttime()
