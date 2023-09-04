@@ -567,7 +567,7 @@ if __name__ == "__main__":
                 )
                 for i in range(db_threhold.shape[0]):
                     if db_threhold[i]:
-                        indata[i * hop_length : (i + 1) * hop_length] = 0
+                        indata[i * self.zc : (i + 1) * self.zc] = 0
             self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :].clone()
             self.input_wav[-self.block_frame: ] = torch.from_numpy(indata).to(device)
             self.input_wav_res[ : -self.block_frame_16k] = self.input_wav_res[self.block_frame_16k :].clone()
