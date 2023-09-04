@@ -699,10 +699,10 @@ if __name__ == "__main__":
                 output_devices.index(output_device)
             ]
             logger.info(
-                "Input device: %s:%d", str(sd.default.device[0]), input_device
+                "Input device: %s:%s", str(sd.default.device[0]), input_device
             )
             logger.info(
-                "Output device: %s:%d", str(sd.default.device[1]), output_device
+                "Output device: %s:%s", str(sd.default.device[1]), output_device
             )
 
     gui = GUI()
