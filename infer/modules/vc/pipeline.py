@@ -362,7 +362,7 @@ class Pipeline(object):
             )
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
-            if self.device == "mps":
+            if self.device == "mps" or (hasattr(torch, "xpu") and torch.xpu.is_available()):
                 pitchf = pitchf.astype(np.float32)
             pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()

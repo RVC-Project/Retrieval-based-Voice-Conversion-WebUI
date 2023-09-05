@@ -56,7 +56,7 @@ def torch_cat(input, *args, **kwargs):
 
 original_interpolate = torch.nn.functional.interpolate
 def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False):
-    if antialias:
+    if antialias or align_corners is not None:
         return_device = input.device
         return_dtype = input.dtype
         return original_interpolate(input.to("cpu", dtype=torch.float32), size=size, scale_factor=scale_factor, mode=mode,
@@ -96,6 +96,9 @@ def ipex_hijacks():
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
     CondFunc('torch.tensor',
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: check_device(device))
+    CondFunc('torch.linspace',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
 

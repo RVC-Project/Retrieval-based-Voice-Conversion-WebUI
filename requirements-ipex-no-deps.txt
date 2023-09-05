@@ -1,3 +1,0 @@
-torchaudio>=0.8.0
-torchcrepe==0.0.20
-fairseq==0.12.2
