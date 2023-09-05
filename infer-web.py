@@ -18,6 +18,14 @@ import faiss
 import gradio as gr
 import numpy as np
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+    if torch.xpu.is_available():
+        from infer.modules.ipex import ipex_init
+        ipex_init()
+        print("Using IPEX")
+except Exception:
+    pass
 from dotenv import load_dotenv
 from sklearn.cluster import MiniBatchKMeans
 
