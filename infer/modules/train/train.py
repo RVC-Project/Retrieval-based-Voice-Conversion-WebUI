@@ -25,6 +25,8 @@ try:
         from torch.xpu.amp import autocast
         GradScaler = gradscaler_init()
         ipex_init()
+    else:
+        from torch.cuda.amp import GradScaler, autocast
 except Exception:
     from torch.cuda.amp import GradScaler, autocast
 
