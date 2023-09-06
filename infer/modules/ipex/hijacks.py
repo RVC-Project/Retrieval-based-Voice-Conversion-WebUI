@@ -103,8 +103,8 @@ def ipex_hijacks():
         lambda orig_func, *args, device=None, **kwargs: check_device(device))
 
     CondFunc('torch.Generator',
-        lambda orig_func, device: torch.xpu.Generator(device),
-        lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
+        lambda orig_func, device=None: torch.xpu.Generator(device),
+        lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu")
 
     CondFunc('torch.batch_norm',
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
@@ -115,7 +115,7 @@ def ipex_hijacks():
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
         weight if weight is not None else torch.ones(input.size()[1], device=input.device),
         bias if bias is not None else torch.zeros(input.size()[1], device=input.device), *args, **kwargs),
-        lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))    
+        lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
 
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',

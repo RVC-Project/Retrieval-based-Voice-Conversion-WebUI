@@ -4,6 +4,7 @@ import contextlib
 import torch
 import intel_extension_for_pytorch as ipex
 from .hijacks import ipex_hijacks
+from .dataloader import dataloader_init
 
 #ControlNet depth_leres++
 class DummyDataParallel(torch.nn.Module):
@@ -163,3 +164,4 @@ def ipex_init():
     torch.cuda.utilization = lambda: 0
 
     ipex_hijacks()
+    dataloader_init()

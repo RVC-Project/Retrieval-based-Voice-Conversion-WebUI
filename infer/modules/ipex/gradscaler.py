@@ -174,5 +174,4 @@ def gradscaler_init():
     torch.xpu.amp.GradScaler._unscale_grads_ = _unscale_grads_
     torch.xpu.amp.GradScaler.unscale_ = unscale_
     torch.xpu.amp.GradScaler.update = update
-
-
+    return torch.xpu.amp.GradScaler
