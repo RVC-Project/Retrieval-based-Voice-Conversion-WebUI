@@ -1,5 +1,7 @@
 import torch
-import intel_extension_for_pytorch as ipex
+import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+
+# pylint: disable=protected-access, missing-function-docstring
 
 _utils = torch.utils.data._utils
 
@@ -41,12 +43,12 @@ def _shutdown_workers(self):
                 # we have to shut it down because the worker is paused
                 if self._persistent_workers or self._workers_status[worker_id]:
                     self._mark_worker_as_unavailable(worker_id, shutdown=True)
-            for w in self._workers:
+            for w in self._workers: # pylint: disable=invalid-name
                 # We should be able to join here, but in case anything went
                 # wrong, we set a timeout and if the workers fail to join,
                 # they are killed in the `finally` block.
                 w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
-            for q in self._index_queues:
+            for q in self._index_queues: # pylint: disable=invalid-name
                 q.cancel_join_thread()
                 q.close()
         finally:
@@ -57,13 +59,13 @@ def _shutdown_workers(self):
             # and remove pids from the C side data structure only at the
             # end.
             #
-            # FIXME: Unfortunately, for Windows, we are missing a worker
+            # -: Unfortunately, for Windows, we are missing a worker
             #        error detection mechanism here in this function, as it
             #        doesn't provide a SIGCHLD handler.
             if self._worker_pids_set:
                 _utils.signal_handling._remove_worker_pids(id(self))
                 self._worker_pids_set = False
-            for w in self._workers:
+            for w in self._workers: # pylint: disable=invalid-name
                 if w.is_alive():
                     # Existing mechanisms try to make the workers exit
                     # peacefully, but in case that we unfortunately reach

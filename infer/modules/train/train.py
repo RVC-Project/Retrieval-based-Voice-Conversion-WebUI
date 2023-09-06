@@ -18,7 +18,7 @@ from random import randint, shuffle
 
 import torch
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
         from infer.modules.ipex.gradscaler import gradscaler_init

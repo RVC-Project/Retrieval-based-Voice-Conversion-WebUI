@@ -1,8 +1,10 @@
-import torch
-import intel_extension_for_pytorch as ipex
 import importlib
+import torch
+import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 
-class CondFunc:
+# pylint: disable=protected-access, missing-function-docstring, line-too-long, unnecessary-lambda, no-else-return
+
+class CondFunc: # pylint: disable=missing-class-docstring
     def __new__(cls, orig_func, sub_func, cond_func):
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, str):
@@ -48,25 +50,25 @@ def ipex_autocast(*args, **kwargs):
         return original_autocast(*args, **kwargs)
 
 original_torch_cat = torch.cat
-def torch_cat(input, *args, **kwargs):
-    if len(input) == 3 and (input[0].dtype != input[1].dtype or input[2].dtype != input[1].dtype):
-        return original_torch_cat([input[0].to(input[1].dtype), input[1], input[2].to(input[1].dtype)], *args, **kwargs)
+def torch_cat(tensor, *args, **kwargs):
+    if len(tensor) == 3 and (tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype):
+        return original_torch_cat([tensor[0].to(tensor[1].dtype), tensor[1], tensor[2].to(tensor[1].dtype)], *args, **kwargs)
     else:
-        return original_torch_cat(input, *args, **kwargs)
+        return original_torch_cat(tensor, *args, **kwargs)
 
 original_interpolate = torch.nn.functional.interpolate
-def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False):
+def interpolate(tensor, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False): # pylint: disable=too-many-arguments
     if antialias or align_corners is not None:
-        return_device = input.device
-        return_dtype = input.dtype
-        return original_interpolate(input.to("cpu", dtype=torch.float32), size=size, scale_factor=scale_factor, mode=mode,
+        return_device = tensor.device
+        return_dtype = tensor.dtype
+        return original_interpolate(tensor.to("cpu", dtype=torch.float32), size=size, scale_factor=scale_factor, mode=mode,
         align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(return_device, dtype=return_dtype)
     else:
-        return original_interpolate(input, size=size, scale_factor=scale_factor, mode=mode,
+        return original_interpolate(tensor, size=size, scale_factor=scale_factor, mode=mode,
         align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias)
 
 original_linalg_solve = torch.linalg.solve
-def linalg_solve(orig_func, A, B, *args, **kwargs):
+def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     if A.device != torch.device("cpu") or B.device != torch.device("cpu"):
         return_device = A.device
         original_linalg_solve(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(return_device)
