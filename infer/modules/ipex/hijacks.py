@@ -111,9 +111,9 @@ original_linalg_solve = torch.linalg.solve
 def linalg_solve(A, B, *args, **kwargs): # pylint: disable=invalid-name
     if A.device != torch.device("cpu") or B.device != torch.device("cpu"):
         return_device = A.device
-        original_linalg_solve(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(return_device)
+        return original_linalg_solve(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(return_device)
     else:
-        original_linalg_solve(A, B, *args, **kwargs)
+        return original_linalg_solve(A, B, *args, **kwargs)
 
 def ipex_hijacks():
     CondFunc('torch.Tensor.to',
