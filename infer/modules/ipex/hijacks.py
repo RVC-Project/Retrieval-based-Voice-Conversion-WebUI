@@ -34,7 +34,7 @@ class CondFunc: # pylint: disable=missing-class-docstring
 
 _utils = torch.utils.data._utils
 def _shutdown_workers(self):
-    if _utils is None or _utils.python_exit_status is True or _utils.python_exit_status is None:
+    if torch.utils.data._utils is None or torch.utils.data._utils.python_exit_status is True or torch.utils.data._utils.python_exit_status is None:
         return
     if hasattr(self, "_shutdown") and not self._shutdown:
         self._shutdown = True
@@ -50,13 +50,13 @@ def _shutdown_workers(self):
                 if self._persistent_workers or self._workers_status[worker_id]:
                     self._mark_worker_as_unavailable(worker_id, shutdown=True)
             for w in self._workers: # pylint: disable=invalid-name
-                w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+                w.join(timeout=torch.utils.data._utils.MP_STATUS_CHECK_INTERVAL)
             for q in self._index_queues: # pylint: disable=invalid-name
                 q.cancel_join_thread()
                 q.close()
         finally:
             if self._worker_pids_set:
-                _utils.signal_handling._remove_worker_pids(id(self))
+                torch.utils.data._utils.signal_handling._remove_worker_pids(id(self))
                 self._worker_pids_set = False
             for w in self._workers: # pylint: disable=invalid-name
                 if w.is_alive():
@@ -84,7 +84,7 @@ def ipex_no_cuda(orig_func, *args, **kwargs):
 
 original_autocast = torch.autocast
 def ipex_autocast(*args, **kwargs):
-    if args[0] == "cuda":
+    if len(args) > 0 and args[0] == "cuda":
         return original_autocast("xpu", *args[1:], **kwargs)
     else:
         return original_autocast(*args, **kwargs)
@@ -166,9 +166,9 @@ def ipex_hijacks():
     CondFunc('torch.nn.modules.linear.Linear.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    CondFunc('torch.bmm',
-        lambda orig_func, input, mat2, *args, **kwargs: orig_func(input, mat2.to(input.dtype), *args, **kwargs),
-        lambda orig_func, input, mat2, *args, **kwargs: input.dtype != mat2.dtype)
+    CondFunc('torch.nn.modules.conv.Conv2d.forward',
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
+        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     CondFunc('torch.nn.functional.layer_norm',
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
