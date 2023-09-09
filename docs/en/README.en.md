@@ -43,6 +43,7 @@ This repository has the following features:
 + Use the UVR5 model to quickly separate vocals and instruments.
 + Use the most powerful High-pitch Voice Extraction Algorithm [InterSpeech2023-RMVPE](#Credits) to prevent the muted sound problem. Provides the best results (significantly) and is faster, with even lower resource consumption than Crepe_full.
 + AMD/Intel graphics cards acceleration supported.
++ Intel ARC graphics cards acceleration with IPEX supported.
 
 ## Preparing the environment
 The following commands need to be executed in the environment of Python version 3.8 or higher.
@@ -76,6 +77,9 @@ for Nvidia graphics cards
 
 for AMD/Intel graphics cards：
   pip install -r requirements-dml.txt
+
+for Intel ARC graphics cards on Linux / WSL using Python 3.10: 
+  pip install -r requirements-ipex.txt
 
 ```
 
@@ -124,6 +128,9 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
     https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
 
 ```
+
+Intel ARC graphics cards users needs to run `source /opt/intel/oneapi/setvars.sh` command before starting Webui.
+
 Then use this command to start Webui:
 ```bash
 python infer-web.py
