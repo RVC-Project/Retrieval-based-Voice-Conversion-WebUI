@@ -209,7 +209,9 @@ class VC:
                 f0_file,
             )
             if self.tgt_sr != resample_sr >= 16000:
-                self.tgt_sr = resample_sr
+                tgt_sr = resample_sr
+            else:
+                tgt_sr = self.tgt_sr
             index_info = (
                 "Index:\n%s." % file_index
                 if os.path.exists(file_index)
@@ -218,7 +220,7 @@ class VC:
             return (
                 "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
                 % (index_info, *times),
-                (self.tgt_sr, audio_opt),
+                (tgt_sr, audio_opt),
             )
         except:
             info = traceback.format_exc()
