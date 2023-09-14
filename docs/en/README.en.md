@@ -57,6 +57,9 @@ pip install torch torchvision torchaudio
 
 #For Windows + Nvidia Ampere Architecture(RTX30xx), you need to specify the cuda version corresponding to pytorch according to the experience of https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/issues/21
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+
+#For Linux + AMD Cards, you need to use the following pytorch versions:
+#pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2
 ```
 
 Then can use poetry to install the other dependencies:
@@ -75,12 +78,14 @@ You can also use pip to install them:
 for Nvidia graphics cards
   pip install -r requirements.txt
 
-for AMD/Intel graphics cards：
+for AMD/Intel graphics cards on Windows (DirectML)：
   pip install -r requirements-dml.txt
 
 for Intel ARC graphics cards on Linux / WSL using Python 3.10: 
   pip install -r requirements-ipex.txt
 
+for AMD graphics cards on Linux (ROCm):
+  pip install -r requirements-amd.txt
 ```
 
 ------
@@ -135,7 +140,31 @@ Then use this command to start Webui:
 ```bash
 python infer-web.py
 ```
+
 If you are using Windows or macOS, you can download and extract `RVC-beta.7z` to use RVC directly by using `go-web.bat` on windows or `sh ./run.sh` on macOS to start Webui.
+
+## ROCm Support for AMD graphic cards (Linux only)
+To use ROCm on Linux install all required drivers as described [here](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html).
+
+On Arch use pacman to install the driver:
+````
+pacman -S rocm-hip-sdk rocm-opencl-sdk
+````
+
+You might also need to set these environment variables (e.g. on a RX6700XT):
+````
+export ROCM_PATH=/opt/rocm
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+````
+Also make sure your user is part of the `render` and `video` group:
+````
+sudo usermod -aG render $USERNAME
+sudo usermod -aG video $USERNAME
+````
+After that you can run the WebUI:
+```bash
+python infer-web.py
+```
 
 ## Credits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
