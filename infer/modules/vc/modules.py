@@ -288,14 +288,13 @@ class VC:
                                 tgt_sr,
                             )
                         else:
-                            path = "%s/%s.%s" % (opt_root, os.path.basename(path), format1)
+                            path = "%s/%s.%s" % (
+                                opt_root,
+                                os.path.basename(path),
+                                format1,
+                            )
                             with BytesIO() as wavf:
-                                sf.write(
-                                    wavf,
-                                    audio_opt,
-                                    tgt_sr,
-                                    format="wav"
-                                )
+                                sf.write(wavf, audio_opt, tgt_sr, format="wav")
                                 wavf.seek(0, 0)
                                 with open(path, "wb") as outf:
                                     wav2(wavf, outf, format1)

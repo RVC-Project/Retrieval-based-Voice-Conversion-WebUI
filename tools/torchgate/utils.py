@@ -3,7 +3,9 @@ from torch.types import Number
 
 
 @torch.no_grad()
-def amp_to_db(x: torch.Tensor, eps=torch.finfo(torch.float64).eps, top_db=40) -> torch.Tensor:
+def amp_to_db(
+    x: torch.Tensor, eps=torch.finfo(torch.float64).eps, top_db=40
+) -> torch.Tensor:
     """
     Convert the input tensor from amplitude to decibel scale.
 
@@ -40,7 +42,9 @@ def temperature_sigmoid(x: torch.Tensor, x0: float, temp_coeff: float) -> torch.
 
 
 @torch.no_grad()
-def linspace(start: Number, stop: Number, num: int = 50, endpoint: bool = True, **kwargs) -> torch.Tensor:
+def linspace(
+    start: Number, stop: Number, num: int = 50, endpoint: bool = True, **kwargs
+) -> torch.Tensor:
     """
     Generate a linearly spaced 1-D tensor.
 

@@ -357,19 +357,13 @@ class RVC:
         with torch.no_grad():
             if self.if_f0 == 1:
                 # print(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
-                infered_audio = (
-                    self.net_g.infer(
-                        feats, p_len, cache_pitch, cache_pitchf, sid, rate
-                    )[0][0, 0]
-                    .data
-                    .float()
-                )
+                infered_audio = self.net_g.infer(
+                    feats, p_len, cache_pitch, cache_pitchf, sid, rate
+                )[0][0, 0].data.float()
             else:
-                infered_audio = (
-                    self.net_g.infer(feats, p_len, sid, rate)[0][0, 0]
-                    .data
-                    .float()
-                )
+                infered_audio = self.net_g.infer(feats, p_len, sid, rate)[0][
+                    0, 0
+                ].data.float()
         t5 = ttime()
         logger.info(
             "Spent time: fea = %.2fs, index = %.2fs, f0 = %.2fs, model = %.2fs",
