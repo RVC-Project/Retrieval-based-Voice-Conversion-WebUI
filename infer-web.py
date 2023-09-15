@@ -389,14 +389,14 @@ def get_pretrained_models(path_str, f0_str, sr2):
         "assets/pretrained%s/%sD%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
     if not if_pretrained_generator_exist:
-        logger.warn(
+        logger.warning(
             "assets/pretrained%s/%sG%s.pth not exist, will not use pretrained model",
             path_str,
             f0_str,
             sr2,
         )
     if not if_pretrained_discriminator_exist:
-        logger.warn(
+        logger.warning(
             "assets/pretrained%s/%sD%s.pth not exist, will not use pretrained model",
             path_str,
             f0_str,

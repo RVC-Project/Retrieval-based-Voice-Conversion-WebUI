@@ -140,7 +140,7 @@ class RVC:
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
         except:
-            logger.warn(traceback.format_exc())
+            logger.warning(traceback.format_exc())
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
@@ -326,10 +326,10 @@ class RVC:
                     + (1 - self.index_rate) * feats[0][-leng_replace_head:]
                 )
             else:
-                logger.warn("Index search FAILED or disabled")
+                logger.warning("Index search FAILED or disabled")
         except:
             traceback.print_exc()
-            logger.warn("Index search FAILED")
+            logger.warning("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
         if self.if_f0 == 1:
