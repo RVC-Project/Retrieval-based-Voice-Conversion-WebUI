@@ -44,6 +44,7 @@ class Config:
     def __init__(self):
         self.device = "cuda:0"
         self.is_half = True
+        self.use_jit = True
         self.n_cpu = 0
         self.gpu_name = None
         self.json_config = self.load_config_json()

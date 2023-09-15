@@ -125,11 +125,21 @@ class RVC:
                 logger.debug(self.net_g.load_state_dict(cpt["weight"], strict=False))
                 self.net_g.eval().to(device)
                 # print(2333333333,device,config.device,self.device)#net_g是device，hubert是config.device
-                if config.is_half:
+                self.is_half = config.is_half
+                if self.is_half:
                     self.net_g = self.net_g.half()
                 else:
                     self.net_g = self.net_g.float()
-                self.is_half = config.is_half
+
+                if config.use_jit and not config.dml:
+                    self.net_g.forward=self.net_g.infer
+                    self.net_g=self.to_jit_model(self.net_g,self.device,
+                                                inputs_path="assets/Synthesizer_inputs.pth",
+                                                is_half=config.is_half)
+                    self.net_g.infer=self.net_g.forward
+
+
+
             else:
                 self.tgt_sr = last_rvc.tgt_sr
                 self.if_f0 = last_rvc.if_f0
@@ -141,6 +151,23 @@ class RVC:
                 self.model_rmvpe = last_rvc.model_rmvpe
         except:
             logger.warn(traceback.format_exc())
+
+    def to_jit_model(self,model,device,inputs_path:str,is_half=True,warm_up=True):
+        inputs=torch.load(inputs_path,map_location=device)
+        if not is_half:
+            for key in inputs.keys():
+                if inputs[key].dtype == torch.float16:
+                    inputs[key] = inputs[key].float()
+        logger.info("Using jit...")
+        model = torch.jit.trace(model, example_kwarg_inputs=inputs)
+        # model.infer = model.forward
+
+        if warm_up:
+            logger.info("Warming up the jit model")
+            for i in range(3):
+                o=model(**inputs)
+
+        return model
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
@@ -357,13 +384,19 @@ class RVC:
         with torch.no_grad():
             if self.if_f0 == 1:
                 # print(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
-                infered_audio = self.net_g.infer(
-                    feats, p_len, cache_pitch, cache_pitchf, sid, rate
-                )[0][0, 0].data.float()
+                infered_audio = (
+                    self.net_g.infer(
+                        feats, p_len, cache_pitch, cache_pitchf, sid, torch.FloatTensor([rate])
+                    )[0][0, 0]
+                    .data
+                    .float()
+                )
             else:
-                infered_audio = self.net_g.infer(feats, p_len, sid, rate)[0][
-                    0, 0
-                ].data.float()
+                infered_audio = (
+                    self.net_g.infer(feats, p_len, sid, torch.FloatTensor([rate]))[0][0, 0]
+                    .data
+                    .float()
+                )
         t5 = ttime()
         logger.info(
             "Spent time: fea = %.2fs, index = %.2fs, f0 = %.2fs, model = %.2fs",
