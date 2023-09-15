@@ -164,7 +164,7 @@ class RVC:
 
         if warm_up:
             logger.info("Warming up the jit model")
-            for i in range(3):
+            for i in range(5):
                 o=model(**inputs)
 
         return model

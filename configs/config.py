@@ -43,6 +43,7 @@ def singleton_variable(func):
 class Config:
     def __init__(self):
         self.device = "cuda:0"
+        # Float is faster than Half, on Rtx4070
         self.is_half = True
         self.use_jit = True
         self.n_cpu = 0
