@@ -3,6 +3,8 @@ import pdb, os
 import numpy as np
 import torch
 
+from tools import jit_export
+
 try:
     # Fix "Torch not compiled with CUDA enabled"
     import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
@@ -276,17 +278,14 @@ class ConvBlockRes(nn.Module):
             nn.BatchNorm2d(out_channels, momentum=momentum),
             nn.ReLU(),
         )
+        self.shortcut=lambda x:x
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
-            self.is_shortcut = True
-        else:
-            self.is_shortcut = False
+        
+            
 
     def forward(self, x):
-        if self.is_shortcut:
-            return self.conv(x) + self.shortcut(x)
-        else:
-            return self.conv(x) + x
+        return self.conv(x) + self.shortcut(x)
 
 
 class Encoder(nn.Module):
@@ -578,7 +577,7 @@ class MelSpectrogram(torch.nn.Module):
 
 
 class RMVPE:
-    def __init__(self, model_path, is_half, device=None):
+    def __init__(self, model_path:str, is_half, device=None,use_jit=False):
         self.resample_kernel = {}
         self.resample_kernel = {}
         self.is_half = is_half
@@ -597,9 +596,19 @@ class RMVPE:
             )
             self.model = ort_session
         else:
-            model = E2E(4, 1, (2, 2))
-            ckpt = torch.load(model_path, map_location="cpu")
-            model.load_state_dict(ckpt)
+            if use_jit:
+                jit_model_path=model_path.rstrip(".pth")+".jit"
+                if os.path.exists(jit_model_path):
+                    model=torch.jit.load(jit_model_path,map_location=device)
+                else:
+                    _,model=jit_export.to_jit_model(model_path,"rmvpe",
+                                            "assets/rmvpe_inputs.pth",
+                                            device,is_half=False)
+                    torch.jit.save(model,jit_model_path)
+            else:
+                model = E2E(4, 1, (2, 2))
+                ckpt = torch.load(model_path, map_location="cpu")
+                model.load_state_dict(ckpt)
             model.eval()
             if is_half == True:
                 model = model.half()
