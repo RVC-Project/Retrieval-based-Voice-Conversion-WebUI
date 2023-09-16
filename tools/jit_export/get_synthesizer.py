@@ -3,7 +3,7 @@ from infer.lib.infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTr
 
 
 def get_synthesizer(pth_path,device=torch.device("cpu")):
-    cpt = torch.load(pth_path, map_location="cpu")
+    cpt = torch.load(pth_path, map_location=device)
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
     if_f0 = cpt.get("f0", 1)
@@ -29,6 +29,7 @@ def get_synthesizer(pth_path,device=torch.device("cpu")):
     ckpt["f0"] = if_f0
     ckpt["version"]=version
     ckpt["info"]=cpt.get("info","0epoch")
+    net_g.load_state_dict(cpt["weight"], strict=False)
     net_g=net_g.float()
     net_g.eval().to(device)
     return net_g,cpt
