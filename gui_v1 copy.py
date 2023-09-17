@@ -15,7 +15,6 @@ import multiprocessing
 
 logger = logging.getLogger(__name__)
 
-
 class Harvest(multiprocessing.Process):
     def __init__(self, inp_q, opt_q):
         multiprocessing.Process.__init__(self)
@@ -100,7 +99,7 @@ if __name__ == "__main__":
         def __init__(self) -> None:
             self.config = GUIConfig()
             self.flag_vc = False
-            # self.device_latency=0.1
+            self.device_sr=40000
             self.launcher()
 
         def load(self):
@@ -288,17 +287,6 @@ if __name__ == "__main__":
                                     enable_events=True,
                                 ),
                             ],
-                            # [
-                            #     sg.Text("设备延迟"),
-                            #     sg.Slider(
-                            #         range=(0, 1),
-                            #         key="device_latency",
-                            #         resolution=0.001,
-                            #         orientation="h",
-                            #         default_value=data.get("device_latency", "0.1"),
-                            #         enable_events=True,
-                            #     ),
-                            # ],
                             [
                                 sg.Text(i18n("harvest进程数")),
                                 sg.Slider(
@@ -399,7 +387,6 @@ if __name__ == "__main__":
                             "pitch": values["pitch"],
                             "rms_mix_rate": values["rms_mix_rate"],
                             "index_rate": values["index_rate"],
-                            # "device_latency": values["device_latency"],
                             "block_time": values["block_time"],
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
@@ -456,7 +443,6 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
-            # self.device_latency = values["device_latency"]
             self.config.pth_path = values["pth_path"]
             self.config.index_path = values["index_path"]
             self.config.threhold = values["threhold"]
@@ -561,6 +547,13 @@ if __name__ == "__main__":
             self.resampler = tat.Resample(
                 orig_freq=self.config.samplerate, new_freq=16000, dtype=torch.float32
             ).to(device)
+            self.resampler_to_device = tat.Resample(
+                orig_freq=self.config.samplerate, new_freq=self.device_sr, dtype=torch.float32
+            ).to(device)
+
+            self.resampler_to_model = tat.Resample(
+                orig_freq=self.device_sr, new_freq=self.config.samplerate, dtype=torch.float32
+            ).to(device)
             self.tg = TorchGate(
                 sr=self.config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
             ).to(device)
@@ -571,14 +564,19 @@ if __name__ == "__main__":
             """
             接受音频输入
             """
+            block_frame=(
+                int(np.round(self.config.block_time * self.device_sr / (self.device_sr// 100)))
+                *  (self.device_sr// 100)
+            )
             channels = 1 if sys.platform == "darwin" else 2
+            
             with sd.Stream(
                 channels=channels,
                 callback=self.audio_callback,
-                blocksize=self.block_frame,
-                samplerate=self.config.samplerate,
+                blocksize=block_frame,
+                samplerate=self.device_sr,
                 dtype="float32",
-                # latency=self.device_latency
+                latency=0.5
             ):
                 while self.flag_vc:
                     time.sleep(self.config.block_time)
@@ -593,6 +591,7 @@ if __name__ == "__main__":
             """
             start_time = time.perf_counter()
             indata = librosa.to_mono(indata.T)
+            
             if self.config.threhold > -60:
                 rms = librosa.feature.rms(
                     y=indata, frame_length=4 * self.zc, hop_length=self.zc
@@ -606,7 +605,9 @@ if __name__ == "__main__":
             self.input_wav[: -self.block_frame] = self.input_wav[
                 self.block_frame :
             ].clone()
-            self.input_wav[-self.block_frame :] = torch.from_numpy(indata).to(device)
+            indata_tensor = torch.from_numpy(indata).to(device)
+            indata_tensor = self.resampler_to_model(indata_tensor)
+            self.input_wav[-self.block_frame :] = indata_tensor
             self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
                 self.block_frame_16k :
             ].clone()
@@ -715,14 +716,23 @@ if __name__ == "__main__":
             infer_wav[: self.crossfade_frame] *= self.fade_in_window
             infer_wav[: self.crossfade_frame] += self.sola_buffer * self.fade_out_window
             self.sola_buffer[:] = infer_wav[-self.crossfade_frame :]
+            outdata_tensor=self.resampler_to_device(infer_wav[: -self.crossfade_frame])
             if sys.platform == "darwin":
                 outdata[:] = (
-                    infer_wav[: -self.crossfade_frame].cpu().numpy()[:, np.newaxis]
+                    outdata_tensor.cpu().numpy()[:, np.newaxis]
                 )
             else:
                 outdata[:] = (
-                    infer_wav[: -self.crossfade_frame].repeat(2, 1).t().cpu().numpy()
+                    outdata_tensor.repeat(2, 1).t().cpu().numpy()
                 )
+            # if sys.platform == "darwin":
+            #     outdata[:] = (
+            #         infer_wav[: -self.crossfade_frame].cpu().numpy()[:, np.newaxis]
+            #     )
+            # else:
+            #     outdata[:] = (
+            #         infer_wav[: -self.crossfade_frame].repeat(2, 1).t().cpu().numpy()
+            #     )
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
             logger.info("Infer time: %.2f", total_time)
@@ -772,6 +782,8 @@ if __name__ == "__main__":
                 input_device_indices,
                 output_device_indices,
             ) = self.get_devices()
+            self.device_sr=int(sd.query_devices(output_devices.index(output_device)).get("default_samplerate",40000))
+            print(f"sr:{self.device_sr}")
             sd.default.device[0] = input_device_indices[
                 input_devices.index(input_device)
             ]
