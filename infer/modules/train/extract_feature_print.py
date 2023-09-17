@@ -1,6 +1,9 @@
 import os
 import sys
 import traceback
+from configs.config import Config
+
+is_half = Config().is_half
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
