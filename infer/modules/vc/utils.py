@@ -22,7 +22,7 @@ def get_index_path_from_model(sid):
                 cur += i
         ret.append(cur.strip())
         return ret
-
+    
     sel_index_path = ""
     # name = os.path.join("logs", sid.split(".")[0], "")
     names=multisplit(sid.split(".")[0])
