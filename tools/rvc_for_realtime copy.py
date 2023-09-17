@@ -107,8 +107,24 @@ class RVC:
 
             if last_rvc is None or last_rvc.pth_path != self.pth_path:
                 self.is_half = config.is_half
-
-                def set_default_model():
+                if config.use_jit and not config.dml:
+                    jit_pth_path=self.pth_path.rstrip(".pth")+".jit"
+                    if os.path.exists(jit_pth_path):
+                        with open(jit_pth_path,"rb") as f:
+                            cpt=pickle.load(f)
+                    else:
+                        cpt=jit_export.synthesizer_jit_export(self.pth_path,
+                                                "assets\Synthesizer_inputs.pth",
+                                                device=device,is_half=False
+                                                )
+                    self.tgt_sr = cpt["config"][-1]
+                    self.if_f0 = cpt.get("f0", 1)
+                    self.version = cpt.get("version", "v1")
+                    self.net_g = torch.jit.load(BytesIO(cpt["model"]),map_location=device)
+                    self.net_g.infer = self.net_g.forward
+                    self.net_g.eval().to(device)
+                    
+                else:
                     cpt = torch.load(self.pth_path, map_location="cpu")
                     self.tgt_sr = cpt["config"][-1]
                     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
@@ -131,40 +147,21 @@ class RVC:
                     del self.net_g.enc_q
                     logger.debug(self.net_g.load_state_dict(cpt["weight"], strict=False))
                     self.net_g.eval().to(device)
-                    if self.is_half:
-                        self.net_g = self.net_g.half()
-                    else:
-                        self.net_g = self.net_g.float()
-
-                def set_jit_model():
-                    jit_pth_path=self.pth_path.rstrip(".pth")
-                    jit_pth_path+=".half.jit" if self.is_half else ".jit"
-                    if os.path.exists(jit_pth_path):
-                        with open(jit_pth_path,"rb") as f:
-                            cpt=pickle.load(f)
-                    else:
-                        cpt=jit_export.synthesizer_jit_export(self.pth_path,
-                                                "assets\Synthesizer_inputs.pth",
-                                                device=self.device,is_half=self.is_half
-                                                )
-                    self.tgt_sr = cpt["config"][-1]
-                    self.if_f0 = cpt.get("f0", 1)
-                    self.version = cpt.get("version", "v1")
-                    self.net_g = torch.jit.load(BytesIO(cpt["model"]),map_location=device)
-                    self.net_g.infer = self.net_g.forward
-                    self.net_g.eval().to(device)
-
-                if config.use_jit and not config.dml:
-                    if self.is_half and "cpu" in str(self.device):
-                        logger.warning("Use default Synthesizer model. \
-                                    Jit is not supported on the CPU for half floating point")
-                        set_default_model()
-                    else:
-                        set_jit_model()
-                else:
-                    set_default_model()
-
                     # print(2333333333,device,config.device,self.device)#net_g是device，hubert是config.device
+
+                if self.is_half:
+                    self.net_g = self.net_g.half()
+                else:
+                    self.net_g = self.net_g.float()
+
+                # if config.use_jit and not config.dml:
+                #     self.net_g.forward=self.net_g.infer
+                #     self.net_g=self.to_jit_model(self.net_g,self.device,
+                #                                 inputs_path="assets/Synthesizer_inputs.pth",
+                #                                 is_half=config.is_half)
+                #     self.net_g.infer=self.net_g.forward
+
+
 
             else:
                 self.tgt_sr = last_rvc.tgt_sr
@@ -178,6 +175,22 @@ class RVC:
         except:
             logger.warn(traceback.format_exc())
 
+    # def to_jit_model(self,model,device,inputs_path:str,is_half=True,warm_up=True):
+    #     inputs=torch.load(inputs_path,map_location=device)
+    #     if not is_half:
+    #         for key in inputs.keys():
+    #             if inputs[key].dtype == torch.float16:
+    #                 inputs[key] = inputs[key].float()
+    #     logger.info("Using jit...")
+    #     model = torch.jit.trace(model, example_kwarg_inputs=inputs)
+    #     # model.infer = model.forward
+
+    #     if warm_up:
+    #         logger.info("Warming up the jit model")
+    #         for i in range(5):
+    #             o=model(**inputs)
+
+    #     return model
 
     def change_key(self, new_key):
         self.f0_up_key = new_key

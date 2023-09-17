@@ -596,23 +596,41 @@ class RMVPE:
             )
             self.model = ort_session
         else:
-            if use_jit:
-                jit_model_path=model_path.rstrip(".pth")+".jit"
+            def get_jit_model():
+                jit_model_path=model_path.rstrip(".pth")
+                jit_model_path+=".half.jit" if is_half else ".jit"
                 if os.path.exists(jit_model_path):
                     model=torch.jit.load(jit_model_path,map_location=device)
                 else:
-                    _,model=jit_export.to_jit_model(model_path,"rmvpe",
+                    model,model_jit=jit_export.to_jit_model(model_path,"rmvpe",
                                             "assets/rmvpe_inputs.pth",
-                                            device,is_half=False)
-                    torch.jit.save(model,jit_model_path)
-            else:
+                                            device=device,is_half=is_half)
+                    torch.jit.save(model_jit,jit_model_path)
+                    model=model.cpu()
+                    del model
+                    model=model_jit
+                return model
+            
+            def get_default_model():
                 model = E2E(4, 1, (2, 2))
                 ckpt = torch.load(model_path, map_location="cpu")
                 model.load_state_dict(ckpt)
-            model.eval()
-            if is_half == True:
-                model = model.half()
-            self.model = model
+                model.eval()
+                if is_half:
+                    model = model.half()
+                else:
+                    model = model.float()
+                return model
+            if use_jit:
+                if is_half and "cpu" in str(self.device):
+                    logger.warning("Use default rmvpe model. \
+                                 Jit is not supported on the CPU for half floating point")
+                    self.model = get_default_model()
+                else:
+                    self.model = get_jit_model()
+            else:
+                self.model = get_default_model()
+
             self.model = self.model.to(device)
         cents_mapping = 20 * np.arange(360) + 1997.3794084376191
         self.cents_mapping = np.pad(cents_mapping, (4, 4))  # 368
@@ -631,6 +649,7 @@ class RMVPE:
                     input_feed={onnx_input_name: mel.cpu().numpy()},
                 )[0]
             else:
+                # mel = mel.half() if self.is_half else mel.float()
                 hidden = self.model(mel)
             return hidden[:, :n_frames]
 
@@ -668,6 +687,32 @@ class RMVPE:
         return f0
 
     def to_local_average_cents(self, salience, thred=0.05):
+        # t0 = ttime()
+        center = np.argmax(salience, axis=1)  # 帧长#index
+        salience = np.pad(salience, ((0, 0), (4, 4)))  # 帧长,368
+        # t1 = ttime()
+        center += 4
+        todo_salience = []
+        todo_cents_mapping = []
+        starts = center - 4
+        ends = center + 5
+        for idx in range(salience.shape[0]):
+            todo_salience.append(salience[:, starts[idx] : ends[idx]][idx])
+            todo_cents_mapping.append(self.cents_mapping[starts[idx] : ends[idx]])
+        # t2 = ttime()
+        todo_salience = np.array(todo_salience)  # 帧长，9
+        todo_cents_mapping = np.array(todo_cents_mapping)  # 帧长，9
+        product_sum = np.sum(todo_salience * todo_cents_mapping, 1)
+        weight_sum = np.sum(todo_salience, 1)  # 帧长
+        devided = product_sum / weight_sum  # 帧长
+        # t3 = ttime()
+        maxx = np.max(salience, axis=1)  # 帧长
+        devided[maxx <= thred] = 0
+        # t4 = ttime()
+        # print("decode:%s\t%s\t%s\t%s" % (t1 - t0, t2 - t1, t3 - t2, t4 - t3))
+        return devided
+    
+    def to_local_average_cents_torch(self, salience, thred=0.05):
         # t0 = ttime()
         center = np.argmax(salience, axis=1)  # 帧长#index
         salience = np.pad(salience, ((0, 0), (4, 4)))  # 帧长,368

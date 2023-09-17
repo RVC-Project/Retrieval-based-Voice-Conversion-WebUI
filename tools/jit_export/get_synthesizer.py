@@ -1,9 +1,9 @@
 import torch
-from infer.lib.infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono, SynthesizerTrnMs768NSFsid, SynthesizerTrnMs768NSFsid_nono
 
 
 def get_synthesizer(pth_path,device=torch.device("cpu")):
-    cpt = torch.load(pth_path, map_location=device)
+    from infer.lib.infer_pack.models import SynthesizerTrnMs256NSFsid, SynthesizerTrnMs256NSFsid_nono, SynthesizerTrnMs768NSFsid, SynthesizerTrnMs768NSFsid_nono
+    cpt = torch.load(pth_path, map_location=torch.device("cpu"))
     tgt_sr = cpt["config"][-1]
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
     if_f0 = cpt.get("f0", 1)
