@@ -139,14 +139,23 @@ class RVC:
                 def set_jit_model():
                     jit_pth_path=self.pth_path.rstrip(".pth")
                     jit_pth_path+=".half.jit" if self.is_half else ".jit"
+                    reload=False
+                    if str(self.device)=="cuda":
+                        self.device = torch.device("cuda:0")
                     if os.path.exists(jit_pth_path):
-                        with open(jit_pth_path,"rb") as f:
-                            cpt=pickle.load(f)
+                            cpt=jit_export.load(jit_pth_path)
+                            model_device = cpt["device"]
+                            if model_device != str(self.device):
+                                reload =True
                     else:
+                        reload=True
+
+                    if reload:
                         cpt=jit_export.synthesizer_jit_export(self.pth_path,
                                                 "assets\Synthesizer_inputs.pth",
                                                 device=self.device,is_half=self.is_half
                                                 )
+                        
                     self.tgt_sr = cpt["config"][-1]
                     self.if_f0 = cpt.get("f0", 1)
                     self.version = cpt.get("version", "v1")

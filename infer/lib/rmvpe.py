@@ -1,4 +1,5 @@
-import pdb, os
+from io import BytesIO
+import os
 
 import numpy as np
 import torch
@@ -582,7 +583,7 @@ class RMVPE:
         self.resample_kernel = {}
         self.is_half = is_half
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.device = device
         self.mel_extractor = MelSpectrogram(
             is_half, 128, 16000, 1024, 160, None, 30, 8000
@@ -596,19 +597,27 @@ class RMVPE:
             )
             self.model = ort_session
         else:
+            if str(self.device)=="cuda":
+                self.device=torch.device("cuda:0")
             def get_jit_model():
                 jit_model_path=model_path.rstrip(".pth")
                 jit_model_path+=".half.jit" if is_half else ".jit"
+                reload=False
                 if os.path.exists(jit_model_path):
-                    model=torch.jit.load(jit_model_path,map_location=device)
+                    ckpt=jit_export.load(jit_model_path)
+                    model_device = ckpt["device"]
+                    if model_device != str(self.device):
+                        reload =True
                 else:
-                    model,model_jit=jit_export.to_jit_model(model_path,"rmvpe",
+                    reload=True
+
+                if reload:
+                    ckpt=jit_export.rmvpe_jit_export(
+                                            model_path,
                                             "assets/rmvpe_inputs.pth",
+                                            save_path=jit_model_path,
                                             device=device,is_half=is_half)
-                    torch.jit.save(model_jit,jit_model_path)
-                    model=model.cpu()
-                    del model
-                    model=model_jit
+                    model=torch.jit.load(BytesIO(ckpt["model"]),map_location=device)
                 return model
             
             def get_default_model():
