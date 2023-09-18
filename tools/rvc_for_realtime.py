@@ -5,7 +5,7 @@ import sys
 import traceback
 import logging
 
-from tools import jit_export
+from infer.lib import jit
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

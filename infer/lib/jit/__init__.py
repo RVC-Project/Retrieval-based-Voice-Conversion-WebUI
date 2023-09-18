@@ -31,14 +31,14 @@ def jit_warm_up(model,inputs_path,device=torch.device("cpu"),epoch=5,is_half=Fal
 def to_jit_model(model_path,model_type:str,inputs_path:str,device=torch.device("cpu"),is_half=False):
     model=None
     if model_type.lower()=="synthesizer":
-        from tools.jit_export.get_synthesizer import get_synthesizer
+        from infer.lib.jit.get_synthesizer import get_synthesizer
         model,_=get_synthesizer(model_path,device)
         model.forward = model.infer
     elif model_type.lower()=="rmvpe":
-        from tools.jit_export.get_rmvpe import get_rmvpe
+        from infer.lib.jit.jit_export.get_rmvpe import get_rmvpe
         model=get_rmvpe(model_path,device)
     elif model_type.lower()=="hubert":
-        from tools.jit_export.get_hubert import get_hubert_model
+        from infer.lib.jit.jit_export.get_hubert import get_hubert_model
         model=get_hubert_model(model_path,device)
         model.forward = model.infer
     else:
@@ -82,7 +82,7 @@ def rmvpe_jit_export(model_path:str,inputs_path:str,save_path:str=None,device=to
         save_path+=".half.jit" if is_half else ".jit"
     if "cuda" in str(device) and ":" not in str(device):
         device = torch.device("cuda:0" )
-    from tools.jit_export.get_rmvpe import get_rmvpe
+    from infer.lib.jit.jit_export.get_rmvpe import get_rmvpe
     model = get_rmvpe(model_path,device)
     inputs = load_inputs(inputs_path,device,is_half)
     ckpt = export(model,inputs,device,is_half)
@@ -96,7 +96,7 @@ def synthesizer_jit_export(model_path:str,inputs_path:str,save_path:str=None,dev
         save_path+=".half.jit" if is_half else ".jit"
     if "cuda" in str(device) and ":" not in str(device):
         device = torch.device("cuda:0" )
-    from tools.jit_export.get_synthesizer import get_synthesizer
+    from infer.lib.jit.jit_export.get_synthesizer import get_synthesizer
     model,cpt=get_synthesizer(model_path,device)
     assert isinstance(cpt,dict)
     model.forward = model.infer

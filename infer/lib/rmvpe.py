@@ -4,7 +4,7 @@ import os
 import numpy as np
 import torch
 
-from tools import jit_export
+from infer.lib import jit
 
 try:
     # Fix "Torch not compiled with CUDA enabled"
@@ -614,7 +614,7 @@ class RMVPE:
                 if reload:
                     ckpt=jit_export.rmvpe_jit_export(
                                             model_path,
-                                            "assets/rmvpe_inputs.pth",
+                                            "assets/rmvpe/rmvpe_inputs.pth",
                                             save_path=jit_model_path,
                                             device=device,is_half=is_half)
                     model=torch.jit.load(BytesIO(ckpt["model"]),map_location=device)
