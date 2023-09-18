@@ -623,7 +623,7 @@ if __name__ == "__main__":
             # infer
             f0_extractor_frame = self.block_frame_16k + 800
             if self.config.f0method == "rmvpe":
-                f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1)
+                f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
             infer_wav = self.rvc.infer(
                 self.input_wav_res,
                 self.input_wav_res[-f0_extractor_frame:].cpu().numpy(),
