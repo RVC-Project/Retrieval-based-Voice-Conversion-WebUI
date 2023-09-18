@@ -76,10 +76,18 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
             except:
-                infos.append(
-                    "%s->%s" % (os.path.basename(inp_path), traceback.format_exc())
-                )
-                yield "\n".join(infos)
+                try:
+                    if done == 0:
+                        pre_fun._path_audio_(
+                            inp_path, save_root_ins, save_root_vocal, format0
+                        )
+                    infos.append("%s->Success" % (os.path.basename(inp_path)))
+                    yield "\n".join(infos)
+                except:
+                    infos.append(
+                        "%s->%s" % (os.path.basename(inp_path), traceback.format_exc())
+                    )
+                    yield "\n".join(infos)
     except:
         infos.append(traceback.format_exc())
         yield "\n".join(infos)

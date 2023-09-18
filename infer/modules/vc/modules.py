@@ -51,7 +51,7 @@ class VC:
             "__type__": "update",
         }
 
-        if not sid:
+        if sid == "" or sid == []:
             if self.hubert_model is not None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
                 logger.info("Clean model cache")
                 del (
@@ -209,7 +209,9 @@ class VC:
                 f0_file,
             )
             if self.tgt_sr != resample_sr >= 16000:
-                self.tgt_sr = resample_sr
+                tgt_sr = resample_sr
+            else:
+                tgt_sr = self.tgt_sr
             index_info = (
                 "Index:\n%s." % file_index
                 if os.path.exists(file_index)
@@ -218,7 +220,7 @@ class VC:
             return (
                 "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
                 % (index_info, *times),
-                (self.tgt_sr, audio_opt),
+                (tgt_sr, audio_opt),
             )
         except:
             info = traceback.format_exc()
@@ -286,14 +288,13 @@ class VC:
                                 tgt_sr,
                             )
                         else:
-                            path = "%s/%s.%s" % (opt_root, os.path.basename(path), format1)
+                            path = "%s/%s.%s" % (
+                                opt_root,
+                                os.path.basename(path),
+                                format1,
+                            )
                             with BytesIO() as wavf:
-                                sf.write(
-                                    wavf,
-                                    audio_opt,
-                                    tgt_sr,
-                                    format="wav"
-                                )
+                                sf.write(wavf, audio_opt, tgt_sr, format="wav")
                                 wavf.seek(0, 0)
                                 with open(path, "wb") as outf:
                                     wav2(wavf, outf, format1)

@@ -11,3 +11,10 @@ services:
       # - ./dataset:/app/dataset # you can use this folder in order to provide your dataset for model training
     ports:
       - 7865:7865
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

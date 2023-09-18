@@ -1028,6 +1028,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 fn=vc.get_vc,
                 inputs=[sid0, protect0, protect1],
                 outputs=[spk_item, protect0, protect1, file_index2, file_index4],
+                api_name="infer_change_voice",
             )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
             with gr.Group():

@@ -2,6 +2,17 @@ import pdb, os
 
 import numpy as np
 import torch
+
+try:
+    # Fix "Torch not compiled with CUDA enabled"
+    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+
+    if torch.xpu.is_available():
+        from infer.modules.ipex import ipex_init
+
+        ipex_init()
+except Exception:
+    pass
 import torch.nn as nn
 import torch.nn.functional as F
 from librosa.util import normalize, pad_center, tiny
