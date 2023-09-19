@@ -604,7 +604,7 @@ class RMVPE:
                 jit_model_path+=".half.jit" if is_half else ".jit"
                 reload=False
                 if os.path.exists(jit_model_path):
-                    ckpt=jit_export.load(jit_model_path)
+                    ckpt=jit.load(jit_model_path)
                     model_device = ckpt["device"]
                     if model_device != str(self.device):
                         reload =True
@@ -612,7 +612,7 @@ class RMVPE:
                     reload=True
 
                 if reload:
-                    ckpt=jit_export.rmvpe_jit_export(
+                    ckpt=jit.rmvpe_jit_export(
                                             model_path,
                                             "assets/rmvpe/rmvpe_inputs.pth",
                                             save_path=jit_model_path,

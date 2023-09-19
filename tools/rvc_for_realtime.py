@@ -143,7 +143,7 @@ class RVC:
                     if str(self.device)=="cuda":
                         self.device = torch.device("cuda:0")
                     if os.path.exists(jit_pth_path):
-                            cpt=jit_export.load(jit_pth_path)
+                            cpt=jit.load(jit_pth_path)
                             model_device = cpt["device"]
                             if model_device != str(self.device):
                                 reload =True
@@ -151,7 +151,7 @@ class RVC:
                         reload=True
 
                     if reload:
-                        cpt=jit_export.synthesizer_jit_export(self.pth_path,
+                        cpt=jit.synthesizer_jit_export(self.pth_path,
                                                 "assets\Synthesizer_inputs.pth",
                                                 device=self.device,is_half=self.is_half
                                                 )
