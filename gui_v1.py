@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from queue import Empty
 
     import librosa
-    from tools.torchgate import TorchGate
+    from infer.lib.jit.torchgate import TorchGate
     import numpy as np
     import PySimpleGUI as sg
     import sounddevice as sd
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
-    import tools.rvc_for_realtime as rvc_for_realtime
+    import infer.lib.jit.rvc_for_realtime as rvc_for_realtime
     from i18n.i18n import I18nAuto
 
     i18n = I18nAuto()
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         def __init__(self) -> None:
             self.config = GUIConfig()
             self.flag_vc = False
-
+            # self.device_latency=0.1
             self.launcher()
 
         def load(self):
@@ -288,6 +288,17 @@ if __name__ == "__main__":
                                     enable_events=True,
                                 ),
                             ],
+                            # [
+                            #     sg.Text("设备延迟"),
+                            #     sg.Slider(
+                            #         range=(0, 1),
+                            #         key="device_latency",
+                            #         resolution=0.001,
+                            #         orientation="h",
+                            #         default_value=data.get("device_latency", "0.1"),
+                            #         enable_events=True,
+                            #     ),
+                            # ],
                             [
                                 sg.Text(i18n("harvest进程数")),
                                 sg.Slider(
@@ -388,6 +399,7 @@ if __name__ == "__main__":
                             "pitch": values["pitch"],
                             "rms_mix_rate": values["rms_mix_rate"],
                             "index_rate": values["index_rate"],
+                            # "device_latency": values["device_latency"],
                             "block_time": values["block_time"],
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
@@ -444,6 +456,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
+            # self.device_latency = values["device_latency"]
             self.config.pth_path = values["pth_path"]
             self.config.index_path = values["index_path"]
             self.config.threhold = values["threhold"]
@@ -565,6 +578,7 @@ if __name__ == "__main__":
                 blocksize=self.block_frame,
                 samplerate=self.config.samplerate,
                 dtype="float32",
+                # latency=self.device_latency
             ):
                 while self.flag_vc:
                     time.sleep(self.config.block_time)
