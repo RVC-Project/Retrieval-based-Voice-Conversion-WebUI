@@ -279,11 +279,9 @@ class ConvBlockRes(nn.Module):
             nn.BatchNorm2d(out_channels, momentum=momentum),
             nn.ReLU(),
         )
-        self.shortcut=lambda x:x
+        self.shortcut = lambda x: x
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
-        
-            
 
     def forward(self, x):
         return self.conv(x) + self.shortcut(x)
@@ -578,7 +576,7 @@ class MelSpectrogram(torch.nn.Module):
 
 
 class RMVPE:
-    def __init__(self, model_path:str, is_half, device=None,use_jit=False):
+    def __init__(self, model_path: str, is_half, device=None, use_jit=False):
         self.resample_kernel = {}
         self.resample_kernel = {}
         self.is_half = is_half
@@ -597,29 +595,32 @@ class RMVPE:
             )
             self.model = ort_session
         else:
-            if str(self.device)=="cuda":
-                self.device=torch.device("cuda:0")
+            if str(self.device) == "cuda":
+                self.device = torch.device("cuda:0")
+
             def get_jit_model():
-                jit_model_path=model_path.rstrip(".pth")
-                jit_model_path+=".half.jit" if is_half else ".jit"
-                reload=False
+                jit_model_path = model_path.rstrip(".pth")
+                jit_model_path += ".half.jit" if is_half else ".jit"
+                reload = False
                 if os.path.exists(jit_model_path):
-                    ckpt=jit.load(jit_model_path)
+                    ckpt = jit.load(jit_model_path)
                     model_device = ckpt["device"]
                     if model_device != str(self.device):
-                        reload =True
+                        reload = True
                 else:
-                    reload=True
+                    reload = True
 
                 if reload:
-                    ckpt=jit.rmvpe_jit_export(
-                                            model_path,
-                                            "assets/rmvpe/rmvpe_inputs.pth",
-                                            save_path=jit_model_path,
-                                            device=device,is_half=is_half)
-                    model=torch.jit.load(BytesIO(ckpt["model"]),map_location=device)
+                    ckpt = jit.rmvpe_jit_export(
+                        model_path,
+                        "assets/rmvpe/rmvpe_inputs.pth",
+                        save_path=jit_model_path,
+                        device=device,
+                        is_half=is_half,
+                    )
+                    model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
                 return model
-            
+
             def get_default_model():
                 model = E2E(4, 1, (2, 2))
                 ckpt = torch.load(model_path, map_location="cpu")
@@ -630,10 +631,13 @@ class RMVPE:
                 else:
                     model = model.float()
                 return model
+
             if use_jit:
                 if is_half and "cpu" in str(self.device):
-                    logger.warning("Use default rmvpe model. \
-                                 Jit is not supported on the CPU for half floating point")
+                    logger.warning(
+                        "Use default rmvpe model. \
+                                 Jit is not supported on the CPU for half floating point"
+                    )
                     self.model = get_default_model()
                 else:
                     self.model = get_jit_model()
@@ -720,7 +724,7 @@ class RMVPE:
         # t4 = ttime()
         # print("decode:%s\t%s\t%s\t%s" % (t1 - t0, t2 - t1, t3 - t2, t4 - t3))
         return devided
-    
+
 
 if __name__ == "__main__":
     import librosa
