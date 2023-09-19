@@ -99,7 +99,7 @@ def main():
         n_gpus = 1
     if n_gpus < 1:
         # patch to unblock people without gpus. there is probably a better way.
-        logger.warn("NO GPU DETECTED: falling back to CPU - this may take a while")
+        logger.warning("NO GPU DETECTED: falling back to CPU - this may take a while")
         n_gpus = 1
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(randint(20000, 55555))
