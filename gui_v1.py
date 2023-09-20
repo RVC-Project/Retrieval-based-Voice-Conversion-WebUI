@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from queue import Empty
 
     import librosa
-    from infer.lib.jit.torchgate import TorchGate
+    from tools.torchgate import TorchGate
     import numpy as np
     import PySimpleGUI as sg
     import sounddevice as sd
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
-    import infer.lib.jit.rvc_for_realtime as rvc_for_realtime
+    import tools.rvc_for_realtime as rvc_for_realtime
     from i18n.i18n import I18nAuto
 
     i18n = I18nAuto()
