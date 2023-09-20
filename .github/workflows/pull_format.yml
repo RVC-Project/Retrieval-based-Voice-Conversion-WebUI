@@ -1,13 +1,30 @@
 name: pull format
 
-on: [pull_request]
-
-permissions:
-  contents: write
+on:
+  pull_request_target:
+    types: [assigned, opened, synchronize, reopened]
 
 jobs:
+  # This workflow closes invalid PR
+  close-pr:
+    name: closepr
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Close PR if it is not pointed to dev branch
+        if: github.event.pull_request.base.ref != 'dev'
+        uses: superbrothers/close-pull-request@v3
+        with:
+          # Optional. Post a issue comment just before closing a pull request.
+          comment: "Invalid PR to non-dev branch ${{ github.event.pull_request.base.ref }}."
+
   pull_format:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
 
     strategy:
       matrix:
