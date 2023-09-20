@@ -551,7 +551,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         gin_channels,
         sr,
         version,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         if type(sr) == type("strr"):

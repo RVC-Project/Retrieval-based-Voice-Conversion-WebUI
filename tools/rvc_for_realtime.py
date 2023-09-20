@@ -85,7 +85,7 @@ class RVC:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
                 logger.info("Index search enabled")
-            self.pth_path:str = pth_path
+            self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
 
@@ -129,7 +129,9 @@ class RVC:
                         else:
                             self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
                     del self.net_g.enc_q
-                    logger.debug(self.net_g.load_state_dict(cpt["weight"], strict=False))
+                    logger.debug(
+                        self.net_g.load_state_dict(cpt["weight"], strict=False)
+                    )
                     self.net_g.eval().to(device)
                     if self.is_half:
                         self.net_g = self.net_g.half()
@@ -137,36 +139,42 @@ class RVC:
                         self.net_g = self.net_g.float()
 
                 def set_jit_model():
-                    jit_pth_path=self.pth_path.rstrip(".pth")
-                    jit_pth_path+=".half.jit" if self.is_half else ".jit"
-                    reload=False
-                    if str(self.device)=="cuda":
+                    jit_pth_path = self.pth_path.rstrip(".pth")
+                    jit_pth_path += ".half.jit" if self.is_half else ".jit"
+                    reload = False
+                    if str(self.device) == "cuda":
                         self.device = torch.device("cuda:0")
                     if os.path.exists(jit_pth_path):
-                            cpt=jit_export.load(jit_pth_path)
-                            model_device = cpt["device"]
-                            if model_device != str(self.device):
-                                reload =True
+                        cpt = jit.load(jit_pth_path)
+                        model_device = cpt["device"]
+                        if model_device != str(self.device):
+                            reload = True
                     else:
-                        reload=True
+                        reload = True
 
                     if reload:
-                        cpt=jit_export.synthesizer_jit_export(self.pth_path,
-                                                "assets\Synthesizer_inputs.pth",
-                                                device=self.device,is_half=self.is_half
-                                                )
-                        
+                        cpt = jit.synthesizer_jit_export(
+                            self.pth_path,
+                            "assets\Synthesizer_inputs.pth",
+                            device=self.device,
+                            is_half=self.is_half,
+                        )
+
                     self.tgt_sr = cpt["config"][-1]
                     self.if_f0 = cpt.get("f0", 1)
                     self.version = cpt.get("version", "v1")
-                    self.net_g = torch.jit.load(BytesIO(cpt["model"]),map_location=device)
+                    self.net_g = torch.jit.load(
+                        BytesIO(cpt["model"]), map_location=device
+                    )
                     self.net_g.infer = self.net_g.forward
                     self.net_g.eval().to(device)
 
                 if config.use_jit and not config.dml:
                     if self.is_half and "cpu" in str(self.device):
-                        logger.warning("Use default Synthesizer model. \
-                                    Jit is not supported on the CPU for half floating point")
+                        logger.warning(
+                            "Use default Synthesizer model. \
+                                    Jit is not supported on the CPU for half floating point"
+                        )
                         set_default_model()
                     else:
                         set_jit_model()
@@ -186,7 +194,6 @@ class RVC:
                 self.model_rmvpe = last_rvc.model_rmvpe
         except:
             logger.warning(traceback.format_exc())
-
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
@@ -321,7 +328,7 @@ class RVC:
                 "assets/rmvpe/rmvpe.pt",
                 is_half=self.is_half,
                 device=self.device,  ####正常逻辑
-                use_jit=config.use_jit
+                use_jit=config.use_jit,
             )
             # self.model_rmvpe = RMVPE("aug2_58000_half.pt", is_half=self.is_half, device=self.device)
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
@@ -404,19 +411,18 @@ class RVC:
         with torch.no_grad():
             if self.if_f0 == 1:
                 # print(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
-                infered_audio = (
-                    self.net_g.infer(
-                        feats, p_len, cache_pitch, cache_pitchf, sid, torch.FloatTensor([rate])
-                    )[0][0, 0]
-                    .data
-                    .float()
-                )
+                infered_audio = self.net_g.infer(
+                    feats,
+                    p_len,
+                    cache_pitch,
+                    cache_pitchf,
+                    sid,
+                    torch.FloatTensor([rate]),
+                )[0][0, 0].data.float()
             else:
-                infered_audio = (
-                    self.net_g.infer(feats, p_len, sid, torch.FloatTensor([rate]))[0][0, 0]
-                    .data
-                    .float()
-                )
+                infered_audio = self.net_g.infer(
+                    feats, p_len, sid, torch.FloatTensor([rate])
+                )[0][0, 0].data.float()
         t5 = ttime()
         logger.info(
             "Spent time: fea = %.2fs, index = %.2fs, f0 = %.2fs, model = %.2fs",
