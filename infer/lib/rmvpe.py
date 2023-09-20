@@ -618,7 +618,7 @@ class RMVPE:
                         device=device,
                         is_half=is_half,
                     )
-                    model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
+                model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
                 return model
 
             def get_default_model():
