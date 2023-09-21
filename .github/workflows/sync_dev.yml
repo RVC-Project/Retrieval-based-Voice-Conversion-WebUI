@@ -1,4 +1,4 @@
-name: sync dev
+name: Merge dev into main
 
 on:
   workflow_dispatch:

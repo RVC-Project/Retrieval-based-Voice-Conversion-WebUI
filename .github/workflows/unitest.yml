@@ -1,4 +1,4 @@
-name: unitest
+name: Unit Test
 on: [ push, pull_request ]
 jobs:
   build:
