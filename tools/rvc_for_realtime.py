@@ -155,7 +155,8 @@ class RVC:
                     if reload:
                         cpt = jit.synthesizer_jit_export(
                             self.pth_path,
-                            "assets\Synthesizer_inputs.pth",
+                            "script",
+                            None,
                             device=self.device,
                             is_half=self.is_half,
                         )
