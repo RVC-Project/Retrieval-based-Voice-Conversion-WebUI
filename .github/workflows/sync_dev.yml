@@ -19,3 +19,5 @@ jobs:
       - name: Create Pull Request
         run: |
           gh pr create --title "chore(sync): merge dev into main" --body "Merge dev to main" --base main --head dev
+        env:
+          GH_TOKEN: ${{ github.token }}
