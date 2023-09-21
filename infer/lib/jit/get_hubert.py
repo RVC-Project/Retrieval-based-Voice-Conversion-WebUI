@@ -1,12 +1,15 @@
 import math
 import random
-from typing import Optional,Tuple
+from typing import Optional, Tuple
 from fairseq.checkpoint_utils import load_model_ensemble_and_task
 import numpy as np
 import torch
 import torch.nn.functional as F
+
 # from fairseq.data.data_utils import compute_mask_indices
 from fairseq.utils import index_put
+
+
 # @torch.jit.script
 def pad_to_multiple(x, multiple, dim=-1, value=0):
     # Inspired from https://github.com/lucidrains/local-attention/blob/master/local_attention/local_attention.py#L41
@@ -15,7 +18,7 @@ def pad_to_multiple(x, multiple, dim=-1, value=0):
     tsz = x.size(dim)
     m = tsz / multiple
     remainder = math.ceil(m) * multiple - tsz
-    if int(tsz % multiple)==0:
+    if int(tsz % multiple) == 0:
         return x, 0
     pad_offset = (0,) * (-1 - dim) * 2
 
@@ -29,7 +32,6 @@ def extract_features(
     tgt_layer=None,
     min_layer=0,
 ):
-
     if padding_mask is not None:
         x = index_put(x, padding_mask, 0)
 
@@ -41,9 +43,7 @@ def extract_features(
         x = self.layer_norm(x)
 
     # pad to the sequence length dimension
-    x, pad_length = pad_to_multiple(
-        x, self.required_seq_len_multiple, dim=-2, value=0
-    )
+    x, pad_length = pad_to_multiple(x, self.required_seq_len_multiple, dim=-2, value=0)
     if pad_length > 0 and padding_mask is None:
         padding_mask = x.new_zeros((x.size(0), x.size(1)), dtype=torch.bool)
         padding_mask[:, -pad_length:] = True
@@ -90,6 +90,7 @@ def extract_features(
         layer_results = [undo_pad(*u) for u in layer_results]
 
     return x, layer_results
+
 
 def compute_mask_indices(
     shape: Tuple[int, int],
@@ -141,10 +142,7 @@ def compute_mask_indices(
     for i in range(bsz):
         if padding_mask is not None:
             sz = all_sz - padding_mask[i].long().sum().item()
-            num_mask = int(
-                mask_prob * sz / float(mask_length)
-                + np.random.rand()
-            )
+            num_mask = int(mask_prob * sz / float(mask_length) + np.random.rand())
             num_mask = max(min_masks, num_mask)
         else:
             sz = all_sz
@@ -153,7 +151,7 @@ def compute_mask_indices(
         if mask_type == "static":
             lengths = torch.full([num_mask], mask_length)
         elif mask_type == "uniform":
-            lengths = torch.randint(mask_other, mask_length*2+1, size=[num_mask])
+            lengths = torch.randint(mask_other, mask_length * 2 + 1, size=[num_mask])
         elif mask_type == "normal":
             lengths = torch.normal(mask_length, mask_other, size=[num_mask])
             lengths = [max(1, int(round(x))) for x in lengths]
@@ -167,7 +165,7 @@ def compute_mask_indices(
             mask_idc = []
 
             def arrange(s, e, length, keep_length):
-                span_start = torch.randint(low=s, high=e - length,size=[1]).item()
+                span_start = torch.randint(low=s, high=e - length, size=[1]).item()
                 mask_idc.extend(span_start + i for i in range(length))
 
                 new_parts = []
@@ -176,17 +174,17 @@ def compute_mask_indices(
                 if e - span_start - length - min_space > keep_length:
                     new_parts.append((span_start + length + min_space, e))
                 return new_parts
-    
+
             parts = [(0, sz)]
             min_length = min(lengths)
             for length in sorted(lengths, reverse=True):
-                t=[e - s if e - s >= length + min_space else 0 for s, e in parts]
-                lens=torch.asarray(t,dtype=torch.int)
+                t = [e - s if e - s >= length + min_space else 0 for s, e in parts]
+                lens = torch.asarray(t, dtype=torch.int)
                 l_sum = torch.sum(lens)
                 if l_sum == 0:
                     break
                 probs = lens / torch.sum(lens)
-                c = torch.multinomial(probs.float(),len(parts)).item()
+                c = torch.multinomial(probs.float(), len(parts)).item()
                 s, e = parts.pop(c)
                 parts.extend(arrange(s, e, length, min_length))
             mask_idc = torch.asarray(mask_idc)
@@ -194,7 +192,9 @@ def compute_mask_indices(
             min_len = min(lengths)
             if sz - min_len <= num_mask:
                 min_len = sz - num_mask - 1
-            mask_idc=torch.asarray(random.sample([i for i in range(sz - min_len)],num_mask))
+            mask_idc = torch.asarray(
+                random.sample([i for i in range(sz - min_len)], num_mask)
+            )
             mask_idc = torch.asarray(
                 [
                     mask_idc[j] + offset
@@ -207,17 +207,22 @@ def compute_mask_indices(
 
     min_len = min([len(m) for m in mask_idcs])
     for i, mask_idc in enumerate(mask_idcs):
-        if isinstance(mask_idc,torch.Tensor):
-            mask_idc=torch.asarray(mask_idc,dtype=torch.float)
+        if isinstance(mask_idc, torch.Tensor):
+            mask_idc = torch.asarray(mask_idc, dtype=torch.float)
         if len(mask_idc) > min_len and require_same_masks:
-            mask_idc=torch.asarray(random.sample([i for i in range(mask_idc)],min_len))
+            mask_idc = torch.asarray(
+                random.sample([i for i in range(mask_idc)], min_len)
+            )
         if mask_dropout > 0:
             num_holes = int(round(len(mask_idc) * mask_dropout))
-            mask_idc=torch.asarray(random.sample([i for i in range(mask_idc)],len(mask_idc) - num_holes))
+            mask_idc = torch.asarray(
+                random.sample([i for i in range(mask_idc)], len(mask_idc) - num_holes)
+            )
 
         mask[i, mask_idc.int()] = True
 
     return mask
+
 
 def apply_mask(self, x, padding_mask, target_list):
     B, T, C = x.shape
@@ -251,40 +256,45 @@ def apply_mask(self, x, padding_mask, target_list):
             min_space=self.mask_channel_min_space,
         )
         mask_channel_indices = (
-            mask_channel_indices
-            .to(x.device)
-            .unsqueeze(1)
-            .expand(-1, T, -1)
+            mask_channel_indices.to(x.device).unsqueeze(1).expand(-1, T, -1)
         )
         x[mask_channel_indices] = 0
 
     return x, mask_indices
 
 
-def get_hubert_model(model_path="assets/hubert/hubert_base.pt",device=torch.device("cpu")):
+def get_hubert_model(
+    model_path="assets/hubert/hubert_base.pt", device=torch.device("cpu")
+):
     models, _, _ = load_model_ensemble_and_task(
-                        [model_path],
-                        suffix="",
-                    )
+        [model_path],
+        suffix="",
+    )
     hubert_model = models[0]
     hubert_model = hubert_model.to(device)
+
     def _apply_mask(x, padding_mask, target_list):
-        return apply_mask(hubert_model,x, padding_mask, target_list)
+        return apply_mask(hubert_model, x, padding_mask, target_list)
+
     hubert_model.apply_mask = _apply_mask
 
-    def _extract_features(x,
+    def _extract_features(
+        x,
         padding_mask=None,
         tgt_layer=None,
         min_layer=0,
     ):
-        return extract_features(hubert_model.encoder,x,
-                                padding_mask=padding_mask,
-                                tgt_layer=tgt_layer,
-                                min_layer=min_layer,
-                            )
+        return extract_features(
+            hubert_model.encoder,
+            x,
+            padding_mask=padding_mask,
+            tgt_layer=tgt_layer,
+            min_layer=min_layer,
+        )
+
     hubert_model.encoder.extract_features = _extract_features
 
-    hubert_model._forward=hubert_model.forward
+    hubert_model._forward = hubert_model.forward
 
     def hubert_extract_features(
         self,
@@ -303,7 +313,7 @@ def get_hubert_model(model_path="assets/hubert/hubert_base.pt",device=torch.devi
         )
         feature = res["features"] if ret_conv else res["x"]
         return feature, res["padding_mask"]
-    
+
     def _hubert_extract_features(
         source: torch.Tensor,
         padding_mask: Optional[torch.Tensor] = None,
@@ -311,19 +321,21 @@ def get_hubert_model(model_path="assets/hubert/hubert_base.pt",device=torch.devi
         ret_conv: bool = False,
         output_layer: Optional[int] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        return hubert_extract_features(hubert_model,source,padding_mask,mask,ret_conv,output_layer)
+        return hubert_extract_features(
+            hubert_model, source, padding_mask, mask, ret_conv, output_layer
+        )
+
     hubert_model.extract_features = _hubert_extract_features
-    
-    def infer(source,padding_mask,output_layer:torch.Tensor):
-        output_layer=output_layer.item()
-        logits = hubert_model.extract_features(source=source,padding_mask=padding_mask,output_layer=output_layer)
-        feats = (
-                hubert_model.final_proj(logits[0]) if output_layer == 9 else logits[0]
-            )
+
+    def infer(source, padding_mask, output_layer: torch.Tensor):
+        output_layer = output_layer.item()
+        logits = hubert_model.extract_features(
+            source=source, padding_mask=padding_mask, output_layer=output_layer
+        )
+        feats = hubert_model.final_proj(logits[0]) if output_layer == 9 else logits[0]
         return feats
 
-    
-    hubert_model.infer=infer
+    hubert_model.infer = infer
     # hubert_model.forward=infer
     # hubert_model.forward
 

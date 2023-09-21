@@ -108,12 +108,7 @@ def main():
     for i in range(n_gpus):
         subproc = mp.Process(
             target=run,
-            args=(
-                i,
-                n_gpus,
-                hps,
-                logger
-            ),
+            args=(i, n_gpus, hps, logger),
         )
         children.append(subproc)
         subproc.start()
@@ -122,7 +117,7 @@ def main():
         children[i].join()
 
 
-def run(rank, n_gpus, hps, logger:logging.Logger):
+def run(rank, n_gpus, hps, logger: logging.Logger):
     global global_step
     if rank == 0:
         # logger = utils.get_logger(hps.model_dir)
