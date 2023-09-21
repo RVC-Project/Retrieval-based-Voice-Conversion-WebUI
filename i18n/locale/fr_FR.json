@@ -124,5 +124,7 @@
     "音调设置": "Réglages de la hauteur",
     "音频设备(请使用同种类驱动)": "Périphérique audio (veuillez utiliser le même type de pilote)",
     "音高算法": "algorithme de détection de la hauteur",
-    "额外推理时长": "Temps d'inférence supplémentaire"
+    "额外推理时长": "Temps d'inférence supplémentaire",
+    "单人" : "Individu",
+    "批次" : "Lote"
 }
