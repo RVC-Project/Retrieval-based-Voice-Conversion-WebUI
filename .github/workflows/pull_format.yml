@@ -2,7 +2,7 @@ name: Check Pull Format
 
 on:
   pull_request_target:
-    types: [assigned, opened, synchronize, reopened]
+    types: [opened, reopened]
 
 jobs:
   # This workflow closes invalid PR
