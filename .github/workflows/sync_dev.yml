@@ -17,8 +17,5 @@ jobs:
           ref: main
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          delete-branch: false
-          base: dev
-          title: "chore(sync): merge dev into main"
+        run: |
+          gh pr create --title "chore(sync): merge dev into main" --body "Merge dev to main" --base main --head dev
