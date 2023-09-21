@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -279,12 +280,15 @@ class ConvBlockRes(nn.Module):
             nn.BatchNorm2d(out_channels, momentum=momentum),
             nn.ReLU(),
         )
-        self.shortcut = lambda x: x
+        # self.shortcut:Optional[nn.Module] = None
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
 
-    def forward(self, x):
-        return self.conv(x) + self.shortcut(x)
+    def forward(self, x:torch.Tensor):
+        if not hasattr(self,"shortcut"):
+            return self.conv(x) + x
+        else:
+            return self.conv(x) + self.shortcut(x)
 
 
 class Encoder(nn.Module):
@@ -316,12 +320,12 @@ class Encoder(nn.Module):
         self.out_size = in_size
         self.out_channel = out_channels
 
-    def forward(self, x):
-        concat_tensors = []
+    def forward(self, x:torch.Tensor):
+        concat_tensors:List[torch.Tensor]= []
         x = self.bn(x)
-        for i in range(self.n_encoders):
-            _, x = self.layers[i](x)
-            concat_tensors.append(_)
+        for i, layer in enumerate(self.layers):
+            t, x = layer(x)
+            concat_tensors.append(t)
         return x, concat_tensors
 
 
@@ -340,8 +344,8 @@ class ResEncoderBlock(nn.Module):
             self.pool = nn.AvgPool2d(kernel_size=kernel_size)
 
     def forward(self, x):
-        for i in range(self.n_blocks):
-            x = self.conv[i](x)
+        for i,conv in enumerate(self.conv):
+            x = conv(x)
         if self.kernel_size is not None:
             return x, self.pool(x)
         else:
@@ -362,8 +366,8 @@ class Intermediate(nn.Module):  #
             )
 
     def forward(self, x):
-        for i in range(self.n_inters):
-            x = self.layers[i](x)
+        for i, layer in enumerate(self.layers):
+            x = layer(x)
         return x
 
 
@@ -393,8 +397,8 @@ class ResDecoderBlock(nn.Module):
     def forward(self, x, concat_tensor):
         x = self.conv1(x)
         x = torch.cat((x, concat_tensor), dim=1)
-        for i in range(self.n_blocks):
-            x = self.conv2[i](x)
+        for i,conv2 in enumerate(self.conv2):
+            x = conv2(x)
         return x
 
 
@@ -410,9 +414,9 @@ class Decoder(nn.Module):
             )
             in_channels = out_channels
 
-    def forward(self, x, concat_tensors):
-        for i in range(self.n_decoders):
-            x = self.layers[i](x, concat_tensors[-1 - i])
+    def forward(self, x:torch.Tensor, concat_tensors:List[torch.Tensor]):
+        for i,layer in enumerate(self.layers):
+            x = layer(x, concat_tensors[-1 - i])
         return x
 
 
@@ -440,7 +444,7 @@ class DeepUnet(nn.Module):
             self.encoder.out_channel, en_de_layers, kernel_size, n_blocks
         )
 
-    def forward(self, x):
+    def forward(self, x:torch.Tensor)->torch.Tensor:
         x, concat_tensors = self.encoder(x)
         x = self.intermediate(x)
         x = self.decoder(x, concat_tensors)
@@ -612,8 +616,9 @@ class RMVPE:
 
                 if reload:
                     ckpt = jit.rmvpe_jit_export(
-                        model_path,
-                        "assets/rmvpe/rmvpe_inputs.pth",
+                        model_path=model_path,
+                        mode="script",
+                        inputs_path=None,
                         save_path=jit_model_path,
                         device=device,
                         is_half=is_half,
