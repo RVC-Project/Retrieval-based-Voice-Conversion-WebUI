@@ -211,13 +211,6 @@ class TorchGate(torch.nn.Module):
         Returns:
             torch.Tensor: The denoised audio signal, with the same shape as the input signal.
         """
-        assert x.ndim == 2
-        if x.shape[-1] < self.win_length * 2:
-            raise Exception(f"x must be bigger than {self.win_length * 2}")
-
-        assert xn is None or xn.ndim == 1 or xn.ndim == 2
-        if xn is not None and xn.shape[-1] < self.win_length * 2:
-            raise Exception(f"xn must be bigger than {self.win_length * 2}")
 
         # Compute short-time Fourier transform (STFT)
         X = torch.stft(
