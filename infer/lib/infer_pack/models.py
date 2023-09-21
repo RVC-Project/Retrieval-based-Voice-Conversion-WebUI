@@ -1156,7 +1156,7 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
                     torch.nn.utils.remove_weight_norm(self.enc_q)
         return self
 
-    @torch.jit.script
+    @torch.jit.ignore
     def forward(self, phone, phone_lengths, y, y_lengths, ds):  # 这里ds是id，[bs,1]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
