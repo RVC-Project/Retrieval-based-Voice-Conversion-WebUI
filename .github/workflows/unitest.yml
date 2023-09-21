@@ -7,7 +7,7 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
         os: [ubuntu-latest]
-      fail-fast: false
+      fail-fast: true
 
     steps:
     - uses: actions/checkout@master

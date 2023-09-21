@@ -1,0 +1,24 @@
+name: sync dev
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync_dev:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          delete-branch: false
+          base: dev
+          title: "chore(sync): merge dev into main"
