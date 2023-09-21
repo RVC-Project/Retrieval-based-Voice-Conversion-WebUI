@@ -667,7 +667,7 @@ class RMVPE:
                     input_feed={onnx_input_name: mel.cpu().numpy()},
                 )[0]
             else:
-                # mel = mel.half() if self.is_half else mel.float()
+                mel = mel.half() if self.is_half else mel.float()
                 hidden = self.model(mel)
             return hidden[:, :n_frames]
 

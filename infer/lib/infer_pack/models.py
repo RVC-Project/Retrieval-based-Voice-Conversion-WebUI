@@ -94,7 +94,7 @@ class TextEncoder768(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, phone:torch.Tensor, pitch:torch.Tensor, lengths:torch.Tensor):
-        if pitch == None:
+        if pitch is None:
             x = self.emb_phone(phone)
         else:
             x = self.emb_phone(phone) + self.emb_pitch(pitch)
