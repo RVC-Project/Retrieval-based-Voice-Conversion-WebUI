@@ -1,4 +1,4 @@
-name: genlocale
+name: Generate and Sync Locale
 on:
   push:
     branches:

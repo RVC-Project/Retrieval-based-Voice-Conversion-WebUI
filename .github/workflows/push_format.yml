@@ -1,4 +1,4 @@
-name: push format
+name: Standardize Code Format
 
 on:
   push:
