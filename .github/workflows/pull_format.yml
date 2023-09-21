@@ -6,8 +6,7 @@ on:
 
 jobs:
   # This workflow closes invalid PR
-  close-pr:
-    name: closepr
+  close_pr:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     permissions: write-all
@@ -22,20 +21,14 @@ jobs:
           comment: "Invalid PR to non-dev branch ${{ github.event.pull_request.base.ref }}."
 
   pull_format:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-        os: [ubuntu-latest]
-      fail-fast: false
 
     continue-on-error: true
 
     steps:
-      - name: checkout
+      - name: Checkout
         continue-on-error: true
         uses: actions/checkout@v3
         with:
