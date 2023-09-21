@@ -29,7 +29,7 @@ class TextEncoder256(nn.Module):
         p_dropout,
         f0=True,
     ):
-        super(TextEncoder256,self).__init__()
+        super(TextEncoder256, self).__init__()
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -42,11 +42,18 @@ class TextEncoder256(nn.Module):
         if f0 == True:
             self.emb_pitch = nn.Embedding(256, hidden_channels)  # pitch 256
         self.encoder = attentions.Encoder(
-            hidden_channels, filter_channels, n_heads, n_layers, kernel_size, float(p_dropout)
+            hidden_channels,
+            filter_channels,
+            n_heads,
+            n_layers,
+            kernel_size,
+            float(p_dropout),
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, phone:torch.Tensor, pitch:Optional[torch.Tensor], lengths:torch.Tensor):
+    def forward(
+        self, phone: torch.Tensor, pitch: Optional[torch.Tensor], lengths: torch.Tensor
+    ):
         if pitch is None:
             x = self.emb_phone(phone)
         else:
@@ -76,7 +83,7 @@ class TextEncoder768(nn.Module):
         p_dropout,
         f0=True,
     ):
-        super(TextEncoder768,self).__init__()
+        super(TextEncoder768, self).__init__()
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels
         self.filter_channels = filter_channels
@@ -89,11 +96,16 @@ class TextEncoder768(nn.Module):
         if f0 == True:
             self.emb_pitch = nn.Embedding(256, hidden_channels)  # pitch 256
         self.encoder = attentions.Encoder(
-            hidden_channels, filter_channels, n_heads, n_layers, kernel_size, float(p_dropout)
+            hidden_channels,
+            filter_channels,
+            n_heads,
+            n_layers,
+            kernel_size,
+            float(p_dropout),
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, phone:torch.Tensor, pitch:torch.Tensor, lengths:torch.Tensor):
+    def forward(self, phone: torch.Tensor, pitch: torch.Tensor, lengths: torch.Tensor):
         if pitch is None:
             x = self.emb_phone(phone)
         else:
@@ -122,7 +134,7 @@ class ResidualCouplingBlock(nn.Module):
         n_flows=4,
         gin_channels=0,
     ):
-        super(ResidualCouplingBlock,self).__init__()
+        super(ResidualCouplingBlock, self).__init__()
         self.channels = channels
         self.hidden_channels = hidden_channels
         self.kernel_size = kernel_size
@@ -146,13 +158,19 @@ class ResidualCouplingBlock(nn.Module):
             )
             self.flows.append(modules.Flip())
 
-    def forward(self, x:torch.Tensor, x_mask:torch.Tensor, g:Optional[torch.Tensor]=None, reverse:bool=False):
+    def forward(
+        self,
+        x: torch.Tensor,
+        x_mask: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        reverse: bool = False,
+    ):
         if not reverse:
             for flow in self.flows:
                 x, _ = flow(x, x_mask, g=g, reverse=reverse)
         else:
             for flow in self.flows[::-1]:
-                x,_ = flow.forward(x, x_mask, g=g, reverse=reverse)
+                x, _ = flow.forward(x, x_mask, g=g, reverse=reverse)
         return x
 
     def remove_weight_norm(self):
@@ -162,8 +180,10 @@ class ResidualCouplingBlock(nn.Module):
     def __prepare_scriptable__(self):
         for i in range(self.n_flows):
             for hook in self.flows[i * 2]._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(self.flows[i * 2])
 
         return self
@@ -180,7 +200,7 @@ class PosteriorEncoder(nn.Module):
         n_layers,
         gin_channels=0,
     ):
-        super(PosteriorEncoder,self).__init__()
+        super(PosteriorEncoder, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_channels = hidden_channels
@@ -199,7 +219,9 @@ class PosteriorEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x:torch.Tensor, x_lengths:torch.Tensor, g:Optional[torch.Tensor]=None):
+    def forward(
+        self, x: torch.Tensor, x_lengths: torch.Tensor, g: Optional[torch.Tensor] = None
+    ):
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(
             x.dtype
         )
@@ -213,14 +235,14 @@ class PosteriorEncoder(nn.Module):
     def remove_weight_norm(self):
         self.enc.remove_weight_norm()
 
-
     def __prepare_scriptable__(self):
         for hook in self.enc._forward_pre_hooks.values():
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.enc)
         return self
-
 
 
 class Generator(torch.nn.Module):
@@ -271,7 +293,7 @@ class Generator(torch.nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x:torch.Tensor, g:Optional[torch.Tensor]=None):
+    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None):
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -291,7 +313,7 @@ class Generator(torch.nn.Module):
         x = torch.tanh(x)
 
         return x
-    
+
     def __prepare_scriptable__(self):
         for l in self.ups:
             for hook in l._forward_pre_hooks.values():
@@ -299,17 +321,20 @@ class Generator(torch.nn.Module):
                 # normally we would do `if isinstance(...)` but this class is not accessible
                 # because of shadowing, so we check the module name directly.
                 # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(l)
 
-        for l in self.resblocks:           
+        for l in self.resblocks:
             for hook in l._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(l)
         return self
-
 
     def remove_weight_norm(self):
         for l in self.ups:
@@ -359,7 +384,7 @@ class SineGen(torch.nn.Module):
             uv = uv.float()
         return uv
 
-    def forward(self, f0:torch.Tensor, upp:int):
+    def forward(self, f0: torch.Tensor, upp: int):
         """sine_tensor, uv = forward(f0)
         input F0: tensor(batchsize=1, length, dim=1)
                   f0 for unvoiced steps should be 0
@@ -454,7 +479,7 @@ class SourceModuleHnNSF(torch.nn.Module):
         self.l_tanh = torch.nn.Tanh()
         # self.ddtype:int = -1
 
-    def forward(self, x:torch.Tensor, upp:int=1):
+    def forward(self, x: torch.Tensor, upp: int = 1):
         # if self.ddtype ==-1:
         #     self.ddtype = self.l_linear.weight.dtype
         sine_wavs, uv, _ = self.l_sin_gen(x, upp)
@@ -543,7 +568,7 @@ class GeneratorNSF(torch.nn.Module):
 
         self.lrelu_slope = modules.LRELU_SLOPE
 
-    def forward(self, x, f0, g:Optional[torch.Tensor]=None):
+    def forward(self, x, f0, g: Optional[torch.Tensor] = None):
         har_source, noi_source, uv = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
         x = self.conv_pre(x)
@@ -551,14 +576,14 @@ class GeneratorNSF(torch.nn.Module):
             x = x + self.cond(g)
         # torch.jit.script() does not support direct indexing of torch modules
         # That's why I wrote this
-        for i,(ups,noise_convs) in enumerate(zip(self.ups,self.noise_convs)):
-            if i<self.num_upsamples:
+        for i, (ups, noise_convs) in enumerate(zip(self.ups, self.noise_convs)):
+            if i < self.num_upsamples:
                 x = F.leaky_relu(x, self.lrelu_slope)
                 x = ups(x)
                 x_source = noise_convs(har_source)
                 x = x + x_source
-                xs:Optional[torch.Tensor] = None
-                l =[i * self.num_kernels + j for j in range(self.num_kernels)]
+                xs: Optional[torch.Tensor] = None
+                l = [i * self.num_kernels + j for j in range(self.num_kernels)]
                 for j, resblock in enumerate(self.resblocks):
                     if j in l:
                         if xs is None:
@@ -567,7 +592,7 @@ class GeneratorNSF(torch.nn.Module):
                             xs += resblock(x)
                 # This assertion cannot be ignored! \
                 # If ignored, it will cause torch.jit.script() compilation errors
-                assert isinstance(xs,torch.Tensor)
+                assert isinstance(xs, torch.Tensor)
                 x = xs / self.num_kernels
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -587,13 +612,17 @@ class GeneratorNSF(torch.nn.Module):
                 # normally we would do `if isinstance(...)` but this class is not accessible
                 # because of shadowing, so we check the module name directly.
                 # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(l)
-        for l in self.resblocks:           
+        for l in self.resblocks:
             for hook in self.resblocks._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(l)
         return self
 
@@ -628,7 +657,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         sr,
         **kwargs
     ):
-        super(SynthesizerTrnMs256NSFsid,self).__init__()
+        super(SynthesizerTrnMs256NSFsid, self).__init__()
         if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
@@ -701,25 +730,36 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             # normally we would do `if isinstance(...)` but this class is not accessible
             # because of shadowing, so we check the module name directly.
             # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.dec)
         for hook in self.flow._forward_pre_hooks.values():
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.flow)
-        if hasattr(self,"enc_q"):
+        if hasattr(self, "enc_q"):
             for hook in self.enc_q._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(self.enc_q)
         return self
 
     @torch.jit.ignore
     def forward(
-        self, phone:torch.Tensor, phone_lengths:torch.Tensor, \
-            pitch:torch.Tensor,pitchf:torch.Tensor, y:torch.Tensor,\
-            y_lengths:torch.Tensor, ds:Optional[torch.Tensor]=None
+        self,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        pitch: torch.Tensor,
+        pitchf: torch.Tensor,
+        y: torch.Tensor,
+        y_lengths: torch.Tensor,
+        ds: Optional[torch.Tensor] = None,
     ):  # 这里ds是id，[bs,1]
         # print(1,pitch.shape)#[bs,t]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
@@ -734,23 +774,23 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         # print(-2,pitchf.shape,z_slice.shape)
         o = self.dec(z_slice, pitchf, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
-    
+
     @torch.jit.export
     def infer(
         self,
-        phone:torch.Tensor,
-        phone_lengths:torch.Tensor,
-        pitch:torch.Tensor,
-        nsff0:torch.Tensor,
-        sid:torch.Tensor,
-        rate: Optional[torch.Tensor]=None,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        pitch: torch.Tensor,
+        nsff0: torch.Tensor,
+        sid: torch.Tensor,
+        rate: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
         if rate is not None:
-            assert isinstance(rate,torch.Tensor)
-            head = int(z_p.shape[2] * (1- rate.item()))
+            assert isinstance(rate, torch.Tensor)
+            head = int(z_p.shape[2] * (1 - rate.item()))
             z_p = z_p[:, :, head:]
             x_mask = x_mask[:, :, head:]
             nsff0 = nsff0[:, head:]
@@ -782,7 +822,7 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         sr,
         **kwargs
     ):
-        super(SynthesizerTrnMs768NSFsid,self).__init__()
+        super(SynthesizerTrnMs768NSFsid, self).__init__()
         if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
@@ -855,19 +895,26 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
             # normally we would do `if isinstance(...)` but this class is not accessible
             # because of shadowing, so we check the module name directly.
             # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.dec)
         for hook in self.flow._forward_pre_hooks.values():
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.flow)
-        if hasattr(self,"enc_q"):
+        if hasattr(self, "enc_q"):
             for hook in self.enc_q._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(self.enc_q)
         return self
+
     @torch.jit.ignore
     def forward(
         self, phone, phone_lengths, pitch, pitchf, y, y_lengths, ds
@@ -885,16 +932,16 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         # print(-2,pitchf.shape,z_slice.shape)
         o = self.dec(z_slice, pitchf, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
-    
+
     @torch.jit.export
     def infer(
         self,
-        phone:torch.Tensor,
-        phone_lengths:torch.Tensor,
-        pitch:torch.Tensor,
-        nsff0:torch.Tensor,
-        sid:torch.Tensor,
-        rate: Optional[torch.Tensor]=None,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        pitch: torch.Tensor,
+        nsff0: torch.Tensor,
+        sid: torch.Tensor,
+        rate: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
@@ -932,7 +979,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         sr=None,
         **kwargs
     ):
-        super(SynthesizerTrnMs256NSFsid_nono,self).__init__()
+        super(SynthesizerTrnMs256NSFsid_nono, self).__init__()
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
@@ -1002,20 +1049,26 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
             # normally we would do `if isinstance(...)` but this class is not accessible
             # because of shadowing, so we check the module name directly.
             # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.dec)
         for hook in self.flow._forward_pre_hooks.values():
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.flow)
-        if hasattr(self,"enc_q"):
+        if hasattr(self, "enc_q"):
             for hook in self.enc_q._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(self.enc_q)
         return self
-    
+
     @torch.jit.ignore
     def forward(self, phone, phone_lengths, y, y_lengths, ds):  # 这里ds是id，[bs,1]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
@@ -1031,10 +1084,10 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
     @torch.jit.export
     def infer(
         self,
-        phone:torch.Tensor,
-        phone_lengths:torch.Tensor,
-        sid:torch.Tensor,
-        rate: Optional[torch.Tensor]=None,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        sid: torch.Tensor,
+        rate: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
@@ -1072,7 +1125,7 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         sr=None,
         **kwargs
     ):
-        super(self,SynthesizerTrnMs768NSFsid_nono).__init__()
+        super(self, SynthesizerTrnMs768NSFsid_nono).__init__()
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
@@ -1142,17 +1195,23 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
             # normally we would do `if isinstance(...)` but this class is not accessible
             # because of shadowing, so we check the module name directly.
             # https://github.com/pytorch/pytorch/blob/be0ca00c5ce260eb5bcec3237357f7a30cc08983/torch/nn/utils/__init__.py#L3
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.dec)
         for hook in self.flow._forward_pre_hooks.values():
-            if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                
+            if (
+                hook.__module__ == "torch.nn.utils.weight_norm"
+                and hook.__class__.__name__ == "WeightNorm"
+            ):
                 torch.nn.utils.remove_weight_norm(self.flow)
-        if hasattr(self,"enc_q"):
+        if hasattr(self, "enc_q"):
             for hook in self.enc_q._forward_pre_hooks.values():
-                if hook.__module__ == "torch.nn.utils.weight_norm" and hook.__class__.__name__ == "WeightNorm":
-                    
+                if (
+                    hook.__module__ == "torch.nn.utils.weight_norm"
+                    and hook.__class__.__name__ == "WeightNorm"
+                ):
                     torch.nn.utils.remove_weight_norm(self.enc_q)
         return self
 
@@ -1170,11 +1229,11 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
 
     @torch.jit.export
     def infer(
-        self,         
-        phone:torch.Tensor,
-        phone_lengths:torch.Tensor,
-        sid:torch.Tensor,
-        rate: Optional[torch.Tensor]=None,
+        self,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        sid: torch.Tensor,
+        rate: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)

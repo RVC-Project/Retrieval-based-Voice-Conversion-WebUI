@@ -284,8 +284,8 @@ class ConvBlockRes(nn.Module):
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
 
-    def forward(self, x:torch.Tensor):
-        if not hasattr(self,"shortcut"):
+    def forward(self, x: torch.Tensor):
+        if not hasattr(self, "shortcut"):
             return self.conv(x) + x
         else:
             return self.conv(x) + self.shortcut(x)
@@ -320,8 +320,8 @@ class Encoder(nn.Module):
         self.out_size = in_size
         self.out_channel = out_channels
 
-    def forward(self, x:torch.Tensor):
-        concat_tensors:List[torch.Tensor]= []
+    def forward(self, x: torch.Tensor):
+        concat_tensors: List[torch.Tensor] = []
         x = self.bn(x)
         for i, layer in enumerate(self.layers):
             t, x = layer(x)
@@ -344,7 +344,7 @@ class ResEncoderBlock(nn.Module):
             self.pool = nn.AvgPool2d(kernel_size=kernel_size)
 
     def forward(self, x):
-        for i,conv in enumerate(self.conv):
+        for i, conv in enumerate(self.conv):
             x = conv(x)
         if self.kernel_size is not None:
             return x, self.pool(x)
@@ -397,7 +397,7 @@ class ResDecoderBlock(nn.Module):
     def forward(self, x, concat_tensor):
         x = self.conv1(x)
         x = torch.cat((x, concat_tensor), dim=1)
-        for i,conv2 in enumerate(self.conv2):
+        for i, conv2 in enumerate(self.conv2):
             x = conv2(x)
         return x
 
@@ -414,8 +414,8 @@ class Decoder(nn.Module):
             )
             in_channels = out_channels
 
-    def forward(self, x:torch.Tensor, concat_tensors:List[torch.Tensor]):
-        for i,layer in enumerate(self.layers):
+    def forward(self, x: torch.Tensor, concat_tensors: List[torch.Tensor]):
+        for i, layer in enumerate(self.layers):
             x = layer(x, concat_tensors[-1 - i])
         return x
 
@@ -444,7 +444,7 @@ class DeepUnet(nn.Module):
             self.encoder.out_channel, en_de_layers, kernel_size, n_blocks
         )
 
-    def forward(self, x:torch.Tensor)->torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x, concat_tensors = self.encoder(x)
         x = self.intermediate(x)
         x = self.decoder(x, concat_tensors)
