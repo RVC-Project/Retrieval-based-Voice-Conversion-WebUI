@@ -293,6 +293,17 @@ if __name__ == "__main__":
                                     enable_events=True,
                                 ),
                             ],
+                            # [
+                            #     sg.Text("设备延迟"),
+                            #     sg.Slider(
+                            #         range=(0, 1),
+                            #         key="device_latency",
+                            #         resolution=0.001,
+                            #         orientation="h",
+                            #         default_value=data.get("device_latency", "0.1"),
+                            #         enable_events=True,
+                            #     ),
+                            # ],
                             [
                                 sg.Text(i18n("harvest进程数")),
                                 sg.Slider(
@@ -409,6 +420,7 @@ if __name__ == "__main__":
                             "pitch": values["pitch"],
                             "rms_mix_rate": values["rms_mix_rate"],
                             "index_rate": values["index_rate"],
+                            # "device_latency": values["device_latency"],
                             "block_time": values["block_time"],
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
@@ -478,6 +490,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
+            # self.device_latency = values["device_latency"]
             self.config.pth_path = values["pth_path"]
             self.config.index_path = values["index_path"]
             self.config.threhold = values["threhold"]

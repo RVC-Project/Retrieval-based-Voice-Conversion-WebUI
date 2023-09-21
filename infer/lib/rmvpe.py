@@ -1,7 +1,10 @@
-import pdb, os
+from io import BytesIO
+import os
 
 import numpy as np
 import torch
+
+from infer.lib import jit
 
 try:
     # Fix "Torch not compiled with CUDA enabled"
@@ -276,17 +279,12 @@ class ConvBlockRes(nn.Module):
             nn.BatchNorm2d(out_channels, momentum=momentum),
             nn.ReLU(),
         )
+        self.shortcut = lambda x: x
         if in_channels != out_channels:
             self.shortcut = nn.Conv2d(in_channels, out_channels, (1, 1))
-            self.is_shortcut = True
-        else:
-            self.is_shortcut = False
 
     def forward(self, x):
-        if self.is_shortcut:
-            return self.conv(x) + self.shortcut(x)
-        else:
-            return self.conv(x) + x
+        return self.conv(x) + self.shortcut(x)
 
 
 class Encoder(nn.Module):
@@ -578,12 +576,12 @@ class MelSpectrogram(torch.nn.Module):
 
 
 class RMVPE:
-    def __init__(self, model_path, is_half, device=None):
+    def __init__(self, model_path: str, is_half, device=None, use_jit=False):
         self.resample_kernel = {}
         self.resample_kernel = {}
         self.is_half = is_half
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.device = device
         self.mel_extractor = MelSpectrogram(
             is_half, 128, 16000, 1024, 160, None, 30, 8000
@@ -597,13 +595,55 @@ class RMVPE:
             )
             self.model = ort_session
         else:
-            model = E2E(4, 1, (2, 2))
-            ckpt = torch.load(model_path, map_location="cpu")
-            model.load_state_dict(ckpt)
-            model.eval()
-            if is_half == True:
-                model = model.half()
-            self.model = model
+            if str(self.device) == "cuda":
+                self.device = torch.device("cuda:0")
+
+            def get_jit_model():
+                jit_model_path = model_path.rstrip(".pth")
+                jit_model_path += ".half.jit" if is_half else ".jit"
+                reload = False
+                if os.path.exists(jit_model_path):
+                    ckpt = jit.load(jit_model_path)
+                    model_device = ckpt["device"]
+                    if model_device != str(self.device):
+                        reload = True
+                else:
+                    reload = True
+
+                if reload:
+                    ckpt = jit.rmvpe_jit_export(
+                        model_path,
+                        "assets/rmvpe/rmvpe_inputs.pth",
+                        save_path=jit_model_path,
+                        device=device,
+                        is_half=is_half,
+                    )
+                model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
+                return model
+
+            def get_default_model():
+                model = E2E(4, 1, (2, 2))
+                ckpt = torch.load(model_path, map_location="cpu")
+                model.load_state_dict(ckpt)
+                model.eval()
+                if is_half:
+                    model = model.half()
+                else:
+                    model = model.float()
+                return model
+
+            if use_jit:
+                if is_half and "cpu" in str(self.device):
+                    logger.warning(
+                        "Use default rmvpe model. \
+                                 Jit is not supported on the CPU for half floating point"
+                    )
+                    self.model = get_default_model()
+                else:
+                    self.model = get_jit_model()
+            else:
+                self.model = get_default_model()
+
             self.model = self.model.to(device)
         cents_mapping = 20 * np.arange(360) + 1997.3794084376191
         self.cents_mapping = np.pad(cents_mapping, (4, 4))  # 368
@@ -622,6 +662,7 @@ class RMVPE:
                     input_feed={onnx_input_name: mel.cpu().numpy()},
                 )[0]
             else:
+                # mel = mel.half() if self.is_half else mel.float()
                 hidden = self.model(mel)
             return hidden[:, :n_frames]
 

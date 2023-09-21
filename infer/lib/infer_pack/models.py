@@ -564,7 +564,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         **kwargs
     ):
         super().__init__()
-        if type(sr) == type("strr"):
+        if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
@@ -647,15 +647,24 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         o = self.dec(z_slice, pitchf, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
-    def infer(self, phone, phone_lengths, pitch, nsff0, sid, rate=None):
+    def infer(
+        self,
+        phone,
+        phone_lengths,
+        pitch,
+        nsff0,
+        sid,
+        rate: torch.Tensor = torch.FloatTensor([1.0]),
+    ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate:
-            head = int(z_p.shape[2] * rate)
-            z_p = z_p[:, :, -head:]
-            x_mask = x_mask[:, :, -head:]
-            nsff0 = nsff0[:, -head:]
+        # 这里不使用分支，因为当使用torch.jit.trace()时，
+        # 只编译一个分支，使用其他分支时会导致错误！
+        head = int(z_p.shape[2] * (1.0 - rate.item()))
+        z_p = z_p[:, :, head:]
+        x_mask = x_mask[:, :, head:]
+        nsff0 = nsff0[:, head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -685,7 +694,7 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         **kwargs
     ):
         super().__init__()
-        if type(sr) == type("strr"):
+        if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
@@ -768,15 +777,22 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         o = self.dec(z_slice, pitchf, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
-    def infer(self, phone, phone_lengths, pitch, nsff0, sid, rate=None):
+    def infer(
+        self,
+        phone,
+        phone_lengths,
+        pitch,
+        nsff0,
+        sid,
+        rate: torch.Tensor = torch.FloatTensor([1.0]),
+    ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate:
-            head = int(z_p.shape[2] * rate)
-            z_p = z_p[:, :, -head:]
-            x_mask = x_mask[:, :, -head:]
-            nsff0 = nsff0[:, -head:]
+        head = int(z_p.shape[2] * (1.0 - rate.item()))
+        z_p = z_p[:, :, head:]
+        x_mask = x_mask[:, :, head:]
+        nsff0 = nsff0[:, head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -880,14 +896,16 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         o = self.dec(z_slice, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
-    def infer(self, phone, phone_lengths, sid, rate=None):
+    def infer(
+        self, phone, phone_lengths, sid, rate: torch.Tensor = torch.FloatTensor([1.0])
+    ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate:
-            head = int(z_p.shape[2] * rate)
-            z_p = z_p[:, :, -head:]
-            x_mask = x_mask[:, :, -head:]
+        head = int(z_p.shape[2] * (1.0 - rate.item()))
+        z_p = z_p[:, :, head:]
+        x_mask = x_mask[:, :, head:]
+        nsff0 = nsff0[:, head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -991,14 +1009,16 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         o = self.dec(z_slice, g=g)
         return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
-    def infer(self, phone, phone_lengths, sid, rate=None):
+    def infer(
+        self, phone, phone_lengths, sid, rate: torch.Tensor = torch.FloatTensor([1.0])
+    ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate:
-            head = int(z_p.shape[2] * rate)
-            z_p = z_p[:, :, -head:]
-            x_mask = x_mask[:, :, -head:]
+        head = int(z_p.shape[2] * (1.0 - rate.item()))
+        z_p = z_p[:, :, head:]
+        x_mask = x_mask[:, :, head:]
+        nsff0 = nsff0[:, head:]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
