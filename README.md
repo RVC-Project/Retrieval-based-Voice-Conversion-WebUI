@@ -40,6 +40,8 @@
 + 可调用UVR5模型来快速分离人声和伴奏
 + 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题。效果最好（显著地）但比crepe_full更快、资源占用更小
 + A卡I卡加速支持
++ A卡Rocm技术支持
++ I卡IPEX技术支持
 
 ## 环境配置
 以下指令需在 Python 版本大于3.8的环境中执行。  
@@ -68,12 +70,16 @@ poetry install
 你也可以通过 pip 来安装依赖：
 ```bash
 N卡：
-
-pip install -r requirements.txt
+  pip install -r requirements.txt
 
 A卡/I卡：
-pip install -r requirements-dml.txt
+  pip install -r requirements-dml.txt
 
+A卡Rocm（Linux）：
+  pip install -r requirements-amd.txt
+
+I卡IPEX（Linux）：
+  pip install -r requirements-ipex.txt
 ```
 
 ------
@@ -122,10 +128,33 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
 ```bash
 python infer-web.py
 ```
-
 如果你正在使用Windows 或 macOS，你可以直接下载并解压`RVC-beta.7z`，前者可以运行`go-web.bat`以启动WebUI，后者则运行命令`sh ./run.sh`以启动WebUI。
 
+对于需要使用IPEX技术的I卡用户，请先在终端执行`source /opt/intel/oneapi/setvars.sh`（仅Linux）。
+
 仓库内还有一份`小白简易教程.doc`以供参考。
+
+## AMD显卡Rocm相关（仅Linux）
+如果你想基于AMD的Rocm技术在Linux系统上运行RVC，请先在[这里](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)安装所需的驱动。
+
+若你使用的是Arch Linux，可以使用pacman来安装所需驱动：
+````
+pacman -S rocm-hip-sdk rocm-opencl-sdk
+````
+对于某些型号的显卡，你可能需要额外配置如下的环境变量（如：RX6700XT）：
+````
+export ROCM_PATH=/opt/rocm
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+````
+同时确保你的当前用户处于`render`与`video`用户组内：
+````
+sudo usermod -aG render $USERNAME
+sudo usermod -aG video $USERNAME
+````
+之后运行WebUI：
+```bash
+python infer-web.py
+```
 
 ## 参考项目
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
