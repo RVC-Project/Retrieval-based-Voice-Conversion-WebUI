@@ -36,4 +36,3 @@ jobs:
           title: "chore(i18n): sync locale on ${{github.ref_name}}"
           commit-message: "chore(i18n): sync locale on ${{github.ref_name}}"
           branch: genlocale-${{github.ref_name}}
-          branch-suffix: short-commit-hash
