@@ -490,8 +490,6 @@ if __name__ == "__main__":
                         self.window["delay_time"].update(int(self.delay_time * 1000))
                 elif event == "O_noise_reduce":
                     self.gui_config.O_noise_reduce = values["O_noise_reduce"]
-                elif event == "use_jit":
-                    self.config.use_jit=values["use_jit"]
                 elif event in ["vc", "im"]:
                     self.function = event
                 elif event != "start_vc" and self.flag_vc == True:
@@ -514,6 +512,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
+            self.config.use_jit = values["use_jit"]
             # self.device_latency = values["device_latency"]
             self.gui_config.pth_path = values["pth_path"]
             self.gui_config.index_path = values["index_path"]
