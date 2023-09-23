@@ -659,7 +659,7 @@ class RMVPE:
             n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
             if n_pad > 0:
                 mel = F.pad(
-                    mel, (0, 32 * ((n_frames - 1) // 32 + 1) - n_frames), mode="constant"
+                    mel, (0, n_pad), mode="constant"
                 )
             if "privateuseone" in str(self.device):
                 onnx_input_name = self.model.get_inputs()[0].name
