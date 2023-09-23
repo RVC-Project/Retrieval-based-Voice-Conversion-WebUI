@@ -124,5 +124,7 @@
     "音调设置": "Pitch settings",
     "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
     "音高算法": "pitch detection algorithm",
-    "额外推理时长": "Extra inference time"
+    "额外推理时长": "Extra inference time",
+    "单人": "Single",
+    "批次": "Batch"
 }
