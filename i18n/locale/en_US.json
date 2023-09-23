@@ -38,6 +38,7 @@
     "加载模型": "Load model",
     "加载预训练底模D路径": "Load pre-trained base model D path:",
     "加载预训练底模G路径": "Load pre-trained base model G path:",
+    "单人": "Single",
     "卸载音色省显存": "Unload voice to save GPU memory:",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Transpose (integer, number of semitones, raise by an octave: 12, lower by an octave: -12):",
     "后处理重采样至最终采样率，0为不进行重采样": "Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling:",
@@ -53,6 +54,7 @@
     "很遗憾您这没有能用的显卡来支持您训练": "Unfortunately, there is no compatible GPU available to support your training.",
     "性能设置": "Performance settings",
     "总训练轮数total_epoch": "Total training epochs (total_epoch):",
+    "批次": "Batch",
     "批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ": "Batch conversion. Enter the folder containing the audio files to be converted or upload multiple audio files. The converted audio will be output in the specified folder (default: 'opt').",
     "指定输出主人声文件夹": "Specify the output folder for vocals:",
     "指定输出文件夹": "Specify output folder:",
@@ -124,7 +126,5 @@
     "音调设置": "Pitch settings",
     "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
     "音高算法": "pitch detection algorithm",
-    "额外推理时长": "Extra inference time",
-    "单人": "Single",
-    "批次": "Batch"
+    "额外推理时长": "Extra inference time"
 }
