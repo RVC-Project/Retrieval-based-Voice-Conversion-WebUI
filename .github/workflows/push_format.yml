@@ -50,4 +50,3 @@ jobs:
           title: "chore(format): run black on ${{github.ref_name}}"
           commit-message: "chore(format): run black on ${{github.ref_name}}"
           branch: formatter-${{github.ref_name}}
-          branch-suffix: short-commit-hash
