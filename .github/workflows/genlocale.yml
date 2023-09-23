@@ -24,7 +24,7 @@ jobs:
           git config --local user.name 'github-actions[bot]'
           git config --local user.email 'github-actions[bot]@users.noreply.github.com'
           git add --all
-          git commit -m "chore(i18n): sync locale"
+          git commit -m "chore(i18n): sync locale on ${{github.ref_name}}"
 
       - name: Create Pull Request
         if: steps.commitback.outcome == 'success'
@@ -33,7 +33,7 @@ jobs:
         with:
           delete-branch: true
           body: "Automatically sync i18n translation jsons"
-          title: "chore(i18n): sync locale"
-          commit-message: "chore(i18n): sync locale"
+          title: "chore(i18n): sync locale on ${{github.ref_name}}"
+          commit-message: "chore(i18n): sync locale on ${{github.ref_name}}"
           branch: genlocale-${{github.ref_name}}
           branch-suffix: short-commit-hash
