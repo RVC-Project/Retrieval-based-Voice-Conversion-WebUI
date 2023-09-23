@@ -124,5 +124,7 @@
     "音调设置": "Ajuste de tono",
     "音频设备(请使用同种类驱动)": "Dispositivo de audio (utilice el mismo tipo de controlador)",
     "音高算法": "Algoritmo de tono",
-    "额外推理时长": "Tiempo de inferencia adicional"
+    "额外推理时长": "Tiempo de inferencia adicional",
+    "单人": "Individual",
+    "批次": "Lote"
 }
