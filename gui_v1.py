@@ -63,8 +63,9 @@ if __name__ == "__main__":
     import tools.rvc_for_realtime as rvc_for_realtime
     from i18n.i18n import I18nAuto
     from configs.config import Config
+
     i18n = I18nAuto()
-    
+
     # device = rvc_for_realtime.config.device
     # device = torch.device(
     #     "cuda"
@@ -135,7 +136,7 @@ if __name__ == "__main__":
                         "crossfade_length": "0.04",
                         "extra_time": "2",
                         "f0method": "rmvpe",
-                        "use_jit":False
+                        "use_jit": False,
                     }
                     data["pm"] = data["f0method"] == "pm"
                     data["harvest"] = data["f0method"] == "harvest"
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 
         def launcher(self):
             data = self.load()
-            self.config.use_jit=data.get("use_jit",self.config.use_jit)
+            self.config.use_jit = data.get("use_jit", self.config.use_jit)
             sg.theme("LightBlue3")
             input_devices, output_devices, _, _ = self.get_devices()
             layout = [
@@ -362,9 +363,7 @@ if __name__ == "__main__":
                                     enable_events=True,
                                 ),
                             ],
-                            [
-                                sg.Text("注：首次使用JIT加速时，会出现卡顿，\n      并伴随一些噪音，但这是正常现象！")
-                            ]
+                            [sg.Text("注：首次使用JIT加速时，会出现卡顿，\n      并伴随一些噪音，但这是正常现象！")],
                         ],
                         title=i18n("性能设置"),
                     ),
@@ -439,7 +438,7 @@ if __name__ == "__main__":
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
                             "n_cpu": values["n_cpu"],
-                            "use_jit":values["use_jit"],
+                            "use_jit": values["use_jit"],
                             "f0method": ["pm", "harvest", "crepe", "rmvpe"][
                                 [
                                     values["pm"],
@@ -553,21 +552,35 @@ if __name__ == "__main__":
             self.gui_config.samplerate = self.rvc.tgt_sr
             self.zc = self.rvc.tgt_sr // 100
             self.block_frame = (
-                int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
+                int(
+                    np.round(
+                        self.gui_config.block_time
+                        * self.gui_config.samplerate
+                        / self.zc
+                    )
+                )
                 * self.zc
             )
             self.block_frame_16k = 160 * self.block_frame // self.zc
             self.crossfade_frame = (
                 int(
                     np.round(
-                        self.gui_config.crossfade_time * self.gui_config.samplerate / self.zc
+                        self.gui_config.crossfade_time
+                        * self.gui_config.samplerate
+                        / self.zc
                     )
                 )
                 * self.zc
             )
             self.sola_search_frame = self.zc
             self.extra_frame = (
-                int(np.round(self.gui_config.extra_time * self.gui_config.samplerate / self.zc))
+                int(
+                    np.round(
+                        self.gui_config.extra_time
+                        * self.gui_config.samplerate
+                        / self.zc
+                    )
+                )
                 * self.zc
             )
             self.input_wav: torch.Tensor = torch.zeros(
@@ -616,7 +629,9 @@ if __name__ == "__main__":
             )
             self.fade_out_window: torch.Tensor = 1 - self.fade_in_window
             self.resampler = tat.Resample(
-                orig_freq=self.gui_config.samplerate, new_freq=16000, dtype=torch.float32
+                orig_freq=self.gui_config.samplerate,
+                new_freq=16000,
+                dtype=torch.float32,
             ).to(self.config.device)
             self.tg = TorchGate(
                 sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
@@ -664,7 +679,9 @@ if __name__ == "__main__":
             self.input_wav[: -self.block_frame] = self.input_wav[
                 self.block_frame :
             ].clone()
-            self.input_wav[-self.block_frame :] = torch.from_numpy(indata).to(self.config.device)
+            self.input_wav[-self.block_frame :] = torch.from_numpy(indata).to(
+                self.config.device
+            )
             self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
                 self.block_frame_16k :
             ].clone()
