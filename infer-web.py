@@ -165,10 +165,10 @@ def clean():
     return {"value": "", "__type__": "update"}
 
 
-def export_onnx():
+def export_onnx(ModelPath, ExportedPath):
     from infer.modules.onnx.export import export_onnx as eo
 
-    eo()
+    eo(ModelPath, ExportedPath)
 
 
 sr_dict = {
