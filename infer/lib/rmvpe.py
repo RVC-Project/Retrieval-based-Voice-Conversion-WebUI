@@ -1,7 +1,6 @@
 from io import BytesIO
 import os
 from typing import List, Optional, Tuple
-
 import numpy as np
 import torch
 
@@ -25,58 +24,6 @@ from scipy.signal import get_window
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-###stft codes from https://github.com/pseeth/torch-stft/blob/master/torch_stft/util.py
-def window_sumsquare(
-    window,
-    n_frames,
-    hop_length=200,
-    win_length=800,
-    n_fft=800,
-    dtype=np.float32,
-    norm=None,
-):
-    """
-    # from librosa 0.6
-    Compute the sum-square envelope of a window function at a given hop length.
-    This is used to estimate modulation effects induced by windowing
-    observations in short-time fourier transforms.
-    Parameters
-    ----------
-    window : string, tuple, number, callable, or list-like
-        Window specification, as in `get_window`
-    n_frames : int > 0
-        The number of analysis frames
-    hop_length : int > 0
-        The number of samples to advance between frames
-    win_length : [optional]
-        The length of the window function.  By default, this matches `n_fft`.
-    n_fft : int > 0
-        The length of each analysis frame.
-    dtype : np.dtype
-        The data type of the output
-    Returns
-    -------
-    wss : np.ndarray, shape=`(n_fft + hop_length * (n_frames - 1))`
-        The sum-squared envelope of the window function
-    """
-    if win_length is None:
-        win_length = n_fft
-
-    n = n_fft + hop_length * (n_frames - 1)
-    x = np.zeros(n, dtype=dtype)
-
-    # Compute the squared window at the desired length
-    win_sq = get_window(window, win_length, fftbins=True)
-    win_sq = normalize(win_sq, norm=norm) ** 2
-    win_sq = pad_center(win_sq, n_fft)
-
-    # Fill the envelope
-    for i in range(n_frames):
-        sample = i * hop_length
-        x[sample : min(n, sample + n_fft)] += win_sq[: max(0, min(n_fft, n - sample))]
-    return x
 
 
 class STFT(torch.nn.Module):
@@ -105,16 +52,15 @@ class STFT(torch.nn.Module):
         self.window = window
         self.forward_transform = None
         self.pad_amount = int(self.filter_length / 2)
-        scale = self.filter_length / self.hop_length
         fourier_basis = np.fft.fft(np.eye(self.filter_length))
 
         cutoff = int((self.filter_length / 2 + 1))
         fourier_basis = np.vstack(
             [np.real(fourier_basis[:cutoff, :]), np.imag(fourier_basis[:cutoff, :])]
         )
-        forward_basis = torch.FloatTensor(fourier_basis[:, None, :])
+        forward_basis = torch.FloatTensor(fourier_basis)
         inverse_basis = torch.FloatTensor(
-            np.linalg.pinv(scale * fourier_basis).T[:, None, :]
+            np.linalg.pinv(fourier_basis)
         )
 
         assert filter_length >= self.win_length
@@ -125,12 +71,13 @@ class STFT(torch.nn.Module):
 
         # window the bases
         forward_basis *= fft_window
-        inverse_basis *= fft_window
+        inverse_basis = (inverse_basis.T * fft_window).T
 
         self.register_buffer("forward_basis", forward_basis.float())
         self.register_buffer("inverse_basis", inverse_basis.float())
+        self.register_buffer("fft_window", fft_window.float())
 
-    def transform(self, input_data):
+    def transform(self, input_data, return_phase=False):
         """Take input data (audio) to STFT domain.
 
         Arguments:
@@ -142,33 +89,22 @@ class STFT(torch.nn.Module):
             phase {tensor} -- Phase of STFT with shape (num_batch,
                 num_frequencies, num_frames)
         """
-        num_batches = input_data.shape[0]
-        num_samples = input_data.shape[-1]
-
-        self.num_samples = num_samples
-
-        # similar to librosa, reflect-pad the input
-        input_data = input_data.view(num_batches, 1, num_samples)
-        # print(1234,input_data.shape)
         input_data = F.pad(
-            input_data.unsqueeze(1),
-            (self.pad_amount, self.pad_amount, 0, 0, 0, 0),
+            input_data,
+            (self.pad_amount, self.pad_amount),
             mode="reflect",
-        ).squeeze(1)
-        # print(2333,input_data.shape,self.forward_basis.shape,self.hop_length)
-        # pdb.set_trace()
-        forward_transform = F.conv1d(
-            input_data, self.forward_basis, stride=self.hop_length, padding=0
         )
-
+        forward_transform = input_data.unfold(1, self.filter_length, self.hop_length).permute(0, 2, 1)
+        forward_transform = torch.matmul(self.forward_basis, forward_transform)
         cutoff = int((self.filter_length / 2) + 1)
         real_part = forward_transform[:, :cutoff, :]
         imag_part = forward_transform[:, cutoff:, :]
-
         magnitude = torch.sqrt(real_part**2 + imag_part**2)
-        # phase = torch.atan2(imag_part.data, real_part.data)
-
-        return magnitude  # , phase
+        if return_phase:
+            phase = torch.atan2(imag_part.data, real_part.data)
+            return magnitude, phase
+        else:
+            return magnitude
 
     def inverse(self, magnitude, phase):
         """Call the inverse STFT (iSTFT), given magnitude and phase tensors produced
@@ -184,42 +120,18 @@ class STFT(torch.nn.Module):
             inverse_transform {tensor} -- Reconstructed audio given magnitude and phase. Of
                 shape (num_batch, num_samples)
         """
-        recombine_magnitude_phase = torch.cat(
+        cat = torch.cat(
             [magnitude * torch.cos(phase), magnitude * torch.sin(phase)], dim=1
         )
-
-        inverse_transform = F.conv_transpose1d(
-            recombine_magnitude_phase,
-            self.inverse_basis,
-            stride=self.hop_length,
-            padding=0,
-        )
-
-        if self.window is not None:
-            window_sum = window_sumsquare(
-                self.window,
-                magnitude.size(-1),
-                hop_length=self.hop_length,
-                win_length=self.win_length,
-                n_fft=self.filter_length,
-                dtype=np.float32,
-            )
-            # remove modulation effects
-            approx_nonzero_indices = torch.from_numpy(
-                np.where(window_sum > tiny(window_sum))[0]
-            )
-            window_sum = torch.from_numpy(window_sum).to(inverse_transform.device)
-            inverse_transform[:, :, approx_nonzero_indices] /= window_sum[
-                approx_nonzero_indices
-            ]
-
-            # scale by hop ratio
-            inverse_transform *= float(self.filter_length) / self.hop_length
-
-        inverse_transform = inverse_transform[..., self.pad_amount :]
-        inverse_transform = inverse_transform[..., : self.num_samples]
-        inverse_transform = inverse_transform.squeeze(1)
-
+        fold = torch.nn.Fold(
+                output_size=(1, (cat.size(-1) - 1) * self.hop_length + self.filter_length), 
+                kernel_size=(1, self.filter_length), 
+                stride=(1, self.hop_length))
+        inverse_transform = torch.matmul(self.inverse_basis, cat)
+        inverse_transform = fold(inverse_transform)[:, 0, 0, self.pad_amount : -self.pad_amount]
+        window_square_sum = self.fft_window.pow(2).repeat(cat.size(-1), 1).T.unsqueeze(0)
+        window_square_sum = fold(window_square_sum)[:, 0, 0, self.pad_amount : -self.pad_amount]
+        inverse_transform /= window_square_sum
         return inverse_transform
 
     def forward(self, input_data):
@@ -232,7 +144,7 @@ class STFT(torch.nn.Module):
             reconstruction {tensor} -- Reconstructed audio given magnitude and phase. Of
                 shape (num_batch, num_samples)
         """
-        self.magnitude, self.phase = self.transform(input_data)
+        self.magnitude, self.phase = self.transform(input_data, return_phase=True)
         reconstruction = self.inverse(self.magnitude, self.phase)
         return reconstruction
 
@@ -538,33 +450,28 @@ class MelSpectrogram(torch.nn.Module):
         keyshift_key = str(keyshift) + "_" + str(audio.device)
         if keyshift_key not in self.hann_window:
             self.hann_window[keyshift_key] = torch.hann_window(win_length_new).to(
-                # "cpu"if(audio.device.type=="privateuseone") else audio.device
                 audio.device
             )
-        # fft = torch.stft(#doesn't support pytorch_dml
-        #     # audio.cpu() if(audio.device.type=="privateuseone")else audio,
-        #     audio,
-        #     n_fft=n_fft_new,
-        #     hop_length=hop_length_new,
-        #     win_length=win_length_new,
-        #     window=self.hann_window[keyshift_key],
-        #     center=center,
-        #     return_complex=True,
-        # )
-        # magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
-        # print(1111111111)
-        # print(222222222222222,audio.device,self.is_half)
-        if hasattr(self, "stft") == False:
-            # print(n_fft_new,hop_length_new,win_length_new,audio.shape)
-            self.stft = STFT(
-                filter_length=n_fft_new,
-                hop_length=hop_length_new,
-                win_length=win_length_new,
-                window="hann",
-            ).to(audio.device)
-        magnitude = self.stft.transform(audio)  # phase
-        # if (audio.device.type == "privateuseone"):
-        #     magnitude=magnitude.to(audio.device)
+        if "privateuseone" in str(audio.device):
+            if not hasattr(self, "stft"):
+                self.stft = STFT(
+                    filter_length=n_fft_new,
+                    hop_length=hop_length_new,
+                    win_length=win_length_new,
+                    window="hann",
+                ).to(audio.device)
+            magnitude = self.stft.transform(audio)
+        else:
+            fft = torch.stft(
+                    audio,
+                    n_fft=n_fft_new,
+                    hop_length=hop_length_new,
+                    win_length=win_length_new,
+                    window=self.hann_window[keyshift_key],
+                    center=center,
+                    return_complex=True,
+                    )
+            magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
         if keyshift != 0:
             size = self.n_fft // 2 + 1
             resize = magnitude.size(1)
@@ -575,7 +482,6 @@ class MelSpectrogram(torch.nn.Module):
         if self.is_half == True:
             mel_output = mel_output.half()
         log_mel_spec = torch.log(torch.clamp(mel_output, min=self.clamp))
-        # print(log_mel_spec.device.type)
         return log_mel_spec
 
 
