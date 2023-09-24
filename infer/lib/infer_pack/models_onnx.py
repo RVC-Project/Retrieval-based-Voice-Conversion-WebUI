@@ -551,7 +551,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         gin_channels,
         sr,
         version,
-        **kwargs,
+        **kwargs
     ):
         super().__init__()
         if type(sr) == type("strr"):
@@ -621,7 +621,10 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         self.emb_g = nn.Embedding(self.spk_embed_dim, gin_channels)
         self.speaker_map = None
         logger.debug(
-            f"gin_channels: {gin_channels}, self.spk_embed_dim: {self.spk_embed_dim}"
+            "gin_channels: "
+            + str(gin_channels)
+            + ", self.spk_embed_dim: "
+            + str(self.spk_embed_dim)
         )
 
     def remove_weight_norm(self):
