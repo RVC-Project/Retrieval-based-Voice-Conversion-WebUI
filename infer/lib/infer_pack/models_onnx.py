@@ -622,9 +622,9 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         self.speaker_map = None
         logger.debug(
             "gin_channels: "
-            + gin_channels
+            + str(gin_channels)
             + ", self.spk_embed_dim: "
-            + self.spk_embed_dim
+            + str(self.spk_embed_dim)
         )
 
     def remove_weight_norm(self):
