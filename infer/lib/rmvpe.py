@@ -656,9 +656,11 @@ class RMVPE:
     def mel2hidden(self, mel):
         with torch.no_grad():
             n_frames = mel.shape[-1]
-            mel = F.pad(
-                mel, (0, 32 * ((n_frames - 1) // 32 + 1) - n_frames), mode="constant"
-            )
+            n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
+            if n_pad > 0:
+                mel = F.pad(
+                    mel, (0, n_pad), mode="constant"
+                )
             if "privateuseone" in str(self.device):
                 onnx_input_name = self.model.get_inputs()[0].name
                 onnx_outputs_names = self.model.get_outputs()[0].name
