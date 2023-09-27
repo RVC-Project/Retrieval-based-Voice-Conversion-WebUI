@@ -208,6 +208,15 @@ if __name__ == "__main__":
                     sg.Frame(
                         layout=[
                             [
+                                sg.Text(i18n("推理设备")),
+                                sg.Combo(
+                                        values=([item[0] for item in self.config.all_device]),
+                                        default_value = self.config.all_device[0][0],
+                                        key="infer_device",
+                                        enable_events=True
+                                )
+                            ],
+                            [
                                 sg.Text(i18n("响应阈值")),
                                 sg.Slider(
                                     range=(-60, 0),
@@ -463,6 +472,9 @@ if __name__ == "__main__":
                         if values["I_noise_reduce"]:
                             self.delay_time += values["crossfade_length"]
                         self.window["delay_time"].update(int(self.delay_time * 1000))
+                if event == "infer_device" and self.flag_vc == False:
+                    device_name = values["infer_device"]
+                    self.config.set_device_by_name(device_name)
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
                     stream_latency = -1

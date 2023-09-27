@@ -1,3 +1,4 @@
+import copy
 from io import BytesIO
 import os
 import pickle
@@ -110,6 +111,7 @@ class RVC:
                 self.model = hubert_model
             else:
                 self.model = last_rvc.model
+            
 
             self.net_g:nn.Module=None
             def set_default_model():
@@ -175,14 +177,19 @@ class RVC:
                 self.if_f0 = last_rvc.if_f0
                 self.version = last_rvc.version
                 self.is_half = last_rvc.is_half
-                if last_rvc.use_jit != self.use_jit:
+                if last_rvc.use_jit != self.use_jit or \
+                    str(self.device) != str(last_rvc.device):
                     set_synthesizer()
                 else:
                     self.net_g = last_rvc.net_g
-
-
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
+            
+            if last_rvc is not None and str(self.device) != str(last_rvc.device):
+                self.model.to(self.device)
+                self.net_g.to(self.device)
+                if hasattr(self, "model_rmvpe"):
+                    del self.model_rmvpe
         except:
             logger.warning(traceback.format_exc())
 

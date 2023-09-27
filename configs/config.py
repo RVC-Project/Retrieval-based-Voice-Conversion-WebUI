@@ -42,13 +42,14 @@ def singleton_variable(func):
 @singleton_variable
 class Config:
     def __init__(self):
-        self.device = "cuda:0"
+        self.device = None
         self.is_half = False
         self.use_jit = True
         self.n_cpu = 0
         self.gpu_name = None
         self.json_config = self.load_config_json()
         self.gpu_mem = None
+        self.all_device, self.all_device_index = self.get_all_device()
         (
             self.python_cmd,
             self.listen_port,
@@ -56,9 +57,23 @@ class Config:
             self.noparallel,
             self.noautoopen,
             self.dml,
+            self.device_index
         ) = self.arg_parse()
-        self.instead = ""
-        self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
+
+        self.x_pad = None
+        self.x_query = None
+        self.x_center = None
+        self.x_max = None
+
+        if self.dml:
+            for device_name,id in self.all_device_index.items():
+                if "dml" in device_name.lower():
+                    self.device_index = id
+                    break
+            
+        self.set_device_by_index(self.device_index)
+
+
 
     @staticmethod
     def load_config_json() -> dict:
@@ -88,6 +103,12 @@ class Config:
             action="store_true",
             help="torch_dml",
         )
+        parser.add_argument(
+            "--device_index",
+            type=int,
+            default=0,
+            help="device index to be inferred or trained.",
+        )
         cmd_opts = parser.parse_args()
 
         cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
@@ -99,12 +120,13 @@ class Config:
             cmd_opts.noparallel,
             cmd_opts.noautoopen,
             cmd_opts.dml,
+            cmd_opts.device_index
         )
 
     # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.
     # check `getattr` and try it for compatibility
-    @staticmethod
-    def has_mps() -> bool:
+    @classmethod
+    def has_mps(self) -> bool:
         if not torch.backends.mps.is_available():
             return False
         try:
@@ -113,23 +135,70 @@ class Config:
         except Exception:
             return False
 
-    @staticmethod
-    def has_xpu() -> bool:
+    @classmethod
+    def has_xpu(self) -> bool:
         if hasattr(torch, "xpu") and torch.xpu.is_available():
             return True
         else:
+            return False
+    @classmethod
+    def has_dml(self):
+        try:
+            import torch_directml
+            return True
+        except:
             return False
 
     def use_fp32_config(self):
         for config_file in version_config_list:
             self.json_config[config_file]["train"]["fp16_run"] = False
 
-    def device_config(self) -> tuple:
+    @classmethod
+    def get_all_device(self):
+        gpu_counter=0
+        device:list=[]
         if torch.cuda.is_available():
-            if self.has_xpu():
-                self.device = self.instead = "xpu:0"
+            for i in range(torch.cuda.device_count()):
+                device.extend([[f"{gpu_counter}: {torch.cuda.get_device_name(i)} (CUDA)", torch.device(f"cuda:{i}")]])
+                gpu_counter+=1
+        if self.has_xpu():
+            for i in range(torch.xpu.device_count()):
+                device.extend([[f"{gpu_counter}: {torch.cuda.get_device_name(i)} (XPU)", torch.device(f"xpu:{i}")]])
+                gpu_counter+=1
+        if self.has_mps():
+            device.extend([[f"{gpu_counter}: MPS",torch.device("mps")]])
+            gpu_counter+=1
+        if self.has_dml():
+            import torch_directml
+            for i in range(torch_directml.device_count()):
+                device.extend([[f"{gpu_counter}: {torch_directml.device_name(i)} (DML)",torch_directml.device(i)]])
+                gpu_counter+=1
+        device.append(["CPU",torch.device("cpu")])
+        
+        device_index:dict={device[i][0]:i for i in range(len(device))}
+        return device, device_index
+
+    def set_device_by_index(self,index:int):
+        if index>len(self.all_device) or index<len(self.all_device):
+            ValueError("Out of index range.")
+
+        device_name, self.device=self.all_device[index]
+        logger.info(F"Use {device_name}")
+        self.x_pad, self.x_query, self.x_center, self.x_max=self.device_config(self.device)
+
+
+    def set_device_by_name(self,name:str):
+        index=self.all_device_index[name]
+        self.set_device_by_index(index)
+        
+
+    def device_config(self, device:torch.device) -> tuple:
+        device_str = str(device).lower() 
+        self.dml = False
+        if "cuda" in device_str or "xpu" in device_str:
+            if "xpu" in device_str:
                 self.is_half = True
-            i_device = int(self.device.split(":")[-1])
+            i_device = int(device_str.split(":")[-1])
             self.gpu_name = torch.cuda.get_device_name(i_device)
             if (
                 ("16" in self.gpu_name and "V100" not in self.gpu_name.upper())
@@ -139,11 +208,11 @@ class Config:
                 or "1070" in self.gpu_name
                 or "1080" in self.gpu_name
             ):
-                logger.info("Found GPU %s, force to fp32", self.gpu_name)
+                logger.info("GPU %s, force to fp32", self.gpu_name)
                 self.is_half = False
                 self.use_fp32_config()
-            else:
-                logger.info("Found GPU %s", self.gpu_name)
+            # else:
+                # logger.info("Found GPU %s", self.gpu_name)
             self.gpu_mem = int(
                 torch.cuda.get_device_properties(i_device).total_memory
                 / 1024
@@ -151,25 +220,19 @@ class Config:
                 / 1024
                 + 0.4
             )
-            if self.gpu_mem <= 4:
-                with open("infer/modules/train/preprocess.py", "r") as f:
-                    strr = f.read().replace("3.7", "3.0")
-                with open("infer/modules/train/preprocess.py", "w") as f:
-                    f.write(strr)
-        elif self.has_mps():
-            logger.info("No supported Nvidia GPU found")
-            self.device = self.instead = "mps"
+        elif "mps" in device_str:
             self.is_half = False
             self.use_fp32_config()
+        elif "privateuseone" in device_str:
+            self.is_half = False
+            self.dml = True
         else:
-            logger.info("No supported Nvidia GPU found")
-            self.device = self.instead = "cpu"
             self.is_half = False
             self.use_fp32_config()
 
         if self.n_cpu == 0:
             self.n_cpu = cpu_count()
-
+        
         if self.is_half:
             # 6G显存配置
             x_pad = 3
@@ -188,8 +251,20 @@ class Config:
             x_query = 5
             x_center = 30
             x_max = 32
+
+
+        if ("cuda" in device_str or "xpu" in device_str ) and self.gpu_mem <= 4:
+            with open("infer/modules/train/preprocess.py", "r") as f:
+                strr = f.read().replace("per=3.7", "per=3.0")
+            with open("infer/modules/train/preprocess.py", "w") as f:
+                f.write(strr)
+        else:
+            with open("infer/modules/train/preprocess.py", "r") as f:
+                strr = f.read().replace("per=3.0", "per=3.7")
+            with open("infer/modules/train/preprocess.py", "w") as f:
+                f.write(strr)
+
         if self.dml:
-            logger.info("Use DirectML instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll"
@@ -210,14 +285,7 @@ class Config:
                     )
                 except:
                     pass
-            # if self.device != "cpu":
-            import torch_directml
-
-            self.device = torch_directml.device(torch_directml.default_device())
-            self.is_half = False
         else:
-            if self.instead:
-                logger.info(f"Use {self.instead} instead")
             if (
                 os.path.exists(
                     "runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll"
