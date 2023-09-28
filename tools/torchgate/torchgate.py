@@ -151,15 +151,15 @@ class TorchGate(torch.nn.Module):
                 XN = self.stft.transform(xn)
             else:
                 XN = torch.stft(
-                        xn,
-                        n_fft=self.n_fft,
-                        hop_length=self.hop_length,
-                        win_length=self.win_length,
-                        return_complex=True,
-                        pad_mode="constant",
-                        center=True,
-                        window=torch.hann_window(self.win_length).to(xn.device),
-                    )
+                    xn,
+                    n_fft=self.n_fft,
+                    hop_length=self.hop_length,
+                    win_length=self.win_length,
+                    return_complex=True,
+                    pad_mode="constant",
+                    center=True,
+                    window=torch.hann_window(self.win_length).to(xn.device),
+                )
             XN_db = amp_to_db(XN).to(dtype=X_db.dtype)
         else:
             XN_db = X_db
@@ -234,16 +234,16 @@ class TorchGate(torch.nn.Module):
             X, phase = self.stft.transform(x, return_phase=True)
         else:
             X = torch.stft(
-                    x,
-                    n_fft=self.n_fft,
-                    hop_length=self.hop_length,
-                    win_length=self.win_length,
-                    return_complex=True,
-                    pad_mode="constant",
-                    center=True,
-                    window=torch.hann_window(self.win_length).to(x.device),
-                )
-        
+                x,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                win_length=self.win_length,
+                return_complex=True,
+                pad_mode="constant",
+                center=True,
+                window=torch.hann_window(self.win_length).to(x.device),
+            )
+
         # Compute signal mask based on stationary or nonstationary assumptions
         if self.nonstationary:
             sig_mask = self._nonstationary_mask(X.abs())
@@ -269,12 +269,12 @@ class TorchGate(torch.nn.Module):
             y = self.stft.inverse(Y, phase)
         else:
             y = torch.istft(
-                    Y,
-                    n_fft=self.n_fft,
-                    hop_length=self.hop_length,
-                    win_length=self.win_length,
-                    center=True,
-                    window=torch.hann_window(self.win_length).to(Y.device),
-                )
-        
+                Y,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                win_length=self.win_length,
+                center=True,
+                window=torch.hann_window(self.win_length).to(Y.device),
+            )
+
         return y.to(dtype=x.dtype)
