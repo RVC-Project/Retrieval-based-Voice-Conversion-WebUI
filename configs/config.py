@@ -179,7 +179,7 @@ class Config:
         return device, device_index
 
     def set_device_by_index(self,index:int):
-        if index>len(self.all_device) or index<len(self.all_device):
+        if index>=len(self.all_device)or index<0:
             ValueError("Out of index range.")
 
         device_name, self.device=self.all_device[index]
