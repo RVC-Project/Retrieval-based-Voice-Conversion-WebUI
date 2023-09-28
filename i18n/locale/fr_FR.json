@@ -38,6 +38,7 @@
     "加载模型": "Charger le modèle.",
     "加载预训练底模D路径": "Charger le chemin du modèle de base pré-entraîné D :",
     "加载预训练底模G路径": "Charger le chemin du modèle de base pré-entraîné G :",
+    "单人": "Individu",
     "卸载音色省显存": "Décharger la voix pour économiser la mémoire GPU.",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Transposer (entier, nombre de demi-tons, monter d'une octave : 12, descendre d'une octave : -12) :",
     "后处理重采样至最终采样率，0为不进行重采样": "Rééchantillonner l'audio de sortie en post-traitement à la fréquence d'échantillonnage finale. Réglez sur 0 pour ne pas effectuer de rééchantillonnage :",
@@ -53,6 +54,7 @@
     "很遗憾您这没有能用的显卡来支持您训练": "Malheureusement, il n'y a pas de GPU compatible disponible pour prendre en charge votre entrainement.",
     "性能设置": "Paramètres de performance",
     "总训练轮数total_epoch": "Nombre total d'époques d'entraînement (total_epoch) :",
+    "批次": "Lote",
     "批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ": "Conversion en lot. Entrez le dossier contenant les fichiers audio à convertir ou téléchargez plusieurs fichiers audio. Les fichiers audio convertis seront enregistrés dans le dossier spécifié (par défaut : 'opt').",
     "指定输出主人声文件夹": "Spécifiez le dossier de sortie pour les fichiers de voix :",
     "指定输出文件夹": "Spécifiez le dossier de sortie :",
@@ -124,7 +126,5 @@
     "音调设置": "Réglages de la hauteur",
     "音频设备(请使用同种类驱动)": "Périphérique audio (veuillez utiliser le même type de pilote)",
     "音高算法": "algorithme de détection de la hauteur",
-    "额外推理时长": "Temps d'inférence supplémentaire",
-    "单人" : "Individu",
-    "批次" : "Lote"
+    "额外推理时长": "Temps d'inférence supplémentaire"
 }

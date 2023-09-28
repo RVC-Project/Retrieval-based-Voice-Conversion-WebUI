@@ -42,7 +42,6 @@ from configs.config import Config
 mm = M()
 
 
-
 # config.device=torch.device("cpu")########强制cpu测试
 # config.is_half=False########强制cpu测试
 class RVC:
@@ -55,7 +54,7 @@ class RVC:
         n_cpu,
         inp_q,
         opt_q,
-        config:Config,
+        config: Config,
         last_rvc=None,
     ) -> None:
         """
@@ -71,7 +70,7 @@ class RVC:
 
                 fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
             # global config
-            self.config=config
+            self.config = config
             self.inp_q = inp_q
             self.opt_q = opt_q
             # device="cpu"########强制cpu测试
@@ -113,9 +112,10 @@ class RVC:
                 self.model = last_rvc.model
             
 
-            self.net_g:nn.Module=None
+            self.net_g: nn.Module = None
+
             def set_default_model():
-                self.net_g, cpt=get_synthesizer(self.pth_path,self.device)
+                self.net_g, cpt = get_synthesizer(self.pth_path, self.device)
                 self.tgt_sr = cpt["config"][-1]
                 cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
                 self.if_f0 = cpt.get("f0", 1)
@@ -182,6 +182,7 @@ class RVC:
                     set_synthesizer()
                 else:
                     self.net_g = last_rvc.net_g
+
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
             

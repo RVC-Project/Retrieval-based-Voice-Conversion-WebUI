@@ -59,9 +59,7 @@ class STFT(torch.nn.Module):
             [np.real(fourier_basis[:cutoff, :]), np.imag(fourier_basis[:cutoff, :])]
         )
         forward_basis = torch.FloatTensor(fourier_basis)
-        inverse_basis = torch.FloatTensor(
-            np.linalg.pinv(fourier_basis)
-        )
+        inverse_basis = torch.FloatTensor(np.linalg.pinv(fourier_basis))
 
         assert filter_length >= self.win_length
         # get window and zero center pad it to filter_length
@@ -94,7 +92,9 @@ class STFT(torch.nn.Module):
             (self.pad_amount, self.pad_amount),
             mode="reflect",
         )
-        forward_transform = input_data.unfold(1, self.filter_length, self.hop_length).permute(0, 2, 1)
+        forward_transform = input_data.unfold(
+            1, self.filter_length, self.hop_length
+        ).permute(0, 2, 1)
         forward_transform = torch.matmul(self.forward_basis, forward_transform)
         cutoff = int((self.filter_length / 2) + 1)
         real_part = forward_transform[:, :cutoff, :]
@@ -124,13 +124,20 @@ class STFT(torch.nn.Module):
             [magnitude * torch.cos(phase), magnitude * torch.sin(phase)], dim=1
         )
         fold = torch.nn.Fold(
-                output_size=(1, (cat.size(-1) - 1) * self.hop_length + self.filter_length), 
-                kernel_size=(1, self.filter_length), 
-                stride=(1, self.hop_length))
+            output_size=(1, (cat.size(-1) - 1) * self.hop_length + self.filter_length),
+            kernel_size=(1, self.filter_length),
+            stride=(1, self.hop_length),
+        )
         inverse_transform = torch.matmul(self.inverse_basis, cat)
-        inverse_transform = fold(inverse_transform)[:, 0, 0, self.pad_amount : -self.pad_amount]
-        window_square_sum = self.fft_window.pow(2).repeat(cat.size(-1), 1).T.unsqueeze(0)
-        window_square_sum = fold(window_square_sum)[:, 0, 0, self.pad_amount : -self.pad_amount]
+        inverse_transform = fold(inverse_transform)[
+            :, 0, 0, self.pad_amount : -self.pad_amount
+        ]
+        window_square_sum = (
+            self.fft_window.pow(2).repeat(cat.size(-1), 1).T.unsqueeze(0)
+        )
+        window_square_sum = fold(window_square_sum)[
+            :, 0, 0, self.pad_amount : -self.pad_amount
+        ]
         inverse_transform /= window_square_sum
         return inverse_transform
 
@@ -463,14 +470,14 @@ class MelSpectrogram(torch.nn.Module):
             magnitude = self.stft.transform(audio)
         else:
             fft = torch.stft(
-                    audio,
-                    n_fft=n_fft_new,
-                    hop_length=hop_length_new,
-                    win_length=win_length_new,
-                    window=self.hann_window[keyshift_key],
-                    center=center,
-                    return_complex=True,
-                    )
+                audio,
+                n_fft=n_fft_new,
+                hop_length=hop_length_new,
+                win_length=win_length_new,
+                window=self.hann_window[keyshift_key],
+                center=center,
+                return_complex=True,
+            )
             magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
         if keyshift != 0:
             size = self.n_fft // 2 + 1
@@ -564,9 +571,7 @@ class RMVPE:
             n_frames = mel.shape[-1]
             n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
             if n_pad > 0:
-                mel = F.pad(
-                    mel, (0, n_pad), mode="constant"
-                )
+                mel = F.pad(mel, (0, n_pad), mode="constant")
             if "privateuseone" in str(self.device):
                 onnx_input_name = self.model.get_inputs()[0].name
                 onnx_outputs_names = self.model.get_outputs()[0].name
