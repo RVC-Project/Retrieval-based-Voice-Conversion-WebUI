@@ -38,6 +38,7 @@
     "加载模型": "Cargar modelo",
     "加载预训练底模D路径": "Cargue la ruta del modelo D base pre-entrenada.",
     "加载预训练底模G路径": "Cargue la ruta del modelo G base pre-entrenada.",
+    "单人": "Individual",
     "卸载音色省显存": "Descargue la voz para ahorrar memoria GPU",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Cambio de tono (entero, número de semitonos, subir una octava +12 o bajar una octava -12)",
     "后处理重采样至最终采样率，0为不进行重采样": "Remuestreo posterior al proceso a la tasa de muestreo final, 0 significa no remuestrear",
@@ -53,6 +54,7 @@
     "很遗憾您这没有能用的显卡来支持您训练": "Lamentablemente, no tiene una tarjeta gráfica adecuada para soportar su entrenamiento",
     "性能设置": "Configuración de rendimiento",
     "总训练轮数total_epoch": "Total de épocas de entrenamiento (total_epoch)",
+    "批次": "Lote",
     "批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ": "Conversión por lotes, ingrese la carpeta que contiene los archivos de audio para convertir o cargue varios archivos de audio. El audio convertido se emitirá en la carpeta especificada (opción predeterminada).",
     "指定输出主人声文件夹": "Especifique la carpeta de salida para la voz principal",
     "指定输出文件夹": "Especificar carpeta de salida",
@@ -124,7 +126,5 @@
     "音调设置": "Ajuste de tono",
     "音频设备(请使用同种类驱动)": "Dispositivo de audio (utilice el mismo tipo de controlador)",
     "音高算法": "Algoritmo de tono",
-    "额外推理时长": "Tiempo de inferencia adicional",
-    "单人": "Individual",
-    "批次": "Lote"
+    "额外推理时长": "Tiempo de inferencia adicional"
 }
