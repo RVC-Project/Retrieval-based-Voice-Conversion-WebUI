@@ -2,26 +2,22 @@ import os
 import sys
 import traceback
 
-now_dir = os.getcwd()
-sys.path.append(now_dir)
-from configs.config import Config
-
-is_half = Config().is_half
-
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 
 device = sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
-if len(sys.argv) == 6:
+if len(sys.argv) == 7:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
+    is_half = bool(sys.argv[6])
 else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[6]
+    is_half = bool(sys.argv[7])
 import fairseq
 import numpy as np
 import soundfile as sf
