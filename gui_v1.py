@@ -471,9 +471,6 @@ if __name__ == "__main__":
                         if values["I_noise_reduce"]:
                             self.delay_time += values["crossfade_length"]
                         self.window["delay_time"].update(int(self.delay_time * 1000))
-                if event == "infer_device" and self.flag_vc == False:
-                    device_name = values["infer_device"]
-                    self.config.set_device_by_name(device_name)
                 if event == "stop_vc" and self.flag_vc == True:
                     self.flag_vc = False
                     stream_latency = -1
@@ -523,6 +520,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
+            self.config.set_device_by_name(values["infer_device"])
             self.config.use_jit = values["use_jit"]
             # self.device_latency = values["device_latency"]
             self.gui_config.pth_path = values["pth_path"]
