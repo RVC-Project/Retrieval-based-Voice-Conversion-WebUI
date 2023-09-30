@@ -1,6 +1,9 @@
 import os
 import sys
 import traceback
+
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 from configs.config import Config
 
 is_half = Config().is_half
