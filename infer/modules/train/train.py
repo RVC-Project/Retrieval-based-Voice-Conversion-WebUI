@@ -23,14 +23,14 @@ try:
 
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
-        from infer.modules.ipex.gradscaler import gradscaler_init
-        from torch.xpu.amp import autocast
-
-        GradScaler = gradscaler_init()
         ipex_init()
+        
+        from torch.xpu.amp import autocast        
+        from infer.modules.ipex.gradscaler import gradscaler_init
+        GradScaler = gradscaler_init()
     else:
         from torch.cuda.amp import GradScaler, autocast
-except Exception:
+except Exception:  # pylint: disable=broad-exception-caught
     from torch.cuda.amp import GradScaler, autocast
 
 torch.backends.cudnn.deterministic = False
