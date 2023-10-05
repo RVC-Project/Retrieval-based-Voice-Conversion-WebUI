@@ -4,7 +4,7 @@ import requests
 
 RVC_DOWNLOAD_LINK = 'https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/'
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def dl_model(link, model_name, dir_name):
     with requests.get(f'{link}{model_name}') as r:
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         print(f'Downloading {model}...')
         dl_model(RVC_DOWNLOAD_LINK + 'pretrained/', model, rvc_models_dir)
     
-    rvc_models_dir = BASE_DIR / 'assets/pretrained'
+    rvc_models_dir = BASE_DIR / 'assets/pretrained_v2'
     
     print('Downloading pretrained models v2:')
 

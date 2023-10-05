@@ -97,23 +97,9 @@ sh ./run.sh
 ## Preparation of other Pre-models
 RVC requires other pre-models to infer and train.
 
-You need to download them from our [Huggingface space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
-
-Here's a list of Pre-models and other files that RVC needs:
 ```bash
-./assets/hubert/hubert_base.pt
-
-./assets/pretrained 
-
-./assets/uvr5_weights
-
-Additional downloads are required if you want to test the v2 version of the model.
-
-./assets/pretrained_v2
-
-If you want to test the v2 version model (the v2 version model has changed the input from the 256 dimensional feature of 9-layer Hubert+final_proj to the 768 dimensional feature of 12-layer Hubert, and has added 3 period discriminators), you will need to download additional features
-
-./assets/pretrained_v2
+#Download all needed models from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/
+python tools/download_models.py
 
 #If you are using Windows, you may also need these two files, skip if FFmpeg and FFprobe are installed
 ffmpeg.exe
