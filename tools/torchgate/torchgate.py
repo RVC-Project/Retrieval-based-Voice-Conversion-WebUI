@@ -1,4 +1,5 @@
 import torch
+from infer.lib.rmvpe import STFT
 from torch.nn.functional import conv1d, conv2d
 from typing import Union, Optional
 from .utils import linspace, temperature_sigmoid, amp_to_db
@@ -139,17 +140,26 @@ class TorchGate(torch.nn.Module):
             are set to 1, and the rest are set to 0.
         """
         if xn is not None:
-            XN = torch.stft(
-                xn,
-                n_fft=self.n_fft,
-                hop_length=self.hop_length,
-                win_length=self.win_length,
-                return_complex=True,
-                pad_mode="constant",
-                center=True,
-                window=torch.hann_window(self.win_length).to(xn.device),
-            )
-
+            if "privateuseone" in str(xn.device):
+                if not hasattr(self, "stft"):
+                    self.stft = STFT(
+                        filter_length=self.n_fft,
+                        hop_length=self.hop_length,
+                        win_length=self.win_length,
+                        window="hann",
+                    ).to(xn.device)
+                XN = self.stft.transform(xn)
+            else:
+                XN = torch.stft(
+                    xn,
+                    n_fft=self.n_fft,
+                    hop_length=self.hop_length,
+                    win_length=self.win_length,
+                    return_complex=True,
+                    pad_mode="constant",
+                    center=True,
+                    window=torch.hann_window(self.win_length).to(xn.device),
+                )
             XN_db = amp_to_db(XN).to(dtype=X_db.dtype)
         else:
             XN_db = X_db
@@ -213,16 +223,26 @@ class TorchGate(torch.nn.Module):
         """
 
         # Compute short-time Fourier transform (STFT)
-        X = torch.stft(
-            x,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            win_length=self.win_length,
-            return_complex=True,
-            pad_mode="constant",
-            center=True,
-            window=torch.hann_window(self.win_length).to(x.device),
-        )
+        if "privateuseone" in str(x.device):
+            if not hasattr(self, "stft"):
+                self.stft = STFT(
+                    filter_length=self.n_fft,
+                    hop_length=self.hop_length,
+                    win_length=self.win_length,
+                    window="hann",
+                ).to(x.device)
+            X, phase = self.stft.transform(x, return_phase=True)
+        else:
+            X = torch.stft(
+                x,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                win_length=self.win_length,
+                return_complex=True,
+                pad_mode="constant",
+                center=True,
+                window=torch.hann_window(self.win_length).to(x.device),
+            )
 
         # Compute signal mask based on stationary or nonstationary assumptions
         if self.nonstationary:
@@ -231,7 +251,7 @@ class TorchGate(torch.nn.Module):
             sig_mask = self._stationary_mask(amp_to_db(X), xn)
 
         # Propagate decrease in signal power
-        sig_mask = self.prop_decrease * (sig_mask * 1.0 - 1.0) + 1.0
+        sig_mask = self.prop_decrease * (sig_mask.float() - 1.0) + 1.0
 
         # Smooth signal mask with 2D convolution
         if self.smoothing_filter is not None:
@@ -245,13 +265,16 @@ class TorchGate(torch.nn.Module):
         Y = X * sig_mask.squeeze(1)
 
         # Inverse STFT to obtain time-domain signal
-        y = torch.istft(
-            Y,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            win_length=self.win_length,
-            center=True,
-            window=torch.hann_window(self.win_length).to(Y.device),
-        )
+        if "privateuseone" in str(Y.device):
+            y = self.stft.inverse(Y, phase)
+        else:
+            y = torch.istft(
+                Y,
+                n_fft=self.n_fft,
+                hop_length=self.hop_length,
+                win_length=self.win_length,
+                center=True,
+                window=torch.hann_window(self.win_length).to(Y.device),
+            )
 
         return y.to(dtype=x.dtype)

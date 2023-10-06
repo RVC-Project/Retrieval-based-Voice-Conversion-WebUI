@@ -2,7 +2,7 @@ torch==2.0.1a0
 intel_extension_for_pytorch==2.0.110+xpu
 torchvision==0.15.2a0
 https://github.com/Disty0/Retrieval-based-Voice-Conversion-WebUI/releases/download/torchaudio_wheels_for_ipex/torchaudio-2.0.2+31de77d-cp310-cp310-linux_x86_64.whl
--f https://developer.intel.com/ipex-whl-stable-xpu
+--extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
 joblib>=1.1.0
 numba==0.56.4
 numpy==1.23.5

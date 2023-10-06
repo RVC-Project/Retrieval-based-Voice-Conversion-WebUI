@@ -1,12 +1,11 @@
+from io import BytesIO
 import os
+import pickle
 import sys
 import traceback
-import logging
-
-logger = logging.getLogger(__name__)
-
+from infer.lib import jit
+from infer.lib.jit.get_synthesizer import get_synthesizer
 from time import time as ttime
-
 import fairseq
 import faiss
 import numpy as np
@@ -31,17 +30,16 @@ from multiprocessing import Manager as M
 
 from configs.config import Config
 
-config = Config()
+# config = Config()
 
 mm = M()
-if config.dml == True:
 
-    def forward_dml(ctx, x, scale):
-        ctx.scale = scale
-        res = x.clone().detach()
-        return res
 
-    fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+def printt(strr, *args):
+    if len(args) == 0:
+        print(strr)
+    else:
+        print(strr % args)
 
 
 # config.device=torch.device("cpu")########强制cpu测试
@@ -56,18 +54,27 @@ class RVC:
         n_cpu,
         inp_q,
         opt_q,
-        device,
+        config: Config,
         last_rvc=None,
     ) -> None:
         """
         初始化
         """
         try:
-            global config
+            if config.dml == True:
+
+                def forward_dml(ctx, x, scale):
+                    ctx.scale = scale
+                    res = x.clone().detach()
+                    return res
+
+                fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+            # global config
+            self.config = config
             self.inp_q = inp_q
             self.opt_q = opt_q
             # device="cpu"########强制cpu测试
-            self.device = device
+            self.device = config.device
             self.f0_up_key = key
             self.time_step = 160 / 16000 * 1000
             self.f0_min = 50
@@ -77,11 +84,14 @@ class RVC:
             self.sr = 16000
             self.window = 160
             self.n_cpu = n_cpu
+            self.use_jit = self.config.use_jit
+            self.is_half = config.is_half
+
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-                logger.info("Index search enabled")
-            self.pth_path = pth_path
+                printt("Index search enabled")
+            self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
 
@@ -91,8 +101,8 @@ class RVC:
                     suffix="",
                 )
                 hubert_model = models[0]
-                hubert_model = hubert_model.to(device)
-                if config.is_half:
+                hubert_model = hubert_model.to(self.device)
+                if self.is_half:
                     hubert_model = hubert_model.half()
                 else:
                     hubert_model = hubert_model.float()
@@ -101,46 +111,80 @@ class RVC:
             else:
                 self.model = last_rvc.model
 
-            if last_rvc is None or last_rvc.pth_path != self.pth_path:
-                cpt = torch.load(self.pth_path, map_location="cpu")
+            self.net_g: nn.Module = None
+
+            def set_default_model():
+                self.net_g, cpt = get_synthesizer(self.pth_path, self.device)
                 self.tgt_sr = cpt["config"][-1]
                 cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
                 self.if_f0 = cpt.get("f0", 1)
                 self.version = cpt.get("version", "v1")
-                if self.version == "v1":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs256NSFsid(
-                            *cpt["config"], is_half=config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
-                elif self.version == "v2":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs768NSFsid(
-                            *cpt["config"], is_half=config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
-                del self.net_g.enc_q
-                logger.debug(self.net_g.load_state_dict(cpt["weight"], strict=False))
-                self.net_g.eval().to(device)
-                # print(2333333333,device,config.device,self.device)#net_g是device，hubert是config.device
-                if config.is_half:
+                if self.is_half:
                     self.net_g = self.net_g.half()
                 else:
                     self.net_g = self.net_g.float()
-                self.is_half = config.is_half
+
+            def set_jit_model():
+                jit_pth_path = self.pth_path.rstrip(".pth")
+                jit_pth_path += ".half.jit" if self.is_half else ".jit"
+                reload = False
+                if str(self.device) == "cuda":
+                    self.device = torch.device("cuda:0")
+                if os.path.exists(jit_pth_path):
+                    cpt = jit.load(jit_pth_path)
+                    model_device = cpt["device"]
+                    if model_device != str(self.device):
+                        reload = True
+                else:
+                    reload = True
+
+                if reload:
+                    cpt = jit.synthesizer_jit_export(
+                        self.pth_path,
+                        "script",
+                        None,
+                        device=self.device,
+                        is_half=self.is_half,
+                    )
+
+                self.tgt_sr = cpt["config"][-1]
+                self.if_f0 = cpt.get("f0", 1)
+                self.version = cpt.get("version", "v1")
+                self.net_g = torch.jit.load(
+                    BytesIO(cpt["model"]), map_location=self.device
+                )
+                self.net_g.infer = self.net_g.forward
+                self.net_g.eval().to(self.device)
+
+            def set_synthesizer():
+                if self.use_jit and not config.dml:
+                    if self.is_half and "cpu" in str(self.device):
+                        printt(
+                            "Use default Synthesizer model. \
+                                    Jit is not supported on the CPU for half floating point"
+                        )
+                        set_default_model()
+                    else:
+                        set_jit_model()
+                else:
+                    set_default_model()
+
+            if last_rvc is None or last_rvc.pth_path != self.pth_path:
+                set_synthesizer()
             else:
                 self.tgt_sr = last_rvc.tgt_sr
                 self.if_f0 = last_rvc.if_f0
                 self.version = last_rvc.version
-                self.net_g = last_rvc.net_g
                 self.is_half = last_rvc.is_half
+                if last_rvc.use_jit != self.use_jit:
+                    set_synthesizer()
+                else:
+                    self.net_g = last_rvc.net_g
 
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
         except:
-            logger.warning(traceback.format_exc())
+            printt(traceback.format_exc())
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
@@ -149,7 +193,7 @@ class RVC:
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
             self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-            logger.info("Index search enabled")
+            printt("Index search enabled")
         self.index_rate = new_index_rate
 
     def get_f0_post(self, f0):
@@ -188,7 +232,7 @@ class RVC:
 
             pad_size = (p_len - len(f0) + 1) // 2
             if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-                # print(pad_size, p_len - len(f0) - pad_size)
+                # printt(pad_size, p_len - len(f0) - pad_size)
                 f0 = np.pad(
                     f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
                 )
@@ -243,7 +287,7 @@ class RVC:
         if "privateuseone" in str(self.device):  ###不支持dml，cpu又太慢用不成，拿pm顶替
             return self.get_f0(x, f0_up_key, 1, "pm")
         audio = torch.tensor(np.copy(x))[None].float()
-        # print("using crepe,device:%s"%self.device)
+        # printt("using crepe,device:%s"%self.device)
         f0, pd = torchcrepe.predict(
             audio,
             self.sr,
@@ -267,7 +311,7 @@ class RVC:
         if hasattr(self, "model_rmvpe") == False:
             from infer.lib.rmvpe import RMVPE
 
-            logger.info("Loading rmvpe model")
+            printt("Loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
                 #  "rmvpe.pt", is_half=False, device=self.device####dml配置
@@ -275,6 +319,7 @@ class RVC:
                 "assets/rmvpe/rmvpe.pt",
                 is_half=self.is_half,
                 device=self.device,  ####正常逻辑
+                use_jit=self.config.use_jit,
             )
             # self.model_rmvpe = RMVPE("aug2_58000_half.pt", is_half=self.is_half, device=self.device)
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
@@ -292,7 +337,7 @@ class RVC:
         f0method,
     ) -> np.ndarray:
         feats = feats.view(1, -1)
-        if config.is_half:
+        if self.config.is_half:
             feats = feats.half()
         else:
             feats = feats.float()
@@ -319,17 +364,17 @@ class RVC:
                 weight = np.square(1 / score)
                 weight /= weight.sum(axis=1, keepdims=True)
                 npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
-                if config.is_half:
+                if self.config.is_half:
                     npy = npy.astype("float16")
                 feats[0][-leng_replace_head:] = (
                     torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
                     + (1 - self.index_rate) * feats[0][-leng_replace_head:]
                 )
             else:
-                logger.warning("Index search FAILED or disabled")
+                printt("Index search FAILED or disabled")
         except:
-            traceback.print_exc()
-            logger.warning("Index search FAILED")
+            traceback.printt_exc()
+            printt("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
         if self.if_f0 == 1:
@@ -356,16 +401,21 @@ class RVC:
         sid = torch.LongTensor([ii]).to(self.device)
         with torch.no_grad():
             if self.if_f0 == 1:
-                # print(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
+                # printt(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
                 infered_audio = self.net_g.infer(
-                    feats, p_len, cache_pitch, cache_pitchf, sid, rate
+                    feats,
+                    p_len,
+                    cache_pitch,
+                    cache_pitchf,
+                    sid,
+                    torch.FloatTensor([rate]),
                 )[0][0, 0].data.float()
             else:
-                infered_audio = self.net_g.infer(feats, p_len, sid, rate)[0][
-                    0, 0
-                ].data.float()
+                infered_audio = self.net_g.infer(
+                    feats, p_len, sid, torch.FloatTensor([rate])
+                )[0][0, 0].data.float()
         t5 = ttime()
-        logger.info(
+        printt(
             "Spent time: fea = %.2fs, index = %.2fs, f0 = %.2fs, model = %.2fs",
             t2 - t1,
             t3 - t2,

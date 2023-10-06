@@ -17,7 +17,6 @@ def ipex_init():  # pylint: disable=too-many-statements
         torch.cuda.device = torch.xpu.device
         torch.cuda.device_count = torch.xpu.device_count
         torch.cuda.device_of = torch.xpu.device_of
-        torch.cuda.getDeviceIdListForCard = torch.xpu.getDeviceIdListForCard
         torch.cuda.get_device_name = torch.xpu.get_device_name
         torch.cuda.get_device_properties = torch.xpu.get_device_properties
         torch.cuda.init = torch.xpu.init
@@ -169,9 +168,23 @@ def ipex_init():  # pylint: disable=too-many-statements
         torch.cuda.get_device_properties.minor = 7
         torch.cuda.ipc_collect = lambda *args, **kwargs: None
         torch.cuda.utilization = lambda *args, **kwargs: 0
+        if hasattr(torch.xpu, "getDeviceIdListForCard"):
+            torch.cuda.getDeviceIdListForCard = torch.xpu.getDeviceIdListForCard
+            torch.cuda.get_device_id_list_per_card = torch.xpu.getDeviceIdListForCard
+        else:
+            torch.cuda.getDeviceIdListForCard = torch.xpu.get_device_id_list_per_card
+            torch.cuda.get_device_id_list_per_card = (
+                torch.xpu.get_device_id_list_per_card
+            )
 
         ipex_hijacks()
         attention_init()
+        try:
+            from .diffusers import ipex_diffusers
+
+            ipex_diffusers()
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
     except Exception as e:
         return False, e
     return True, None

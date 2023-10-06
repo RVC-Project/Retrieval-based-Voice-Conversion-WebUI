@@ -1,3 +1,4 @@
+from typing import List, Optional
 import math
 
 import numpy as np
@@ -16,10 +17,10 @@ def get_padding(kernel_size, dilation=1):
     return int((kernel_size * dilation - dilation) / 2)
 
 
-def convert_pad_shape(pad_shape):
-    l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
-    return pad_shape
+# def convert_pad_shape(pad_shape):
+#     l = pad_shape[::-1]
+#     pad_shape = [item for sublist in l for item in sublist]
+#     return pad_shape
 
 
 def kl_divergence(m_p, logs_p, m_q, logs_q):
@@ -113,10 +114,14 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     return acts
 
 
-def convert_pad_shape(pad_shape):
-    l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
-    return pad_shape
+# def convert_pad_shape(pad_shape):
+#     l = pad_shape[::-1]
+#     pad_shape = [item for sublist in l for item in sublist]
+#     return pad_shape
+
+
+def convert_pad_shape(pad_shape: List[List[int]]) -> List[int]:
+    return torch.tensor(pad_shape).flip(0).reshape(-1).int().tolist()
 
 
 def shift_1d(x):
@@ -124,7 +129,7 @@ def shift_1d(x):
     return x
 
 
-def sequence_mask(length, max_length=None):
+def sequence_mask(length: torch.Tensor, max_length: Optional[int] = None):
     if max_length is None:
         max_length = length.max()
     x = torch.arange(max_length, dtype=length.dtype, device=length.device)
