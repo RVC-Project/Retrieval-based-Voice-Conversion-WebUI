@@ -97,7 +97,12 @@ sh ./run.sh
 ## Preparation of other Pre-models
 RVC requires other pre-models to infer and train.
 
-You need to download them from our [Huggingface space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
+```bash
+#Download all needed models from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/
+python tools/download_models.py
+```
+
+Or just download them by yourself from our [Huggingface space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
 
 Here's a list of Pre-models and other files that RVC needs:
 ```bash
