@@ -24,8 +24,13 @@ An easy-to-use Voice Conversion framework based on VITS.<br><br>
 
 Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
 
-Realtime Voice Conversion Software using RVC : [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
+Training/Inference WebUI：go-web.bat
 
+![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/00387c1c-51b1-4010-947d-3f3ecac95b87)
+
+Realtime Voice Conversion GUI：go-realtime-gui.bat
+
+![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/143246a9-8b42-4dd1-a197-430ede4d15d7)
 
 > The dataset for the pre-training model uses nearly 50 hours of high quality VCTK open source dataset.
 
