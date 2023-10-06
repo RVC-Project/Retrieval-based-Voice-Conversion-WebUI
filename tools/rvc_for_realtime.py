@@ -34,9 +34,13 @@ from configs.config import Config
 
 mm = M()
 
-def printt(strr,*args):
-    if(len(args)==0):print(strr)
-    else:print(strr%args)
+
+def printt(strr, *args):
+    if len(args) == 0:
+        print(strr)
+    else:
+        print(strr % args)
+
 
 # config.device=torch.device("cpu")########强制cpu测试
 # config.is_half=False########强制cpu测试

@@ -32,7 +32,6 @@ import shutil
 import logging
 
 
-
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
@@ -781,9 +780,7 @@ with gr.Blocks(title="RVC WebUI") as app:
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
                 with gr.Column():
-                    refresh_button = gr.Button(
-                        i18n("刷新音色列表和索引路径"), variant="primary"
-                    )
+                    refresh_button = gr.Button(i18n("刷新音色列表和索引路径"), variant="primary")
                     clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
                 spk_item = gr.Slider(
                     minimum=0,
@@ -873,7 +870,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 interactive=True,
                             )
                             f0_file = gr.File(
-                               label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),visible=False
+                                label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),
+                                visible=False,
                             )
 
                             refresh_button.click(

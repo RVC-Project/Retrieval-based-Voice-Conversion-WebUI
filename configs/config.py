@@ -247,5 +247,5 @@ class Config:
                     )
                 except:
                     pass
-        print("is_half:%s, device:%s"%(self.is_half,self.device))
+        print("is_half:%s, device:%s" % (self.is_half, self.device))
         return x_pad, x_query, x_center, x_max

@@ -11,11 +11,16 @@ if sys.platform == "darwin":
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
+
 stream_latency = -1
 
-def printt(strr,*args):
-    if(len(args)==0):print(strr)
-    else:print(strr%args)
+
+def printt(strr, *args):
+    if len(args) == 0:
+        print(strr)
+    else:
+        print(strr % args)
+
 
 class Harvest(multiprocessing.Process):
     def __init__(self, inp_q, opt_q):
@@ -146,7 +151,7 @@ if __name__ == "__main__":
 
         def launcher(self):
             data = self.load()
-            self.config.use_jit = False# data.get("use_jit", self.config.use_jit)
+            self.config.use_jit = False  # data.get("use_jit", self.config.use_jit)
             sg.theme("LightBlue3")
             input_devices, output_devices, _, _ = self.get_devices()
             layout = [
@@ -512,7 +517,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
-            self.config.use_jit = False #values["use_jit"]
+            self.config.use_jit = False  # values["use_jit"]
             # self.device_latency = values["device_latency"]
             self.gui_config.pth_path = values["pth_path"]
             self.gui_config.index_path = values["index_path"]
@@ -864,8 +869,6 @@ if __name__ == "__main__":
                 output_devices.index(output_device)
             ]
             printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
-            printt(
-                "Output device: %s:%s", str(sd.default.device[1]), output_device
-            )
+            printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
 
     gui = GUI()
