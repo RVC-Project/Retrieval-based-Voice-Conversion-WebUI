@@ -13,7 +13,7 @@ try:
         from infer.modules.ipex import ipex_init
 
         ipex_init()
-except Exception:
+except Exception:  # pylint: disable=broad-exception-caught
     pass
 import logging
 
@@ -152,6 +152,15 @@ class Config:
     def use_fp32_config(self):
         for config_file in version_config_list:
             self.json_config[config_file]["train"]["fp16_run"] = False
+            with open(f"configs/{config_file}", "r") as f:
+                strr = f.read().replace("true", "false")
+            with open(f"configs/{config_file}", "w") as f:
+                f.write(strr)
+        with open("infer/modules/train/preprocess.py", "r") as f:
+            strr = f.read().replace("3.7", "3.0")
+        with open("infer/modules/train/preprocess.py", "w") as f:
+            f.write(strr)
+        print("overwrite preprocess and configs.json")
 
     @classmethod
     def get_all_device(self):
@@ -180,7 +189,7 @@ class Config:
 
     def set_device_by_index(self,index:int):
         if index>=len(self.all_device)or index<0:
-            ValueError("Out of index range.")
+            raise ValueError("Out of index range.")
 
         device_name, self.device=self.all_device[index]
         logger.info(F"Use {device_name}")
@@ -220,6 +229,12 @@ class Config:
                 / 1024
                 + 0.4
             )
+            if self.gpu_mem<=4:
+                with open("infer/modules/train/preprocess.py", "r") as f:
+                    strr = f.read().replace("3.7", "3.0")
+                with open("infer/modules/train/preprocess.py", "w") as f:
+                    f.write(strr)
+
         elif "mps" in device_str:
             self.is_half = False
             self.use_fp32_config()
@@ -253,16 +268,16 @@ class Config:
             x_max = 32
 
 
-        if ("cuda" in device_str or "xpu" in device_str ) and self.gpu_mem <= 4:
-            with open("infer/modules/train/preprocess.py", "r") as f:
-                strr = f.read().replace("per=3.7", "per=3.0")
-            with open("infer/modules/train/preprocess.py", "w") as f:
-                f.write(strr)
-        else:
-            with open("infer/modules/train/preprocess.py", "r") as f:
-                strr = f.read().replace("per=3.0", "per=3.7")
-            with open("infer/modules/train/preprocess.py", "w") as f:
-                f.write(strr)
+        # if ("cuda" in device_str or "xpu" in device_str ) and self.gpu_mem <= 4:
+        #     with open("infer/modules/train/preprocess.py", "r") as f:
+        #         strr = f.read().replace("per=3.7", "per=3.0")
+        #     with open("infer/modules/train/preprocess.py", "w") as f:
+        #         f.write(strr)
+        # else:
+        #     with open("infer/modules/train/preprocess.py", "r") as f:
+        #         strr = f.read().replace("per=3.0", "per=3.7")
+        #     with open("infer/modules/train/preprocess.py", "w") as f:
+        #         f.write(strr)
 
         if self.dml:
             if (
@@ -306,4 +321,5 @@ class Config:
                     )
                 except:
                     pass
+        print("is_half:%s, device:%s" % (self.is_half, self.device))
         return x_pad, x_query, x_center, x_max

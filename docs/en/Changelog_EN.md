@@ -1,3 +1,8 @@
+### 2023-10-06
+- We have created a GUI for real-time voice change: go-realtime-gui.bat/gui_v1.py (Note that you should choose the same type of input and output device, e.g. MME and MME).
+- We trained a better pitch extract RMVPE model.
+- Optimize inference GUI layout.
+
 ### 2023-08-13
 1-Regular bug fix
 - Change the minimum total epoch number to 1, and change the minimum total epoch number to 2

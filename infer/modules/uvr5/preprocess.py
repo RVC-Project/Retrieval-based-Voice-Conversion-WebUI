@@ -16,13 +16,13 @@ from infer.lib.uvr5_pack.utils import inference
 
 
 class AudioPre:
-    def __init__(self, agg, model_path, device, is_half):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
             # Processing Options
             "postprocess": False,
-            "tta": False,
+            "tta": tta,
             # Constants
             "window_size": 512,
             "agg": agg,
@@ -180,13 +180,13 @@ class AudioPre:
 
 
 class AudioPreDeEcho:
-    def __init__(self, agg, model_path, device, is_half):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
             # Processing Options
             "postprocess": False,
-            "tta": False,
+            "tta": tta,
             # Constants
             "window_size": 512,
             "agg": agg,
