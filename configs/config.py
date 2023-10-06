@@ -43,8 +43,8 @@ def singleton_variable(func):
 class Config:
     def __init__(self):
         self.device = None
-        self.is_half = False
-        self.use_jit = True
+        self.is_half = True
+        self.use_jit = False
         self.n_cpu = 0
         self.gpu_name = None
         self.json_config = self.load_config_json()
