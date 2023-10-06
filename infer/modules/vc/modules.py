@@ -57,13 +57,12 @@ class VC:
                 del (
                     self.net_g,
                     self.n_spk,
-                    self.vc,
                     self.hubert_model,
-                    self.tgt_sr,
+                    self.tgt_sr
                 )  # ,cpt
                 self.hubert_model = (
                     self.net_g
-                ) = self.n_spk = self.vc = self.hubert_model = self.tgt_sr = None
+                ) = self.n_spk = self.hubert_model = self.tgt_sr = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 ###楼下不这么折腾清理不干净
