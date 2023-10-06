@@ -1,5 +1,4 @@
 import os
-import logging
 import sys
 from dotenv import load_dotenv
 
@@ -12,10 +11,11 @@ if sys.platform == "darwin":
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
-
-logger = logging.getLogger(__name__)
 stream_latency = -1
 
+def printt(strr,*args):
+    if(len(args)==0):print(strr)
+    else:print(strr%args)
 
 class Harvest(multiprocessing.Process):
     def __init__(self, inp_q, opt_q):
@@ -88,8 +88,8 @@ if __name__ == "__main__":
             self.block_time: float = 1.0  # s
             self.buffer_num: int = 1
             self.threhold: int = -60
-            self.crossfade_time: float = 0.04
-            self.extra_time: float = 2.0
+            self.crossfade_time: float = 0.05
+            self.extra_time: float = 2.5
             self.I_noise_reduce = False
             self.O_noise_reduce = False
             self.rms_mix_rate = 0.0
@@ -133,8 +133,8 @@ if __name__ == "__main__":
                         "index_rate": "0",
                         "rms_mix_rate": "0",
                         "block_time": "0.25",
-                        "crossfade_length": "0.04",
-                        "extra_time": "2",
+                        "crossfade_length": "0.05",
+                        "extra_time": "2.5",
                         "f0method": "rmvpe",
                         "use_jit": False,
                     }
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
         def launcher(self):
             data = self.load()
-            self.config.use_jit = data.get("use_jit", self.config.use_jit)
+            self.config.use_jit = False# data.get("use_jit", self.config.use_jit)
             sg.theme("LightBlue3")
             input_devices, output_devices, _, _ = self.get_devices()
             layout = [
@@ -330,7 +330,7 @@ if __name__ == "__main__":
                                     key="crossfade_length",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("crossfade_length", "0.04"),
+                                    default_value=data.get("crossfade_length", "0.05"),
                                     enable_events=True,
                                 ),
                             ],
@@ -341,7 +341,7 @@ if __name__ == "__main__":
                                     key="extra_time",
                                     resolution=0.01,
                                     orientation="h",
-                                    default_value=data.get("extra_time", "2.0"),
+                                    default_value=data.get("extra_time", "2.5"),
                                     enable_events=True,
                                 ),
                             ],
@@ -356,14 +356,14 @@ if __name__ == "__main__":
                                     key="O_noise_reduce",
                                     enable_events=True,
                                 ),
-                                sg.Checkbox(
-                                    "JIT加速",
-                                    default=self.config.use_jit,
-                                    key="use_jit",
-                                    enable_events=True,
-                                ),
+                                # sg.Checkbox(
+                                #     "JIT加速",
+                                #     default=self.config.use_jit,
+                                #     key="use_jit",
+                                #     enable_events=False,
+                                # ),
                             ],
-                            [sg.Text("注：首次使用JIT加速时，会出现卡顿，\n      并伴随一些噪音，但这是正常现象！")],
+                            # [sg.Text("注：首次使用JIT加速时，会出现卡顿，\n      并伴随一些噪音，但这是正常现象！")],
                         ],
                         title=i18n("性能设置"),
                     ),
@@ -422,7 +422,7 @@ if __name__ == "__main__":
                     )
                 if event == "start_vc" and self.flag_vc == False:
                     if self.set_values(values) == True:
-                        logger.info("cuda_is_available: %s", torch.cuda.is_available())
+                        printt("cuda_is_available: %s", torch.cuda.is_available())
                         self.start_vc()
                         settings = {
                             "pth_path": values["pth_path"],
@@ -438,7 +438,8 @@ if __name__ == "__main__":
                             "crossfade_length": values["crossfade_length"],
                             "extra_time": values["extra_time"],
                             "n_cpu": values["n_cpu"],
-                            "use_jit": values["use_jit"],
+                            # "use_jit": values["use_jit"],
+                            "use_jit": False,
                             "f0method": ["pm", "harvest", "crepe", "rmvpe"][
                                 [
                                     values["pm"],
@@ -511,7 +512,7 @@ if __name__ == "__main__":
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
-            self.config.use_jit = values["use_jit"]
+            self.config.use_jit = False #values["use_jit"]
             # self.device_latency = values["device_latency"]
             self.gui_config.pth_path = values["pth_path"]
             self.gui_config.index_path = values["index_path"]
@@ -655,8 +656,8 @@ if __name__ == "__main__":
                 stream_latency = stream.latency[-1]
                 while self.flag_vc:
                     time.sleep(self.gui_config.block_time)
-                    logger.debug("Audio block passed.")
-            logger.debug("ENDing VC")
+                    printt("Audio block passed.")
+            printt("ENDing VC")
 
         def audio_callback(
             self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
@@ -792,7 +793,7 @@ if __name__ == "__main__":
                 sola_offset = sola_offset.item()
             else:
                 sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
-            logger.debug("sola_offset = %d", int(sola_offset))
+            printt("sola_offset = %d", int(sola_offset))
             infer_wav = infer_wav[
                 sola_offset : sola_offset + self.block_frame + self.crossfade_frame
             ]
@@ -809,7 +810,7 @@ if __name__ == "__main__":
                 )
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
-            logger.info("Infer time: %.2f", total_time)
+            printt("Infer time: %.2f", total_time)
 
         def get_devices(self, update: bool = True):
             """获取设备列表"""
@@ -862,8 +863,8 @@ if __name__ == "__main__":
             sd.default.device[1] = output_device_indices[
                 output_devices.index(output_device)
             ]
-            logger.info("Input device: %s:%s", str(sd.default.device[0]), input_device)
-            logger.info(
+            printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
+            printt(
                 "Output device: %s:%s", str(sd.default.device[1]), output_device
             )
 

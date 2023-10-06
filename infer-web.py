@@ -1,3 +1,8 @@
+import os
+import sys
+
+now_dir = os.getcwd()
+sys.path.append(now_dir)
 from infer.modules.vc.modules import VC
 from infer.modules.uvr5.modules import uvr
 from infer.lib.train.process_ckpt import (
@@ -25,11 +30,7 @@ import traceback
 import threading
 import shutil
 import logging
-import os
-import sys
 
-now_dir = os.getcwd()
-sys.path.append(now_dir)
 
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -777,31 +778,26 @@ with gr.Blocks(title="RVC WebUI") as app:
     )
     with gr.Tabs():
         with gr.TabItem(i18n("模型推理")):
-            with gr.TabItem(i18n("单人")):
-                with gr.Row():
-                    sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
-                    file_index2 = gr.Dropdown(
-                        label=i18n("自动检测index路径,下拉式选择(dropdown)"),
-                        choices=sorted(index_paths),
-                        interactive=True,
+            with gr.Row():
+                sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
+                with gr.Column():
+                    refresh_button = gr.Button(
+                        i18n("刷新音色列表和索引路径"), variant="primary"
                     )
-                    with gr.Column():
-                        refresh_button = gr.Button(
-                            i18n("刷新音色列表和索引路径"), variant="primary"
-                        )
-                        clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
-                    spk_item = gr.Slider(
-                        minimum=0,
-                        maximum=2333,
-                        step=1,
-                        label=i18n("请选择说话人id"),
-                        value=0,
-                        visible=False,
-                        interactive=True,
-                    )
-                    clean_button.click(
-                        fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
-                    )
+                    clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
+                spk_item = gr.Slider(
+                    minimum=0,
+                    maximum=2333,
+                    step=1,
+                    label=i18n("请选择说话人id"),
+                    value=0,
+                    visible=False,
+                    interactive=True,
+                )
+                clean_button.click(
+                    fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
+                )
+            with gr.TabItem(i18n("单次推理")):
                 with gr.Group():
                     with gr.Row():
                         with gr.Column():
@@ -810,11 +806,16 @@ with gr.Blocks(title="RVC WebUI") as app:
                             )
                             input_audio0 = gr.Textbox(
                                 label=i18n("输入待处理音频文件路径(默认是正确格式示例)"),
-                                placeholder="C:\\User\\Desktop\\audio_example.wav",
+                                placeholder="C:\\Users\\Desktop\\audio_example.wav",
                             )
                             file_index1 = gr.Textbox(
                                 label=i18n("特征检索库文件路径,为空则使用下拉的选择结果"),
-                                placeholder="C:\\User\\Desktop\\model_example.index",
+                                placeholder="C:\\Users\\Desktop\\model_example.index",
+                                interactive=True,
+                            )
+                            file_index2 = gr.Dropdown(
+                                label=i18n("自动检测index路径,下拉式选择(dropdown)"),
+                                choices=sorted(index_paths),
                                 interactive=True,
                             )
                             f0method0 = gr.Radio(
@@ -827,21 +828,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 value="rmvpe",
                                 interactive=True,
                             )
-                            # f0_file = gr.File(
-                            #    label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调")
-                            # )
-
-                            refresh_button.click(
-                                fn=change_choices,
-                                inputs=[],
-                                outputs=[sid0, file_index2],
-                                api_name="infer_refresh",
-                            )
-                            # file_big_npy1 = gr.Textbox(
-                            #     label=i18n("特征文件路径"),
-                            #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                            #     interactive=True,
-                            # )
 
                         with gr.Column():
                             resample_sr0 = gr.Slider(
@@ -886,6 +872,21 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 value=0.75,
                                 interactive=True,
                             )
+                            f0_file = gr.File(
+                               label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),visible=False
+                            )
+
+                            refresh_button.click(
+                                fn=change_choices,
+                                inputs=[],
+                                outputs=[sid0, file_index2],
+                                api_name="infer_refresh",
+                            )
+                            # file_big_npy1 = gr.Textbox(
+                            #     label=i18n("特征文件路径"),
+                            #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
+                            #     interactive=True,
+                            # )
                 with gr.Group():
                     with gr.Column():
                         but0 = gr.Button(i18n("转换"), variant="primary")
@@ -899,7 +900,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 spk_item,
                                 input_audio0,
                                 vc_transform0,
-                                # f0_file,
+                                f0_file,
                                 f0method0,
                                 file_index1,
                                 file_index2,
@@ -913,7 +914,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             [vc_output1, vc_output2],
                             api_name="infer_convert",
                         )
-            with gr.TabItem(i18n("批次")):
+            with gr.TabItem(i18n("批量推理")):
                 gr.Markdown(
                     value=i18n("批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ")
                 )
@@ -1006,7 +1007,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 with gr.Row():
                     dir_input = gr.Textbox(
                         label=i18n("输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"),
-                        placeholder="C:\\User\\Desktop\\model_example.index",
+                        placeholder="C:\\Users\\Desktop\\input_vocal_dir",
                     )
                     inputs = gr.File(
                         file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
@@ -1055,7 +1056,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     with gr.Column():
                         dir_wav_input = gr.Textbox(
                             label=i18n("输入待处理音频文件夹路径"),
-                            value="E:\\codes\\py39\\test-20230416b\\todo-songs\\todo-songs",
+                            placeholder="C:\\Users\\Desktop\\todo-songs",
                         )
                         wav_inputs = gr.File(
                             file_count="multiple", label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹")
