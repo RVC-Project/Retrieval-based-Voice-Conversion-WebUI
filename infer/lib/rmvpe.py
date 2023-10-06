@@ -14,7 +14,7 @@ try:
         from infer.modules.ipex import ipex_init
 
         ipex_init()
-except Exception:
+except Exception:  # pylint: disable=broad-exception-caught
     pass
 import torch.nn as nn
 import torch.nn.functional as F
