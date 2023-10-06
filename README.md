@@ -28,7 +28,7 @@
 
 ![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/092e5c12-0d49-4168-a590-0b0ef6a4f630)
 
-实时变声界面：
+实时变声界面：go-realtime-gui.bat
 
 ![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/143246a9-8b42-4dd1-a197-430ede4d15d7)
 
