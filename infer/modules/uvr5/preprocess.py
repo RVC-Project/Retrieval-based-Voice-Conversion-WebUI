@@ -16,7 +16,7 @@ from infer.lib.uvr5_pack.utils import inference
 
 
 class AudioPre:
-    def __init__(self, agg, model_path, device, is_half, tta = False):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
@@ -180,7 +180,7 @@ class AudioPre:
 
 
 class AudioPreDeEcho:
-    def __init__(self, agg, model_path, device, is_half, tta = False):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
