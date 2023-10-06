@@ -16,6 +16,7 @@ from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
 from dotenv import load_dotenv
 import torch
+
 try:
     import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
