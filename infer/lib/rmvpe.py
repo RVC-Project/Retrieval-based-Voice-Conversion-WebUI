@@ -505,10 +505,14 @@ class RMVPE:
         ).to(device)
         if "privateuseone" in str(device):
             import onnxruntime as ort
-
+            device_splitted=str(device).split(":")
+            device_id = 0
+            if len(device_splitted)>1:
+                device_id = int(device_splitted[1])
             ort_session = ort.InferenceSession(
                 "%s/rmvpe.onnx" % os.environ["rmvpe_root"],
                 providers=["DmlExecutionProvider"],
+                provider_options=[{'device_id':device_id}]
             )
             self.model = ort_session
         else:

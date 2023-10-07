@@ -37,7 +37,7 @@ def println(strr):
 
 
 class PreProcess:
-    def __init__(self, sr, exp_dir, per=3.7):
+    def __init__(self, sr, exp_dir, per=3.0):
         self.slicer = Slicer(
             sr=sr,
             threshold=-42,

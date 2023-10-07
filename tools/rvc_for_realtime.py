@@ -41,6 +41,8 @@ def printt(strr, *args):
     else:
         print(strr % args)
 
+forward_orignal=fairseq.modules.grad_multiply.GradMultiply.forward
+
 
 # config.device=torch.device("cpu")########强制cpu测试
 # config.is_half=False########强制cpu测试
@@ -69,6 +71,9 @@ class RVC:
                     return res
 
                 fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
+            else:
+                fairseq.modules.grad_multiply.GradMultiply.forward = forward_orignal
+                
             # global config
             self.config = config
             self.inp_q = inp_q
@@ -95,19 +100,24 @@ class RVC:
             self.index_path = index_path
             self.index_rate = index_rate
 
-            if last_rvc is None:
+            def set_hubert_model():
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
                     suffix="",
                 )
                 hubert_model = models[0]
-                hubert_model = hubert_model.to(self.device)
                 if self.is_half:
                     hubert_model = hubert_model.half()
                 else:
                     hubert_model = hubert_model.float()
                 hubert_model.eval()
+                hubert_model = hubert_model.to(self.device) 
                 self.model = hubert_model
+
+            if last_rvc is None:
+                set_hubert_model()
+            elif str(self.device) != str(last_rvc.device):
+                set_hubert_model()
             else:
                 self.model = last_rvc.model
             
@@ -170,27 +180,31 @@ class RVC:
                 else:
                     set_default_model()
 
-            if last_rvc is None or last_rvc.pth_path != self.pth_path:
+            if last_rvc is None or \
+                last_rvc.pth_path != self.pth_path:
+                set_synthesizer()
+            elif str(self.device) != str(last_rvc.device):
                 set_synthesizer()
             else:
                 self.tgt_sr = last_rvc.tgt_sr
                 self.if_f0 = last_rvc.if_f0
                 self.version = last_rvc.version
                 self.is_half = last_rvc.is_half
-                if last_rvc.use_jit != self.use_jit or \
-                    str(self.device) != str(last_rvc.device):
+                if last_rvc.use_jit != self.use_jit:
                     set_synthesizer()
                 else:
                     self.net_g = last_rvc.net_g
 
-            if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
-                self.model_rmvpe = last_rvc.model_rmvpe
-            
-            if last_rvc is not None and str(self.device) != str(last_rvc.device):
-                self.model.to(self.device)
-                self.net_g.to(self.device)
-                if hasattr(self, "model_rmvpe"):
-                    del self.model_rmvpe
+            self.model_rmvpe = None
+            if last_rvc is not None:
+                if hasattr(last_rvc, "model_rmvpe") and \
+                    str(self.device) == str(last_rvc.device):
+                    self.model_rmvpe = last_rvc.model_rmvpe
+                else:
+                    delattr(self,"model_rmvpe")
+            else:
+                delattr(self,"model_rmvpe")
+                
         except:
             printt(traceback.format_exc())
 
@@ -318,7 +332,6 @@ class RVC:
     def get_f0_rmvpe(self, x, f0_up_key):
         if hasattr(self, "model_rmvpe") == False:
             from infer.lib.rmvpe import RMVPE
-
             printt("Loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 # "rmvpe.pt", is_half=self.is_half if self.device.type!="privateuseone" else False, device=self.device if self.device.type!="privateuseone"else "cpu"####dml时强制对rmvpe用cpu跑
@@ -351,18 +364,18 @@ class RVC:
             feats = feats.float()
         feats = feats.to(self.device)
         t1 = ttime()
-        with torch.no_grad():
-            padding_mask = torch.BoolTensor(feats.shape).to(self.device).fill_(False)
-            inputs = {
-                "source": feats,
-                "padding_mask": padding_mask,
-                "output_layer": 9 if self.version == "v1" else 12,
-            }
-            logits = self.model.extract_features(**inputs)
-            feats = (
-                self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
-            )
-            feats = F.pad(feats, (0, 0, 1, 0))
+        # with torch.no_grad():
+        padding_mask = torch.BoolTensor(feats.shape).to(self.device).fill_(False)
+        inputs = {
+            "source": feats,
+            "padding_mask": padding_mask,
+            "output_layer": 9 if self.version == "v1" else 12,
+        }
+        logits = self.model.extract_features(**inputs)
+        feats = (
+            self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
+        )
+        feats = F.pad(feats, (0, 0, 1, 0))
         t2 = ttime()
         try:
             if hasattr(self, "index") and self.index_rate != 0:
@@ -381,7 +394,7 @@ class RVC:
             else:
                 printt("Index search FAILED or disabled")
         except:
-            traceback.printt_exc()
+            traceback.print_exc()
             printt("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
@@ -407,6 +420,7 @@ class RVC:
         p_len = torch.LongTensor([p_len]).to(self.device)
         ii = 0  # sid
         sid = torch.LongTensor([ii]).to(self.device)
+        rate = torch.FloatTensor([rate]).to(self.device)
         with torch.no_grad():
             if self.if_f0 == 1:
                 # printt(12222222222,feats.device,p_len.device,cache_pitch.device,cache_pitchf.device,sid.device,rate2)
@@ -416,11 +430,11 @@ class RVC:
                     cache_pitch,
                     cache_pitchf,
                     sid,
-                    torch.FloatTensor([rate]),
+                    rate,
                 )[0][0, 0].data.float()
             else:
                 infered_audio = self.net_g.infer(
-                    feats, p_len, sid, torch.FloatTensor([rate])
+                    feats, p_len, sid, rate
                 )[0][0, 0].data.float()
         t5 = ttime()
         printt(

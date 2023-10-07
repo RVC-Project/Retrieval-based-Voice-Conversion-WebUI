@@ -525,6 +525,8 @@ if __name__ == "__main__":
             if pattern.findall(values["index_path"]):
                 sg.popup(i18n("index文件路径不可包含中文"))
                 return False
+            device_name = values["infer_device"]
+            self.config.set_device_by_name(device_name)
             self.set_devices(values["sg_input_device"], values["sg_output_device"])
             self.config.use_jit = False  # values["use_jit"]
             # self.device_latency = values["device_latency"]

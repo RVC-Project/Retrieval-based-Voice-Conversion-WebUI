@@ -157,7 +157,7 @@ class Config:
             with open(f"configs/{config_file}", "w") as f:
                 f.write(strr)
         with open("infer/modules/train/preprocess.py", "r") as f:
-            strr = f.read().replace("3.7", "3.0")
+            strr = f.read().replace("per=3.7", "per=3.0")
         with open("infer/modules/train/preprocess.py", "w") as f:
             f.write(strr)
         print("overwrite preprocess and configs.json")
@@ -192,7 +192,10 @@ class Config:
             raise ValueError("Out of index range.")
 
         device_name, self.device=self.all_device[index]
-        logger.info(F"Use {device_name}")
+        if self.is_half:
+            logger.info(f"Using {device_name} for half precision inference/training.")
+        else:
+            logger.info(f"Using {device_name}")
         self.x_pad, self.x_query, self.x_center, self.x_max=self.device_config(self.device)
 
 
@@ -220,8 +223,7 @@ class Config:
                 logger.info("GPU %s, force to fp32", self.gpu_name)
                 self.is_half = False
                 self.use_fp32_config()
-            # else:
-                # logger.info("Found GPU %s", self.gpu_name)
+
             self.gpu_mem = int(
                 torch.cuda.get_device_properties(i_device).total_memory
                 / 1024
@@ -231,7 +233,7 @@ class Config:
             )
             if self.gpu_mem<=4:
                 with open("infer/modules/train/preprocess.py", "r") as f:
-                    strr = f.read().replace("3.7", "3.0")
+                    strr = f.read().replace("per=3.7", "per=3.0")
                 with open("infer/modules/train/preprocess.py", "w") as f:
                     f.write(strr)
 
@@ -267,17 +269,6 @@ class Config:
             x_center = 30
             x_max = 32
 
-
-        # if ("cuda" in device_str or "xpu" in device_str ) and self.gpu_mem <= 4:
-        #     with open("infer/modules/train/preprocess.py", "r") as f:
-        #         strr = f.read().replace("per=3.7", "per=3.0")
-        #     with open("infer/modules/train/preprocess.py", "w") as f:
-        #         f.write(strr)
-        # else:
-        #     with open("infer/modules/train/preprocess.py", "r") as f:
-        #         strr = f.read().replace("per=3.0", "per=3.7")
-        #     with open("infer/modules/train/preprocess.py", "w") as f:
-        #         f.write(strr)
 
         if self.dml:
             if (
