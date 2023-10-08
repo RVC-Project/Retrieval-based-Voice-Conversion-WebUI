@@ -9,7 +9,7 @@ import torch
 
 from configs.config import Config
 from infer.modules.uvr5.mdxnet import MDXNetDereverb
-from infer.modules.uvr5.preprocess import AudioPre, AudioPreDeEcho
+from infer.modules.uvr5.vr import AudioPre, AudioPreDeEcho
 
 config = Config()
 
@@ -36,6 +36,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 device=config.device,
                 is_half=config.is_half,
             )
+        is_hp3 = "HP3" in model_name
         if inp_root != "":
             paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:
@@ -52,7 +53,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 ):
                     need_reformat = 0
                     pre_fun._path_audio_(
-                        inp_path, save_root_ins, save_root_vocal, format0
+                        inp_path, save_root_ins, save_root_vocal, format0, is_hp3=is_hp3
                     )
                     done = 1
             except:
@@ -70,7 +71,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 inp_path = tmp_path
             try:
                 if done == 0:
-                    pre_fun.path_audio(
+                    pre_fun._path_audio_(
                         inp_path, save_root_ins, save_root_vocal, format0
                     )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
