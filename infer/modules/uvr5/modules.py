@@ -70,7 +70,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 inp_path = tmp_path
             try:
                 if done == 0:
-                    pre_fun.path_audio(
+                    pre_fun._path_audio_(
                         inp_path, save_root_ins, save_root_vocal, format0
                     )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
