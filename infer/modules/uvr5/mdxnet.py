@@ -216,26 +216,26 @@ class Predictor:
             path_other = "%s/%s_others.wav" % (others_root, basename)
             sf.write(path_vocal, mix - opt, rate)
             sf.write(path_other, opt, rate)
-            opt_path_vocal=path_vocal[:-4] + ".%s" % format
-            opt_path_other=path_other[:-4] + ".%s" % format
+            opt_path_vocal = path_vocal[:-4] + ".%s" % format
+            opt_path_other = path_other[:-4] + ".%s" % format
             if os.path.exists(path_vocal):
                 os.system(
-                    "ffmpeg -i %s -vn %s -q:a 2 -y"
-                    % (path_vocal, opt_path_vocal)
+                    "ffmpeg -i %s -vn %s -q:a 2 -y" % (path_vocal, opt_path_vocal)
                 )
-                if(os.path.exists(opt_path_vocal)):
+                if os.path.exists(opt_path_vocal):
                     try:
                         os.remove(path_vocal)
-                    except:pass
+                    except:
+                        pass
             if os.path.exists(path_other):
                 os.system(
-                    "ffmpeg -i %s -vn %s -q:a 2 -y"
-                    % (path_other, opt_path_other)
+                    "ffmpeg -i %s -vn %s -q:a 2 -y" % (path_other, opt_path_other)
                 )
-                if(os.path.exists(opt_path_other)):
+                if os.path.exists(opt_path_other):
                     try:
                         os.remove(path_other)
-                    except:pass
+                    except:
+                        pass
 
 
 class MDXNetDereverb:
@@ -252,5 +252,5 @@ class MDXNetDereverb:
         self.pred = Predictor(self)
         self.device = device
 
-    def _path_audio_(self, input, vocal_root, others_root, format,is_hp3=False):
+    def _path_audio_(self, input, vocal_root, others_root, format, is_hp3=False):
         self.pred.prediction(input, vocal_root, others_root, format)

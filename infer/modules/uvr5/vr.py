@@ -16,7 +16,7 @@ from infer.lib.uvr5_pack.utils import inference
 
 
 class AudioPre:
-    def __init__(self, agg, model_path, device, is_half, tta = False):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
@@ -41,7 +41,9 @@ class AudioPre:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(self, music_file, ins_root=None, vocal_root=None, format="flac",is_hp3=False):
+    def _path_audio_(
+        self, music_file, ins_root=None, vocal_root=None, format="flac", is_hp3=False
+    ):
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -120,20 +122,22 @@ class AudioPre:
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             logger.info("%s instruments done" % name)
-            if(is_hp3==True):head="vocal_"
-            else:head="instrument_"
+            if is_hp3 == True:
+                head = "vocal_"
+            else:
+                head = "instrument_"
             if format in ["wav", "flac"]:
                 sf.write(
                     os.path.join(
                         ins_root,
-                        head+"{}_{}.{}".format(name, self.data["agg"], format),
+                        head + "{}_{}.{}".format(name, self.data["agg"], format),
                     ),
                     (np.array(wav_instrument) * 32768).astype("int16"),
                     self.mp.param["sr"],
                 )  #
             else:
                 path = os.path.join(
-                    ins_root, head+"{}_{}.wav".format(name, self.data["agg"])
+                    ins_root, head + "{}_{}.wav".format(name, self.data["agg"])
                 )
                 sf.write(
                     path,
@@ -141,18 +145,18 @@ class AudioPre:
                     self.mp.param["sr"],
                 )
                 if os.path.exists(path):
-                    opt_format_path=path[:-4] + ".%s" % format
-                    os.system(
-                        "ffmpeg -i %s -vn %s -q:a 2 -y"
-                        % (path, opt_format_path)
-                    )
+                    opt_format_path = path[:-4] + ".%s" % format
+                    os.system("ffmpeg -i %s -vn %s -q:a 2 -y" % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:pass
+                        except:
+                            pass
         if vocal_root is not None:
-            if(is_hp3==True):head="instrument_"
-            else:head="vocal_"
+            if is_hp3 == True:
+                head = "instrument_"
+            else:
+                head = "vocal_"
             if self.data["high_end_process"].startswith("mirroring"):
                 input_high_end_ = spec_utils.mirroring(
                     self.data["high_end_process"], v_spec_m, input_high_end, self.mp
@@ -167,14 +171,14 @@ class AudioPre:
                 sf.write(
                     os.path.join(
                         vocal_root,
-                        head+"{}_{}.{}".format(name, self.data["agg"], format),
+                        head + "{}_{}.{}".format(name, self.data["agg"], format),
                     ),
                     (np.array(wav_vocals) * 32768).astype("int16"),
                     self.mp.param["sr"],
                 )
             else:
                 path = os.path.join(
-                    vocal_root, head+"{}_{}.wav".format(name, self.data["agg"])
+                    vocal_root, head + "{}_{}.wav".format(name, self.data["agg"])
                 )
                 sf.write(
                     path,
@@ -182,19 +186,17 @@ class AudioPre:
                     self.mp.param["sr"],
                 )
                 if os.path.exists(path):
-                    opt_format_path=path[:-4] + ".%s" % format
-                    os.system(
-                        "ffmpeg -i %s -vn %s -q:a 2 -y"
-                        % (path, opt_format_path)
-                    )
+                    opt_format_path = path[:-4] + ".%s" % format
+                    os.system("ffmpeg -i %s -vn %s -q:a 2 -y" % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:pass
+                        except:
+                            pass
 
 
 class AudioPreDeEcho:
-    def __init__(self, agg, model_path, device, is_half, tta = False):
+    def __init__(self, agg, model_path, device, is_half, tta=False):
         self.model_path = model_path
         self.device = device
         self.data = {
@@ -221,7 +223,7 @@ class AudioPreDeEcho:
         self.model = model
 
     def _path_audio_(
-        self, music_file, vocal_root=None, ins_root=None, format="flac",is_hp3=False
+        self, music_file, vocal_root=None, ins_root=None, format="flac", is_hp3=False
     ):  # 3个VR模型vocal和ins是反的
         if ins_root is None and vocal_root is None:
             return "No save root."
@@ -320,15 +322,13 @@ class AudioPreDeEcho:
                     self.mp.param["sr"],
                 )
                 if os.path.exists(path):
-                    opt_format_path=path[:-4] + ".%s" % format
-                    os.system(
-                        "ffmpeg -i %s -vn %s -q:a 2 -y"
-                        % (path, opt_format_path)
-                    )
+                    opt_format_path = path[:-4] + ".%s" % format
+                    os.system("ffmpeg -i %s -vn %s -q:a 2 -y" % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:pass
+                        except:
+                            pass
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
                 input_high_end_ = spec_utils.mirroring(
@@ -359,12 +359,10 @@ class AudioPreDeEcho:
                     self.mp.param["sr"],
                 )
                 if os.path.exists(path):
-                    opt_format_path=path[:-4] + ".%s" % format
-                    os.system(
-                        "ffmpeg -i %s -vn %s -q:a 2 -y"
-                        % (path, opt_format_path)
-                    )
+                    opt_format_path = path[:-4] + ".%s" % format
+                    os.system("ffmpeg -i %s -vn %s -q:a 2 -y" % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:pass
+                        except:
+                            pass
