@@ -1,3 +1,6 @@
+import os
+import traceback
+
 import librosa
 import numpy as np
 import av
@@ -47,10 +50,14 @@ def audio2(i, o, format, sr):
 
 
 def load_audio(file, sr):
+    file = (
+        file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+    )  # 防止小白拷路径头尾带了空格和"和回车
+    if os.path.exists(file) == False:
+        raise RuntimeError(
+            "You input a wrong audio path that does not exists, please fix it!"
+        )
     try:
-        file = (
-            file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-        )  # 防止小白拷路径头尾带了空格和"和回车
         with open(file, "rb") as f:
             with BytesIO() as out:
                 audio2(f, out, "f32le", sr)
@@ -62,5 +69,5 @@ def load_audio(file, sr):
             audio = np.mean(audio, -1)
         return librosa.resample(audio, orig_sr=file[0], target_sr=16000)
 
-    except Exception as e:
-        raise RuntimeError(f"Failed to load audio: {e}")
+    except:
+        raise RuntimeError(traceback.format_exc())
