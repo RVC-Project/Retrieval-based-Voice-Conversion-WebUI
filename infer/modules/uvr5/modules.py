@@ -34,7 +34,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                     os.getenv("weight_uvr5_root"), model_name + ".pth"
                 ),
                 device=config.device,
-                is_half=config.is_half
+                is_half=config.is_half,
             )
         is_hp3 = "HP3" in model_name
         if inp_root != "":
@@ -53,7 +53,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 ):
                     need_reformat = 0
                     pre_fun._path_audio_(
-                        inp_path, save_root_ins, save_root_vocal, format0,is_hp3=is_hp3
+                        inp_path, save_root_ins, save_root_vocal, format0, is_hp3=is_hp3
                     )
                     done = 1
             except:

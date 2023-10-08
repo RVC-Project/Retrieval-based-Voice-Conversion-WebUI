@@ -53,8 +53,10 @@ def load_audio(file, sr):
     file = (
         file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
     )  # 防止小白拷路径头尾带了空格和"和回车
-    if(os.path.exists(file)==False):
-        raise RuntimeError("You input a wrong audio path that does not exists, please fix it!")
+    if os.path.exists(file) == False:
+        raise RuntimeError(
+            "You input a wrong audio path that does not exists, please fix it!"
+        )
     try:
         with open(file, "rb") as f:
             with BytesIO() as out:
