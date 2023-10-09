@@ -321,14 +321,14 @@ class Pipeline(object):
         if audio_pad.shape[0] > self.t_max:
             audio_sum = np.zeros_like(audio)
             for i in range(self.window):
-                audio_sum += audio_pad[i : i - self.window]
+                audio_sum += np.abs(audio_pad[i : i - self.window])
             for t in range(self.t_center, audio.shape[0], self.t_center):
                 opt_ts.append(
                     t
                     - self.t_query
                     + np.where(
-                        np.abs(audio_sum[t - self.t_query : t + self.t_query])
-                        == np.abs(audio_sum[t - self.t_query : t + self.t_query]).min()
+                        audio_sum[t - self.t_query : t + self.t_query]
+                        == audio_sum[t - self.t_query : t + self.t_query].min()
                     )[0][0]
                 )
         s = 0
