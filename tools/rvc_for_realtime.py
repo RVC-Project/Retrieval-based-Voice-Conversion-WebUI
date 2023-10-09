@@ -373,7 +373,7 @@ class RVC:
             else:
                 printt("Index search FAILED or disabled")
         except:
-            traceback.printt_exc()
+            traceback.print_exc()
             printt("Index search FAILED")
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
