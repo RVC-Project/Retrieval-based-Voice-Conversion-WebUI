@@ -16,16 +16,6 @@ from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
 from dotenv import load_dotenv
 import torch
-
-try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
-
-        ipex_init()
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
 import numpy as np
 import gradio as gr
 import faiss
@@ -40,6 +30,7 @@ import traceback
 import threading
 import shutil
 import logging
+
 
 
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -448,8 +439,8 @@ def change_version19(sr2, if_f0_3, version19):
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
     return (
-        {"visible": if_f0_3, "__type__": "update"},
-        *get_pretrained_models(path_str, "f0", sr2),
+        {"visible": if_f0_3, "__type__": "update"},{"visible": if_f0_3, "__type__": "update"},
+        *get_pretrained_models(path_str, "f0"if if_f0_3==True else "", sr2),
     )
 
 
@@ -790,7 +781,9 @@ with gr.Blocks(title="RVC WebUI") as app:
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
                 with gr.Column():
-                    refresh_button = gr.Button(i18n("刷新音色列表和索引路径"), variant="primary")
+                    refresh_button = gr.Button(
+                        i18n("刷新音色列表和索引路径"), variant="primary"
+                    )
                     clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
                 spk_item = gr.Slider(
                     minimum=0,
@@ -880,8 +873,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 interactive=True,
                             )
                             f0_file = gr.File(
-                                label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),
-                                visible=False,
+                               label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),visible=False
                             )
 
                             refresh_button.click(
@@ -1291,7 +1283,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     if_f0_3.change(
                         change_f0,
                         [if_f0_3, sr2, version19],
-                        [f0method8, pretrained_G14, pretrained_D15],
+                        [f0method8, gpus_rmvpe,pretrained_G14, pretrained_D15],
                     )
                     gpus16 = gr.Textbox(
                         label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),
