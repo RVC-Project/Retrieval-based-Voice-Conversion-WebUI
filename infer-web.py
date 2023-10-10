@@ -16,16 +16,6 @@ from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
 from dotenv import load_dotenv
 import torch
-
-try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
-
-        ipex_init()
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
 import numpy as np
 import gradio as gr
 import faiss
@@ -449,7 +439,8 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
     path_str = "" if version19 == "v1" else "_v2"
     return (
         {"visible": if_f0_3, "__type__": "update"},
-        *get_pretrained_models(path_str, "f0", sr2),
+        {"visible": if_f0_3, "__type__": "update"},
+        *get_pretrained_models(path_str, "f0" if if_f0_3 == True else "", sr2),
     )
 
 
@@ -1291,7 +1282,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     if_f0_3.change(
                         change_f0,
                         [if_f0_3, sr2, version19],
-                        [f0method8, pretrained_G14, pretrained_D15],
+                        [f0method8, gpus_rmvpe, pretrained_G14, pretrained_D15],
                     )
                     gpus16 = gr.Textbox(
                         label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),
