@@ -181,27 +181,32 @@ class VC:
                 if file_index != ""
                 else file_index2
             )  # 防止小白写错，自动帮他替换掉
-
-            audio_opt = self.pipeline.pipeline(
-                self.hubert_model,
-                self.net_g,
-                sid,
-                audio,
-                input_audio_path,
-                times,
-                f0_up_key,
-                f0_method,
-                file_index,
-                index_rate,
-                self.if_f0,
-                filter_radius,
-                self.tgt_sr,
-                resample_sr,
-                rms_mix_rate,
-                self.version,
-                protect,
-                f0_file,
-            )
+            try:
+                audio_opt = self.pipeline.pipeline(
+                    self.hubert_model,
+                    self.net_g,
+                    sid,
+                    audio,
+                    input_audio_path,
+                    times,
+                    f0_up_key,
+                    f0_method,
+                    file_index,
+                    index_rate,
+                    self.if_f0,
+                    filter_radius,
+                    self.tgt_sr,
+                    resample_sr,
+                    rms_mix_rate,
+                    self.version,
+                    protect,
+                    f0_file,
+                )
+            except AttributeError:
+                info = "You must load model before inference"
+                logger.warning(info)
+                return info, (None, None)
+            
             if self.tgt_sr != resample_sr >= 16000:
                 tgt_sr = resample_sr
             else:
@@ -216,6 +221,7 @@ class VC:
                 % (index_info, *times),
                 (tgt_sr, audio_opt),
             )
+
         except:
             info = traceback.format_exc()
             logger.warning(info)
