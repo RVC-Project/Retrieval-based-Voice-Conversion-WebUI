@@ -16,6 +16,7 @@ from infer.lib.infer_pack.commons import get_padding, init_weights
 
 has_xpu = bool(hasattr(torch, "xpu") and torch.xpu.is_available())
 
+
 class TextEncoder256(nn.Module):
     def __init__(
         self,
@@ -1123,7 +1124,7 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         sr=None,
         **kwargs
     ):
-        super(SynthesizerTrnMs768NSFsid_nono,self).__init__()
+        super(SynthesizerTrnMs768NSFsid_nono, self).__init__()
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
