@@ -51,50 +51,6 @@ class VC:
             "__type__": "update",
         }
 
-        if sid == "" or sid == []:
-            if self.hubert_model is not None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
-                logger.info("Clean model cache")
-                del (self.net_g, self.n_spk, self.hubert_model, self.tgt_sr)  # ,cpt
-                self.hubert_model = (
-                    self.net_g
-                ) = self.n_spk = self.hubert_model = self.tgt_sr = None
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                ###楼下不这么折腾清理不干净
-                self.if_f0 = self.cpt.get("f0", 1)
-                self.version = self.cpt.get("version", "v1")
-                if self.version == "v1":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs256NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs256NSFsid_nono(*self.cpt["config"])
-                elif self.version == "v2":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs768NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs768NSFsid_nono(*self.cpt["config"])
-                del self.net_g, self.cpt
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            return (
-                {"visible": False, "__type__": "update"},
-                {
-                    "visible": True,
-                    "value": to_return_protect0,
-                    "__type__": "update",
-                },
-                {
-                    "visible": True,
-                    "value": to_return_protect1,
-                    "__type__": "update",
-                },
-                "",
-                "",
-            )
         person = f'{os.getenv("weight_root")}/{sid}'
         logger.info(f"Loading: {person}")
 
@@ -114,6 +70,31 @@ class VC:
         self.net_g = synthesizer_class.get(
             (self.version, self.if_f0), SynthesizerTrnMs256NSFsid
         )(*self.cpt["config"], is_half=self.config.is_half)
+
+        if sid == "" or []:
+            if self.hubert_model is not None:
+                logger.info("Clean model cache")
+                [
+                    setattr(self, attr, None)
+                    for attr in ["net_g", "n_spk", "hubert_model", "tgt_sr", "cpt"]
+                ]
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            return (
+                {"visible": False, "__type__": "update"},
+                {
+                    "visible": True,
+                    "value": to_return_protect0,
+                    "__type__": "update",
+                },
+                {
+                    "visible": True,
+                    "value": to_return_protect1,
+                    "__type__": "update",
+                },
+                "",
+                "",
+            )
 
         del self.net_g.enc_q
 
