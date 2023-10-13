@@ -44,6 +44,9 @@ os.makedirs(tmp, exist_ok=True)
 os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
 os.makedirs(os.path.join(now_dir, "assets/weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
+os.environ['PATH'] += os.pathsep + os.path.join(now_dir, 'ffmpeg')
+os.environ['PATH'] += os.pathsep + os.path.join(now_dir, 'ffprobe')
+
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
