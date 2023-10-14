@@ -76,7 +76,7 @@ class VC:
                 logger.info("Clean model cache")
                 [
                     setattr(self, attr, None)
-                    for attr in [net_g, n_spk, hubert_model, tgt_sr, cpt]
+                    for attr in [self.net_g, self.n_spk, self.hubert_model, self.tgt_sr, self.cpt]
                 ]
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
