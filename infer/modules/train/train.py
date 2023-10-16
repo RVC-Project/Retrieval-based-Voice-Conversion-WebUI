@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ from infer.lib.train.data_utils import (
     TextAudioCollate,
     TextAudioCollateMultiNSFsid,
     TextAudioLoader,
-    TextAudioLoaderMultiNSFsid,
+    TextAudioLoaderMultiNSFsid, split_train_val_dataset,
 )
 
 if hps.version == "v1":
@@ -117,9 +117,9 @@ def main():
 
 
 def run(
-    rank,
-    n_gpus,
-    hps,
+        rank,
+        n_gpus,
+        hps,
 ):
     global global_step
     if rank == 0:
@@ -135,9 +135,11 @@ def run(
     torch.manual_seed(hps.train.seed)
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
-
+        train_file_name, val_file_name = \
+            split_train_val_dataset(hps.data.training_files, target_sid=0, val_size=0.2)
     if hps.if_f0 == 1:
-        train_dataset = TextAudioLoaderMultiNSFsid(hps.data.training_files, hps.data)
+        train_dataset = TextAudioLoaderMultiNSFsid(train_file_name, hps.data)
+        val_dataset = TextAudioLoaderMultiNSFsid(val_file_name, hps.data)
     else:
         train_dataset = TextAudioLoader(hps.data.training_files, hps.data)
     train_sampler = DistributedBucketSampler(
@@ -164,6 +166,13 @@ def run(
         batch_sampler=train_sampler,
         persistent_workers=True,
         prefetch_factor=8,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        num_workers=1,
+        shuffle=False,
+        sampler=None,
+        collate_fn=collate_fn,
     )
     if hps.if_f0 == 1:
         net_g = RVC_Model_f0(
@@ -276,7 +285,7 @@ def run(
                 [optim_g, optim_d],
                 [scheduler_g, scheduler_d],
                 scaler,
-                [train_loader, None],
+                [train_loader, val_loader],
                 logger,
                 [writer, writer_eval],
                 cache,
@@ -300,7 +309,7 @@ def run(
 
 
 def train_and_evaluate(
-    rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache
+        rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache
 ):
     net_g, net_d = nets
     optim_g, optim_d = optims
@@ -396,111 +405,26 @@ def train_and_evaluate(
         # Loader
         data_iterator = enumerate(train_loader)
 
-    # Run steps
+    # Run train steps
     epoch_recorder = EpochRecorder()
     for batch_idx, info in data_iterator:
         # Data
         ## Unpack
-        if hps.if_f0 == 1:
-            (
-                phone,
-                phone_lengths,
-                pitch,
-                pitchf,
-                spec,
-                spec_lengths,
-                wave,
-                wave_lengths,
-                sid,
-            ) = info
-        else:
-            phone, phone_lengths, spec, spec_lengths, wave, wave_lengths, sid = info
-        ## Load on CUDA
-        if (hps.if_cache_data_in_gpu == False) and torch.cuda.is_available():
-            phone = phone.cuda(rank, non_blocking=True)
-            phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
-            if hps.if_f0 == 1:
-                pitch = pitch.cuda(rank, non_blocking=True)
-                pitchf = pitchf.cuda(rank, non_blocking=True)
-            sid = sid.cuda(rank, non_blocking=True)
-            spec = spec.cuda(rank, non_blocking=True)
-            spec_lengths = spec_lengths.cuda(rank, non_blocking=True)
-            wave = wave.cuda(rank, non_blocking=True)
-            # wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
+        phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave = get_batch(hps, info,rank)
 
         # Calculate
         with autocast(enabled=hps.train.fp16_run):
-            if hps.if_f0 == 1:
-                (
-                    y_hat,
-                    ids_slice,
-                    x_mask,
-                    z_mask,
-                    (z, z_p, m_p, logs_p, m_q, logs_q),
-                ) = net_g(phone, phone_lengths, pitch, pitchf, spec, spec_lengths, sid)
-            else:
-                (
-                    y_hat,
-                    ids_slice,
-                    x_mask,
-                    z_mask,
-                    (z, z_p, m_p, logs_p, m_q, logs_q),
-                ) = net_g(phone, phone_lengths, spec, spec_lengths, sid)
-            mel = spec_to_mel_torch(
-                spec,
-                hps.data.filter_length,
-                hps.data.n_mel_channels,
-                hps.data.sampling_rate,
-                hps.data.mel_fmin,
-                hps.data.mel_fmax,
-            )
-            y_mel = commons.slice_segments(
-                mel, ids_slice, hps.train.segment_size // hps.data.hop_length
-            )
-            with autocast(enabled=False):
-                y_hat_mel = mel_spectrogram_torch(
-                    y_hat.float().squeeze(1),
-                    hps.data.filter_length,
-                    hps.data.n_mel_channels,
-                    hps.data.sampling_rate,
-                    hps.data.hop_length,
-                    hps.data.win_length,
-                    hps.data.mel_fmin,
-                    hps.data.mel_fmax,
-                )
-            if hps.train.fp16_run == True:
-                y_hat_mel = y_hat_mel.half()
-            wave = commons.slice_segments(
-                wave, ids_slice * hps.data.hop_length, hps.train.segment_size
-            )  # slice
-
-            # Discriminator
-            y_d_hat_r, y_d_hat_g, _, _ = net_d(wave, y_hat.detach())
-            with autocast(enabled=False):
-                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
-                    y_d_hat_r, y_d_hat_g
-                )
-        optim_d.zero_grad()
-        scaler.scale(loss_disc).backward()
-        scaler.unscale_(optim_d)
-        grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
-        scaler.step(optim_d)
+            logs_p, logs_q, loss_disc, losses_disc_g, losses_disc_r, m_p, mel, wave, y_hat, y_hat_mel, y_mel, z_mask, z_p = calc_net_d_losses(
+                hps, net_d, net_g, phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave)
+        grad_norm_d = update_d_params(loss_disc, net_d, optim_d, scaler)
 
         with autocast(enabled=hps.train.fp16_run):
             # Generator
-            y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(wave, y_hat)
-            with autocast(enabled=False):
-                loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
-                loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
-                loss_fm = feature_loss(fmap_r, fmap_g)
-                loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl
-        optim_g.zero_grad()
-        scaler.scale(loss_gen_all).backward()
-        scaler.unscale_(optim_g)
-        grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
-        scaler.step(optim_g)
-        scaler.update()
+            loss_fm, loss_gen, loss_gen_all, loss_kl, loss_mel, losses_gen = calc_net_g_losses(hps, logs_p, logs_q, m_p,
+                                                                                               net_d, wave, y_hat,
+                                                                                               y_hat_mel, y_mel, z_mask,
+                                                                                               z_p)
+        grad_norm_g = update_g_params(loss_gen_all, net_g, optim_g, scaler)
 
         if rank == 0:
             if global_step % hps.train.log_interval == 0:
@@ -619,6 +543,33 @@ def train_and_evaluate(
 
     if rank == 0:
         logger.info("====> Epoch: {} {}".format(epoch, epoch_recorder.record()))
+
+    # Run val step at end of epoch
+
+    val_loss = 0
+    net_g.eval()
+    net_d.eval()
+    with torch.no_grad():
+        for batch_idx, batch in enumerate(eval_loader):
+            phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave = get_batch(hps,batch,rank)
+            with autocast(enabled=hps.train.fp16_run):
+                logs_p, logs_q, loss_disc, losses_disc_g, losses_disc_r, m_p, mel, wave, y_hat, y_hat_mel, y_mel, z_mask, z_p = calc_net_d_losses(
+                    hps, net_d, net_g, phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave)
+            with autocast(enabled=hps.train.fp16_run):
+                # Generator
+                loss_fm, loss_gen, loss_gen_all, loss_kl, loss_mel, losses_gen = calc_net_g_losses(hps, logs_p, logs_q, m_p,
+                                                                                                   net_d, wave, y_hat,
+                                                                                                   y_hat_mel, y_mel, z_mask,
+                                                                                                   z_p)
+
+            val_loss += loss_gen_all
+        val_epoch_loss = float((val_loss) / float(batch_idx + 1))
+        utils.summarize(
+            writer_eval,
+            global_step,
+            scalars={"loss/g_total_val":val_epoch_loss }
+        )
+        print(f"loss/g_total_val { val_epoch_loss}")
     if epoch >= hps.total_epoch and rank == 0:
         logger.info("Training is done. The program is closed.")
 
@@ -636,6 +587,119 @@ def train_and_evaluate(
         )
         sleep(1)
         os._exit(2333333)
+
+
+def update_g_params(loss_gen_all, net_g, optim_g, scaler):
+    optim_g.zero_grad()
+    scaler.scale(loss_gen_all).backward()
+    scaler.unscale_(optim_g)
+    grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
+    scaler.step(optim_g)
+    scaler.update()
+    return grad_norm_g
+
+
+def update_d_params(loss_disc, net_d, optim_d, scaler):
+    optim_d.zero_grad()
+    scaler.scale(loss_disc).backward()
+    scaler.unscale_(optim_d)
+    grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
+    scaler.step(optim_d)
+    return grad_norm_d
+
+
+def calc_net_d_losses(hps, net_d, net_g, phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave):
+    if hps.if_f0 == 1:
+        (
+            y_hat,
+            ids_slice,
+            x_mask,
+            z_mask,
+            (z, z_p, m_p, logs_p, m_q, logs_q),
+        ) = net_g(phone, phone_lengths, pitch, pitchf, spec, spec_lengths, sid)
+    else:
+        (
+            y_hat,
+            ids_slice,
+            x_mask,
+            z_mask,
+            (z, z_p, m_p, logs_p, m_q, logs_q),
+        ) = net_g(phone, phone_lengths, spec, spec_lengths, sid)
+    mel = spec_to_mel_torch(
+        spec,
+        hps.data.filter_length,
+        hps.data.n_mel_channels,
+        hps.data.sampling_rate,
+        hps.data.mel_fmin,
+        hps.data.mel_fmax,
+    )
+    y_mel = commons.slice_segments(
+        mel, ids_slice, hps.train.segment_size // hps.data.hop_length
+    )
+    with autocast(enabled=False):
+        y_hat_mel = mel_spectrogram_torch(
+            y_hat.float().squeeze(1),
+            hps.data.filter_length,
+            hps.data.n_mel_channels,
+            hps.data.sampling_rate,
+            hps.data.hop_length,
+            hps.data.win_length,
+            hps.data.mel_fmin,
+            hps.data.mel_fmax,
+        )
+    if hps.train.fp16_run == True:
+        y_hat_mel = y_hat_mel.half()
+    wave = commons.slice_segments(
+        wave, ids_slice * hps.data.hop_length, hps.train.segment_size
+    )  # slice
+    # Discriminator
+    y_d_hat_r, y_d_hat_g, _, _ = net_d(wave, y_hat.detach())
+    with autocast(enabled=False):
+        loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
+            y_d_hat_r, y_d_hat_g
+        )
+    return logs_p, logs_q, loss_disc, losses_disc_g, losses_disc_r, m_p, mel, wave, y_hat, y_hat_mel, y_mel, z_mask, z_p
+
+
+def calc_net_g_losses(hps, logs_p, logs_q, m_p, net_d, wave, y_hat, y_hat_mel, y_mel, z_mask, z_p):
+    y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(wave, y_hat)
+    with autocast(enabled=False):
+        loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
+        loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
+        loss_fm = feature_loss(fmap_r, fmap_g)
+        loss_gen, losses_gen = generator_loss(y_d_hat_g)
+        loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl
+    return loss_fm, loss_gen, loss_gen_all, loss_kl, loss_mel, losses_gen
+
+
+def get_batch(hps, info,rank):
+    if hps.if_f0 == 1:
+        (
+            phone,
+            phone_lengths,
+            pitch,
+            pitchf,
+            spec,
+            spec_lengths,
+            wave,
+            wave_lengths,
+            sid,
+        ) = info
+    else:
+        phone, phone_lengths, spec, spec_lengths, wave, wave_lengths, sid = info
+    ## Load on CUDA
+    if (hps.if_cache_data_in_gpu == False) and torch.cuda.is_available():
+        phone = phone.cuda(rank, non_blocking=True)
+        phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
+        if hps.if_f0 == 1:
+            pitch = pitch.cuda(rank, non_blocking=True)
+            pitchf = pitchf.cuda(rank, non_blocking=True)
+        sid = sid.cuda(rank, non_blocking=True)
+        spec = spec.cuda(rank, non_blocking=True)
+        spec_lengths = spec_lengths.cuda(rank, non_blocking=True)
+        wave = wave.cuda(rank, non_blocking=True)
+        # wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
+    return phone, phone_lengths, pitch, pitchf, sid, spec, spec_lengths, wave
 
 
 if __name__ == "__main__":

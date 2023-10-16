@@ -1,6 +1,7 @@
+import logging
 import os
 import traceback
-import logging
+from random import random
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +11,50 @@ import torch.utils.data
 
 from infer.lib.train.mel_processing import spectrogram_torch
 from infer.lib.train.utils import load_filepaths_and_text, load_wav_to_torch
+
+
+def split_train_val_dataset(filelist_path, target_sid, val_size=0.2):
+    """
+    creates validation set of target_sid only according to val_size
+    returns 2 filelists, one for train, one for validation
+    filelist format each line contains the following fields
+     (wav_path,feature_path,fo_feature_path,fo_label,speaker_id),seperated by "|" between fields
+    :return:
+    """
+    target_sid_examples_train = []
+    target_sid_examples_val = []
+    other_speakers_examples = []
+
+    with open(filelist_path, 'r', encoding='utf8') as file:
+        print(f"{filelist_path}")
+        for line in file:
+            line_ = line  # remove \n symbol
+            _, _, _, _, speaker_id = line_.split("|")
+            if int(speaker_id) == target_sid:
+                if random() <= val_size:
+                    target_sid_examples_val.append(line)
+                else:
+                    target_sid_examples_train.append(line)
+            else:
+                other_speakers_examples.append(line)
+
+    train_examples = target_sid_examples_train + other_speakers_examples
+    print(f"training samples num: {len(train_examples)}")
+    print(f"validation samples num: {len(target_sid_examples_val)}")
+
+    directory, file_name = os.path.split(filelist_path)
+    train_file_name = os.path.join(directory, "train_filelist.txt")
+    val_file_name = os.path.join(directory, "validation_filelist.txt")
+    write_filelist(train_file_name, train_examples)
+    write_filelist(val_file_name, target_sid_examples_val)
+    return train_file_name, val_file_name
+
+
+def write_filelist(filepath_, list_of_strings):
+    '''writes tuples into filepath'''
+    with open(filepath_, 'w', encoding="utf8") as file:
+        for string in list_of_strings:
+            file.write(string)
 
 
 class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
@@ -409,13 +454,13 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
     """
 
     def __init__(
-        self,
-        dataset,
-        batch_size,
-        boundaries,
-        num_replicas=None,
-        rank=None,
-        shuffle=True,
+            self,
+            dataset,
+            batch_size,
+            boundaries,
+            num_replicas=None,
+            rank=None,
+            shuffle=True,
     ):
         super().__init__(dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle)
         self.lengths = dataset.lengths
@@ -444,8 +489,8 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
             len_bucket = len(buckets[i])
             total_batch_size = self.num_replicas * self.batch_size
             rem = (
-                total_batch_size - (len_bucket % total_batch_size)
-            ) % total_batch_size
+                          total_batch_size - (len_bucket % total_batch_size)
+                  ) % total_batch_size
             num_samples_per_bucket.append(len_bucket + rem)
         return buckets, num_samples_per_bucket
 
@@ -472,21 +517,21 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
             # add extra samples to make it evenly divisible
             rem = num_samples_bucket - len_bucket
             ids_bucket = (
-                ids_bucket
-                + ids_bucket * (rem // len_bucket)
-                + ids_bucket[: (rem % len_bucket)]
+                    ids_bucket
+                    + ids_bucket * (rem // len_bucket)
+                    + ids_bucket[: (rem % len_bucket)]
             )
 
             # subsample
-            ids_bucket = ids_bucket[self.rank :: self.num_replicas]
+            ids_bucket = ids_bucket[self.rank:: self.num_replicas]
 
             # batching
             for j in range(len(ids_bucket) // self.batch_size):
                 batch = [
                     bucket[idx]
                     for idx in ids_bucket[
-                        j * self.batch_size : (j + 1) * self.batch_size
-                    ]
+                               j * self.batch_size: (j + 1) * self.batch_size
+                               ]
                 ]
                 batches.append(batch)
 
