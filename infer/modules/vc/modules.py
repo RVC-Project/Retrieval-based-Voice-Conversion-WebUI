@@ -170,16 +170,18 @@ class VC:
                 self.hubert_model = load_hubert(self.config)
 
             if file_index:
-                file_index = file_index.strip(" ") \
-                .strip('"') \
-                .strip("\n") \
-                .strip('"') \
-                .strip(" ") \
-                .replace("trained", "added")
+                file_index = (
+                    file_index.strip(" ")
+                    .strip('"')
+                    .strip("\n")
+                    .strip('"')
+                    .strip(" ")
+                    .replace("trained", "added")
+                )
             elif file_index2:
                 file_index = file_index2
             else:
-                file_index = "" # 防止小白写错，自动帮他替换掉
+                file_index = ""  # 防止小白写错，自动帮他替换掉
 
             audio_opt = self.pipeline.pipeline(
                 self.hubert_model,
