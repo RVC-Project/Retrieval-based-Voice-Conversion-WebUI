@@ -223,16 +223,16 @@ class RVC:
             l_pad = int(np.ceil(1.5 / f0_min * 16000))
             r_pad = l_pad + 1
             s = parselmouth.Sound(np.pad(x, (l_pad, r_pad)), 16000).to_pitch_ac(
-                    time_step=0.01,
-                    voicing_threshold=0.6,
-                    pitch_floor=f0_min,
-                    pitch_ceiling=1100,
-                    )
+                time_step=0.01,
+                voicing_threshold=0.6,
+                pitch_floor=f0_min,
+                pitch_ceiling=1100,
+            )
             assert np.abs(s.t1 - 1.5 / f0_min) < 0.001
-            f0 = s.selected_array['frequency']
+            f0 = s.selected_array["frequency"]
             if len(f0) < p_len:
                 f0 = np.pad(f0, (0, p_len - len(f0)))
-            f0 = f0[: p_len]
+            f0 = f0[:p_len]
             f0 *= pow(2, f0_up_key / 12)
             return self.get_f0_post(f0)
         if n_cpu == 1:
@@ -350,7 +350,7 @@ class RVC:
             feats = (
                 self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
             )
-            feats = torch.cat((feats, feats[:,-1:,:]), 1)
+            feats = torch.cat((feats, feats[:, -1:, :]), 1)
         t2 = ttime()
         try:
             if hasattr(self, "index") and self.index_rate != 0:
