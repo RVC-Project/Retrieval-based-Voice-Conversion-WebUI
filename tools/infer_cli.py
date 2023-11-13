@@ -1,3 +1,5 @@
+# --f0up_key=0 --input_path=/Users/roman/Downloads/rvc_audio_test/K_7.aif --index_path=logs/barv/added_IVF3462_Flat_nprobe_1_barv_v2.index --f0method=rmvpe --opt_path=test2.wav --model_name=barv.pth --index_rate=0.75 --device=cpu --is_half=False --filter_radius=3 --resample_sr=0 --rms_mix_rate=1 --protect=0.33
+
 import argparse
 import os
 import sys
@@ -14,7 +16,6 @@ from infer.modules.vc.modules import VC
 # USAGE
 #
 # In your Terminal or CMD or whatever
-
 
 def arg_parse() -> tuple:
     parser = argparse.ArgumentParser()
@@ -42,8 +43,8 @@ def main():
     load_dotenv()
     args = arg_parse()
     config = Config()
-    config.device = args.device if args.device else config.device
-    config.is_half = args.is_half if args.is_half else config.is_half
+    config.device = "cpu" #args.device if args.device else config.device
+    # config.is_half = args.is_half if args.is_half else config.is_half
     vc = VC(config)
     vc.get_vc(args.model_name)
     _, wav_opt = vc.vc_single(
@@ -61,6 +62,14 @@ def main():
         args.protect,
     )
     wavfile.write(args.opt_path, wav_opt[0], wav_opt[1])
+    if os.path.isfile(args.opt_path):
+        file_stats = os.stat(args.opt_path)
+        if file_stats.st_size > 0:
+            print("SUCCESS")
+        else:
+            print("FAILURE")
+    else:
+        print("FAILURE")
 
 
 if __name__ == "__main__":
