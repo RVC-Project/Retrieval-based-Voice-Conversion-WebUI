@@ -1,4 +1,4 @@
-FROM ryurchik/rvc-runtime:v0.0.4
+FROM ryurchik/rvc-runtime:version-0.0.4
 WORKDIR /app
 COPY . .
 RUN tools/dlmodels_runpod.sh
