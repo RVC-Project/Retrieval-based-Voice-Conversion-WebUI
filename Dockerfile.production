@@ -2,4 +2,5 @@ FROM ryurchik/rvc-runtime:v1
 WORKDIR /app
 COPY . .
 RUN tools/dlmodels_runpod.sh
+RUN python3 tools/download_data_from_s3.py
 CMD [ "python3", "-u", "/app/runpod_api_handler.py" ]
