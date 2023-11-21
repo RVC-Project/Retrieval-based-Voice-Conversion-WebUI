@@ -1,0 +1,5 @@
+FROM ryurchik/rvc-runtime:v1
+WORKDIR /app
+COPY . .
+RUN tools/dlmodels_runpod.sh
+CMD [ "python3", "-u", "/app/runpod_api_handler.py" ]

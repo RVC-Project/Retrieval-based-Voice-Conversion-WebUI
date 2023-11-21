@@ -175,3 +175,8 @@ python infer-web.py
 <a href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=RVC-Project/Retrieval-based-Voice-Conversion-WebUI" />
 </a>
+
+
+
+docker buildx build --platform linux/amd64 . -f Dockerfile.runpod --cache-to=type=local,dest=.buildx_cache --cache-from=type=local,src=.buildx_cache --push -t ryurchik/rvc-runtime:v1 --target build 
+docker buildx build --platform linux/amd64 . -f Dockerfile.runpod --load --cache-to=type=local,dest=.buildx_cache --cache-from=type=local,src=.buildx_cache --push -t ryurchik/rvc-runtime:v1 --target build 

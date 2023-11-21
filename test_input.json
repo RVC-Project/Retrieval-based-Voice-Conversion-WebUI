@@ -1,0 +1,15 @@
+{
+  "input": {
+    "bucket": "voicerary",
+    "filepath": "vc/audio/QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl.wav",
+    "model_name": "barv.pth",
+    "f0up_key": 0,
+    "index_path": "logs/barv/added_IVF3462_Flat_nprobe_1_barv_v2.index",
+    "f0method": "rmvpe",
+    "index_rate": 0,
+    "filter_radius": 3,
+    "resample_sr": 0,
+    "rms_mix_rate": 1,
+    "protect": 0.33
+  }
+}
