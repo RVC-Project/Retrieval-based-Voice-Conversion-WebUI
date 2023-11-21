@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04 as build
+FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
 WORKDIR /app
 RUN apt-get update && \
     apt-get install -y -qq ffmpeg aria2 python3-pip &&\
@@ -6,8 +6,3 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 COPY requirements-runpod.txt .
 RUN pip install --no-cache-dir -r requirements-runpod.txt
-
-FROM build as stage1
-COPY . .
-RUN tools/dlmodels_runpod.sh
-CMD [ "python3", "-u", "/app/runpod_api_handler.py" ]
