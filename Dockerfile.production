@@ -1,15 +1,10 @@
 FROM ryurchik/rvc-runtime:v1
-
-ARG BUCKET
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_ACCESS_KEY
-ENV BUCKET=$BUCKET
-ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-
 WORKDIR /app
 COPY . .
 RUN tools/dlmodels_runpod.sh
+ARG BUCKET
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
 RUN python3 tools/download_data_from_s3.py
 
 CMD [ "python3", "-u", "/app/runpod_api_handler.py" ]
