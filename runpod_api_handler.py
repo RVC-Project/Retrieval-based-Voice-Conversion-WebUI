@@ -3,6 +3,8 @@ import os
 import boto3
 import runpod
 from dotenv import load_dotenv
+
+load_dotenv()
 from scipy.io import wavfile
 
 from configs.config import Config
@@ -10,7 +12,6 @@ from infer.modules.vc.modules import VC
 
 
 def process(job):
-    # return True
     job_input = job["input"]
     s3 = boto3.client('s3')
     bucket = job_input['bucket']  # voicerary
@@ -19,21 +20,22 @@ def process(job):
     local_filepath_no_ext = os.path.splitext(local_filepath)[0]  # QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl
     s3_filepath_no_ext = os.path.splitext(s3_filepath)[0]  # vc/audio/QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl
     s3_converted_filepath = s3_filepath_no_ext + '_done.wav'  # vc/audio/QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl_done.wav
+    index_root = os.getenv("index_root")
+    index_path = f'{index_root}/{job_input["model_name"]}/added_{job_input["model_name"]}.index'
 
     try:
         s3.download_file(bucket, s3_filepath, local_filepath)
 
-        load_dotenv()
         config = Config()
         vc = VC(config)
-        vc.get_vc(job_input["model_name"])
+        vc.get_vc(job_input["model_name"] + '.pth')
         _, wav_opt = vc.vc_single(
             0,
             local_filepath,
             job_input["f0up_key"],
             None,
             job_input["f0method"],
-            job_input["index_path"],
+            index_path,
             None,
             job_input["index_rate"],
             job_input["filter_radius"],
