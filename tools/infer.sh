@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python infer-web.py
+load_ext tensorboard & tensorboard --logdir /app/logs --bind_all & python infer-web.py
