@@ -21,7 +21,7 @@ def process(job):
     s3_filepath_no_ext = os.path.splitext(s3_filepath)[0]  # vc/audio/QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl
     s3_converted_filepath = s3_filepath_no_ext + '_done.wav'  # vc/audio/QcjsPLUasGO4C7TZnbRN2TSibl3XbBdWSUVI8Wzl_done.wav
     index_root = os.getenv("index_root")
-    index_path = f'{index_root}/{job_input["model_name"]}/added_{job_input["model_name"]}.index'
+    index_path = f'{index_root}/{job_input["model_name"]}.index'
 
     try:
         s3.download_file(bucket, s3_filepath, local_filepath)
@@ -35,7 +35,7 @@ def process(job):
             job_input["f0up_key"],
             None,
             job_input["f0method"],
-            index_path,
+            index_path if os.path.isfile(index_path) else '',
             None,
             job_input["index_rate"],
             job_input["filter_radius"],
