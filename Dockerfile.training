@@ -1,4 +1,4 @@
-FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu22.04
 EXPOSE 7865
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
