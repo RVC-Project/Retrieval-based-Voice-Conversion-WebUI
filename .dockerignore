@@ -30,18 +30,11 @@ logs/mute
 
 environment_dml.yaml
 *.bat
-gui_v1.py
-infer-web.py
 myinfer-v2-0528.py
 poetry.lock
 pyproject.toml
 README.md
 
-requirements*.txt
-!requirements-runpod.txt
-
-*.ipynb
-*.sh
 test_input.json
 
 LICENSE
