@@ -1,5 +1,6 @@
 FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 EXPOSE 7865
+EXPOSE 6006
 WORKDIR /app
 COPY tools/infer.sh /post_start.sh
 RUN chmod +x /post_start.sh
