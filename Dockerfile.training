@@ -1,0 +1,18 @@
+FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y -qq ffmpeg aria2 python3-pip python3-toolz python3-venv p7zip-full libmecab-dev cmake unzip build-essential libgl1 &&\
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+ADD https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/RVC1006Nvidia.7z?download=true /app
+RUN 7z x RVC1006Nvidia.7z \
+    && rm RVC1006Nvidia.7z \
+    && mv RVC1006Nvidia/* /app \
+    && rm -rf RVC1006Nvidia
+RUN python3 -m venv .venv && \
+     source .venv/bin/activate && \
+     pip install --no-cache-dir -r requirements.txt
+RUN  ./tools/dlmodels.sh
+CMD [ "python3", "infer-web.py --pycmd python3" ]
+
