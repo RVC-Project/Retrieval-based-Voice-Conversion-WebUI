@@ -1,16 +1,16 @@
-FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu22.04
+FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 EXPOSE 7865
-ARG DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+COPY tools/infer.sh /post_start.sh
+RUN chmod +x /post_start.sh
 RUN apt-get update && \
-    apt-get install -y -qq ffmpeg aria2 python3-pip python3-toolz python3-venv p7zip-full libmecab-dev cmake unzip build-essential libgl1 &&\
+    apt-get install -y -qq ffmpeg p7zip-full libmecab-dev libgl1 &&\
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-WORKDIR /app
 ADD https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/RVC1006Nvidia.7z?download=true /app
 RUN 7z x RVC1006Nvidia.7z \
     && rm RVC1006Nvidia.7z \
     && mv RVC1006Nvidia/* /app \
     && rm -rf RVC1006Nvidia
 RUN pip install --no-cache-dir -r requirements.txt
-CMD [ "python3", "infer-web.py" ]
-
+CMD [ "/start.sh" ]
