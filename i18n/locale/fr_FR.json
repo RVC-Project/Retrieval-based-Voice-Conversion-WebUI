@@ -3,6 +3,7 @@
     "A模型权重": "Poids (w) pour le modèle A :",
     "A模型路径": "Chemin d'accès au modèle A :",
     "B模型路径": "Chemin d'accès au modèle B :",
+    "E:\\语音音频+标注\\米津玄师\\src": "E:\\语音音频+标注\\米津玄师\\src",
     "F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调": "Fichier de courbe F0 (facultatif). Une hauteur par ligne. Remplace la fréquence fondamentale par défaut et la modulation de la hauteur :",
     "Index Rate": "Taux d'indexation",
     "Onnx导出": "Exporter en ONNX",
