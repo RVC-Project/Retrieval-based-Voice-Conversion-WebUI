@@ -3,7 +3,7 @@ EXPOSE 7865
 EXPOSE 6006
 WORKDIR /app
 COPY tools/infer.sh /post_start.sh
-RUN chmod +x /post_start.sh \
+RUN chmod +x /post_start.sh
 COPY tools/mkdir_runpod.sh /pre_start.sh
 RUN chmod +x /pre_start.sh
 RUN apt-get update && \
