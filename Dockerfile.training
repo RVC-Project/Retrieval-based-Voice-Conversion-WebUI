@@ -15,5 +15,7 @@ RUN 7z x RVC1006Nvidia.7z \
     && rm -rf RVC1006Nvidia \
     && rm -rf runtime
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir tensorflow
+    && pip install --no-cache-dir tensorflow \
+RUN mkdir -p /workspace/weights  \
+    && mkdir -p /workspace/logs
 CMD [ "/start.sh" ]
