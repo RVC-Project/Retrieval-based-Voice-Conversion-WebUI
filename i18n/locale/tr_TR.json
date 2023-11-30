@@ -3,6 +3,7 @@
     "A模型权重": "A Modeli Ağırlığı:",
     "A模型路径": "A Modeli Yolu:",
     "B模型路径": "B Modeli Yolu:",
+    "E:\\语音音频+标注\\米津玄师\\src": "E:\\语音音频+标注\\米津玄师\\src",
     "F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调": "F0 eğrisi dosyası (isteğe bağlı). Her satırda bir pitch değeri bulunur. Varsayılan F0 ve pitch modülasyonunu değiştirir:",
     "Index Rate": "Index Oranı",
     "Onnx导出": "Onnx Dışa Aktar",

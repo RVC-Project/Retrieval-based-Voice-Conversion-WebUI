@@ -3,6 +3,7 @@
     "A模型权重": "Weight (w) for Model A:",
     "A模型路径": "Path to Model A:",
     "B模型路径": "Path to Model B:",
+    "E:\\语音音频+标注\\米津玄师\\src": "C:\\Users\\Desktop\\src",
     "F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调": "F0 curve file (optional). One pitch per line. Replaces the default F0 and pitch modulation:",
     "Index Rate": "Index Rate",
     "Onnx导出": "Export Onnx",
@@ -126,6 +127,5 @@
     "音调设置": "Pitch settings",
     "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
     "音高算法": "pitch detection algorithm",
-    "额外推理时长": "Extra inference time",
-    "E:\\语音音频+标注\\米津玄师\\src": "C:\\Users\\Desktop\\src"
+    "额外推理时长": "Extra inference time"
 }
