@@ -38,7 +38,7 @@
     "加载模型": "Load model",
     "加载预训练底模D路径": "Load pre-trained base model D path:",
     "加载预训练底模G路径": "Load pre-trained base model G path:",
-    "单次推理": "单次推理",
+    "单次推理": "Single Inference",
     "卸载音色省显存": "Unload voice to save GPU memory:",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Transpose (integer, number of semitones, raise by an octave: 12, lower by an octave: -12):",
     "后处理重采样至最终采样率，0为不进行重采样": "Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling:",
@@ -54,7 +54,7 @@
     "很遗憾您这没有能用的显卡来支持您训练": "Unfortunately, there is no compatible GPU available to support your training.",
     "性能设置": "Performance settings",
     "总训练轮数total_epoch": "Total training epochs (total_epoch):",
-    "批量推理": "批量推理",
+    "批量推理": "Batch Inference",
     "批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ": "Batch conversion. Enter the folder containing the audio files to be converted or upload multiple audio files. The converted audio will be output in the specified folder (default: 'opt').",
     "指定输出主人声文件夹": "Specify the output folder for vocals:",
     "指定输出文件夹": "Specify output folder:",
@@ -120,11 +120,12 @@
     "选择.pth文件": "Select the .pth file",
     "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU": "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU",
     "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU": "Select the pitch extraction algorithm ('pm': faster extraction but lower-quality speech; 'harvest': better bass but extremely slow; 'crepe': better quality but GPU intensive), 'rmvpe': best quality, and little GPU requirement",
-    "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢,rmvpe效果最好且微吃CPU/GPU": "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢,rmvpe效果最好且微吃CPU/GPU",
+    "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢,rmvpe效果最好且微吃CPU/GPU": "Select the pitch extraction algorithm: when extracting singing, you can use 'pm' to speed up. For high-quality speech with fast performance, but worse CPU usage, you can use 'dio'. 'harvest' results in better quality but is slower.  'rmvpe' has the best results and consumes less CPU/GPU",
     "采样长度": "Sample length",
     "重载设备列表": "Reload device list",
     "音调设置": "Pitch settings",
     "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
     "音高算法": "pitch detection algorithm",
-    "额外推理时长": "Extra inference time"
+    "额外推理时长": "Extra inference time",
+    "E:\\语音音频+标注\\米津玄师\\src": "C:\\Users\\Desktop\\src"
 }
