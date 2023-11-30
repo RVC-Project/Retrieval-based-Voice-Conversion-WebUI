@@ -3,7 +3,9 @@ EXPOSE 7865
 EXPOSE 6006
 WORKDIR /app
 COPY tools/infer.sh /post_start.sh
-RUN chmod +x /post_start.sh
+RUN chmod +x /post_start.sh \
+COPY tools/mkdir_runpod.sh /pre_start.sh
+RUN chmod +x /pre_start.sh
 RUN apt-get update && \
     apt-get install -y -qq ffmpeg p7zip-full libmecab-dev libgl1 &&\
     apt-get clean && \
@@ -15,7 +17,5 @@ RUN 7z x RVC1006Nvidia.7z \
     && rm -rf RVC1006Nvidia \
     && rm -rf runtime
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir tensorflow \
-RUN mkdir -p /workspace/weights  \
-    && mkdir -p /workspace/logs
+    && pip install --no-cache-dir tensorflow
 CMD [ "/start.sh" ]
