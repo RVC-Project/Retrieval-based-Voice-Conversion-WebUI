@@ -2,9 +2,10 @@ FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 EXPOSE 7865
 EXPOSE 6006
 WORKDIR /app
+COPY .env.training /.env.training
 COPY tools/infer.sh /post_start.sh
 RUN chmod +x /post_start.sh
-COPY tools/mkdir_runpod.sh /pre_start.sh
+COPY tools/prestart_runpod.sh /pre_start.sh
 RUN chmod +x /pre_start.sh
 RUN apt-get update && \
     apt-get install -y -qq ffmpeg p7zip-full libmecab-dev libgl1 &&\
