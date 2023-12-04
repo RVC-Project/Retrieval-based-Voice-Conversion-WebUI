@@ -553,7 +553,7 @@ def click_train(
             f.write("\n")
     if gpus16:
         cmd = (
-            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -g %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s -li %s'
             % (
                 config.python_cmd,
                 exp_dir1,
@@ -569,11 +569,12 @@ def click_train(
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
                 version19,
+                os.getenv("LOG_INTERVAL", 200)
             )
         )
     else:
         cmd = (
-            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s'
+            '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s -li %s'
             % (
                 config.python_cmd,
                 exp_dir1,
@@ -588,6 +589,7 @@ def click_train(
                 1 if if_cache_gpu17 == i18n("是") else 0,
                 1 if if_save_every_weights18 == i18n("是") else 0,
                 version19,
+                os.getenv("LOG_INTERVAL", 200)
             )
         )
     logger.info(cmd)

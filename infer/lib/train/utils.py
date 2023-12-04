@@ -328,6 +328,9 @@ def get_hparams(init=True):
         "-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k"
     )
     parser.add_argument(
+        "-li", "--log_interval", type=int, required=False, default=200, help="log interval, default is 200"
+    )
+    parser.add_argument(
         "-sw",
         "--save_every_weights",
         type=str,
@@ -379,6 +382,7 @@ def get_hparams(init=True):
     hparams.version = args.version
     hparams.gpus = args.gpus
     hparams.train.batch_size = args.batch_size
+    hparams.train.log_interval = args.log_interval
     hparams.sample_rate = args.sample_rate
     hparams.if_f0 = args.if_f0
     hparams.if_latest = args.if_latest
