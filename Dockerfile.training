@@ -21,7 +21,7 @@ RUN 7z x RVC1006Nvidia.7z \
     && rm -rf assets/pretrained/* \
     && rm -rf assets/weights/*
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir tensorflow \
+    && pip install --no-cache-dir tensorflow
 COPY infer-web.py ./infer-web.py
 COPY infer/lib/train/utils.py ./infer/lib/train/utils.py
 COPY infer/lib/train/process_ckpt.py ./infer/lib/train/process_ckpt.py
