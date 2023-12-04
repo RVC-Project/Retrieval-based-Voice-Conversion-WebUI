@@ -361,7 +361,9 @@ def get_hparams(init=True):
 
     args = parser.parse_args()
     name = args.experiment_dir
-    experiment_dir = os.path.join("./logs", args.experiment_dir)
+    index_root = os.getenv("index_root")
+
+    experiment_dir = os.path.join(index_root, args.experiment_dir) if index_root else os.path.join("./logs", args.experiment_dir)
 
     config_save_path = os.path.join(experiment_dir, "config.json")
     with open(config_save_path, "r") as f:

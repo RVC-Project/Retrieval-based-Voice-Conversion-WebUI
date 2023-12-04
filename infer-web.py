@@ -1,7 +1,6 @@
 import os
 import sys
 from dotenv import load_dotenv
-
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 load_dotenv()
@@ -33,6 +32,7 @@ import shutil
 import logging
 
 
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
@@ -41,9 +41,15 @@ tmp = os.path.join(now_dir, "TEMP")
 shutil.rmtree(tmp, ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/infer_pack" % (now_dir), ignore_errors=True)
 shutil.rmtree("%s/runtime/Lib/site-packages/uvr5_pack" % (now_dir), ignore_errors=True)
+
+base_data_root = os.getenv("base_data_root")
+weight_root = os.getenv("weight_root")
+weight_uvr5_root = os.getenv("weight_uvr5_root")
+index_root = os.getenv("index_root")
+
 os.makedirs(tmp, exist_ok=True)
-os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
-os.makedirs(os.path.join(now_dir, "assets/weights"), exist_ok=True)
+os.makedirs(index_root if index_root else os.path.join(now_dir, "logs"), exist_ok=True)
+# os.makedirs(weight_root if weight_root else os.path.join(now_dir, "assets/weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
@@ -126,10 +132,6 @@ class ToolButton(gr.Button, gr.components.FormComponent):
         return "button"
 
 
-weight_root = os.getenv("weight_root")
-weight_uvr5_root = os.getenv("weight_uvr5_root")
-index_root = os.getenv("index_root")
-
 names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
@@ -204,8 +206,8 @@ def if_done_multi(done, ps):
 
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
-    os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
-    f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
+    os.makedirs("%s/logs/%s" % (base_data_root if base_data_root else now_dir, exp_dir), exist_ok=True)
+    f = open("%s/logs/%s/preprocess.log" % (base_data_root if base_data_root else now_dir, exp_dir), "w")
     f.close()
     per = 3.0 if config.is_half else 3.7
     cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
@@ -213,7 +215,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         trainset_dir,
         sr,
         n_p,
-        now_dir,
+        base_data_root if base_data_root else now_dir,
         exp_dir,
         config.noparallel,
         per,
@@ -231,12 +233,12 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         ),
     ).start()
     while 1:
-        with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "r") as f:
+        with open("%s/logs/%s/preprocess.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r") as f:
             yield (f.read())
         sleep(1)
         if done[0]:
             break
-    with open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "r") as f:
+    with open("%s/logs/%s/preprocess.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r") as f:
         log = f.read()
     logger.info(log)
     yield log
@@ -245,8 +247,8 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
 # but2.click(extract_f0,[gpus6,np7,f0method8,if_f0_3,trainset_dir4],[info2])
 def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvpe):
     gpus = gpus.split("-")
-    os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
-    f = open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "w")
+    os.makedirs("%s/logs/%s" % (base_data_root if base_data_root else now_dir, exp_dir), exist_ok=True)
+    f = open("%s/logs/%s/extract_f0_feature.log" % (base_data_root if base_data_root else now_dir, exp_dir), "w")
     f.close()
     if if_f0:
         if f0method != "rmvpe_gpu":
@@ -254,7 +256,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 '"%s" infer/modules/train/extract/extract_f0_print.py "%s/logs/%s" %s %s'
                 % (
                     config.python_cmd,
-                    now_dir,
+                    base_data_root if base_data_root else now_dir,
                     exp_dir,
                     n_p,
                     f0method,
@@ -286,7 +288,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                             leng,
                             idx,
                             n_g,
-                            now_dir,
+                            base_data_root if base_data_root else now_dir,
                             exp_dir,
                             config.is_half,
                         )
@@ -310,7 +312,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     config.python_cmd
                     + ' infer/modules/train/extract/extract_f0_rmvpe_dml.py "%s/logs/%s" '
                     % (
-                        now_dir,
+	                    base_data_root if base_data_root else now_dir,
                         exp_dir,
                     )
                 )
@@ -322,13 +324,13 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 done = [True]
         while 1:
             with open(
-                "%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r"
+                "%s/logs/%s/extract_f0_feature.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r"
             ) as f:
                 yield (f.read())
             sleep(1)
             if done[0]:
                 break
-        with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+        with open("%s/logs/%s/extract_f0_feature.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r") as f:
             log = f.read()
         logger.info(log)
         yield log
@@ -351,7 +353,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 leng,
                 idx,
                 n_g,
-                now_dir,
+                base_data_root if base_data_root else now_dir,
                 exp_dir,
                 version19,
             )
@@ -371,12 +373,12 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
         ),
     ).start()
     while 1:
-        with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+        with open("%s/logs/%s/extract_f0_feature.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r") as f:
             yield (f.read())
         sleep(1)
         if done[0]:
             break
-    with open("%s/logs/%s/extract_f0_feature.log" % (now_dir, exp_dir), "r") as f:
+    with open("%s/logs/%s/extract_f0_feature.log" % (base_data_root if base_data_root else now_dir, exp_dir), "r") as f:
         log = f.read()
     logger.info(log)
     yield log
@@ -438,9 +440,8 @@ def change_version19(sr2, if_f0_3, version19):
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
     return (
-        {"visible": if_f0_3, "__type__": "update"},
-        {"visible": if_f0_3, "__type__": "update"},
-        *get_pretrained_models(path_str, "f0" if if_f0_3 == True else "", sr2),
+        {"visible": if_f0_3, "__type__": "update"},{"visible": if_f0_3, "__type__": "update"},
+        *get_pretrained_models(path_str, "f0"if if_f0_3==True else "", sr2),
     )
 
 
@@ -462,7 +463,7 @@ def click_train(
     version19,
 ):
     # 生成filelist
-    exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
+    exp_dir = "%s/logs/%s" % (base_data_root if base_data_root else now_dir, exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
     feature_dir = (
@@ -597,8 +598,8 @@ def click_train(
 
 # but4.click(train_index, [exp_dir1], info3)
 def train_index(exp_dir1, version19):
-    # exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
-    exp_dir = "logs/%s" % (exp_dir1)
+    exp_dir = "%s/logs/%s" % (base_data_root if base_data_root else now_dir, exp_dir1)
+    # exp_dir = "logs/%s" % (exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
     feature_dir = (
         "%s/3_feature256" % (exp_dir)
@@ -781,7 +782,9 @@ with gr.Blocks(title="RVC WebUI") as app:
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
                 with gr.Column():
-                    refresh_button = gr.Button(i18n("刷新音色列表和索引路径"), variant="primary")
+                    refresh_button = gr.Button(
+                        i18n("刷新音色列表和索引路径"), variant="primary"
+                    )
                     clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
                 spk_item = gr.Slider(
                     minimum=0,
@@ -871,8 +874,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 interactive=True,
                             )
                             f0_file = gr.File(
-                                label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),
-                                visible=False,
+                               label=i18n("F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调"),visible=False
                             )
 
                             refresh_button.click(
@@ -1282,7 +1284,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     if_f0_3.change(
                         change_f0,
                         [if_f0_3, sr2, version19],
-                        [f0method8, gpus_rmvpe, pretrained_G14, pretrained_D15],
+                        [f0method8, gpus_rmvpe,pretrained_G14, pretrained_D15],
                     )
                     gpus16 = gr.Textbox(
                         label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),
