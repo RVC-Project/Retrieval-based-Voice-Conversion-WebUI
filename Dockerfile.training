@@ -8,7 +8,7 @@ RUN chmod +x /post_start.sh
 COPY tools/prestart_runpod.sh /pre_start.sh
 RUN chmod +x /pre_start.sh
 RUN apt-get update && \
-    apt-get install -y -qq ffmpeg p7zip-full libmecab-dev libgl1 &&\
+    apt-get install -y -qq ffmpeg p7zip-full libmecab-dev libgl1 awscli &&\
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 ADD https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/RVC1006Nvidia.7z?download=true /app
