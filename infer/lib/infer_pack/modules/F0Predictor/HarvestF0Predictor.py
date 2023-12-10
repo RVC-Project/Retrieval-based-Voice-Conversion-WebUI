@@ -65,7 +65,7 @@ class HarvestF0Predictor(F0Predictor):
             p_len = wav.shape[0] // self.hop_length
         f0, t = pyworld.harvest(
             wav.astype(np.double),
-            fs=self.hop_length,
+            fs=self.sampling_rate,
             f0_ceil=self.f0_max,
             f0_floor=self.f0_min,
             frame_period=1000 * self.hop_length / self.sampling_rate,
