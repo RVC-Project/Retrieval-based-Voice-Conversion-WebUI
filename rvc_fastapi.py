@@ -1,4 +1,5 @@
 
+from typing import Union
 import os
 import sys
 from io import BytesIO
@@ -56,7 +57,7 @@ class ModelCache:
 
 
 def infer(
-        input: str | bytes, # filepath or raw bytes
+        input: Union[str, bytes], # filepath or raw bytes
         model_name: str,
         index_path: str = None,
         f0up_key: int = 0,

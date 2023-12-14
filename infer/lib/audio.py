@@ -6,6 +6,7 @@ import numpy as np
 import av
 from io import BytesIO
 
+from typing import Union
 
 def wav2(i, o, format):
     inp = av.open(i, "rb")
@@ -49,7 +50,7 @@ def audio2(i, o, format, sr):
     inp.close()
 
 
-def load_audio(file: str | bytes, sr: int):
+def load_audio(file: Union[str, bytes], sr: int):
     # open audio file
     if type(file) == bytes:
         opened_file = BytesIO(file)
