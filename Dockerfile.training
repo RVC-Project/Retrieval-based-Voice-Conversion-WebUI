@@ -25,4 +25,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY infer-web.py ./infer-web.py
 COPY infer/lib/train/utils.py ./infer/lib/train/utils.py
 COPY infer/lib/train/process_ckpt.py ./infer/lib/train/process_ckpt.py
+COPY infer/lib/rmvpe.py ./infer/lib/rmvpe.py
+COPY tools/app.py ./tools/app.py
+COPY infer/modules/uvr5 ./infer/modules/uvr5
+COPY infer/modules/vc ./infer/modules/vc
 CMD [ "/start.sh" ]
