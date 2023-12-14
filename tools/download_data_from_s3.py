@@ -25,5 +25,5 @@ def download_directory_from_s3(bucket_name: str, s3_folder: str, local_dir: str)
                 s3.download_file(bucket_name, obj['Key'], local_file_path)
 
 
-download_directory_from_s3(bucket_name, 'weights/', app_path + os.getenv("WEIGHT_ROOT"))
-download_directory_from_s3(bucket_name, 'index/', app_path + os.getenv("INDEX_ROOT"))
+download_directory_from_s3(bucket_name, 'weights/', os.getenv("WEIGHT_ROOT"))
+download_directory_from_s3(bucket_name, 'index/', os.getenv("INDEX_ROOT"))
