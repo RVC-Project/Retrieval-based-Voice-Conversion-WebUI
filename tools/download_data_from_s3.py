@@ -8,7 +8,7 @@ app_path = os.getenv("APP_PATH", "/app/")
 load_dotenv(app_path + '.env')
 
 
-def download_directory_from_s3(bucket_name, s3_folder, local_dir):
+def download_directory_from_s3(bucket_name: str, s3_folder: str, local_dir: str):
     s3 = boto3.client('s3')
     paginator = s3.get_paginator('list_objects_v2')
     for result in paginator.paginate(Bucket=bucket_name, Prefix=s3_folder):

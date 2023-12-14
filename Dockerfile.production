@@ -1,6 +1,7 @@
 FROM ryurchik/rvc-runtime:version-0.0.4
 WORKDIR /app
 COPY . .
+COPY .env.example .env
 RUN tools/dlmodels_runpod.sh
 ARG BUCKET
 ARG AWS_ACCESS_KEY_ID
