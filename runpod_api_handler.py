@@ -30,7 +30,12 @@ def process(job):
     converted_file_no_silence = os.path.join(tempfile.gettempdir(), 'converted_no_silence.wav')
     converted_file_restored_silence = os.path.join(tempfile.gettempdir(), 'converted_restored_silence.wav')
 
+    model_name = job_input["model_name"] + '.pth'
+
     try:
+        if not os.path.isfile(os.path.join(os.getenv("WEIGHT_ROOT"), model_name)):
+            raise Exception('model not found')
+
         s3.download_file(bucket, s3_filepath, local_filepath)
 
         ap = AudioProcessing(local_filepath)
@@ -39,7 +44,7 @@ def process(job):
 
         config = Config()
         vc = VC(config)
-        vc.get_vc(job_input["model_name"] + '.pth')
+        vc.get_vc(model_name)
         _, wav_opt = vc.vc_single(
             0,
             ap.joined_speeches_audio_path,
@@ -59,8 +64,8 @@ def process(job):
         ap.restore_speeches_timing(converted_file_no_silence, converted_file_restored_silence)
 
         s3.upload_file(converted_file_restored_silence, bucket, s3_converted_filepath)
-    except Exception:
-        return {"error": "Operation failed"}
+    except Exception as e:
+        return {"error": f'Operation failed: {e}'}
     else:
         return {"converted": s3_converted_filepath}
 
