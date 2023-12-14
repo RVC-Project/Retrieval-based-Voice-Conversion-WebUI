@@ -1,1 +1,3 @@
-python3.8 -m venv .venv
+#!/bin/bash
+
+source venv/bin/activate && python infer-web.py

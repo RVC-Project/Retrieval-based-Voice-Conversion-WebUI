@@ -42,7 +42,7 @@ def savee(ckpt, sr, if_f0, name, epoch, version, hps):
         opt["sr"] = sr
         opt["f0"] = if_f0
         opt["version"] = version
-        weight_root = os.getenv("weight_root")
+        weight_root = os.getenv("WEIGHT_ROOT")
         torch.save(opt, "%s/%s.pth" % (weight_root, name))
         return "Success."
     except:
@@ -186,7 +186,7 @@ def extract_small_model(path, name, sr, if_f0, info, version):
         opt["version"] = version
         opt["sr"] = sr
         opt["f0"] = int(if_f0)
-        weight_root = os.getenv("weight_root")
+        weight_root = os.getenv("WEIGHT_ROOT")
         torch.save(opt, "%s/%s.pth" % (weight_root, name))
         return "Success."
     except:
@@ -199,7 +199,7 @@ def change_info(path, info, name):
         ckpt["info"] = info
         if name == "":
             name = os.path.basename(path)
-        weight_root = os.getenv("weight_root")
+        weight_root = os.getenv("WEIGHT_ROOT")
         torch.save(ckpt, "%s/%s.pth" % (weight_root, name))
         return "Success."
     except:
@@ -258,7 +258,7 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
         opt["f0"] = 1 if f0 == i18n("是") else 0
         opt["version"] = version
         opt["info"] = info
-        weight_root = os.getenv("weight_root")
+        weight_root = os.getenv("WEIGHT_ROOT")
         torch.save(opt, "%s/%s.pth" % (weight_root, name))
         return "Success."
     except:

@@ -364,7 +364,7 @@ def get_hparams(init=True):
 
     args = parser.parse_args()
     name = args.experiment_dir
-    index_root = os.getenv("index_root")
+    index_root = os.getenv("INDEX_ROOT")
 
     experiment_dir = os.path.join(index_root, args.experiment_dir) if index_root else os.path.join("./logs", args.experiment_dir)
 

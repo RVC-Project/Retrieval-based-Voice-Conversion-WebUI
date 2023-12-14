@@ -31,7 +31,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             pre_fun = func(
                 agg=int(agg),
                 model_path=os.path.join(
-                    os.getenv("weight_uvr5_root"), model_name + ".pth"
+                    os.getenv("WEIGHT_UVR5_ROOT"), model_name + ".pth"
                 ),
                 device=config.device,
                 is_half=config.is_half,

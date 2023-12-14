@@ -3,6 +3,7 @@ __pycache__
 /TEMP
 *.pyd
 .venv
+venv
 .buildx_cache
 /opt
 tools/aria2c/
@@ -23,3 +24,5 @@ assets/weights/*
 
 # To set a Python version for the project
 .tool-versions
+
+.env
