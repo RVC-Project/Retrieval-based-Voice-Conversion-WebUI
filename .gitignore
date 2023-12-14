@@ -7,6 +7,7 @@ __pycache__
 tools/aria2c/
 tools/flag.txt
 
+
 # Imported from huggingface.co/lj1995/VoiceConversionWebUI
 /pretrained
 /pretrained_v2
@@ -21,3 +22,29 @@ rmvpe.pt
 
 # To set a Python version for the project
 .tool-versions
+
+
+### IDE FILES
+
+# Ignore PyCharm files
+.idea/
+
+# Ignore Visual Studio Code files
+.vscode/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore output folder
+output/
+
+# Ignore virtual environment folder
+venv/
+
+# Ignore distribution folders
+dist/
+build/
+*.egg-info/
