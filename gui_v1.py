@@ -122,6 +122,7 @@ if __name__ == "__main__":
                     data["harvest"] = data["f0method"] == "harvest"
                     data["crepe"] = data["f0method"] == "crepe"
                     data["rmvpe"] = data["f0method"] == "rmvpe"
+                    data["fcpe"] = data["f0method"] == "fcpe"
                     if data["sg_input_device"] not in input_devices:
                         data["sg_input_device"] = input_devices[sd.default.device[0]]
                     if data["sg_output_device"] not in output_devices:
@@ -147,6 +148,7 @@ if __name__ == "__main__":
                     data["harvest"] = data["f0method"] == "harvest"
                     data["crepe"] = data["f0method"] == "crepe"
                     data["rmvpe"] = data["f0method"] == "rmvpe"
+                    data["fcpe"] = data["f0method"] == "fcpe"
             return data
 
         def launcher(self):
@@ -285,6 +287,13 @@ if __name__ == "__main__":
                                     "f0method",
                                     key="rmvpe",
                                     default=data.get("rmvpe", "") == True,
+                                    enable_events=True,
+                                ),
+                                sg.Radio(
+                                    "fcpe",
+                                    "f0method",
+                                    key="fcpe",
+                                    default=data.get("fcpe", "") == True,
                                     enable_events=True,
                                 ),
                             ],
@@ -445,12 +454,13 @@ if __name__ == "__main__":
                             "n_cpu": values["n_cpu"],
                             # "use_jit": values["use_jit"],
                             "use_jit": False,
-                            "f0method": ["pm", "harvest", "crepe", "rmvpe"][
+                            "f0method": ["pm", "harvest", "crepe", "rmvpe", "fcpe"][
                                 [
                                     values["pm"],
                                     values["harvest"],
                                     values["crepe"],
                                     values["rmvpe"],
+                                    values["fcpe"],
                                 ].index(True)
                             ],
                         }
@@ -484,7 +494,7 @@ if __name__ == "__main__":
                         self.rvc.change_index_rate(values["index_rate"])
                 elif event == "rms_mix_rate":
                     self.gui_config.rms_mix_rate = values["rms_mix_rate"]
-                elif event in ["pm", "harvest", "crepe", "rmvpe"]:
+                elif event in ["pm", "harvest", "crepe", "rmvpe", "fcpe"]:
                     self.gui_config.f0method = event
                 elif event == "I_noise_reduce":
                     self.gui_config.I_noise_reduce = values["I_noise_reduce"]
@@ -531,12 +541,13 @@ if __name__ == "__main__":
             self.gui_config.rms_mix_rate = values["rms_mix_rate"]
             self.gui_config.index_rate = values["index_rate"]
             self.gui_config.n_cpu = values["n_cpu"]
-            self.gui_config.f0method = ["pm", "harvest", "crepe", "rmvpe"][
+            self.gui_config.f0method = ["pm", "harvest", "crepe", "rmvpe", "fcpe"][
                 [
                     values["pm"],
                     values["harvest"],
                     values["crepe"],
                     values["rmvpe"],
+                    values["fcpe"],
                 ].index(True)
             ]
             return True
