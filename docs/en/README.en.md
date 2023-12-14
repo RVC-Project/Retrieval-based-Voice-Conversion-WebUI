@@ -176,6 +176,16 @@ After that you can run the WebUI:
 python infer-web.py
 ```
 
+## Infer web REST API 
+
+You can use the following command to start the REST API server:
+```bash
+python rvc_fastapi.py
+```
+The rest API was built using fastAPI. It supports inference on pre trained models with the web-UI.
+You can find the documentation at http://localhost:8000/docs
+
+
 ## Credits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)

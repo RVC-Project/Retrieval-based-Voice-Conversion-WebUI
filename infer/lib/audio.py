@@ -49,25 +49,35 @@ def audio2(i, o, format, sr):
     inp.close()
 
 
-def load_audio(file, sr):
-    file = (
-        file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-    )  # 防止小白拷路径头尾带了空格和"和回车
-    if os.path.exists(file) == False:
-        raise RuntimeError(
-            "You input a wrong audio path that does not exists, please fix it!"
-        )
-    try:
-        with open(file, "rb") as f:
-            with BytesIO() as out:
-                audio2(f, out, "f32le", sr)
-                return np.frombuffer(out.getvalue(), np.float32).flatten()
+def load_audio(file: str | bytes, sr: int):
+    # open audio file
+    if type(file) == bytes:
+        opened_file = BytesIO(file)
+    else:
+        file = (
+            file.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+        )  # 防止小白拷路径头尾带了空格和"和回车
+        if os.path.exists(file) == False:
+            raise RuntimeError(
+                "You input a wrong audio path that does not exists, please fix it!"
+            )
+        opened_file = open(file, "rb")
 
+    # convert audio file to 16k wav
+    try:
+        with BytesIO() as out:
+            audio2(opened_file, out, "f32le", sr)
+            ret = np.frombuffer(out.getvalue(), np.float32).flatten()
     except AttributeError:
         audio = file[1] / 32768.0
         if len(audio.shape) == 2:
             audio = np.mean(audio, -1)
-        return librosa.resample(audio, orig_sr=file[0], target_sr=16000)
+        ret = librosa.resample(audio, orig_sr=file[0], target_sr=16000)
 
     except:
         raise RuntimeError(traceback.format_exc())
+
+    # close audio file to be safe
+    opened_file.close()
+
+    return ret
