@@ -46,23 +46,22 @@ def printt(strr, *args):
 # config.is_half=False########强制cpu测试
 class RVC:
     def __init__(
-        self,
-        key,
-        pth_path,
-        index_path,
-        index_rate,
-        n_cpu,
-        inp_q,
-        opt_q,
-        config: Config,
-        last_rvc=None,
+            self,
+            key,
+            pth_path,
+            index_path,
+            index_rate,
+            n_cpu,
+            inp_q,
+            opt_q,
+            config: Config,
+            last_rvc=None,
     ) -> None:
         """
         初始化
         """
         try:
             if config.dml == True:
-
                 def forward_dml(ctx, x, scale):
                     ctx.scale = scale
                     res = x.clone().detach()
@@ -183,6 +182,8 @@ class RVC:
 
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
+            if last_rvc is not None and hasattr(last_rvc, "model_fcpe"):
+                self.model_fcpe = last_rvc.model_fcpe
         except:
             printt(traceback.format_exc())
 
@@ -204,7 +205,7 @@ class RVC:
         f0bak = f0.copy()
         f0_mel = 1127 * np.log(1 + f0 / 700)
         f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (
-            f0_mel_max - f0_mel_min
+                f0_mel_max - f0_mel_min
         ) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
@@ -217,6 +218,8 @@ class RVC:
             return self.get_f0_crepe(x, f0_up_key)
         if method == "rmvpe":
             return self.get_f0_rmvpe(x, f0_up_key)
+        if method == "fcpe":
+            return self.get_f0_fcpe(x, f0_up_key)
         if method == "pm":
             p_len = x.shape[0] // 160 + 1
             f0_min = 65
@@ -258,7 +261,7 @@ class RVC:
                 self.inp_q.put((idx, x[:tail], res_f0, n_cpu, ts))
             else:
                 self.inp_q.put(
-                    (idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts)
+                    (idx, x[part_length * idx - 320: tail], res_f0, n_cpu, ts)
                 )
         while 1:
             res_ts = self.opt_q.get()
@@ -273,7 +276,7 @@ class RVC:
             else:
                 f0 = f0[2:]
             f0bak[
-                part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]
+            part_length * idx // 160: part_length * idx // 160 + f0.shape[0]
             ] = f0
         f0bak = signal.medfilt(f0bak, 3)
         f0bak *= pow(2, f0_up_key / 12)
@@ -322,15 +325,29 @@ class RVC:
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 
+    def get_f0_fcpe(self, x, f0_up_key):
+        if hasattr(self, "model_fcpe") == False:
+            from torchfcpe import spawn_bundled_infer_model
+            printt("Loading fcpe model")
+            self.model_fcpe = spawn_bundled_infer_model(self.device)
+        f0 = self.model_fcpe.infer(
+            torch.from_numpy(x).to(self.device).unsqueeze(0).float(),
+            sr=16000,
+            decoder_mode='local_argmax',
+            threshold=0.006,
+        ).squeeze().cpu().numpy()
+        f0 *= pow(2, f0_up_key / 12)
+        return self.get_f0_post(f0)
+
     def infer(
-        self,
-        feats: torch.Tensor,
-        indata: np.ndarray,
-        block_frame_16k,
-        rate,
-        cache_pitch,
-        cache_pitchf,
-        f0method,
+            self,
+            feats: torch.Tensor,
+            indata: np.ndarray,
+            block_frame_16k,
+            rate,
+            cache_pitch,
+            cache_pitchf,
+            f0method,
     ) -> np.ndarray:
         feats = feats.view(1, -1)
         if self.config.is_half:
@@ -363,8 +380,8 @@ class RVC:
                 if self.config.is_half:
                     npy = npy.astype("float16")
                 feats[0][-leng_replace_head:] = (
-                    torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
-                    + (1 - self.index_rate) * feats[0][-leng_replace_head:]
+                        torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
+                        + (1 - self.index_rate) * feats[0][-leng_replace_head:]
                 )
             else:
                 printt("Index search FAILED or disabled")
