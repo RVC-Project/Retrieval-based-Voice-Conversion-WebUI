@@ -49,7 +49,7 @@ index_root = os.getenv("INDEX_ROOT")
 
 os.makedirs(tmp, exist_ok=True)
 os.makedirs(index_root if index_root else os.path.join(now_dir, "logs"), exist_ok=True)
-# os.makedirs(WEIGHT_ROOT if WEIGHT_ROOT else os.path.join(now_dir, "assets/weights"), exist_ok=True)
+os.makedirs(weight_root if weight_root else os.path.join(now_dir, "assets/weights"), exist_ok=True)
 os.environ["TEMP"] = tmp
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
