@@ -208,7 +208,7 @@ class VC:
                 tgt_sr = self.tgt_sr
             index_info = (
                 "Index:\n%s." % file_index
-                if os.path.exists(file_index)
+                if file_index and os.path.exists(file_index)
                 else "Index not used."
             )
             return (

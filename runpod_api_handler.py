@@ -52,7 +52,7 @@ def process(job):
             None,
             job_input["f0method"],
             index_path if os.path.isfile(index_path) else '',
-            None,
+            '',
             job_input["index_rate"],
             job_input["filter_radius"],
             job_input["resample_sr"],
