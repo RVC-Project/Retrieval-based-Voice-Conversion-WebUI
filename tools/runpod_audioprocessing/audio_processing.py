@@ -23,6 +23,7 @@ def _remove_temp_files(pattern: str) -> None:
 
 class AudioProcessing:
     SILENCE_DETECT_PARAMS = 'silencedetect=noise=-60dB:d=0.5'
+    SPEECH_SAFETY_PAD = 0.2
 
     def __init__(self, input_audio_path: str):
         if not os.path.isfile(input_audio_path):
@@ -41,11 +42,11 @@ class AudioProcessing:
 
     def _prepare_speech_segments_from_time(self, silence_time: float, silence_time_type: str) -> None:
         if silence_time_type == 'end':
-            # speech start is silence end, should not fall off 0
-            self._speech_start = max((silence_time - 0.2), 0)
+            # speech start is silence end, should not fall off below 0
+            self._speech_start = max((silence_time - self.SPEECH_SAFETY_PAD), 0)
         elif silence_time_type == 'start' and silence_time != 0.0:
-            # speech end is silence start, should not be greater than audio duration
-            self._speech_end = min((silence_time + 0.2), self._input_audio_duration)
+            # speech end is silence start, should not be greater than input audio duration
+            self._speech_end = min((silence_time + self.SPEECH_SAFETY_PAD), self._input_audio_duration)
         else:
             return
 
