@@ -25,39 +25,59 @@ class AudioProcessing:
     SILENCE_DETECT_PARAMS = 'silencedetect=noise=-60dB:d=0.5'
 
     def __init__(self, input_audio_path: str):
-        self._speech_start = 0.0
+        if not os.path.isfile(input_audio_path):
+            raise FileNotFoundError(f"Input audio file '{input_audio_path}' does not exist.")
+
+        self._speech_start = None
+        self._speech_end = None
         self._speech_segments = []
         self._input_audio_path = input_audio_path
+        self._input_audio_duration = float(ffmpeg.probe(self._input_audio_path)["format"]["duration"])
         self._joined_speeches_audio_path = _get_temp_file_path('joined_speeches.wav')
 
     @property
     def joined_speeches_audio_path(self):
         return self._joined_speeches_audio_path
 
-    def _prepare_speech_duration_from_time(self, time_string: str) -> dict:
-        time = float(time_string)
-        result = {}
-        if self._speech_start == 0.0:
-            # Set the start of a speech segment
-            self._speech_start = time - 0.2
+    def _prepare_speech_segments_from_time(self, silence_time: float, silence_time_type: str) -> None:
+        if silence_time_type == 'end':
+            # speech start is silence end, should not fall off 0
+            self._speech_start = max((silence_time - 0.2), 0)
+        elif silence_time_type == 'start' and silence_time != 0.0:
+            # speech end is silence start, should not be greater than audio duration
+            self._speech_end = min((silence_time + 0.2), self._input_audio_duration)
         else:
-            # Set the end of a speech segment and calculate duration
-            end = time + 0.2
-            duration = end - self._speech_start
-            result = {'start': self._speech_start, 'end': end, 'duration': duration}
-            self._speech_start = 0.0
-        return result
+            return
+
+        # add speech segment if we know speech start and end
+        # or if audio starts with sound, we must add 1st speech as segment from 0 to first silence start
+        if ((self._speech_start and self._speech_end)
+                or (not self._speech_start and not self._speech_segments and silence_time != 0.0)):
+            self._speech_segments.append({
+                'start': self._speech_start if self._speech_start else 0.0,
+                'end': self._speech_end,
+                'duration': (self._speech_end - (self._speech_start if self._speech_start else 0.0))}
+            )
+            self._speech_start = None
+            self._speech_end = None
+            return
 
     def _extract_speech_segments(self, contents: str) -> list:
-        output = []
-        matches = re.findall(r'silence_(start|end): (\d+\.\d+)', contents)
+        matches = re.findall(r'silence_(start|end): (\d+(\.\d+)?)', contents)
         for match in matches:
             time_string = match[1]
+            time_type = match[0]  # start or end
             if bool(re.match(r'^\d+(\.\d+)?$', time_string)):
-                duration = self._prepare_speech_duration_from_time(time_string)
-                if duration:
-                    output.append(duration)
-        return output
+                self._prepare_speech_segments_from_time(float(time_string), time_type)
+
+        # special case if no silence gaps were detected by ffmpeg
+        if not self._speech_segments:
+            self._speech_segments.append({
+                'start': 0.0,
+                'end': self._input_audio_duration,
+                'duration': self._input_audio_duration}
+            )
+        return self._speech_segments
 
     def extract_speeches(self):
         try:
