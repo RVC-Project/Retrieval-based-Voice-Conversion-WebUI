@@ -3,6 +3,8 @@ from typing import Union
 import os
 import sys
 from io import BytesIO
+
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 
 # don't like settings paths like this at all but due bad code its necessary
@@ -68,7 +70,8 @@ def infer(
         filter_radius: int = 3,
         resample_sr: int = 0,
         rms_mix_rate: float = 1,
-        protect: float = 0.33
+        protect: float = 0.33,
+        **kwargs
     ):
     model_name = model_name.replace(".pth", "")
 
@@ -78,6 +81,7 @@ def infer(
             raise ValueError(f"autinferred index_path {index_path} does not exist. Please provide a valid index_path")
 
     vc = model_cache.load_model(model_name, device=device, is_half=is_half)
+
     _, wav_opt = vc.vc_single(
         sid=0,
         input_audio_path=input,
@@ -90,16 +94,16 @@ def infer(
         filter_radius=filter_radius,
         resample_sr=resample_sr,
         rms_mix_rate=rms_mix_rate,
-        protect=protect,
+        protect=protect
     )
 
     # using virtual file to be able to return it as response
-    wf = BytesIO()  # StringIO()
+    wf = BytesIO()
     wavfile.write(wf, wav_opt[0], wav_opt[1])
     return wf
 
 
-@app.post("/", tags=["voice2voice"])
+@app.post("/voice2voice", tags=["voice2voice"])
 async def voice2voice(
     input_file: fastapi.UploadFile,
     model_name: str,
@@ -130,21 +134,15 @@ async def voice2voice(
     """
     audio_bytes = await input_file.read()
 
+    kwargs = locals()
+    kwargs["input"] = audio_bytes
+    del kwargs["input_file"]
+
     # call the infer function
-    wf = infer(
-        input=audio_bytes,
-        model_name=model_name,
-        index_path=index_path,
-        f0up_key=f0up_key,
-        f0method=f0method,
-        index_rate=index_rate,
-        device=device,
-        is_half=is_half,
-        filter_radius=filter_radius,
-        resample_sr=resample_sr,
-        rms_mix_rate=rms_mix_rate,
-        protect=protect
-    )
+    try:
+        wf = infer(**kwargs)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     return StreamingResponse(wf, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename=rvc.wav"})
 
@@ -180,22 +178,13 @@ async def voice2voice_local(
     :param rms_mix_rate: 1
     :param protect: 0.33
     """
+    kwargs = locals()
 
     # call the infer function
-    wf = infer(
-        input=input_path,
-        model_name=model_name,
-        index_path=index_path,
-        f0up_key=f0up_key,
-        f0method=f0method,
-        index_rate=index_rate,
-        device=device,
-        is_half=is_half,
-        filter_radius=filter_radius,
-        resample_sr=resample_sr,
-        rms_mix_rate=rms_mix_rate,
-        protect=protect
-    )
+    try:
+        wf = infer(**kwargs)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     # write to file if opt_path is provided
     if opt_path is not None:
@@ -207,7 +196,12 @@ async def voice2voice_local(
 
     return StreamingResponse(wf, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={out_name}"})
 
+@app.get("/status")
+def status():
+    return {"status": "ok"}
+
 # create model cache
 model_cache = ModelCache()
 # start uvicorn server
-uvicorn.run(app, host="localhost", port=8000)
+uvicorn.run(app, host="localhost", port=8001)
+
