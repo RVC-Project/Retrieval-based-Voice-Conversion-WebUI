@@ -203,7 +203,7 @@ class AudioProcessing:
                     self._normalized_input_audio,
                     af=self.LOUDNESS_NORMALIZATION_PARAMS
                 )
-                .run()
+                .run(overwrite_output=True)
             )
         except ffmpeg.Error as e:
             print('ffmpeg error')
