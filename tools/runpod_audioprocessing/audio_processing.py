@@ -78,6 +78,14 @@ class AudioProcessing:
                 'end': self._input_audio_duration,
                 'duration': self._input_audio_duration}
             )
+
+        # special case if no silence was detected at the end of audio
+        if self._speech_start and not self._speech_end:
+            self._speech_segments.append({
+                'start': self._speech_start,
+                'end': self._input_audio_duration,
+                'duration': self._input_audio_duration - self._speech_start}
+            )
         return self._speech_segments
 
     def extract_speeches(self):
