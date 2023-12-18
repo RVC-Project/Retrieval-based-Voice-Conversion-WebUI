@@ -23,6 +23,7 @@ def _remove_temp_files(pattern: str) -> None:
 
 class AudioProcessing:
     SILENCE_DETECT_PARAMS = 'silencedetect=noise=-60dB:d=0.5'
+    LOUDNESS_NORMALIZATION_PARAMS = 'loudnorm=I=-20:dual_mono=false:TP=-4:LRA=11:print_format=summary'
     SPEECH_SAFETY_PAD = 0.2
 
     def __init__(self, input_audio_path: str):
@@ -35,6 +36,9 @@ class AudioProcessing:
         self._input_audio_path = input_audio_path
         self._input_audio_duration = float(ffmpeg.probe(self._input_audio_path)["format"]["duration"])
         self._joined_speeches_audio_path = _get_temp_file_path('joined_speeches.wav')
+        self._normalized_input_audio = _get_temp_file_path('normalized_input_audio.wav')
+
+        self._normalize_input_audio()
 
     @property
     def joined_speeches_audio_path(self):
@@ -91,7 +95,7 @@ class AudioProcessing:
     def extract_speeches(self):
         try:
             out, err = (ffmpeg
-                        .input(self._input_audio_path)
+                        .input(self._normalized_input_audio)
                         .output('-', format='null', af=self.SILENCE_DETECT_PARAMS)
                         .run(capture_stdout=True, capture_stderr=True)
                         )
@@ -111,7 +115,7 @@ class AudioProcessing:
                 temp_segment_file = _get_temp_file_path("temp_" + str(segment['start']) + ".wav")
                 (
                     ffmpeg
-                    .input(self._input_audio_path, ss=segment['start'], to=segment['end'])
+                    .input(self._normalized_input_audio, ss=segment['start'], to=segment['end'])
                     .output(temp_segment_file)
                     .run(overwrite_output=True)
                 )
@@ -140,48 +144,67 @@ class AudioProcessing:
         if os.path.isfile(file_list):
             os.remove(file_list)
 
-        for segment in self._speech_segments:
-            # Calculate duration of silence before the speech segment
-            silence_duration = float(segment['start']) - current_position_in_original
+        try:
+            for segment in self._speech_segments:
+                # Calculate duration of silence before the speech segment
+                silence_duration = float(segment['start']) - current_position_in_original
 
-            # Create silent audio segment
-            if silence_duration > 0:
-                silence_file = _get_temp_file_path("silence_" + str(segment['start']) + ".wav")
-                cmd = [
-                    "ffmpeg",
-                    "-f", "lavfi",
-                    "-i", "anullsrc=r=48000:cl=mono",
-                    "-t", str(silence_duration),
-                    "-q:a", "9",
-                    silence_file
-                ]
-                subprocess.run(cmd, check=True)
-                _append_to_temp_file(file_list, f"file '{silence_file}'\n")
+                # Create silent audio segment
+                if silence_duration > 0:
+                    silence_file = _get_temp_file_path("silence_" + str(segment['start']) + ".wav")
+                    cmd = [
+                        "ffmpeg",
+                        "-f", "lavfi",
+                        "-i", "anullsrc=r=48000:cl=mono",
+                        "-t", str(silence_duration),
+                        "-q:a", "9",
+                        silence_file
+                    ]
+                    subprocess.run(cmd, check=True)
+                    _append_to_temp_file(file_list, f"file '{silence_file}'\n")
 
-            # Extract the speech segment from the joined file
-            speech_file = _get_temp_file_path("speech_" + str(segment['start']) + ".wav")
+                # Extract the speech segment from the joined file
+                speech_file = _get_temp_file_path("speech_" + str(segment['start']) + ".wav")
+                (
+                    ffmpeg
+                    .input(converted_file_no_silence, ss=str(current_position_in_joined), t=str(segment['duration']))
+                    .output(speech_file, ac=1, ar='48000')
+                    .run(overwrite_output=True)
+                )
+                _append_to_temp_file(file_list, f"file '{speech_file}'\n")
+
+                # Update the current positions
+                current_position_in_original = float(segment['end'])
+                current_position_in_joined += float(segment['duration'])
+
+            # Concatenate all segments
             (
                 ffmpeg
-                .input(converted_file_no_silence, ss=str(current_position_in_joined), t=str(segment['duration']))
-                .output(speech_file, ac=1, ar='48000')
+                .input(file_list, format='concat', safe=0)
+                .output(output_file, c='copy')
                 .run(overwrite_output=True)
             )
-            _append_to_temp_file(file_list, f"file '{speech_file}'\n")
 
-            # Update the current positions
-            current_position_in_original = float(segment['end'])
-            current_position_in_joined += float(segment['duration'])
+            # Clean up temporary files
+            for file in os.listdir(tempfile.gettempdir()):
+                if (file.startswith('silence_') or file.startswith('speech_')) and file.endswith('.wav'):
+                    os.remove(os.path.join(tempfile.gettempdir(), file))
+            os.remove(file_list)
+        except ffmpeg.Error as e:
+            print('ffmpeg error')
+            print(e.stderr.decode())
 
-        # Concatenate all segments
-        (
-            ffmpeg
-            .input(file_list, format='concat', safe=0)
-            .output(output_file, c='copy')
-            .run(overwrite_output=True)
-        )
-
-        # Clean up temporary files
-        for file in os.listdir(tempfile.gettempdir()):
-            if (file.startswith('silence_') or file.startswith('speech_')) and file.endswith('.wav'):
-                os.remove(os.path.join(tempfile.gettempdir(), file))
-        os.remove(file_list)
+    def _normalize_input_audio(self):
+        try:
+            (
+                ffmpeg
+                .input(self._input_audio_path)
+                .output(
+                    self._normalized_input_audio,
+                    af=self.LOUDNESS_NORMALIZATION_PARAMS
+                )
+                .run()
+            )
+        except ffmpeg.Error as e:
+            print('ffmpeg error')
+            print(e.stderr.decode())
