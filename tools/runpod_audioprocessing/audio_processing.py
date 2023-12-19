@@ -23,7 +23,7 @@ def _remove_temp_files(pattern: str) -> None:
 
 class AudioProcessing:
     SILENCE_DETECT_PARAMS = 'silencedetect=noise=-60dB:d=0.5'
-    LOUDNESS_NORMALIZATION_PARAMS = 'loudnorm=I=-20:dual_mono=false:TP=-4:LRA=11:print_format=summary'
+    LOUDNESS_NORMALIZATION_PARAMS = 'loudnorm=I=-20:dual_mono=false:TP=-1:LRA=11:print_format=summary'
     SPEECH_SAFETY_PAD = 0.2
 
     def __init__(self, input_audio_path: str):
@@ -36,9 +36,6 @@ class AudioProcessing:
         self._input_audio_path = input_audio_path
         self._input_audio_duration = float(ffmpeg.probe(self._input_audio_path)["format"]["duration"])
         self._joined_speeches_audio_path = _get_temp_file_path('joined_speeches.wav')
-        self._normalized_input_audio = _get_temp_file_path('normalized_input_audio.wav')
-
-        self._normalize_input_audio()
 
     @property
     def joined_speeches_audio_path(self):
@@ -92,22 +89,22 @@ class AudioProcessing:
             )
         return self._speech_segments
 
-    def extract_speeches(self):
+    def extract_speeches(self) -> None:
         try:
             out, err = (ffmpeg
-                        .input(self._normalized_input_audio)
+                        .input(self._input_audio_path)
                         .output('-', format='null', af=self.SILENCE_DETECT_PARAMS)
                         .run(capture_stdout=True, capture_stderr=True)
                         )
             # The ffmpeg command prints the output of the -af silencedetect option to stderr and not to stdout.
             # This is part of its design and not due to an error.
             ffmpeg_output = err.decode()
-            self._speech_segments = self._extract_speech_segments(ffmpeg_output)
+            self._extract_speech_segments(ffmpeg_output)
         except ffmpeg.Error as e:
             print('ffmpeg error')
             print(e.stderr.decode())
 
-    def join_speech_segments(self):
+    def join_speech_segments(self) -> None:
         temp_file_list = _get_temp_file_path('temp_file_list.txt')
 
         try:
@@ -115,8 +112,11 @@ class AudioProcessing:
                 temp_segment_file = _get_temp_file_path("temp_" + str(segment['start']) + ".wav")
                 (
                     ffmpeg
-                    .input(self._normalized_input_audio, ss=segment['start'], to=segment['end'])
-                    .output(temp_segment_file)
+                    .input(self._input_audio_path, ss=segment['start'], to=segment['end'])
+                    .output(
+                        temp_segment_file,
+                        af=self.LOUDNESS_NORMALIZATION_PARAMS
+                    )
                     .run(overwrite_output=True)
                 )
                 _append_to_temp_file(temp_file_list, f"file '{temp_segment_file}'\n")
@@ -136,7 +136,7 @@ class AudioProcessing:
             print('ffmpeg error')
             print(e.stderr.decode())
 
-    def restore_speeches_timing(self, converted_file_no_silence: str, output_file: str):
+    def restore_speeches_timing(self, converted_file_no_silence: str, output_file: str) -> None:
         # Initialize variables
         current_position_in_original = 0.0
         current_position_in_joined = 0.0
@@ -190,21 +190,6 @@ class AudioProcessing:
                 if (file.startswith('silence_') or file.startswith('speech_')) and file.endswith('.wav'):
                     os.remove(os.path.join(tempfile.gettempdir(), file))
             os.remove(file_list)
-        except ffmpeg.Error as e:
-            print('ffmpeg error')
-            print(e.stderr.decode())
-
-    def _normalize_input_audio(self):
-        try:
-            (
-                ffmpeg
-                .input(self._input_audio_path)
-                .output(
-                    self._normalized_input_audio,
-                    af=self.LOUDNESS_NORMALIZATION_PARAMS
-                )
-                .run(overwrite_output=True)
-            )
         except ffmpeg.Error as e:
             print('ffmpeg error')
             print(e.stderr.decode())
