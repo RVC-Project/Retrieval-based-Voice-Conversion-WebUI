@@ -22,7 +22,7 @@ def _remove_temp_files(pattern: str) -> None:
 
 
 class AudioProcessing:
-    SILENCE_DETECT_PARAMS = 'silencedetect=noise=-60dB:d=0.5'
+    SILENCE_DETECT_PARAMS = 'silencedetect=noise=-50dB:d=0.5'
     LOUDNESS_NORMALIZATION_PARAMS = 'loudnorm=I=-20:dual_mono=false:TP=-1:LRA=11:print_format=summary'
     SPEECH_SAFETY_PAD = 0.2
 
