@@ -43,11 +43,11 @@ def process(job):
         ap.join_speech_segments()
 
         # we need to be able to bypass auto pitch correction if needed
-        if job_input["bypass_auto_pitch"]:
+        if job_input.has_key("bypass_auto_pitch") and job_input["bypass_auto_pitch"] == True:
             pitch_correction_semitones = 0
         else:
             #  provide model's fundamental frequency in a request payload
-            model_f0m = job_input["model_f0m"] if job_input["model_f0m"] else 0.0
+            model_f0m = job_input["model_f0m"] if job_input.has_key("model_f0m") else 0.0
             pitch_correction_semitones = ap.get_auto_pitch_correction(model_f0m)
 
         config = Config()
@@ -77,10 +77,10 @@ def process(job):
     else:
         return {
             "converted": s3_converted_filepath,
-            "auto_pitch_correction_bypassed": job_input["bypass_auto_pitch"] if job_input[
-                "bypass_auto_pitch"] else False,
+            "auto_pitch_correction_bypassed": job_input["bypass_auto_pitch"] if job_input.has_key(
+                "bypass_auto_pitch") else False,
             "pitch_correction_semitones": pitch_correction_semitones,
-            "model_f0m": job_input["model_f0m"] if job_input["model_f0m"] else 0,
+            "model_f0m": job_input["model_f0m"] if job_input.has_key("model_f0m") else 0,
             "input_audio_f0m": ap.joined_speeches_audio_f0m
         }
 
