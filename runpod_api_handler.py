@@ -75,7 +75,11 @@ def process(job):
     except Exception as e:
         return {"error": f'Operation failed: {e}'}
     else:
-        return {"converted": s3_converted_filepath}
+        return {
+            "converted": s3_converted_filepath,
+            "auto_pitch_correction_bypassed": job_input["bypass_auto_pitch"],
+            "pitch_correction_semitones": pitch_correction_semitones
+        }
 
 
 runpod.serverless.start({"handler": process})
