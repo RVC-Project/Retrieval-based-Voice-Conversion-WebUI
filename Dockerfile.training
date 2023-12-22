@@ -29,4 +29,6 @@ COPY infer/lib/rmvpe.py ./infer/lib/rmvpe.py
 COPY tools/app.py ./tools/app.py
 COPY infer/modules/uvr5 ./infer/modules/uvr5
 COPY infer/modules/vc ./infer/modules/vc
+COPY tools/runpod_audioprocessing ./tools/runpod_audioprocessing
+COPY audio_processing_cli.py ./audio_processing_cli.py
 CMD [ "/start.sh" ]
