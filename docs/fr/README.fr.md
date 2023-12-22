@@ -74,12 +74,12 @@ Ou vous pouvez utiliser pip pour installer les dépendances :
 ```bash
 Cartes Nvidia :
 
-pip install -r requirements.txt
+pip install -r ./assets/requirements/requirements.txt
 
 Cartes AMD/Intel :
 pip install -
 
-r requirements-dml.txt
+r ./assets/requirements/requirements-dml.txt
 
 ```
 

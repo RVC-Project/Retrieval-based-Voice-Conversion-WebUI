@@ -79,16 +79,16 @@ poetry install
 
 ```bash
 N卡：
-  pip install -r requirements.txt
+  pip install -r ./assets/requirements/requirements.txt
 
 A卡/I卡：
-  pip install -r requirements-dml.txt
+  pip install -r ./assets/requirements/requirements-dml.txt
 
 A卡Rocm（Linux）：
-  pip install -r requirements-amd.txt
+  pip install -r ./assets/requirements/requirements-amd.txt
 
 I卡IPEX（Linux）：
-  pip install -r requirements-ipex.txt
+  pip install -r ./assets/requirements/requirements-ipex.txt
 ```
 
 ---

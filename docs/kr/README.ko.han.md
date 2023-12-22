@@ -65,7 +65,7 @@ poetry install
 pip를 活用하여依存를 設置하여도 無妨합니다.
 
 ```bash
-pip install -r requirements.txt
+pip install -r ./assets/requirements/requirements.txt
 ```
 
 ## 其他預備모델準備

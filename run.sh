@@ -14,7 +14,7 @@ if [ -d ".venv" ]; then
   source .venv/bin/activate
 else
   echo "Create venv..."
-  requirements_file="requirements.txt"
+  requirements_file="./assets/requirements/requirements.txt"
 
   # Check if Python 3.8 is installed
   if ! command -v python3 &> /dev/null; then

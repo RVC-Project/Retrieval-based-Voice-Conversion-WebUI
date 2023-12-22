@@ -65,7 +65,7 @@ poetry install
 pipでも依存関係のインストールが可能です:
 
 ```bash
-pip install -r requirements.txt
+pip install -r ./assets/requirements/requirements.txt
 ```
 
 ## 基底modelsを準備

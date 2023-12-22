@@ -81,16 +81,16 @@ You can also use pip to install them:
 ```bash
 
 for Nvidia graphics cards
-  pip install -r requirements.txt
+  pip install -r ./assets/requirements/requirements.txt
 
 for AMD/Intel graphics cards on Windows (DirectML)：
-  pip install -r requirements-dml.txt
+  pip install -r ./assets/requirements/requirements-dml.txt
 
 for Intel ARC graphics cards on Linux / WSL using Python 3.10: 
-  pip install -r requirements-ipex.txt
+  pip install -r ./assets/requirements/requirements-ipex.txt
 
 for AMD graphics cards on Linux (ROCm):
-  pip install -r requirements-amd.txt
+  pip install -r ./assets/requirements/requirements-amd.txt
 ```
 
 ------
