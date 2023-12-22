@@ -3,8 +3,7 @@
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
 Un framework simple et facile à utiliser pour la conversion vocale (modificateur de voix) basé sur VITS<br><br>
 
-[![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
-)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
+[![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
@@ -18,9 +17,9 @@ Un framework simple et facile à utiliser pour la conversion vocale (modificateu
 
 </div>
 
-------
+---
 
-[**English**](./docs/en/README.en.md) |[ **中文简体**](./docs/cn/README.md) | [**日本語**](./docs/jp/README.ja.md) | [**한국어**](./docs/kr/README.ko.md) ([**韓國語**](./docs/kr/README.ko.han.md)) | [**Turc**](./docs/tr/README.tr.md) 
+[**English**](./README.md) | [**中文简体**](./docs/cn/README.cn.md) | [**日本語**](./docs/jp/README.ja.md) | [**한국어**](./docs/kr/README.ko.md) ([**韓國語**](./docs/kr/README.ko.han.md)) | [**Türkçe**](./docs/tr/README.tr.md) | [**Français**](./docs/fr/README.fr.md)
 
 Cliquez ici pour voir notre [vidéo de démonstration](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
@@ -31,21 +30,25 @@ Cliquez ici pour voir notre [vidéo de démonstration](https://www.bilibili.com/
 > Attendez-vous au modèle de base RVCv3 : plus de paramètres, plus de données, de meilleurs résultats, une vitesse d'inférence presque identique, et nécessite moins de données pour la formation.
 
 ## Introduction
+
 Ce dépôt a les caractéristiques suivantes :
-+ Utilise le top1 pour remplacer les caractéristiques de la source d'entrée par les caractéristiques de l'ensemble d'entraînement pour éliminer les fuites de timbre vocal.
-+ Peut être formé rapidement même sur une carte graphique relativement moins performante.
-+ Obtient de bons résultats même avec peu de données pour la formation (il est recommandé de collecter au moins 10 minutes de données vocales avec un faible bruit de fond).
-+ Peut changer le timbre vocal en fusionnant des modèles (avec l'aide de l'onglet ckpt-merge).
-+ Interface web simple et facile à utiliser.
-+ Peut appeler le modèle UVR5 pour séparer rapidement la voix et l'accompagnement.
-+ Utilise l'algorithme de pitch vocal le plus avancé [InterSpeech2023-RMVPE](#projets-référencés) pour éliminer les problèmes de voix muette. Meilleurs résultats, plus rapide que crepe_full, et moins gourmand en ressources.
-+ Support d'accélération pour les cartes A et I.
+
+- Utilise le top1 pour remplacer les caractéristiques de la source d'entrée par les caractéristiques de l'ensemble d'entraînement pour éliminer les fuites de timbre vocal.
+- Peut être formé rapidement même sur une carte graphique relativement moins performante.
+- Obtient de bons résultats même avec peu de données pour la formation (il est recommandé de collecter au moins 10 minutes de données vocales avec un faible bruit de fond).
+- Peut changer le timbre vocal en fusionnant des modèles (avec l'aide de l'onglet ckpt-merge).
+- Interface web simple et facile à utiliser.
+- Peut appeler le modèle UVR5 pour séparer rapidement la voix et l'accompagnement.
+- Utilise l'algorithme de pitch vocal le plus avancé [InterSpeech2023-RMVPE](#projets-référencés) pour éliminer les problèmes de voix muette. Meilleurs résultats, plus rapide que crepe_full, et moins gourmand en ressources.
+- Support d'accélération pour les cartes A et I.
 
 ## Configuration de l'environnement
+
 Exécutez les commandes suivantes dans un environnement Python de version supérieure à 3.8.
 
 (Windows/Linux)  
 Installez d'abord les dépendances principales via pip :
+
 ```bash
 # Installez Pytorch et ses dépendances essentielles, sautez si déjà installé.
 # Voir : https://pytorch.org/get-started/locally/
@@ -56,6 +59,7 @@ pip install torch torchvision torchaudio
 ```
 
 Vous pouvez utiliser poetry pour installer les dépendances :
+
 ```bash
 # Installez l'outil de gestion des dépendances Poetry, sautez si déjà installé.
 # Voir : https://python-poetry.org/docs/#installation
@@ -66,34 +70,39 @@ poetry install
 ```
 
 Ou vous pouvez utiliser pip pour installer les dépendances :
+
 ```bash
 Cartes Nvidia :
 
-pip install -r requirements.txt
+pip install -r ./assets/requirements/requirements.txt
 
 Cartes AMD/Intel :
 pip install -
 
-r requirements-dml.txt
+r ./assets/requirements/requirements-dml.txt
 
 ```
 
-------
+---
+
 Les utilisateurs de Mac peuvent exécuter `run.sh` pour installer les dépendances :
+
 ```bash
 sh ./run.sh
 ```
 
 ## Préparation d'autres modèles pré-entraînés
+
 RVC nécessite d'autres modèles pré-entraînés pour l'inférence et la formation.
 
 Vous pouvez télécharger ces modèles depuis notre [espace Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
 
 Voici une liste des modèles et autres fichiers requis par RVC :
+
 ```bash
 ./assets/hubert/hubert_base.pt
 
-./assets/pretrained 
+./assets/pretrained
 
 ./assets/uvr5_weights
 
@@ -120,7 +129,9 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
     https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
 
 ```
+
 Ensuite, exécutez la commande suivante pour démarrer WebUI :
+
 ```bash
 python infer-web.py
 ```
@@ -130,17 +141,19 @@ Si vous utilisez Windows ou macOS, vous pouvez télécharger et extraire `RVC-be
 Il y a également un `Guide facile pour les débutants.doc` inclus pour référence.
 
 ## Crédits
-+ [ContentVec](https://github.com/auspicious3000/contentvec/)
-+ [VITS](https://github.com/jaywalnut310/vits)
-+ [HIFIGAN](https://github.com/jik876/hifi-gan)
-+ [Gradio](https://github.com/gradio-app/gradio)
-+ [FFmpeg](https://github.com/FFmpeg/FFmpeg)
-+ [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
-+ [audio-slicer](https://github.com/openvpi/audio-slicer)
-+ [Extraction de la hauteur vocale : RMVPE](https://github.com/Dream-High/RMVPE)
-  + Le modèle pré-entraîné a été formé et testé par [yxlllc](https://github.com/yxlllc/RMVPE) et [RVC-Boss](https://github.com/RVC-Boss).
+
+- [ContentVec](https://github.com/auspicious3000/contentvec/)
+- [VITS](https://github.com/jaywalnut310/vits)
+- [HIFIGAN](https://github.com/jik876/hifi-gan)
+- [Gradio](https://github.com/gradio-app/gradio)
+- [FFmpeg](https://github.com/FFmpeg/FFmpeg)
+- [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
+- [audio-slicer](https://github.com/openvpi/audio-slicer)
+- [Extraction de la hauteur vocale : RMVPE](https://github.com/Dream-High/RMVPE)
+  - Le modèle pré-entraîné a été formé et testé par [yxlllc](https://github.com/yxlllc/RMVPE) et [RVC-Boss](https://github.com/RVC-Boss).
 
 ## Remerciements à tous les contributeurs pour leurs efforts
+
 <a href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=RVC-Project/Retrieval-based-Voice-Conversion-WebUI" />
 </a>

@@ -1,5 +1,5 @@
 ### 2023-10-06
-- We have created a GUI for real-time voice change: go-realtime-gui.bat/gui_v1.py (Note that you should choose the same type of input and output device, e.g. MME and MME).
+- We have created a GUI for real-time voice change: go-realtime-gui.bat/realtime-gui.py (Note that you should choose the same type of input and output device, e.g. MME and MME).
 - We trained a better pitch extract RMVPE model.
 - Optimize inference GUI layout.
 

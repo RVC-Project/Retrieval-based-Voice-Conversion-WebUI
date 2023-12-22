@@ -3,8 +3,7 @@
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
 VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<br><br>
 
-[![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
-)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
+[![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
@@ -20,7 +19,7 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 [**업데이트 로그**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_KO.md)
 
-[**English**](../en/README.en.md) | [**中文简体**](../../README.md) | [**日本語**](../jp/README.ja.md) | [**한국어**](../kr/README.ko.md) ([**韓國語**](../kr/README.ko.han.md)) | [**Türkçe**](../tr/README.tr.md)
+[**English**](./README.md) | [**中文简体**](./docs/cn/README.cn.md) | [**日本語**](./docs/jp/README.ja.md) | [**한국어**](./docs/kr/README.ko.md) ([**韓國語**](./docs/kr/README.ko.han.md)) | [**Türkçe**](./docs/tr/README.tr.md) | [**Français**](./docs/fr/README.fr.md)
 
 > [데모 영상](https://www.bilibili.com/video/BV1pm4y1z7Gm/)을 확인해 보세요!
 
@@ -66,7 +65,7 @@ poetry install
 pip를 활용하여 dependencies를 설치하여도 무방합니다.
 
 ```bash
-pip install -r requirements.txt
+pip install -r ./assets/requirements/requirements.txt
 ```
 
 ## 기타 사전 모델 준비
@@ -80,7 +79,7 @@ RVC 모델은 추론과 훈련을 위하여 다른 사전 모델이 필요합니
 ```bash
 ./assets/hubert/hubert_base.pt
 
-./assets/pretrained 
+./assets/pretrained
 
 ./assets/uvr5_weights
 

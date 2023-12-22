@@ -21,3 +21,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The relevant referenced library protocols are listed below:
+
+ContentVec (MIT License)
+https://github.com/auspicious3000/contentvec/blob/main/LICENSE
+
+VITS (MIT License)
+https://github.com/jaywalnut310/vits/blob/main/LICENSE
+
+HIFIGAN (MIT License)
+https://github.com/jik876/hifi-gan/blob/master/LICENSE
+
+gradio (Apache License 2.0)
+https://github.com/gradio-app/gradio/blob/main/LICENSE
+
+ffmpeg (LPGLv3 License & MIT License)
+https://github.com/FFmpeg/FFmpeg/blob/master/COPYING.LGPLv3
+https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2021-02-28-12-32/ffmpeg-n4.3.2-160-gfbb9368226-win64-lgpl-4.3.zip
+
+ultimatevocalremovergui (MIT License)
+https://github.com/Anjok07/ultimatevocalremovergui/blob/master/LICENSE
+https://github.com/yang123qwe/vocal_separation_by_uvr5
+
+audio-slicer (MIT License
+)
+https://github.com/openvpi/audio-slicer/blob/main/LICENSE
+
+PySimpleGUI (LPGLv3 License)
+https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt
