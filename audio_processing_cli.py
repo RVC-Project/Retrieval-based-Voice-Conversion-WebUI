@@ -1,6 +1,10 @@
 import argparse
+import os
+import sys
 
 from tools.runpod_audioprocessing import *
+
+sys.path.append(os.getcwd())
 
 
 def get_f0m(audio_file_path: str) -> None:

@@ -23,10 +23,15 @@ class AudioProcessing:
         self._input_audio_path = input_audio_path
         self._input_audio_duration = float(ffmpeg.probe(self._input_audio_path)["format"]["duration"])
         self._joined_speeches_audio_path = AudioProcessingUtils.get_temp_file_path('joined_speeches.wav')
+        self._joined_speeches_audio_f0m = 0
 
     @property
     def joined_speeches_audio_path(self):
         return self._joined_speeches_audio_path
+
+    @property
+    def joined_speeches_audio_f0m(self):
+        return self._joined_speeches_audio_f0m
 
     def _prepare_speech_segments_from_time(self, silence_time: float, silence_time_type: str) -> None:
         if silence_time_type == 'end':
@@ -124,8 +129,8 @@ class AudioProcessing:
             print(e.stderr.decode())
 
     def get_auto_pitch_correction(self, model_f0m: float) -> int:
-        input_audio_f0m = AudioProcessingUtils.get_fundamental_frequency(self._joined_speeches_audio_path)
-        return AudioProcessingUtils.semitone_distance(model_f0m, input_audio_f0m)
+        self._joined_speeches_audio_f0m = AudioProcessingUtils.get_fundamental_frequency(self._joined_speeches_audio_path)
+        return AudioProcessingUtils.semitone_distance(model_f0m, self._joined_speeches_audio_f0m)
 
     def restore_speeches_timing(self, converted_file_no_silence: str, output_file: str) -> None:
         # Initialize variables
