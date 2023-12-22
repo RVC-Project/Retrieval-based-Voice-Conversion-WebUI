@@ -1,4 +1,3 @@
-import glob
 import os
 import re
 import subprocess
@@ -6,19 +5,7 @@ import tempfile
 
 import ffmpeg
 
-
-def _get_temp_file_path(name: str) -> str:
-    return os.path.join(tempfile.gettempdir(), name)
-
-
-def _append_to_temp_file(temp_file_list: str, line: str) -> None:
-    with open(temp_file_list, 'a') as f:
-        f.write(line)
-
-
-def _remove_temp_files(pattern: str) -> None:
-    for temp_file in glob.glob(os.path.join(tempfile.gettempdir(), pattern)):
-        os.remove(temp_file)
+from tools.runpod_audioprocessing.utils import AudioProcessingUtils
 
 
 class AudioProcessing:
@@ -35,7 +22,7 @@ class AudioProcessing:
         self._speech_segments = []
         self._input_audio_path = input_audio_path
         self._input_audio_duration = float(ffmpeg.probe(self._input_audio_path)["format"]["duration"])
-        self._joined_speeches_audio_path = _get_temp_file_path('joined_speeches.wav')
+        self._joined_speeches_audio_path = AudioProcessingUtils.get_temp_file_path('joined_speeches.wav')
 
     @property
     def joined_speeches_audio_path(self):
@@ -105,11 +92,11 @@ class AudioProcessing:
             print(e.stderr.decode())
 
     def join_speech_segments(self) -> None:
-        temp_file_list = _get_temp_file_path('temp_file_list.txt')
+        temp_file_list = AudioProcessingUtils.get_temp_file_path('temp_file_list.txt')
 
         try:
             for segment in self._speech_segments:
-                temp_segment_file = _get_temp_file_path("temp_" + str(segment['start']) + ".wav")
+                temp_segment_file = AudioProcessingUtils.get_temp_file_path("temp_" + str(segment['start']) + ".wav")
                 (
                     ffmpeg
                     .input(self._input_audio_path, ss=segment['start'], to=segment['end'])
@@ -119,7 +106,7 @@ class AudioProcessing:
                     )
                     .run(overwrite_output=True)
                 )
-                _append_to_temp_file(temp_file_list, f"file '{temp_segment_file}'\n")
+                AudioProcessingUtils.append_to_temp_file(temp_file_list, f"file '{temp_segment_file}'\n")
 
             # Concatenate all segments
             (
@@ -130,17 +117,21 @@ class AudioProcessing:
             )
 
             # Clean up temporary files
-            _remove_temp_files('temp_*.wav')
+            AudioProcessingUtils.remove_temp_files('temp_*.wav')
             os.remove(temp_file_list)
         except ffmpeg.Error as e:
             print('ffmpeg error')
             print(e.stderr.decode())
 
+    def get_auto_pitch_correction(self, model_f0m: float) -> int:
+        input_audio_f0m = AudioProcessingUtils.get_fundamental_frequency(self._joined_speeches_audio_path)
+        return AudioProcessingUtils.semitone_distance(model_f0m, input_audio_f0m)
+
     def restore_speeches_timing(self, converted_file_no_silence: str, output_file: str) -> None:
         # Initialize variables
         current_position_in_original = 0.0
         current_position_in_joined = 0.0
-        file_list = _get_temp_file_path('file_list.txt')
+        file_list = AudioProcessingUtils.get_temp_file_path('file_list.txt')
         if os.path.isfile(file_list):
             os.remove(file_list)
 
@@ -151,7 +142,7 @@ class AudioProcessing:
 
                 # Create silent audio segment
                 if silence_duration > 0:
-                    silence_file = _get_temp_file_path("silence_" + str(segment['start']) + ".wav")
+                    silence_file = AudioProcessingUtils.get_temp_file_path("silence_" + str(segment['start']) + ".wav")
                     cmd = [
                         "ffmpeg",
                         "-f", "lavfi",
@@ -161,17 +152,17 @@ class AudioProcessing:
                         silence_file
                     ]
                     subprocess.run(cmd, check=True)
-                    _append_to_temp_file(file_list, f"file '{silence_file}'\n")
+                    AudioProcessingUtils.append_to_temp_file(file_list, f"file '{silence_file}'\n")
 
                 # Extract the speech segment from the joined file
-                speech_file = _get_temp_file_path("speech_" + str(segment['start']) + ".wav")
+                speech_file = AudioProcessingUtils.get_temp_file_path("speech_" + str(segment['start']) + ".wav")
                 (
                     ffmpeg
                     .input(converted_file_no_silence, ss=str(current_position_in_joined), t=str(segment['duration']))
                     .output(speech_file, ac=1, ar='48000')
                     .run(overwrite_output=True)
                 )
-                _append_to_temp_file(file_list, f"file '{speech_file}'\n")
+                AudioProcessingUtils.append_to_temp_file(file_list, f"file '{speech_file}'\n")
 
                 # Update the current positions
                 current_position_in_original = float(segment['end'])

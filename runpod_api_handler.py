@@ -42,13 +42,21 @@ def process(job):
         ap.extract_speeches()
         ap.join_speech_segments()
 
+        # we need to be able to bypass auto pitch correction if needed
+        if job_input["bypass_auto_pitch"]:
+            pitch_correction_semitones = 0
+        else:
+            #  provide model's fundamental frequency in a request payload
+            model_f0m = job_input["model_f0m"] if job_input["model_f0m"] else 0.0
+            pitch_correction_semitones = ap.get_auto_pitch_correction(model_f0m)
+
         config = Config()
         vc = VC(config)
         vc.get_vc(model_name)
         _, wav_opt = vc.vc_single(
             0,
             ap.joined_speeches_audio_path,
-            job_input["f0up_key"],
+            job_input["f0up_key"] + pitch_correction_semitones,
             None,
             job_input["f0method"],
             index_path if os.path.isfile(index_path) else '',
