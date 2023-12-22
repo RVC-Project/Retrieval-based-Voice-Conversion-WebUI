@@ -77,7 +77,8 @@ def process(job):
     else:
         return {
             "converted": s3_converted_filepath,
-            "auto_pitch_correction_bypassed": job_input["bypass_auto_pitch"],
+            "auto_pitch_correction_bypassed": job_input["bypass_auto_pitch"] if job_input[
+                "bypass_auto_pitch"] else False,
             "pitch_correction_semitones": pitch_correction_semitones,
             "model_f0m": job_input["model_f0m"] if job_input["model_f0m"] else 0,
             "input_audio_f0m": ap.joined_speeches_audio_f0m
