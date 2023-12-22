@@ -51,7 +51,7 @@ else
 fi
 
 # Download models
-./tools/dlmodels.sh
+python3 ./tools/download_models.py
 
 if [[ $? -ne 0 ]]; then
   exit 1
