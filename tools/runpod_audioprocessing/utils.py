@@ -7,6 +7,7 @@ import math
 import numpy as np
 import soundfile as sf
 import torch
+import statistics as stats
 from dotenv import load_dotenv
 
 from infer.lib.rmvpe import RMVPE
@@ -50,7 +51,13 @@ class AudioProcessingUtils:
             rmvpe = RMVPE(os.path.join(os.environ["RMVPE_ROOT"],
                                        'rmvpe.pt'), is_half=False, device=device)
             f0 = rmvpe.infer_from_audio(audio, thred=thred)
-            median = np.median(f0)
-            return median
+            f0_nonzero = f0[f0 != 0]
+            # median_nonzero = np.median(f0_nonzero)
+            # median = np.median(f0)
+            mode_nonzero = stats.multimode(np.round(f0_nonzero))
+            # mode = stats.multimode(np.round(f0))
+            # print(f"F0 with 0s: median value is {round(median, 2)}Hz, mode value is {np.average(mode)}Hz")
+            # print(f"F0 array without 0s: median value is {round(median_nonzero, 2)}Hz, mode value is {np.average(mode_nonzero)}Hz")
+            return np.average(mode_nonzero)
         else:
             return 0
