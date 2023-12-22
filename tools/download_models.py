@@ -73,4 +73,4 @@ if __name__ == "__main__":
         print(f"Downloading {model}...")
         download_model(RVC_DOWNLOAD_LINK + "uvr5_weights/", model, UVR5_WEIGHTS_DIR)
 
-    print("All models downloaded!")
+    print("\nAll models downloaded!")
