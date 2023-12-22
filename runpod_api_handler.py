@@ -47,7 +47,7 @@ def process(job):
             pitch_correction_semitones = 0
         else:
             #  provide model's fundamental frequency in a request payload
-            model_f0m = job_input["model_f0m"] if job_input.has_key("model_f0m") else 0.0
+            model_f0m = job_input["model_f0m"] if "model_f0m" in job_input else 0.0
             pitch_correction_semitones = ap.get_auto_pitch_correction(model_f0m)
 
         config = Config()
