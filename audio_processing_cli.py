@@ -2,6 +2,9 @@ import argparse
 import os
 import sys
 
+now_dir = os.getcwd()
+sys.path.append(now_dir)
+
 from tools.runpod_audioprocessing import *
 
 sys.path.append(os.getcwd())
