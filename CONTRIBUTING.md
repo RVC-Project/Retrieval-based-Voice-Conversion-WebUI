@@ -6,6 +6,6 @@
 
 # Contributing Rules
 1. Generally, the author, `@RVC-Boss`, will reject all algorithm changes unless it is to fix a code-level error or warning.
-2. You can contribute translations and WebUI, but please make minimal your changes as much as possible.
+2. You can contribute translations and WebUI, but please minimize your changes as much as possible.
 3. All changes need to be approved by `@RVC-Boss`, so your PR may be put on hold.
 4. Please accept our apologies for any inconvenience caused.
