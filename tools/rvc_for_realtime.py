@@ -90,7 +90,9 @@ class RVC:
             self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
-
+            self.cache_pitch: np.ndarray = np.zeros(1024, dtype="int32")
+            self.cache_pitchf = np.zeros(1024, dtype="float32")
+            
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
@@ -329,8 +331,9 @@ class RVC:
             sr=16000,
             decoder_mode='local_argmax',
             threshold=0.006,
-        ).squeeze().cpu().numpy()
+        )
         f0 *= pow(2, f0_up_key / 12)
+        f0 = f0.squeeze().cpu().numpy()
         return self.get_f0_post(f0)
 
     def infer(
@@ -338,8 +341,7 @@ class RVC:
             input_wav: torch.Tensor,
             block_frame_16k,
             skip_head,
-            cache_pitch,
-            cache_pitchf,
+            return_length,
             f0method,
     ) -> np.ndarray:
         t1 = ttime()
@@ -362,24 +364,22 @@ class RVC:
         t2 = ttime()
         try:
             if hasattr(self, "index") and self.index_rate != 0:
-                leng_replace_head = int(rate * feats[0].shape[0])
-                npy = feats[0][-leng_replace_head:].cpu().numpy().astype("float32")
+                npy = feats[0][skip_head // 2:].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
                 weight = np.square(1 / score)
                 weight /= weight.sum(axis=1, keepdims=True)
                 npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
                 if self.config.is_half:
                     npy = npy.astype("float16")
-                feats[0][-leng_replace_head:] = (
+                feats[0][skip_head // 2:] = (
                         torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
-                        + (1 - self.index_rate) * feats[0][-leng_replace_head:]
+                        + (1 - self.index_rate) * feats[0][skip_head // 2:]
                 )
             else:
                 printt("Index search FAILED or disabled")
         except:
             traceback.print_exc()
             printt("Index search FAILED")
-        feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         t3 = ttime()
         if self.if_f0 == 1:
             f0_extractor_frame = block_frame_16k + 800
@@ -387,40 +387,39 @@ class RVC:
                 f0_extractor_frame = (
                     5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
                 )
-            input_wav = input_wav[-f0_extractor_frame:]
-            pitch, pitchf = self.get_f0(input_wav, self.f0_up_key, self.n_cpu, f0method)
+            pitch, pitchf = self.get_f0(input_wav[-f0_extractor_frame: ], self.f0_up_key, self.n_cpu, f0method)
             start_frame = block_frame_16k // 160
-            end_frame = len(cache_pitch) - (pitch.shape[0] - 4) + start_frame
-            cache_pitch[:] = np.append(cache_pitch[start_frame:end_frame], pitch[3:-1])
-            cache_pitchf[:] = np.append(
-                cache_pitchf[start_frame:end_frame], pitchf[3:-1]
+            end_frame = len(self.cache_pitch) - (pitch.shape[0] - 4) + start_frame
+            self.cache_pitch[:] = np.append(self.cache_pitch[start_frame: end_frame], pitch[3:-1])
+            self.cache_pitchf[:] = np.append(
+                self.cache_pitchf[start_frame: end_frame], pitchf[3:-1]
             )
-            p_len = min(feats.shape[1], 13000, cache_pitch.shape[0])
-        else:
-            cache_pitch, cache_pitchf = None, None
-            p_len = min(feats.shape[1], 13000)
         t4 = ttime()
-        feats = feats[:, :p_len, :]
+        p_len = input_wav.shape[0] // 160
         if self.if_f0 == 1:
-            cache_pitch = torch.LongTensor(cache_pitch[:p_len]).to(self.device).unsqueeze(0)
-            cache_pitchf = torch.FloatTensor(cache_pitchf[:p_len]).to(self.device).unsqueeze(0)
+            cache_pitch = torch.LongTensor(self.cache_pitch[-p_len: ]).to(self.device).unsqueeze(0)
+            cache_pitchf = torch.FloatTensor(self.cache_pitchf[-p_len: ]).to(self.device).unsqueeze(0)
+        feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
+        feats = feats[:, :p_len, :]
         p_len = torch.LongTensor([p_len]).to(self.device)
         sid = torch.LongTensor([0]).to(self.device)
         skip_head = torch.LongTensor([skip_head])
+        return_length = torch.LongTensor([return_length])
         with torch.no_grad():
             if self.if_f0 == 1:
-                infered_audio = self.net_g.infer(
+                infered_audio, _, _ = self.net_g.infer(
                     feats,
                     p_len,
                     cache_pitch,
                     cache_pitchf,
                     sid,
                     skip_head,
-                )[0][0, 0].data.float()
+                    return_length,
+                )
             else:
-                infered_audio = self.net_g.infer(
-                    feats, p_len, sid, skip_head
-                )[0][0, 0].data.float()
+                infered_audio, _, _ = self.net_g.infer(
+                    feats, p_len, sid, skip_head, return_length
+                )
         t5 = ttime()
         printt(
             "Spent time: fea = %.3fs, index = %.3fs, f0 = %.3fs, model = %.3fs",
@@ -429,4 +428,4 @@ class RVC:
             t4 - t3,
             t5 - t4,
         )
-        return infered_audio
+        return infered_audio.squeeze().float()

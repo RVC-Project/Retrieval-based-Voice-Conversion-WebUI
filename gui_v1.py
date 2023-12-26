@@ -681,14 +681,6 @@ if __name__ == "__main__":
                 device=self.config.device,
                 dtype=torch.float32,
             )
-            self.pitch: np.ndarray = np.zeros(
-                self.input_wav.shape[0] // self.zc,
-                dtype="int32",
-            )
-            self.pitchf: np.ndarray = np.zeros(
-                self.input_wav.shape[0] // self.zc,
-                dtype="float64",
-            )
             self.sola_buffer: torch.Tensor = torch.zeros(
                 self.sola_buffer_frame, device=self.config.device, dtype=torch.float32
             )
@@ -698,6 +690,7 @@ if __name__ == "__main__":
                 2 * self.zc, device=self.config.device, dtype=torch.float32
             )
             self.skip_head = self.extra_frame // self.zc
+            self.return_length = (self.block_frame + self.sola_buffer_frame + self.sola_search_frame) // self.zc
             self.fade_in_window: torch.Tensor = (
                 torch.sin(
                     0.5
@@ -808,8 +801,7 @@ if __name__ == "__main__":
                     self.input_wav_res,
                     self.block_frame_16k,
                     self.skip_head,
-                    self.pitch,
-                    self.pitchf,
+                    self.return_length,
                     self.gui_config.f0method,
                 )
                 if self.resampler2 is not None:
@@ -879,9 +871,7 @@ if __name__ == "__main__":
             else:
                 sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
             printt("sola_offset = %d", int(sola_offset))
-            infer_wav = infer_wav[
-                sola_offset : sola_offset + self.block_frame + self.crossfade_frame
-            ]
+            infer_wav = infer_wav[sola_offset :]
             if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
                 infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
                 infer_wav[: self.sola_buffer_frame] += self.sola_buffer * self.fade_out_window
@@ -894,11 +884,11 @@ if __name__ == "__main__":
             self.sola_buffer[:] = infer_wav[self.block_frame : self.block_frame + self.sola_buffer_frame]
             if sys.platform == "darwin":
                 outdata[:] = (
-                    infer_wav[: -self.crossfade_frame].cpu().numpy()[:, np.newaxis]
+                    infer_wav[: self.block_frame].cpu().numpy()[:, np.newaxis]
                 )
             else:
                 outdata[:] = (
-                    infer_wav[: -self.crossfade_frame].repeat(2, 1).t().cpu().numpy()
+                    infer_wav[: self.block_frame].repeat(2, 1).t().cpu().numpy()
                 )
             total_time = time.perf_counter() - start_time
             self.window["infer_time"].update(int(total_time * 1000))
