@@ -307,14 +307,14 @@ class AudioPreDeEcho:
                 sf.write(
                     os.path.join(
                         ins_root,
-                        "instrument_{}_{}.{}".format(name, self.data["agg"], format),
+                        "vocal_{}_{}.{}".format(name, self.data["agg"], format),
                     ),
                     (np.array(wav_instrument) * 32768).astype("int16"),
                     self.mp.param["sr"],
                 )  #
             else:
                 path = os.path.join(
-                    ins_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
+                    ins_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
                 )
                 sf.write(
                     path,
@@ -344,14 +344,14 @@ class AudioPreDeEcho:
                 sf.write(
                     os.path.join(
                         vocal_root,
-                        "vocal_{}_{}.{}".format(name, self.data["agg"], format),
+                        "instrument_{}_{}.{}".format(name, self.data["agg"], format),
                     ),
                     (np.array(wav_vocals) * 32768).astype("int16"),
                     self.mp.param["sr"],
                 )
             else:
                 path = os.path.join(
-                    vocal_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
+                    vocal_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
                 )
                 sf.write(
                     path,

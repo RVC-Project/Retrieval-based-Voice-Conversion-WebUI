@@ -149,7 +149,7 @@ class ResidualCouplingBlock(nn.Module):
                 x, _ = flow(x, x_mask, g=g, reverse=reverse)
         else:
             for flow in reversed(self.flows):
-                x = flow(x, x_mask, g=g, reverse=reverse)
+                x, _ = flow(x, x_mask, g=g, reverse=reverse)
         return x
 
     def remove_weight_norm(self):
