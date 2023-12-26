@@ -38,10 +38,14 @@ def phase_vocoder(a, b, fade_out, fade_in):
     deltaphase = deltaphase - 2 * np.pi * torch.floor(deltaphase / 2 / np.pi + 0.5)
     w = 2 * np.pi * torch.arange(n // 2 + 1).to(a) + deltaphase
     t = torch.arange(n).unsqueeze(-1).to(a) / n
-    result = a * (fade_out ** 2) + b * (fade_in ** 2) + torch.sum(absab * torch.cos(w * t + phia), -1) * window / n
+    result = (
+        a * (fade_out**2)
+        + b * (fade_in**2)
+        + torch.sum(absab * torch.cos(w * t + phia), -1) * window / n
+    )
     return result
 
-    
+
 class Harvest(multiprocessing.Process):
     def __init__(self, inp_q, opt_q):
         multiprocessing.Process.__init__(self)
@@ -592,11 +596,11 @@ if __name__ == "__main__":
             self.gui_config.pth_path = values["pth_path"]
             self.gui_config.index_path = values["index_path"]
             self.gui_config.sr_type = ["sr_model", "sr_device"][
-                                [
-                                    values["sr_model"],
-                                    values["sr_device"],
-                                ].index(True)
-                            ]
+                [
+                    values["sr_model"],
+                    values["sr_device"],
+                ].index(True)
+            ]
             self.gui_config.threhold = values["threhold"]
             self.gui_config.pitch = values["pitch"]
             self.gui_config.block_time = values["block_time"]
@@ -633,7 +637,11 @@ if __name__ == "__main__":
                 self.config,
                 self.rvc if hasattr(self, "rvc") else None,
             )
-            self.gui_config.samplerate = self.rvc.tgt_sr if self.gui_config.sr_type == "sr_model" else self.get_device_samplerate()
+            self.gui_config.samplerate = (
+                self.rvc.tgt_sr
+                if self.gui_config.sr_type == "sr_model"
+                else self.get_device_samplerate()
+            )
             self.zc = self.gui_config.samplerate // 100
             self.block_frame = (
                 int(
@@ -690,7 +698,9 @@ if __name__ == "__main__":
                 2 * self.zc, device=self.config.device, dtype=torch.float32
             )
             self.skip_head = self.extra_frame // self.zc
-            self.return_length = (self.block_frame + self.sola_buffer_frame + self.sola_search_frame) // self.zc
+            self.return_length = (
+                self.block_frame + self.sola_buffer_frame + self.sola_search_frame
+            ) // self.zc
             self.fade_in_window: torch.Tensor = (
                 torch.sin(
                     0.5
@@ -824,7 +834,11 @@ if __name__ == "__main__":
             # volume envelop mixing
             if self.gui_config.rms_mix_rate < 1 and self.function == "vc":
                 rms1 = librosa.feature.rms(
-                    y=self.input_wav_res[160 * self.skip_head : 160 * (self.skip_head + self.return_length)]
+                    y=self.input_wav_res[
+                        160
+                        * self.skip_head : 160
+                        * (self.skip_head + self.return_length)
+                    ]
                     .cpu()
                     .numpy(),
                     frame_length=640,
@@ -871,21 +885,24 @@ if __name__ == "__main__":
             else:
                 sola_offset = torch.argmax(cor_nom[0, 0] / cor_den[0, 0])
             printt("sola_offset = %d", int(sola_offset))
-            infer_wav = infer_wav[sola_offset :]
+            infer_wav = infer_wav[sola_offset:]
             if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
                 infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
-                infer_wav[: self.sola_buffer_frame] += self.sola_buffer * self.fade_out_window
+                infer_wav[: self.sola_buffer_frame] += (
+                    self.sola_buffer * self.fade_out_window
+                )
             else:
                 infer_wav[: self.sola_buffer_frame] = phase_vocoder(
-                                                        self.sola_buffer,
-                                                        infer_wav[: self.sola_buffer_frame],
-                                                        self.fade_out_window,
-                                                        self.fade_in_window)
-            self.sola_buffer[:] = infer_wav[self.block_frame : self.block_frame + self.sola_buffer_frame]
-            if sys.platform == "darwin":
-                outdata[:] = (
-                    infer_wav[: self.block_frame].cpu().numpy()[:, np.newaxis]
+                    self.sola_buffer,
+                    infer_wav[: self.sola_buffer_frame],
+                    self.fade_out_window,
+                    self.fade_in_window,
                 )
+            self.sola_buffer[:] = infer_wav[
+                self.block_frame : self.block_frame + self.sola_buffer_frame
+            ]
+            if sys.platform == "darwin":
+                outdata[:] = infer_wav[: self.block_frame].cpu().numpy()[:, np.newaxis]
             else:
                 outdata[:] = (
                     infer_wav[: self.block_frame].repeat(2, 1).t().cpu().numpy()
@@ -930,7 +947,7 @@ if __name__ == "__main__":
                 input_devices_indices,
                 output_devices_indices,
             )
-                    
+
         def set_devices(self, input_device, output_device):
             """设置输出设备"""
             (
@@ -947,8 +964,10 @@ if __name__ == "__main__":
             ]
             printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
             printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
-        
+
         def get_device_samplerate(self):
-            return int(sd.query_devices(device=sd.default.device[0])['default_samplerate'])
-            
+            return int(
+                sd.query_devices(device=sd.default.device[0])["default_samplerate"]
+            )
+
     gui = GUI()
