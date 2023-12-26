@@ -46,22 +46,23 @@ def printt(strr, *args):
 # config.is_half=False########强制cpu测试
 class RVC:
     def __init__(
-            self,
-            key,
-            pth_path,
-            index_path,
-            index_rate,
-            n_cpu,
-            inp_q,
-            opt_q,
-            config: Config,
-            last_rvc=None,
+        self,
+        key,
+        pth_path,
+        index_path,
+        index_rate,
+        n_cpu,
+        inp_q,
+        opt_q,
+        config: Config,
+        last_rvc=None,
     ) -> None:
         """
         初始化
         """
         try:
             if config.dml == True:
+
                 def forward_dml(ctx, x, scale):
                     ctx.scale = scale
                     res = x.clone().detach()
@@ -92,7 +93,7 @@ class RVC:
             self.index_rate = index_rate
             self.cache_pitch: np.ndarray = np.zeros(1024, dtype="int32")
             self.cache_pitchf = np.zeros(1024, dtype="float32")
-            
+
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
@@ -201,7 +202,7 @@ class RVC:
         f0bak = f0.copy()
         f0_mel = 1127 * np.log(1 + f0 / 700)
         f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
-                self.f0_mel_max - self.f0_mel_min
+            self.f0_mel_max - self.f0_mel_min
         ) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
@@ -258,7 +259,7 @@ class RVC:
                 self.inp_q.put((idx, x[:tail], res_f0, n_cpu, ts))
             else:
                 self.inp_q.put(
-                    (idx, x[part_length * idx - 320: tail], res_f0, n_cpu, ts)
+                    (idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts)
                 )
         while 1:
             res_ts = self.opt_q.get()
@@ -273,7 +274,7 @@ class RVC:
             else:
                 f0 = f0[2:]
             f0bak[
-            part_length * idx // 160: part_length * idx // 160 + f0.shape[0]
+                part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]
             ] = f0
         f0bak = signal.medfilt(f0bak, 3)
         f0bak *= pow(2, f0_up_key / 12)
@@ -320,6 +321,7 @@ class RVC:
     def get_f0_fcpe(self, x, f0_up_key):
         if hasattr(self, "model_fcpe") == False:
             from torchfcpe import spawn_bundled_infer_model
+
             printt("Loading fcpe model")
             if "privateuseone" in str(self.device):
                 self.device_fcpe = "cpu"
@@ -329,7 +331,7 @@ class RVC:
         f0 = self.model_fcpe.infer(
             x.to(self.device_fcpe).unsqueeze(0).float(),
             sr=16000,
-            decoder_mode='local_argmax',
+            decoder_mode="local_argmax",
             threshold=0.006,
         )
         f0 *= pow(2, f0_up_key / 12)
@@ -337,12 +339,12 @@ class RVC:
         return self.get_f0_post(f0)
 
     def infer(
-            self,
-            input_wav: torch.Tensor,
-            block_frame_16k,
-            skip_head,
-            return_length,
-            f0method,
+        self,
+        input_wav: torch.Tensor,
+        block_frame_16k,
+        skip_head,
+        return_length,
+        f0method,
     ) -> np.ndarray:
         t1 = ttime()
         with torch.no_grad():
@@ -364,16 +366,16 @@ class RVC:
         t2 = ttime()
         try:
             if hasattr(self, "index") and self.index_rate != 0:
-                npy = feats[0][skip_head // 2:].cpu().numpy().astype("float32")
+                npy = feats[0][skip_head // 2 :].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
                 weight = np.square(1 / score)
                 weight /= weight.sum(axis=1, keepdims=True)
                 npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
                 if self.config.is_half:
                     npy = npy.astype("float16")
-                feats[0][skip_head // 2:] = (
-                        torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
-                        + (1 - self.index_rate) * feats[0][skip_head // 2:]
+                feats[0][skip_head // 2 :] = (
+                    torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
+                    + (1 - self.index_rate) * feats[0][skip_head // 2 :]
                 )
             else:
                 printt("Index search FAILED or disabled")
@@ -384,21 +386,29 @@ class RVC:
         if self.if_f0 == 1:
             f0_extractor_frame = block_frame_16k + 800
             if f0method == "rmvpe":
-                f0_extractor_frame = (
-                    5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
-                )
-            pitch, pitchf = self.get_f0(input_wav[-f0_extractor_frame: ], self.f0_up_key, self.n_cpu, f0method)
+                f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
+            pitch, pitchf = self.get_f0(
+                input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method
+            )
             start_frame = block_frame_16k // 160
             end_frame = len(self.cache_pitch) - (pitch.shape[0] - 4) + start_frame
-            self.cache_pitch[:] = np.append(self.cache_pitch[start_frame: end_frame], pitch[3:-1])
+            self.cache_pitch[:] = np.append(
+                self.cache_pitch[start_frame:end_frame], pitch[3:-1]
+            )
             self.cache_pitchf[:] = np.append(
-                self.cache_pitchf[start_frame: end_frame], pitchf[3:-1]
+                self.cache_pitchf[start_frame:end_frame], pitchf[3:-1]
             )
         t4 = ttime()
         p_len = input_wav.shape[0] // 160
         if self.if_f0 == 1:
-            cache_pitch = torch.LongTensor(self.cache_pitch[-p_len: ]).to(self.device).unsqueeze(0)
-            cache_pitchf = torch.FloatTensor(self.cache_pitchf[-p_len: ]).to(self.device).unsqueeze(0)
+            cache_pitch = (
+                torch.LongTensor(self.cache_pitch[-p_len:]).to(self.device).unsqueeze(0)
+            )
+            cache_pitchf = (
+                torch.FloatTensor(self.cache_pitchf[-p_len:])
+                .to(self.device)
+                .unsqueeze(0)
+            )
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]
         p_len = torch.LongTensor([p_len]).to(self.device)

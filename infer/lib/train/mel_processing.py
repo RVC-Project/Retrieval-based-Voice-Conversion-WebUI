@@ -38,6 +38,7 @@ def spectral_de_normalize_torch(magnitudes):
 mel_basis = {}
 hann_window = {}
 
+
 def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False):
     """Convert waveform into Linear-frequency Linear-amplitude spectrogram.
 
@@ -51,7 +52,7 @@ def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False)
     Returns:
         :: (B, Freq, Frame) - Linear-frequency Linear-amplitude spectrogram
     """
-    
+
     # Window - Cache if needed
     global hann_window
     dtype_device = str(y.dtype) + "_" + str(y.device)
@@ -60,7 +61,7 @@ def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False)
         hann_window[wnsize_dtype_device] = torch.hann_window(win_size).to(
             dtype=y.dtype, device=y.device
         )
-    
+
     # Padding
     y = torch.nn.functional.pad(
         y.unsqueeze(1),
@@ -68,7 +69,7 @@ def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False)
         mode="reflect",
     )
     y = y.squeeze(1)
-    
+
     # Complex Spectrogram :: (B, T) -> (B, Freq, Frame, RealComplex=2)
     spec = torch.stft(
         y,
@@ -82,10 +83,11 @@ def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False)
         onesided=True,
         return_complex=True,
     )
-    
+
     # Linear-frequency Linear-amplitude spectrogram :: (B, Freq, Frame, RealComplex=2) -> (B, Freq, Frame)
     spec = torch.sqrt(spec.real.pow(2) + spec.imag.pow(2) + 1e-6)
     return spec
+
 
 def spec_to_mel_torch(spec, n_fft, num_mels, sampling_rate, fmin, fmax):
     # MelBasis - Cache if needed
