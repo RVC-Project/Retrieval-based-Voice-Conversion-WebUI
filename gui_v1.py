@@ -533,7 +533,7 @@ if __name__ == "__main__":
                             + 0.01
                         )
                         if values["I_noise_reduce"]:
-                            self.delay_time += values["crossfade_length"]
+                            self.delay_time += min(values["crossfade_length"], 0.04)
                         self.window["sr_stream"].update(self.gui_config.samplerate)
                         self.window["delay_time"].update(int(self.delay_time * 1000))
                 if event == "stop_vc" and self.flag_vc == True:
