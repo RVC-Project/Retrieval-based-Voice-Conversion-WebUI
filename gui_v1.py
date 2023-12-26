@@ -559,7 +559,7 @@ if __name__ == "__main__":
                     if stream_latency > 0:
                         self.delay_time += (
                             1 if values["I_noise_reduce"] else -1
-                        ) * values["crossfade_length"]
+                        ) * min(values["crossfade_length"], 0.04)
                         self.window["delay_time"].update(int(self.delay_time * 1000))
                 elif event == "O_noise_reduce":
                     self.gui_config.O_noise_reduce = values["O_noise_reduce"]
@@ -774,7 +774,7 @@ if __name__ == "__main__":
             # input noise reduction and resampling
             if self.gui_config.I_noise_reduce and self.function == "vc":
                 input_wav = self.input_wav[
-                    -self.crossfade_frame - self.block_frame - 2 * self.zc :
+                    -self.sola_buffer_frame - self.block_frame - 2 * self.zc :
                 ]
                 input_wav = self.tg(
                     input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
@@ -783,7 +783,7 @@ if __name__ == "__main__":
                 input_wav[: self.sola_buffer_frame] += (
                     self.nr_buffer * self.fade_out_window
                 )
-                self.nr_buffer[:] = input_wav[self.block_frame : self.block_frame + self.sola_buffer_frame]
+                self.nr_buffer[:] = input_wav[self.block_frame :]
                 input_wav = torch.cat(
                     (self.res_buffer[:], input_wav[: self.block_frame])
                 )
@@ -824,7 +824,7 @@ if __name__ == "__main__":
             # volume envelop mixing
             if self.gui_config.rms_mix_rate < 1 and self.function == "vc":
                 rms1 = librosa.feature.rms(
-                    y=self.input_wav_res[-160 * infer_wav.shape[0] // self.zc :]
+                    y=self.input_wav_res[160 * self.skip_head : 160 * (self.skip_head + self.return_length)]
                     .cpu()
                     .numpy(),
                     frame_length=640,
