@@ -28,9 +28,9 @@
 
 ![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/092e5c12-0d49-4168-a590-0b0ef6a4f630)
 
-实时变声界面：go-realtime-gui.bat
+实时变声界面：go-realtime-gui.bat(我们已经实现端到端170ms延迟。如使用ASIO输入输出设备，已能实现端到端90ms延迟，但非常依赖硬件驱动支持。)
 
-![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/143246a9-8b42-4dd1-a197-430ede4d15d7)
+![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/730b4114-8805-44a1-ab1a-04668f3c30a6)
 
 > 底模使用接近50小时的开源高质量VCTK训练集训练，无版权方面的顾虑，请大家放心使用
 
