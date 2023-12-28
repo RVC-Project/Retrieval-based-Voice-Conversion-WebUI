@@ -186,8 +186,6 @@ sh ./run.sh
 source /opt/intel/oneapi/setvars.sh
 ```
 
-仓库内还有一份[小白简易教程.doc](/docs/小白简易教程.doc)以供参考。
-
 ## 参考项目
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)
