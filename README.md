@@ -24,14 +24,24 @@
 
 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
-训练推理界面：go-web.bat
-
-![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/092e5c12-0d49-4168-a590-0b0ef6a4f630)
-
-实时变声界面：go-realtime-gui.bat(我们已经实现端到端170ms延迟。如使用ASIO输入输出设备，已能实现端到端90ms延迟，但非常依赖硬件驱动支持。)
-
-![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/730b4114-8805-44a1-ab1a-04668f3c30a6)
-
+<table>
+   <tr>
+		<td align="center">训练推理界面</td>
+		<td align="center">实时变声界面</td>
+	</tr>
+  <tr>
+		<td align="center"><img src="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/092e5c12-0d49-4168-a590-0b0ef6a4f630"></td>
+    <td align="center"><img src="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/730b4114-8805-44a1-ab1a-04668f3c30a6"></td>
+	</tr>
+	<tr>
+		<td align="center">go-web.bat</td>
+		<td align="center">go-realtime-gui.bat</td>
+	</tr>
+  <tr>
+    <td align="center">可以自由选择想要执行的操作。</td>
+		<td align="center">我们已经实现端到端170ms延迟。如使用ASIO输入输出设备，已能实现端到端90ms延迟，但非常依赖硬件驱动支持。</td>
+	</tr>
+</table>
 
 > 底模使用接近50小时的开源高质量VCTK训练集训练，无版权方面的顾虑，请大家放心使用
 
