@@ -149,7 +149,7 @@ brew install ffmpeg
 
 - 下载[rmvpe.onnx](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
 
-## 4. AMD显卡Rocm(可选, 仅Linux)
+### 4. AMD显卡Rocm(可选, 仅Linux)
 如果你想基于AMD的Rocm技术在Linux系统上运行RVC，请先在[这里](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)安装所需的驱动。
 
 若你使用的是Arch Linux，可以使用pacman来安装所需驱动：
