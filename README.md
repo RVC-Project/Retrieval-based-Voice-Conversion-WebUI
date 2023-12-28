@@ -147,8 +147,6 @@ python infer-web.py
 
 对于需要使用IPEX技术的I卡用户，请先在终端执行`source /opt/intel/oneapi/setvars.sh`（仅Linux）。
 
-仓库内还有一份`小白简易教程.doc`以供参考。
-
 ## AMD显卡Rocm相关（仅Linux）
 如果你想基于AMD的Rocm技术在Linux系统上运行RVC，请先在[这里](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)安装所需的驱动。
 
