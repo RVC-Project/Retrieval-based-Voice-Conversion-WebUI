@@ -14,6 +14,7 @@ import multiprocessing
 
 flag_vc = False
 
+
 def printt(strr, *args):
     if len(args) == 0:
         print(strr)
@@ -135,7 +136,7 @@ if __name__ == "__main__":
             self.delay_time = 0
             self.input_devices = None
             self.output_devices = None
-            self.input_devices_indices = None 
+            self.input_devices_indices = None
             self.output_devices_indices = None
             self.stream = None
             self.update_devices()
@@ -153,16 +154,24 @@ if __name__ == "__main__":
                     data["rmvpe"] = data["f0method"] == "rmvpe"
                     data["fcpe"] = data["f0method"] == "fcpe"
                     if data["sg_input_device"] not in self.input_devices:
-                        data["sg_input_device"] = self.input_devices[self.input_devices_indices.index(sd.default.device[0])]
+                        data["sg_input_device"] = self.input_devices[
+                            self.input_devices_indices.index(sd.default.device[0])
+                        ]
                     if data["sg_output_device"] not in self.output_devices:
-                        data["sg_output_device"] = self.output_devices[self.output_devices_indices.index(sd.default.device[1])]
+                        data["sg_output_device"] = self.output_devices[
+                            self.output_devices_indices.index(sd.default.device[1])
+                        ]
             except:
                 with open("configs/config.json", "w") as j:
                     data = {
                         "pth_path": "",
                         "index_path": "",
-                        "sg_input_device": self.input_devices[self.input_devices_indices.index(sd.default.device[0])],
-                        "sg_output_device": self.output_devices[self.output_devices_indices.index(sd.default.device[1])],
+                        "sg_input_device": self.input_devices[
+                            self.input_devices_indices.index(sd.default.device[0])
+                        ],
+                        "sg_output_device": self.output_devices[
+                            self.output_devices_indices.index(sd.default.device[1])
+                        ],
                         "sr_type": "sr_model",
                         "threhold": -60,
                         "pitch": 0,
@@ -567,7 +576,7 @@ if __name__ == "__main__":
                 elif event == "stop_vc" or event != "start_vc":
                     # Other parameters do not support hot update
                     self.stop_stream()
-                
+
         def set_values(self, values):
             if len(values["pth_path"].strip()) == 0:
                 sg.popup(i18n("请选择pth文件"))
@@ -726,7 +735,7 @@ if __name__ == "__main__":
                 sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
             ).to(self.config.device)
             self.start_stream()
-           
+
         def start_stream(self):
             global flag_vc
             if not flag_vc:
@@ -737,7 +746,8 @@ if __name__ == "__main__":
                     callback=self.audio_callback,
                     blocksize=self.block_frame,
                     samplerate=self.gui_config.samplerate,
-                    dtype="float32")
+                    dtype="float32",
+                )
                 self.stream.start()
 
         def stop_stream(self):
@@ -748,7 +758,7 @@ if __name__ == "__main__":
                     self.stream.stop()
                     self.stream.close()
                     self.stream = None
-                
+
         def audio_callback(
             self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
         ):
@@ -937,7 +947,7 @@ if __name__ == "__main__":
                 for d in devices
                 if d["max_output_channels"] > 0
             ]
-                    
+
         def set_devices(self, input_device, output_device):
             """设置输出设备"""
             sd.default.device[0] = self.input_devices_indices[
@@ -948,8 +958,10 @@ if __name__ == "__main__":
             ]
             printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
             printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
-        
+
         def get_device_samplerate(self):
-            return int(sd.query_devices(device=sd.default.device[0])['default_samplerate'])
-            
+            return int(
+                sd.query_devices(device=sd.default.device[0])["default_samplerate"]
+            )
+
     gui = GUI()
