@@ -192,6 +192,7 @@ if __name__ == "__main__":
                     data["crepe"] = data["f0method"] == "crepe"
                     data["rmvpe"] = data["f0method"] == "rmvpe"
                     data["fcpe"] = data["f0method"] == "fcpe"
+                    json.dump(data, j)
             return data
 
         def launcher(self):
