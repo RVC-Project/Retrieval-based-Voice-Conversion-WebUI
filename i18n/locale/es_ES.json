@@ -129,7 +129,7 @@
     "采样长度": "Longitud de muestreo",
     "重载设备列表": "Actualizar lista de dispositivos",
     "音调设置": "Ajuste de tono",
-    "音频设备(请使用同种类驱动)": "Dispositivo de audio (utilice el mismo tipo de controlador)",
+    "音频设备": "Dispositivo de audio",
     "音高算法": "Algoritmo de tono",
     "额外推理时长": "Tiempo de inferencia adicional"
 }

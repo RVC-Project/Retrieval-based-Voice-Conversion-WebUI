@@ -129,7 +129,7 @@
     "采样长度": "Longueur de l'échantillon",
     "重载设备列表": "Recharger la liste des dispositifs",
     "音调设置": "Réglages de la hauteur",
-    "音频设备(请使用同种类驱动)": "Périphérique audio (veuillez utiliser le même type de pilote)",
+    "音频设备": "Périphérique audio",
     "音高算法": "algorithme de détection de la hauteur",
     "额外推理时长": "Temps d'inférence supplémentaire"
 }

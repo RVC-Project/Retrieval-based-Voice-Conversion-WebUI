@@ -129,7 +129,7 @@
     "采样长度": "Lunghezza del campione",
     "重载设备列表": "Ricaricare l'elenco dei dispositivi",
     "音调设置": "Impostazioni del tono",
-    "音频设备(请使用同种类驱动)": "Dispositivo audio (utilizzare lo stesso tipo di driver)",
+    "音频设备": "Dispositivo audio",
     "音高算法": "音高算法",
     "额外推理时长": "Tempo di inferenza extra"
 }
