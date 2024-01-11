@@ -344,7 +344,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s %s'
             % (
                 config.python_cmd,
                 config.device,
@@ -354,6 +354,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 now_dir,
                 exp_dir,
                 version19,
+                config.is_half,
             )
         )
         logger.info(cmd)
