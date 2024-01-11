@@ -46,7 +46,7 @@ httpx
 onnxruntime; sys_platform == 'darwin'
 onnxruntime-gpu; sys_platform != 'darwin'
 torchcrepe==0.0.20
-fastapi==0.88
+fastapi
 ffmpy==0.3.1
 python-dotenv>=1.0.0
 av
