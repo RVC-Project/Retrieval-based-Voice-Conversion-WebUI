@@ -42,7 +42,7 @@ httpx
 onnxruntime
 onnxruntime-gpu
 torchcrepe==0.0.20
-fastapi==0.88
+fastapi
 ffmpy==0.3.1
 python-dotenv>=1.0.0
 av
