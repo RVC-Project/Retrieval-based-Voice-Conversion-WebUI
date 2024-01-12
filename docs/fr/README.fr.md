@@ -39,10 +39,10 @@ Ce dépôt a les caractéristiques suivantes :
 + Interface web simple et facile à utiliser.
 + Peut appeler le modèle UVR5 pour séparer rapidement la voix et l'accompagnement.
 + Utilise l'algorithme de pitch vocal le plus avancé [InterSpeech2023-RMVPE](#projets-référencés) pour éliminer les problèmes de voix muette. Meilleurs résultats, plus rapide que crepe_full, et moins gourmand en ressources.
-+ Support d'accélération pour les cartes A et I.
++ Support d'accélération pour les cartes AMD et Intel.
 
 ## Configuration de l'environnement
-Exécutez les commandes suivantes dans un environnement Python de version supérieure à 3.8.
+Exécutez les commandes suivantes dans un environnement Python de version 3.8 ou supérieure.
 
 (Windows/Linux)  
 Installez d'abord les dépendances principales via pip :
@@ -52,7 +52,10 @@ Installez d'abord les dépendances principales via pip :
 pip install torch torchvision torchaudio
 
 # Pour les utilisateurs de Windows avec une architecture Nvidia Ampere (RTX30xx), en se basant sur l'expérience #21, spécifiez la version CUDA correspondante pour Pytorch.
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+
+# Pour Linux + carte AMD, utilisez cette version de Pytorch:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2
 ```
 
 Vous pouvez utiliser poetry pour installer les dépendances :
@@ -67,15 +70,17 @@ poetry install
 
 Ou vous pouvez utiliser pip pour installer les dépendances :
 ```bash
-Cartes Nvidia :
-
+# Cartes Nvidia :
 pip install -r requirements.txt
 
-Cartes AMD/Intel :
-pip install -
+# Cartes AMD/Intel :
+pip install -r requirements-dml.txt
 
-r requirements-dml.txt
+# Cartes Intel avec IPEX
+pip install -r requirements-ipex.txt
 
+# Cartes AMD sur Linux (ROCm)
+pip install -r requirements-amd.txt
 ```
 
 ------
@@ -87,7 +92,12 @@ sh ./run.sh
 ## Préparation d'autres modèles pré-entraînés
 RVC nécessite d'autres modèles pré-entraînés pour l'inférence et la formation.
 
-Vous pouvez télécharger ces modèles depuis notre [espace Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
+```bash
+#Télécharger tous les modèles depuis https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/
+python tools/download_models.py
+```
+
+Ou vous pouvez télécharger ces modèles depuis notre [espace Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
 
 Voici une liste des modèles et autres fichiers requis par RVC :
 ```bash
@@ -97,29 +107,30 @@ Voici une liste des modèles et autres fichiers requis par RVC :
 
 ./assets/uvr5_weights
 
-Pour tester la version v2 du modèle, téléchargez également :
+# Pour tester la version v2 du modèle, téléchargez également :
 
 ./assets/pretrained_v2
 
-Si vous utilisez Windows, vous pourriez avoir besoin de ces fichiers pour ffmpeg et ffprobe, sautez cette étape si vous avez déjà installé ffmpeg et ffprobe. Les utilisateurs d'ubuntu/debian peuvent installer ces deux bibliothèques avec apt install ffmpeg. Les utilisateurs de Mac peuvent les installer avec brew install ffmpeg (prérequis : avoir installé brew).
+# Si vous utilisez Windows, vous pourriez avoir besoin de ces fichiers pour ffmpeg et ffprobe, sautez cette étape si vous avez déjà installé ffmpeg et ffprobe. Les utilisateurs d'ubuntu/debian peuvent installer ces deux bibliothèques avec apt install ffmpeg. Les utilisateurs de Mac peuvent les installer avec brew install ffmpeg (prérequis : avoir installé brew).
 
-./ffmpeg
+# ./ffmpeg
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe
 
-./ffprobe
+# ./ffprobe
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
 
-Si vous souhaitez utiliser le dernier algorithme RMVPE de pitch vocal, téléchargez les paramètres du modèle de pitch et placez-les dans le répertoire racine de RVC.
+# Si vous souhaitez utiliser le dernier algorithme RMVPE de pitch vocal, téléchargez les paramètres du modèle de pitch et placez-les dans le répertoire racine de RVC.
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
 
-    Les utilisateurs de cartes AMD/Intel nécessitant l'environnement DML doivent télécharger :
+    # Les utilisateurs de cartes AMD/Intel nécessitant l'environnement DML doivent télécharger :
 
     https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
 
 ```
+Pour les utilisateurs d'Intel ARC avec IPEX, exécutez d'abord `source /opt/intel/oneapi/setvars.sh`.
 Ensuite, exécutez la commande suivante pour démarrer WebUI :
 ```bash
 python infer-web.py
@@ -127,7 +138,28 @@ python infer-web.py
 
 Si vous utilisez Windows ou macOS, vous pouvez télécharger et extraire `RVC-beta.7z`. Les utilisateurs de Windows peuvent exécuter `go-web.bat` pour démarrer WebUI, tandis que les utilisateurs de macOS peuvent exécuter `sh ./run.sh`.
 
-Il y a également un `Guide facile pour les débutants.doc` inclus pour référence.
+## Compatibilité ROCm pour les cartes AMD (seulement Linux)
+Installez tous les pilotes décrits [ici](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html).
+
+Sur Arch utilisez pacman pour installer le pilote:
+````
+pacman -S rocm-hip-sdk rocm-opencl-sdk
+````
+
+Vous devrez peut-être créer ces variables d'environnement (par exemple avec RX6700XT):
+````
+export ROCM_PATH=/opt/rocm
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+````
+Assurez-vous que votre utilisateur est dans les groupes `render` et `video`:
+````
+sudo usermod -aG render $USERNAME
+sudo usermod -aG video $USERNAME
+````
+Enfin vous pouvez exécuter WebUI:
+```bash
+python infer-web.py
+```
 
 ## Crédits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
