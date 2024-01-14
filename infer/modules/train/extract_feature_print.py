@@ -51,10 +51,10 @@ def printt(strr):
     f.flush()
 
 
-printt(sys.argv)
+printt(" ".join(sys.argv))
 model_path = "assets/hubert/hubert_base.pt"
 
-printt(exp_dir)
+printt("exp_dir: " + exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
 outPath = (
     "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
@@ -116,7 +116,9 @@ else:
                 feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
-                    "source": feats.half().to(device) if is_half and device not in ["mps", "cpu"] else feats.to(device),
+                    "source": feats.half().to(device)
+                    if is_half and device not in ["mps", "cpu"]
+                    else feats.to(device),
                     "padding_mask": padding_mask.to(device),
                     "output_layer": 9 if version == "v1" else 12,  # layer 9
                 }

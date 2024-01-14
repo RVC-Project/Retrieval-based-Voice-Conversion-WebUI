@@ -14,23 +14,32 @@ An easy-to-use Voice Conversion framework based on VITS.<br><br>
 
 [![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
-</div>
-
-------
 [**Changelog**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_EN.md) | [**FAQ (Frequently Asked Questions)**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/FAQ-(Frequently-Asked-Questions)) 
 
-[**English**](../en/README.en.md) | [**中文简体**](../../README.md) | [**日本語**](../jp/README.ja.md) | [**한국어**](../kr/README.ko.md) ([**韓國語**](../kr/README.ko.han.md)) | [**Türkçe**](../tr/README.tr.md)
+[**English**](../en/README.en.md) | [**中文简体**](../../README.md) | [**日本語**](../jp/README.ja.md) | [**한국어**](../kr/README.ko.md) ([**韓國語**](../kr/README.ko.han.md)) | [**Français**](../fr/README.fr.md) | [**Türkçe**](../tr/README.tr.md)
 
+</div>
 
-Check our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
+> Check out our [Demo Video](https://www.bilibili.com/video/BV1pm4y1z7Gm/) here!
 
-Training/Inference WebUI：go-web.bat
-
-![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/00387c1c-51b1-4010-947d-3f3ecac95b87)
-
-Realtime Voice Conversion GUI：go-realtime-gui.bat
-
-![image](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/143246a9-8b42-4dd1-a197-430ede4d15d7)
+<table>
+   <tr>
+		<td align="center">Training and inference Webui</td>
+		<td align="center">Real-time voice changing GUI</td>
+	</tr>
+  <tr>
+		<td align="center"><img src="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/092e5c12-0d49-4168-a590-0b0ef6a4f630"></td>
+    <td align="center"><img src="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/assets/129054828/730b4114-8805-44a1-ab1a-04668f3c30a6"></td>
+	</tr>
+	<tr>
+		<td align="center">go-web.bat</td>
+		<td align="center">go-realtime-gui.bat</td>
+	</tr>
+  <tr>
+    <td align="center">You can freely choose the action you want to perform.</td>
+		<td align="center">We have achieved an end-to-end latency of 170ms. With the use of ASIO input and output devices, we have managed to achieve an end-to-end latency of 90ms, but it is highly dependent on hardware driver support.</td>
+	</tr>
+</table>
 
 > The dataset for the pre-training model uses nearly 50 hours of high quality audio from the VCTK open source dataset.
 
@@ -124,15 +133,6 @@ If you want to test the v2 version model (the v2 version model has changed the i
 
 ./assets/pretrained_v2
 
-#If you are using Windows, you may also need these two files, skip if FFmpeg and FFprobe are installed
-ffmpeg.exe
-
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe
-
-ffprobe.exe
-
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
-
 If you want to use the latest SOTA RMVPE vocal pitch extraction algorithm, you need to download the RMVPE weights and place them in the RVC root directory
 
 https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
@@ -143,14 +143,22 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
 
 ```
 
-Intel ARC graphics cards users needs to run `source /opt/intel/oneapi/setvars.sh` command before starting Webui.
+### 2. Install FFmpeg
+If you have FFmpeg and FFprobe installed on your computer, you can skip this step.
 
-Then use this command to start Webui:
+#### For Ubuntu/Debian users
 ```bash
-python infer-web.py
+sudo apt install ffmpeg
 ```
+#### For MacOS users
+```bash
+brew install ffmpeg
+```
+#### For Windwos users
+Download these files and place them in the root folder:
+- [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
 
-If you are using Windows or macOS, you can download and extract `RVC-beta.7z` to use RVC directly by using `go-web.bat` on windows or `sh ./run.sh` on macOS to start Webui.
+- [ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
 
 ## ROCm Support for AMD graphic cards (Linux only)
 To use ROCm on Linux install all required drivers as described [here](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html).
@@ -170,11 +178,25 @@ Make sure your user is part of the `render` and `video` group:
 sudo usermod -aG render $USERNAME
 sudo usermod -aG video $USERNAME
 ````
-After that you can run the WebUI:
+
+## Get started
+### start up directly
+Use the following command to start WebUI:
 ```bash
 python infer-web.py
 ```
-
+### Use the integration package
+Download and extract file `RVC-beta.7z`, then follow the steps below according to your system:
+#### For Windows users
+双击`go-web.bat`
+#### For MacOS users
+```bash
+sh ./run.sh
+```
+### For Intel IPEX users (Linux Only)
+```bash
+source /opt/intel/oneapi/setvars.sh
+```
 ## Credits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)
