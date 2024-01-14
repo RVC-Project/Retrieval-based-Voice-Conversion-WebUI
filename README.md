@@ -94,7 +94,7 @@ pip install -r requirements-ipex.txt
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
-通过 Poetry 安装依赖时，python 建议使用 3.11 及以下版本，3.12版本在安装 llvmlite==0.39.0 时会出现bug
+通过 Poetry 安装依赖时，python 建议使用 3.7-3.10 版本，其余版本在安装 llvmlite==0.39.0 时会出现冲突
 ```bash
 poetry init -n
 poetry env use "path to your python.exe"
