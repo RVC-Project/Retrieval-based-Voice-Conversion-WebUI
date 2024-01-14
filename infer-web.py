@@ -217,7 +217,7 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         config.noparallel,
         config.preprocess_per,
     )
-    logger.info("Execute: "+cmd)
+    logger.info("Execute: " + cmd)
     # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
     p = Popen(cmd, shell=True)
     # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
@@ -259,7 +259,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     f0method,
                 )
             )
-            logger.info("Execute: "+cmd)
+            logger.info("Execute: " + cmd)
             p = Popen(
                 cmd, shell=True, cwd=now_dir
             )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
@@ -290,7 +290,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                             config.is_half,
                         )
                     )
-                    logger.info("Execute: "+cmd)
+                    logger.info("Execute: " + cmd)
                     p = Popen(
                         cmd, shell=True, cwd=now_dir
                     )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -313,7 +313,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                         exp_dir,
                     )
                 )
-                logger.info("Execute: "+cmd)
+                logger.info("Execute: " + cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -356,7 +356,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 config.is_half,
             )
         )
-        logger.info("Execute: "+cmd)
+        logger.info("Execute: " + cmd)
         p = Popen(
             cmd, shell=True, cwd=now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -589,7 +589,7 @@ def click_train(
                 version19,
             )
         )
-    logger.info("Execute: "+cmd)
+    logger.info("Execute: " + cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
     return "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"

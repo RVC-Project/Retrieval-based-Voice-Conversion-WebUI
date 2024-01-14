@@ -158,7 +158,8 @@ class Config:
                 / 1024
                 + 0.4
             )
-            if self.gpu_mem <= 4: self.preprocess_per = 3.0
+            if self.gpu_mem <= 4:
+                self.preprocess_per = 3.0
         elif self.has_mps():
             logger.info("No supported Nvidia GPU found")
             self.device = self.instead = "mps"
@@ -241,5 +242,8 @@ class Config:
                     )
                 except:
                     pass
-        logger.info("Half-precision floating-point: %s, device: %s" % (self.is_half, self.device))
+        logger.info(
+            "Half-precision floating-point: %s, device: %s"
+            % (self.is_half, self.device)
+        )
         return x_pad, x_query, x_center, x_max
