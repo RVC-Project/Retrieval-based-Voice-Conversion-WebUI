@@ -51,10 +51,10 @@ def printt(strr):
     f.flush()
 
 
-printt(sys.argv)
+printt(" ".join(sys.argv))
 model_path = "assets/hubert/hubert_base.pt"
 
-printt(exp_dir)
+printt("exp_dir: " + exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
 outPath = (
     "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
