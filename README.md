@@ -93,9 +93,12 @@ pip install -r requirements-ipex.txt
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
-通过poetry安装依赖
+
+通过 Poetry 安装依赖时，python 建议使用 3.7-3.10 版本，其余版本在安装 llvmlite==0.39.0 时会出现冲突
 ```bash
-poetry install
+poetry init -n
+poetry env use "path to your python.exe"
+poetry run pip install -r requirments.txt
 ```
 
 ### MacOS
@@ -174,6 +177,12 @@ sudo usermod -aG video $USERNAME
 ```bash
 python infer-web.py
 ```
+
+若先前使用 Poetry 安装依赖，则可以通过以下方式启动WebUI
+```bash
+poetry run python infer-web.py
+```
+
 ### 使用整合包
 下载并解压`RVC-beta.7z`
 #### Windows 用户
