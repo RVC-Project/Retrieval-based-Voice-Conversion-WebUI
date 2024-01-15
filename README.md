@@ -136,7 +136,7 @@ sudo apt install ffmpeg
 ```bash
 brew install ffmpeg
 ```
-#### Windwos 用户
+#### Windows 用户
 下载后放置在根目录。
 - 下载[ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
 
