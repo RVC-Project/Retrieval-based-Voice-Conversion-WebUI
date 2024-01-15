@@ -722,7 +722,8 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()
         self.flow.remove_weight_norm()
-        self.enc_q.remove_weight_norm()
+        if hasattr(self, "enc_q"):
+            self.enc_q.remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for hook in self.dec._forward_pre_hooks.values():
@@ -783,17 +784,20 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         pitch: torch.Tensor,
         nsff0: torch.Tensor,
         sid: torch.Tensor,
-        rate: Optional[torch.Tensor] = None,
+        skip_head: Optional[torch.Tensor] = None,
+        return_length: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate is not None:
-            assert isinstance(rate, torch.Tensor)
-            head = int(z_p.shape[2] * (1 - rate.item()))
-            z_p = z_p[:, :, head:]
-            x_mask = x_mask[:, :, head:]
-            nsff0 = nsff0[:, head:]
+        if skip_head is not None and return_length is not None:
+            assert isinstance(skip_head, torch.Tensor)
+            assert isinstance(return_length, torch.Tensor)
+            head = int(skip_head.item())
+            length = int(return_length.item())
+            z_p = z_p[:, :, head : head + length]
+            x_mask = x_mask[:, :, head : head + length]
+            nsff0 = nsff0[:, head : head + length]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -887,7 +891,8 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()
         self.flow.remove_weight_norm()
-        self.enc_q.remove_weight_norm()
+        if hasattr(self, "enc_q"):
+            self.enc_q.remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for hook in self.dec._forward_pre_hooks.values():
@@ -941,16 +946,20 @@ class SynthesizerTrnMs768NSFsid(nn.Module):
         pitch: torch.Tensor,
         nsff0: torch.Tensor,
         sid: torch.Tensor,
-        rate: Optional[torch.Tensor] = None,
+        skip_head: Optional[torch.Tensor] = None,
+        return_length: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate is not None:
-            head = int(z_p.shape[2] * (1.0 - rate.item()))
-            z_p = z_p[:, :, head:]
-            x_mask = x_mask[:, :, head:]
-            nsff0 = nsff0[:, head:]
+        if skip_head is not None and return_length is not None:
+            assert isinstance(skip_head, torch.Tensor)
+            assert isinstance(return_length, torch.Tensor)
+            head = int(skip_head.item())
+            length = int(return_length.item())
+            z_p = z_p[:, :, head : head + length]
+            x_mask = x_mask[:, :, head : head + length]
+            nsff0 = nsff0[:, head : head + length]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, nsff0, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -1041,7 +1050,8 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()
         self.flow.remove_weight_norm()
-        self.enc_q.remove_weight_norm()
+        if hasattr(self, "enc_q"):
+            self.enc_q.remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for hook in self.dec._forward_pre_hooks.values():
@@ -1087,16 +1097,19 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         phone: torch.Tensor,
         phone_lengths: torch.Tensor,
         sid: torch.Tensor,
-        rate: Optional[torch.Tensor] = None,
+        skip_head: Optional[torch.Tensor] = None,
+        return_length: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate is not None:
-            head = int(z_p.shape[2] * (1.0 - rate.item()))
-            z_p = z_p[:, :, head:]
-            x_mask = x_mask[:, :, head:]
-            nsff0 = nsff0[:, head:]
+        if skip_head is not None and return_length is not None:
+            assert isinstance(skip_head, torch.Tensor)
+            assert isinstance(return_length, torch.Tensor)
+            head = int(skip_head.item())
+            length = int(return_length.item())
+            z_p = z_p[:, :, head : head + length]
+            x_mask = x_mask[:, :, head : head + length]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)
@@ -1125,7 +1138,7 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         sr=None,
         **kwargs
     ):
-        super(self, SynthesizerTrnMs768NSFsid_nono).__init__()
+        super(SynthesizerTrnMs768NSFsid_nono, self).__init__()
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
@@ -1187,7 +1200,8 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()
         self.flow.remove_weight_norm()
-        self.enc_q.remove_weight_norm()
+        if hasattr(self, "enc_q"):
+            self.enc_q.remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for hook in self.dec._forward_pre_hooks.values():
@@ -1233,16 +1247,19 @@ class SynthesizerTrnMs768NSFsid_nono(nn.Module):
         phone: torch.Tensor,
         phone_lengths: torch.Tensor,
         sid: torch.Tensor,
-        rate: Optional[torch.Tensor] = None,
+        skip_head: Optional[torch.Tensor] = None,
+        return_length: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
-        if rate is not None:
-            head = int(z_p.shape[2] * (1.0 - rate.item()))
-            z_p = z_p[:, :, head:]
-            x_mask = x_mask[:, :, head:]
-            nsff0 = nsff0[:, head:]
+        if skip_head is not None and return_length is not None:
+            assert isinstance(skip_head, torch.Tensor)
+            assert isinstance(return_length, torch.Tensor)
+            head = int(skip_head.item())
+            length = int(return_length.item())
+            z_p = z_p[:, :, head : head + length]
+            x_mask = x_mask[:, :, head : head + length]
         z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g)
         return o, x_mask, (z, z_p, m_p, logs_p)

@@ -58,6 +58,7 @@ class Config:
             self.dml,
         ) = self.arg_parse()
         self.instead = ""
+        self.preprocess_per = 3.7
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
     @staticmethod
@@ -127,11 +128,8 @@ class Config:
                 strr = f.read().replace("true", "false")
             with open(f"configs/{config_file}", "w") as f:
                 f.write(strr)
-        with open("infer/modules/train/preprocess.py", "r") as f:
-            strr = f.read().replace("3.7", "3.0")
-        with open("infer/modules/train/preprocess.py", "w") as f:
-            f.write(strr)
-        print("overwrite preprocess and configs.json")
+        self.preprocess_per = 3.0
+        logger.info("overwrite configs.json")
 
     def device_config(self) -> tuple:
         if torch.cuda.is_available():
@@ -161,10 +159,7 @@ class Config:
                 + 0.4
             )
             if self.gpu_mem <= 4:
-                with open("infer/modules/train/preprocess.py", "r") as f:
-                    strr = f.read().replace("3.7", "3.0")
-                with open("infer/modules/train/preprocess.py", "w") as f:
-                    f.write(strr)
+                self.preprocess_per = 3.0
         elif self.has_mps():
             logger.info("No supported Nvidia GPU found")
             self.device = self.instead = "mps"
@@ -247,5 +242,8 @@ class Config:
                     )
                 except:
                     pass
-        print("is_half:%s, device:%s" % (self.is_half, self.device))
+        logger.info(
+            "Half-precision floating-point: %s, device: %s"
+            % (self.is_half, self.device)
+        )
         return x_pad, x_query, x_center, x_max

@@ -1,8 +1,10 @@
 import os
 import sys
+from dotenv import load_dotenv
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
+load_dotenv()
 from infer.modules.vc.modules import VC
 from infer.modules.uvr5.modules import uvr
 from infer.lib.train.process_ckpt import (
@@ -14,18 +16,7 @@ from infer.lib.train.process_ckpt import (
 from i18n.i18n import I18nAuto
 from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
-from dotenv import load_dotenv
 import torch
-
-try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
-
-        ipex_init()
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
 import numpy as np
 import gradio as gr
 import faiss
@@ -58,7 +49,6 @@ warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 
 
-load_dotenv()
 config = Config()
 vc = VC(config)
 
@@ -217,7 +207,6 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
-    per = 3.0 if config.is_half else 3.7
     cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
         config.python_cmd,
         trainset_dir,
@@ -226,9 +215,9 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         now_dir,
         exp_dir,
         config.noparallel,
-        per,
+        config.preprocess_per,
     )
-    logger.info(cmd)
+    logger.info("Execute: " + cmd)
     # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
     p = Popen(cmd, shell=True)
     # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
@@ -270,7 +259,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     f0method,
                 )
             )
-            logger.info(cmd)
+            logger.info("Execute: " + cmd)
             p = Popen(
                 cmd, shell=True, cwd=now_dir
             )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
@@ -301,7 +290,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                             config.is_half,
                         )
                     )
-                    logger.info(cmd)
+                    logger.info("Execute: " + cmd)
                     p = Popen(
                         cmd, shell=True, cwd=now_dir
                     )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -324,7 +313,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                         exp_dir,
                     )
                 )
-                logger.info(cmd)
+                logger.info("Execute: " + cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -354,7 +343,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s %s'
             % (
                 config.python_cmd,
                 config.device,
@@ -364,9 +353,10 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 now_dir,
                 exp_dir,
                 version19,
+                config.is_half,
             )
         )
-        logger.info(cmd)
+        logger.info("Execute: " + cmd)
         p = Popen(
             cmd, shell=True, cwd=now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -449,7 +439,8 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
     path_str = "" if version19 == "v1" else "_v2"
     return (
         {"visible": if_f0_3, "__type__": "update"},
-        *get_pretrained_models(path_str, "f0", sr2),
+        {"visible": if_f0_3, "__type__": "update"},
+        *get_pretrained_models(path_str, "f0" if if_f0_3 == True else "", sr2),
     )
 
 
@@ -598,7 +589,7 @@ def click_train(
                 version19,
             )
         )
-    logger.info(cmd)
+    logger.info("Execute: " + cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
     return "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"
@@ -1151,7 +1142,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 with gr.Row():
                     trainset_dir4 = gr.Textbox(
-                        label=i18n("输入训练文件夹路径"), value="E:\\语音音频+标注\\米津玄师\\src"
+                        label=i18n("输入训练文件夹路径"), value=i18n("E:\\语音音频+标注\\米津玄师\\src")
                     )
                     spk_id5 = gr.Slider(
                         minimum=0,
@@ -1291,7 +1282,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     if_f0_3.change(
                         change_f0,
                         [if_f0_3, sr2, version19],
-                        [f0method8, pretrained_G14, pretrained_D15],
+                        [f0method8, gpus_rmvpe, pretrained_G14, pretrained_D15],
                     )
                     gpus16 = gr.Textbox(
                         label=i18n("以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"),

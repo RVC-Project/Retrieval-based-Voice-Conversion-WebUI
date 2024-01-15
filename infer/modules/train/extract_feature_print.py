@@ -8,14 +8,16 @@ os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 device = sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
-if len(sys.argv) == 6:
+if len(sys.argv) == 7:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
+    is_half = bool(sys.argv[6])
 else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[6]
+    is_half = bool(sys.argv[7])
 import fairseq
 import numpy as np
 import soundfile as sf
@@ -49,10 +51,10 @@ def printt(strr):
     f.flush()
 
 
-printt(sys.argv)
+printt(" ".join(sys.argv))
 model_path = "assets/hubert/hubert_base.pt"
 
-printt(exp_dir)
+printt("exp_dir: " + exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
 outPath = (
     "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
@@ -91,8 +93,9 @@ models, saved_cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task(
 model = models[0]
 model = model.to(device)
 printt("move model to %s" % device)
-if device not in ["mps", "cpu"]:
-    model = model.half()
+if is_half:
+    if device not in ["mps", "cpu"]:
+        model = model.half()
 model.eval()
 
 todo = sorted(list(os.listdir(wavPath)))[i_part::n_part]
@@ -114,7 +117,7 @@ else:
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
                     "source": feats.half().to(device)
-                    if device not in ["mps", "cpu"]
+                    if is_half and device not in ["mps", "cpu"]
                     else feats.to(device),
                     "padding_mask": padding_mask.to(device),
                     "output_layer": 9 if version == "v1" else 12,  # layer 9
