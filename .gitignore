@@ -21,3 +21,8 @@ rmvpe.pt
 
 # To set a Python version for the project
 .tool-versions
+
+/runtime
+/assets/weights/*
+ffmpeg.*
+ffprobe.*
