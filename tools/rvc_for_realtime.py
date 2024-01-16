@@ -91,8 +91,12 @@ class RVC:
             self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
-            self.cache_pitch: torch.Tensor = torch.zeros(1024, device=self.device, dtype=torch.long)
-            self.cache_pitchf = torch.zeros(1024, device=self.device, dtype=torch.float32)
+            self.cache_pitch: torch.Tensor = torch.zeros(
+                1024, device=self.device, dtype=torch.long
+            )
+            self.cache_pitchf = torch.zeros(
+                1024, device=self.device, dtype=torch.float32
+            )
 
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
@@ -307,6 +311,7 @@ class RVC:
     def get_f0_rmvpe(self, x, f0_up_key):
         if hasattr(self, "model_rmvpe") == False:
             from infer.lib.rmvpe import RMVPE
+
             printt("Loading rmvpe model")
             self.model_rmvpe = RMVPE(
                 "assets/rmvpe/rmvpe.pt",
@@ -391,8 +396,8 @@ class RVC:
                 input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method
             )
             shift = block_frame_16k // 160
-            self.cache_pitch[: -shift] = self.cache_pitch[shift :].clone()
-            self.cache_pitchf[: -shift] = self.cache_pitchf[shift :].clone()
+            self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()
+            self.cache_pitchf[:-shift] = self.cache_pitchf[shift:].clone()
             self.cache_pitch[4 - pitch.shape[0] :] = pitch[3:-1]
             self.cache_pitchf[4 - pitch.shape[0] :] = pitchf[3:-1]
             cache_pitch = self.cache_pitch[None, -p_len:]
