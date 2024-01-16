@@ -158,7 +158,10 @@ if __name__ == "__main__":
                     data["fcpe"] = data["f0method"] == "fcpe"
                     if data["sg_hostapi"] in self.hostapis:
                         self.update_devices(hostapi_name=data["sg_hostapi"])
-                        if data["sg_input_device"] not in self.input_devices or data["sg_output_device"] not in self.output_devices:
+                        if (
+                            data["sg_input_device"] not in self.input_devices
+                            or data["sg_output_device"] not in self.output_devices
+                        ):
                             self.update_devices()
                             data["sg_hostapi"] = self.hostapis[0]
                             data["sg_input_device"] = self.input_devices[
@@ -256,7 +259,7 @@ if __name__ == "__main__":
                                     key="sg_hostapi",
                                     default_value=data.get("sg_hostapi", ""),
                                     enable_events=True,
-                                    size=(20, 1)
+                                    size=(20, 1),
                                 ),
                                 sg.Checkbox(
                                     i18n("独占 WASAPI 设备"),
@@ -523,9 +526,7 @@ if __name__ == "__main__":
                     if self.gui_config.sg_hostapi not in self.hostapis:
                         self.gui_config.sg_hostapi = self.hostapis[0]
                     self.window["sg_hostapi"].Update(values=self.hostapis)
-                    self.window["sg_hostapi"].Update(
-                        value=self.gui_config.sg_hostapi
-                    )
+                    self.window["sg_hostapi"].Update(value=self.gui_config.sg_hostapi)
                     if self.gui_config.sg_input_device not in self.input_devices:
                         self.gui_config.sg_input_device = self.input_devices[0]
                     self.window["sg_input_device"].Update(values=self.input_devices)
@@ -589,7 +590,9 @@ if __name__ == "__main__":
                         if values["I_noise_reduce"]:
                             self.delay_time += min(values["crossfade_length"], 0.04)
                         self.window["sr_stream"].update(self.gui_config.samplerate)
-                        self.window["delay_time"].update(int(np.round(self.delay_time * 1000)))
+                        self.window["delay_time"].update(
+                            int(np.round(self.delay_time * 1000))
+                        )
                 # Parameter hot update
                 if event == "threhold":
                     self.gui_config.threhold = values["threhold"]
@@ -611,7 +614,9 @@ if __name__ == "__main__":
                         self.delay_time += (
                             1 if values["I_noise_reduce"] else -1
                         ) * min(values["crossfade_length"], 0.04)
-                        self.window["delay_time"].update(int(np.round(self.delay_time * 1000)))
+                        self.window["delay_time"].update(
+                            int(np.round(self.delay_time * 1000))
+                        )
                 elif event == "O_noise_reduce":
                     self.gui_config.O_noise_reduce = values["O_noise_reduce"]
                 elif event == "use_pv":
@@ -787,7 +792,10 @@ if __name__ == "__main__":
             global flag_vc
             if not flag_vc:
                 flag_vc = True
-                if 'WASAPI' in self.gui_config.sg_hostapi and self.gui_config.sg_wasapi_exclusive:
+                if (
+                    "WASAPI" in self.gui_config.sg_hostapi
+                    and self.gui_config.sg_wasapi_exclusive
+                ):
                     extra_settings = sd.WasapiSettings(exclusive=True)
                 else:
                     extra_settings = None
@@ -847,9 +855,7 @@ if __name__ == "__main__":
                 self.input_wav_denoise[: -self.block_frame] = self.input_wav_denoise[
                     self.block_frame :
                 ].clone()
-                input_wav = self.input_wav[
-                    -self.sola_buffer_frame - self.block_frame:
-                ]
+                input_wav = self.input_wav[-self.sola_buffer_frame - self.block_frame :]
                 input_wav = self.tg(
                     input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
                 ).squeeze(0)
@@ -857,15 +863,19 @@ if __name__ == "__main__":
                 input_wav[: self.sola_buffer_frame] += (
                     self.nr_buffer * self.fade_out_window
                 )
-                self.input_wav_denoise[-self.block_frame :] = input_wav[: self.block_frame]
+                self.input_wav_denoise[-self.block_frame :] = input_wav[
+                    : self.block_frame
+                ]
                 self.nr_buffer[:] = input_wav[self.block_frame :]
                 self.input_wav_res[-self.block_frame_16k - 160 :] = self.resampler(
                     self.input_wav_denoise[-self.block_frame - 2 * self.zc :]
                 )[160:]
             else:
-                self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = self.resampler(
-                    self.input_wav[-indata.shape[0] - 2 * self.zc :]
-                )[160:]
+                self.input_wav_res[
+                    -160 * (indata.shape[0] // self.zc + 1) :
+                ] = self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[
+                    160:
+                ]
             # infer
             if self.function == "vc":
                 infer_wav = self.rvc.infer(
@@ -959,13 +969,17 @@ if __name__ == "__main__":
                 self.block_frame : self.block_frame + self.sola_buffer_frame
             ]
             outdata[:] = (
-                infer_wav[: self.block_frame].repeat(self.gui_config.channels, 1).t().cpu().numpy()
+                infer_wav[: self.block_frame]
+                .repeat(self.gui_config.channels, 1)
+                .t()
+                .cpu()
+                .numpy()
             )
             total_time = time.perf_counter() - start_time
             if flag_vc:
                 self.window["infer_time"].update(int(total_time * 1000))
             printt("Infer time: %.2f", total_time)
-        
+
         def update_devices(self, hostapi_name=None):
             """获取设备列表"""
             global flag_vc
@@ -981,22 +995,24 @@ if __name__ == "__main__":
             if hostapi_name not in self.hostapis:
                 hostapi_name = self.hostapis[0]
             self.input_devices = [
-                d['name'] for d in devices
-                if d["max_input_channels"] > 0 and d['hostapi_name'] == hostapi_name
+                d["name"]
+                for d in devices
+                if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
             ]
             self.output_devices = [
-                d['name'] for d in devices
-                if d["max_output_channels"] > 0 and d['hostapi_name'] == hostapi_name
+                d["name"]
+                for d in devices
+                if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
             ]
             self.input_devices_indices = [
                 d["index"] if "index" in d else d["name"]
                 for d in devices
-                if d["max_input_channels"] > 0 and d['hostapi_name'] == hostapi_name
+                if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
             ]
             self.output_devices_indices = [
                 d["index"] if "index" in d else d["name"]
                 for d in devices
-                if d["max_output_channels"] > 0 and d['hostapi_name'] == hostapi_name
+                if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
             ]
 
         def set_devices(self, input_device, output_device):
@@ -1014,10 +1030,14 @@ if __name__ == "__main__":
             return int(
                 sd.query_devices(device=sd.default.device[0])["default_samplerate"]
             )
-        
+
         def get_device_channels(self):
-            max_input_channels = sd.query_devices(device=sd.default.device[0])["max_input_channels"]
-            max_output_channels = sd.query_devices(device=sd.default.device[1])["max_output_channels"]
+            max_input_channels = sd.query_devices(device=sd.default.device[0])[
+                "max_input_channels"
+            ]
+            max_output_channels = sd.query_devices(device=sd.default.device[1])[
+                "max_output_channels"
+            ]
             return min(max_input_channels, max_output_channels, 2)
 
     gui = GUI()

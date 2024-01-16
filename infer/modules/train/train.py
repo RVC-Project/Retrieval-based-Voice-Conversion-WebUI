@@ -117,12 +117,7 @@ def main():
         children[i].join()
 
 
-def run(
-    rank,
-    n_gpus,
-    hps,
-    logger: logging.Logger
-):
+def run(rank, n_gpus, hps, logger: logging.Logger):
     global global_step
     if rank == 0:
         # logger = utils.get_logger(hps.model_dir)
