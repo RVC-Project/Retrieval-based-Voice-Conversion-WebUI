@@ -129,7 +129,7 @@
     "采样长度": "Sample length",
     "重载设备列表": "Reload device list",
     "音调设置": "Pitch settings",
-    "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
+    "音频设备": "Audio device",
     "音高算法": "pitch detection algorithm",
     "额外推理时长": "Extra inference time"
 }
