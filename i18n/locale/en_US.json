@@ -90,6 +90,7 @@
     "版本": "Version",
     "特征提取": "Feature extraction",
     "特征检索库文件路径,为空则使用下拉的选择结果": "Path to the feature index file. Leave blank to use the selected result from the dropdown:",
+    "独占 WASAPI 设备": "独占 WASAPI 设备",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Recommended +12 key for male to female conversion, and -12 key for female to male conversion. If the sound range goes too far and the voice is distorted, you can also adjust it to the appropriate range by yourself.",
     "目标采样率": "Target sample rate:",
     "算法延迟(ms):": "Algorithmic delays(ms):",
@@ -101,6 +102,7 @@
     "训练模型": "Train model",
     "训练特征索引": "Train feature index",
     "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log": "Training complete. You can check the training logs in the console or the 'train.log' file under the experiment folder.",
+    "设备类型": "设备类型",
     "请指定说话人id": "Please specify the speaker/singer ID:",
     "请选择index文件": "Please choose the .index file",
     "请选择pth文件": "Please choose the .pth file",
@@ -129,7 +131,7 @@
     "采样长度": "Sample length",
     "重载设备列表": "Reload device list",
     "音调设置": "Pitch settings",
-    "音频设备(请使用同种类驱动)": "Audio device (please use the same type of driver)",
+    "音频设备": "Audio device",
     "音高算法": "pitch detection algorithm",
     "额外推理时长": "Extra inference time"
 }
