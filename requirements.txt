@@ -1,9 +1,9 @@
 joblib>=1.1.0
-numba==0.56.4
-numpy==1.23.5
+numba
+numpy
 scipy
 librosa==0.9.1
-llvmlite==0.39.0
+llvmlite
 fairseq==0.12.2
 faiss-cpu==1.7.3
 gradio==3.34.0
