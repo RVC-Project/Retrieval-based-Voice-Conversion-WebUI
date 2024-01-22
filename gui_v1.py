@@ -1,6 +1,7 @@
 import os
 import sys
 from dotenv import load_dotenv
+import shutil
 
 load_dotenv()
 
@@ -147,7 +148,9 @@ if __name__ == "__main__":
 
         def load(self):
             try:
-                with open("configs/config.json", "r") as j:
+                if not os.path.exists("configs/inuse/config.json"):
+                    shutil.copy("configs/config.json", "configs/inuse/config.json")
+                with open("configs/inuse/config.json", "r") as j:
                     data = json.load(j)
                     data["sr_model"] = data["sr_type"] == "sr_model"
                     data["sr_device"] = data["sr_type"] == "sr_device"
@@ -179,7 +182,7 @@ if __name__ == "__main__":
                             self.output_devices_indices.index(sd.default.device[1])
                         ]
             except:
-                with open("configs/config.json", "w") as j:
+                with open("configs/inuse/config.json", "w") as j:
                     data = {
                         "pth_path": "",
                         "index_path": "",
@@ -578,7 +581,7 @@ if __name__ == "__main__":
                                 ].index(True)
                             ],
                         }
-                        with open("configs/config.json", "w") as j:
+                        with open("configs/inuse/config.json", "w") as j:
                             json.dump(settings, j)
                         if self.stream is not None:
                             self.delay_time = (
