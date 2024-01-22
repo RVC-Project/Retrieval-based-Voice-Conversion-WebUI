@@ -63,6 +63,9 @@ set hb=hubert_base.pt
 
 set dlhb=https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt
 
+set rmvpe=rmvpe.pt
+set dlrmvpe=https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/rmvpe.pt
+
 echo dir check start.
 echo=
 
@@ -332,12 +335,23 @@ if exist "%~dp0assets\uvr5_weights\onnx_dereverb_By_FoxJoy\%onnx_dereverb%" (
 
 echo checking %hb%
 if exist "%~dp0assets\hubert\%hb%" (
-        echo %hb% in .\assets\hubert\pretrained checked.
+        echo %hb% in .\assets\hubert checked.
         echo=
     ) else (
         echo failed. starting download from huggingface.
         %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dlhb% -d %~dp0assets\hubert\ -o %hb%
         if exist "%~dp0assets\hubert\%hb%" (echo download successful.) else (echo please try again!
+        echo=)
+    )
+
+echo checking %rmvpe%
+if exist "%~dp0assets\rmvpe\%rmvpe%" (
+        echo %rmvpe% in .\assets\rmvpe checked.
+        echo=
+    ) else (
+        echo failed. starting download from huggingface.
+        %~dp0%aria2%\aria2c --console-log-level=error -c -x 16 -s 16 -k 1M %dlrmvpe% -d %~dp0assets\rmvpe\ -o %rmvpe%
+        if exist "%~dp0assets\rmvpe\%rmvpe%" (echo download successful.) else (echo please try again!
         echo=)
     )
 
