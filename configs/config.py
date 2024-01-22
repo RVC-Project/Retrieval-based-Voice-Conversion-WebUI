@@ -132,7 +132,7 @@ class Config:
                 strr = f.read().replace("true", "false")
             with open(f"configs/inuse/{config_file}", "w") as f:
                 f.write(strr)
-            logger.info("overwrite "+config_file)
+            logger.info("overwrite " + config_file)
         self.preprocess_per = 3.0
         logger.info("overwrite preprocess_per to %d" % (self.preprocess_per))
 
