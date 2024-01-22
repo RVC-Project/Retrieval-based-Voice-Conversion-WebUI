@@ -139,12 +139,16 @@ for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
 index_paths = []
+
+
 def lookup_indices(index_root):
     global index_paths
     for root, dirs, files in os.walk(index_root, topdown=False):
         for name in files:
             if name.endswith(".index") and "trained" not in name:
                 index_paths.append("%s/%s" % (root, name))
+
+
 lookup_indices(index_root)
 lookup_indices(outside_index_root)
 uvr5_names = []
@@ -669,18 +673,18 @@ def train_index(exp_dir1, version19):
             "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
             % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
             "%s/%s_IVF%s_Flat_nprobe_%s_%s_%s.index"
-            % (outside_index_root, exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+            % (
+                outside_index_root,
+                exp_dir,
+                n_ivf,
+                index_ivf.nprobe,
+                exp_dir1,
+                version19,
+            ),
         )
-        infos.append(
-            "链接索引到%s"
-            % (outside_index_root)
-        )
+        infos.append("链接索引到%s" % (outside_index_root))
     except:
-        infos.append(
-            "链接索引到%s失败"
-            % (outside_index_root)
-        )
-
+        infos.append("链接索引到%s失败" % (outside_index_root))
 
     infos.append("adding")
     yield "\n".join(infos)
