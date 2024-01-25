@@ -530,7 +530,7 @@ if __name__ == "__main__":
                         self.gui_config.sg_hostapi = self.hostapis[0]
                     self.window["sg_hostapi"].Update(values=self.hostapis)
                     self.window["sg_hostapi"].Update(value=self.gui_config.sg_hostapi)
-                    if self.gui_config.sg_input_device not in self.input_devices:
+                    if self.gui_config.sg_input_device not in self.input_devices and len(self.input_devices) > 0:
                         self.gui_config.sg_input_device = self.input_devices[0]
                     self.window["sg_input_device"].Update(values=self.input_devices)
                     self.window["sg_input_device"].Update(
