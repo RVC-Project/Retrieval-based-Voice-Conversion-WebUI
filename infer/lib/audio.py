@@ -1,4 +1,4 @@
-import platform,os
+import platform, os
 import ffmpeg
 import numpy as np
 import av
@@ -46,6 +46,6 @@ def load_audio(file, sr):
 
 
 def clean_path(path_str):
-    if platform.system() == 'Windows':
-        path_str = path_str.replace('/', '\\')
+    if platform.system() == "Windows":
+        path_str = path_str.replace("/", "\\")
     return path_str.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
