@@ -877,11 +877,11 @@ if __name__ == "__main__":
                     self.input_wav_denoise[-self.block_frame - 2 * self.zc :]
                 )[160:]
             else:
-                self.input_wav_res[
-                    -160 * (indata.shape[0] // self.zc + 1) :
-                ] = self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[
-                    160:
-                ]
+                self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = (
+                    self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[
+                        160:
+                    ]
+                )
             # infer
             if self.function == "vc":
                 infer_wav = self.rvc.infer(
