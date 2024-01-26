@@ -104,11 +104,11 @@ def return_xpu(device):
     return (
         f"xpu:{device[-1]}"
         if isinstance(device, str) and ":" in device
-        else f"xpu:{device}"
-        if isinstance(device, int)
-        else torch.device("xpu")
-        if isinstance(device, torch.device)
-        else "xpu"
+        else (
+            f"xpu:{device}"
+            if isinstance(device, int)
+            else torch.device("xpu") if isinstance(device, torch.device) else "xpu"
+        )
     )
 
 
@@ -271,12 +271,16 @@ def ipex_hijacks():
         "torch.batch_norm",
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(
             input,
-            weight
-            if weight is not None
-            else torch.ones(input.size()[1], device=input.device),
-            bias
-            if bias is not None
-            else torch.zeros(input.size()[1], device=input.device),
+            (
+                weight
+                if weight is not None
+                else torch.ones(input.size()[1], device=input.device)
+            ),
+            (
+                bias
+                if bias is not None
+                else torch.zeros(input.size()[1], device=input.device)
+            ),
             *args,
             **kwargs,
         ),
@@ -286,12 +290,16 @@ def ipex_hijacks():
         "torch.instance_norm",
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(
             input,
-            weight
-            if weight is not None
-            else torch.ones(input.size()[1], device=input.device),
-            bias
-            if bias is not None
-            else torch.zeros(input.size()[1], device=input.device),
+            (
+                weight
+                if weight is not None
+                else torch.ones(input.size()[1], device=input.device)
+            ),
+            (
+                bias
+                if bias is not None
+                else torch.zeros(input.size()[1], device=input.device)
+            ),
             *args,
             **kwargs,
         ),
