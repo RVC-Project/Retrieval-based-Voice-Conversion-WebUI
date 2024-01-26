@@ -279,15 +279,17 @@ class RVC:
                 f0 = f0[2:-3]
             else:
                 f0 = f0[2:]
-            f0bak[
-                part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]
-            ] = f0
+            f0bak[part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]] = (
+                f0
+            )
         f0bak = signal.medfilt(f0bak, 3)
         f0bak *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0bak)
 
     def get_f0_crepe(self, x, f0_up_key):
-        if "privateuseone" in str(self.device):  ###不支持dml，cpu又太慢用不成，拿fcpe顶替
+        if "privateuseone" in str(
+            self.device
+        ):  ###不支持dml，cpu又太慢用不成，拿fcpe顶替
             return self.get_f0(x, f0_up_key, 1, "fcpe")
         # printt("using crepe,device:%s"%self.device)
         f0, pd = torchcrepe.predict(
