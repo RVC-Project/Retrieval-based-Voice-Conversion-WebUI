@@ -51,6 +51,7 @@ else
 fi
 
 # Download models
+chmod +x tools/dlmodels.sh
 ./tools/dlmodels.sh
 
 if [ $? -ne 0 ]; then
