@@ -11,7 +11,7 @@ i_part = int(sys.argv[3])
 if len(sys.argv) == 7:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
-    is_half = sys.argv[7] == "True"
+    is_half = sys.argv[6] == "True"
 else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
