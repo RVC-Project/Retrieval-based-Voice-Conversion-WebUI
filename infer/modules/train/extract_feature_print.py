@@ -11,13 +11,13 @@ i_part = int(sys.argv[3])
 if len(sys.argv) == 7:
     exp_dir = sys.argv[4]
     version = sys.argv[5]
-    is_half = bool(sys.argv[6])
+    is_half = sys.argv[6].lower() == "true"
 else:
     i_gpu = sys.argv[4]
     exp_dir = sys.argv[5]
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[6]
-    is_half = bool(sys.argv[7])
+    is_half = sys.argv[7].lower() == "true"
 import fairseq
 import numpy as np
 import soundfile as sf
