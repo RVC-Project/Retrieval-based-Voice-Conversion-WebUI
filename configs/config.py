@@ -42,22 +42,25 @@ def singleton_variable(func):
 
 @singleton_variable
 class Config:
-    def __init__(self):
-        self.device = "cuda:0"
-        self.is_half = True
+    def __init__(self,device='cuda:0',is_half=True, cli_inference=True):
+        self.device = device
+        self.is_half = is_half
         self.use_jit = False
         self.n_cpu = 0
+        if cli_inference:
+            (
+                self.python_cmd,
+                self.listen_port,
+                self.iscolab,
+                self.noparallel,
+                self.noautoopen,
+                self.dml,
+            ) = self.arg_parse()
+        else:
+            self.dml=0
         self.gpu_name = None
         self.json_config = self.load_config_json()
         self.gpu_mem = None
-        (
-            self.python_cmd,
-            self.listen_port,
-            self.iscolab,
-            self.noparallel,
-            self.noautoopen,
-            self.dml,
-        ) = self.arg_parse()
         self.instead = ""
         self.preprocess_per = 3.7
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
