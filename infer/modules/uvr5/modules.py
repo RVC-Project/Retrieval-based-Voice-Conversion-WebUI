@@ -15,15 +15,19 @@ config = Config()
 
 
 def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format0):
+
     infos = []
+
     try:
         inp_root = inp_root.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+
         save_root_vocal = (
             save_root_vocal.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
         save_root_ins = (
             save_root_ins.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
         )
+
         if model_name == "onnx_dereverb_By_FoxJoy":
             pre_fun = MDXNetDereverb(15, config.device)
         else:
@@ -36,11 +40,19 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                 device=config.device,
                 is_half=config.is_half,
             )
+
         is_hp3 = "HP3" in model_name
+
         if inp_root != "":
             paths = [os.path.join(inp_root, name) for name in os.listdir(inp_root)]
         else:
-            paths = [path.name for path in paths]
+            if os.path.isfile(paths):  # path 받아서 바로 진행
+                paths = [paths]
+            else:
+                paths = [path.name for path in paths]
+
+        print(f"Find audio files: : {paths}")
+
         for path in paths:
             inp_path = os.path.join(inp_root, path)
             need_reformat = 1
@@ -75,7 +87,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                         inp_path, save_root_ins, save_root_vocal, format0
                     )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
-                yield "\n".join(infos)
+                # yield "\n".join(infos)
             except:
                 try:
                     if done == 0:
@@ -83,15 +95,17 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                             inp_path, save_root_ins, save_root_vocal, format0
                         )
                     infos.append("%s->Success" % (os.path.basename(inp_path)))
-                    yield "\n".join(infos)
+                    # yield "\n".join(infos)
                 except:
                     infos.append(
                         "%s->%s" % (os.path.basename(inp_path), traceback.format_exc())
                     )
-                    yield "\n".join(infos)
+                    # yield "\n".join(infos)
     except:
+        print("except")
+        print(traceback.format_exc())
         infos.append(traceback.format_exc())
-        yield "\n".join(infos)
+        # yield "\n".join(infos)
     finally:
         try:
             if model_name == "onnx_dereverb_By_FoxJoy":
@@ -105,4 +119,4 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             logger.info("Executed torch.cuda.empty_cache()")
-    yield "\n".join(infos)
+    # yield "\n".join(infos)
