@@ -6,14 +6,13 @@ from scipy import signal
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-print(sys.argv)
+print(*sys.argv[1:])
 inp_root = sys.argv[1]
 sr = int(sys.argv[2])
 n_p = int(sys.argv[3])
 exp_dir = sys.argv[4]
 noparallel = sys.argv[5] == "True"
 per = float(sys.argv[6])
-import multiprocessing
 import os
 import traceback
 
@@ -24,16 +23,13 @@ from scipy.io import wavfile
 from infer.lib.audio import load_audio
 from infer.lib.slicer2 import Slicer
 
-mutex = multiprocessing.Lock()
 f = open("%s/preprocess.log" % exp_dir, "a+")
 
 
 def println(strr):
-    mutex.acquire()
     print(strr)
     f.write("%s\n" % strr)
     f.flush()
-    mutex.release()
 
 
 class PreProcess:
@@ -104,9 +100,9 @@ class PreProcess:
                         idx1 += 1
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            println("%s->Suc." % path)
+            println("%s\t-> Success" % path)
         except:
-            println("%s->%s" % (path, traceback.format_exc()))
+            println("%s\t-> %s" % (path, traceback.format_exc()))
 
     def pipeline_mp(self, infos):
         for path, idx0 in infos:
@@ -138,7 +134,6 @@ class PreProcess:
 def preprocess_trainset(inp_root, sr, n_p, exp_dir, per):
     pp = PreProcess(sr, exp_dir, per)
     println("start preprocess")
-    println(sys.argv)
     pp.pipeline_mp_inp_dir(inp_root, n_p)
     println("end preprocess")
 

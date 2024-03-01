@@ -34,6 +34,7 @@ import logging
 
 
 logging.getLogger("numba").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
@@ -132,16 +133,25 @@ class ToolButton(gr.Button, gr.components.FormComponent):
 weight_root = os.getenv("weight_root")
 weight_uvr5_root = os.getenv("weight_uvr5_root")
 index_root = os.getenv("index_root")
+outside_index_root = os.getenv("outside_index_root")
 
 names = []
 for name in os.listdir(weight_root):
     if name.endswith(".pth"):
         names.append(name)
 index_paths = []
-for root, dirs, files in os.walk(index_root, topdown=False):
-    for name in files:
-        if name.endswith(".index") and "trained" not in name:
-            index_paths.append("%s/%s" % (root, name))
+
+
+def lookup_indices(index_root):
+    global index_paths
+    for root, dirs, files in os.walk(index_root, topdown=False):
+        for name in files:
+            if name.endswith(".index") and "trained" not in name:
+                index_paths.append("%s/%s" % (root, name))
+
+
+lookup_indices(index_root)
+lookup_indices(outside_index_root)
 uvr5_names = []
 for name in os.listdir(weight_uvr5_root):
     if name.endswith(".pth") or "onnx" in name:
@@ -210,7 +220,6 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
-    per = 3.0 if config.is_half else 3.7
     cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
         config.python_cmd,
         trainset_dir,
@@ -219,9 +228,9 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         now_dir,
         exp_dir,
         config.noparallel,
-        per,
+        config.preprocess_per,
     )
-    logger.info(cmd)
+    logger.info("Execute: " + cmd)
     # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
     p = Popen(cmd, shell=True)
     # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
@@ -263,7 +272,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                     f0method,
                 )
             )
-            logger.info(cmd)
+            logger.info("Execute: " + cmd)
             p = Popen(
                 cmd, shell=True, cwd=now_dir
             )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
@@ -294,7 +303,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                             config.is_half,
                         )
                     )
-                    logger.info(cmd)
+                    logger.info("Execute: " + cmd)
                     p = Popen(
                         cmd, shell=True, cwd=now_dir
                     )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -317,7 +326,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                         exp_dir,
                     )
                 )
-                logger.info(cmd)
+                logger.info("Execute: " + cmd)
                 p = Popen(
                     cmd, shell=True, cwd=now_dir
                 )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -347,7 +356,7 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
     ps = []
     for idx, n_g in enumerate(gpus):
         cmd = (
-            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s'
+            '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s %s'
             % (
                 config.python_cmd,
                 config.device,
@@ -357,9 +366,10 @@ def extract_f0_feature(gpus, n_p, f0method, if_f0, exp_dir, version19, gpus_rmvp
                 now_dir,
                 exp_dir,
                 version19,
+                config.is_half,
             )
         )
-        logger.info(cmd)
+        logger.info("Execute: " + cmd)
         p = Popen(
             cmd, shell=True, cwd=now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
@@ -596,7 +606,7 @@ def click_train(
                 version19,
             )
         )
-    logger.info(cmd)
+    logger.info("Execute: " + cmd)
     p = Popen(cmd, shell=True, cwd=now_dir)
     p.wait()
     return "训练结束, 您可查看控制台训练日志或实验文件夹下的train.log"
@@ -663,6 +673,23 @@ def train_index(exp_dir1, version19):
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
+    try:
+        os.link(
+            "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
+            % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+            "%s/%s_IVF%s_Flat_nprobe_%s_%s_%s.index"
+            % (
+                outside_index_root,
+                exp_dir,
+                n_ivf,
+                index_ivf.nprobe,
+                exp_dir1,
+                version19,
+            ),
+        )
+        infos.append("链接索引到%s" % (outside_index_root))
+    except:
+        infos.append("链接索引到%s失败" % (outside_index_root))
 
     infos.append("adding")
     yield "\n".join(infos)
@@ -675,7 +702,7 @@ def train_index(exp_dir1, version19):
         % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     infos.append(
-        "成功构建索引，added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        "成功构建索引 added_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))

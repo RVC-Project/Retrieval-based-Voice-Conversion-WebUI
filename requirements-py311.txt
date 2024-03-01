@@ -4,7 +4,7 @@ numpy
 scipy
 librosa==0.9.1
 llvmlite
-fairseq
+fairseq @ git+https://github.com/One-sixth/fairseq.git
 faiss-cpu
 gradio==3.34.0
 Cython
