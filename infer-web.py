@@ -16,7 +16,7 @@ from infer.lib.train.process_ckpt import (
 from i18n.i18n import I18nAuto
 from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
-import torch
+import torch,platform
 import numpy as np
 import gradio as gr
 import faiss
@@ -673,24 +673,6 @@ def train_index(exp_dir1, version19):
         "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
-    try:
-        os.link(
-            "%s/trained_IVF%s_Flat_nprobe_%s_%s_%s.index"
-            % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
-            "%s/%s_IVF%s_Flat_nprobe_%s_%s_%s.index"
-            % (
-                outside_index_root,
-                exp_dir,
-                n_ivf,
-                index_ivf.nprobe,
-                exp_dir1,
-                version19,
-            ),
-        )
-        infos.append("链接索引到%s" % (outside_index_root))
-    except:
-        infos.append("链接索引到%s失败" % (outside_index_root))
-
     infos.append("adding")
     yield "\n".join(infos)
     batch_size_add = 8192
@@ -705,6 +687,25 @@ def train_index(exp_dir1, version19):
         "成功构建索引 added_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
+    try:
+        link=os.link if platform.system()=="Windows" else os.symlink
+        link(
+            "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+            % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
+            "%s/%s_IVF%s_Flat_nprobe_%s_%s_%s.index"
+            % (
+                outside_index_root,
+                exp_dir1,
+                n_ivf,
+                index_ivf.nprobe,
+                exp_dir1,
+                version19,
+            ),
+        )
+        infos.append("链接索引到外部-%s" % (outside_index_root))
+    except:
+        infos.append("链接索引到外部-%s失败" % (outside_index_root))
+
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
     yield "\n".join(infos)
