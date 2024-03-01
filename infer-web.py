@@ -16,7 +16,7 @@ from infer.lib.train.process_ckpt import (
 from i18n.i18n import I18nAuto
 from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
-import torch,platform
+import torch, platform
 import numpy as np
 import gradio as gr
 import faiss
@@ -688,7 +688,7 @@ def train_index(exp_dir1, version19):
         % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     try:
-        link=os.link if platform.system()=="Windows" else os.symlink
+        link = os.link if platform.system() == "Windows" else os.symlink
         link(
             "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
             % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
