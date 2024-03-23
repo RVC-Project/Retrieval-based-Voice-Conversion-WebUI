@@ -88,19 +88,6 @@ pip install -r requirements-amd.txt
 pip install -r requirements-ipex.txt
 ```
 
-#### 2. 通过 poetry 来安装依赖
-安装 Poetry 依赖管理工具，若已安装则跳过。参考自: https://python-poetry.org/docs/#installation
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
-
-通过 Poetry 安装依赖时，python 建议使用 3.7-3.10 版本，其余版本在安装 llvmlite==0.39.0 时会出现冲突
-```bash
-poetry init -n
-poetry env use "path to your python.exe"
-poetry run pip install -r requirments.txt
-```
-
 ### MacOS
 可以通过 `run.sh` 来安装依赖
 ```bash
