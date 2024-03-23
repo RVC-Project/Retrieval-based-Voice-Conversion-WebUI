@@ -61,7 +61,7 @@
 
 ### Windows/Linux/MacOS等平台通用方法
 下列方法任选其一。
-#### 1. 通过 pip 安装依赖
+#### 通过 pip 安装依赖
 1. 安装Pytorch及其核心依赖，若已安装则跳过。参考自: https://pytorch.org/get-started/locally/
 ```bash
 pip install torch torchvision torchaudio
