@@ -98,7 +98,7 @@ curl -sSL https://install.python-poetry.org | python3 -
 ```bash
 poetry init -n
 poetry env use "path to your python.exe"
-poetry run pip install -r requirments.txt
+poetry run pip install -r requirements.txt
 ```
 
 ### MacOS
