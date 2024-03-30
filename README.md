@@ -57,8 +57,8 @@
 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
 ## 环境配置
-以下指令需在 Python 版本的环境中执行，建议使用 conda 管理 python 环境
- - 3.8 <= python < 3.11 参考[bug](https://github.com/facebookresearch/fairseq/issues/5012)
+以下指令需在以下 Python 版本的环境中执行，建议使用 conda 管理 Python 环境
+ - 3.8 <= Python < 3.11 参考[bug](https://github.com/facebookresearch/fairseq/issues/5012)
 
 ### Windows/Linux/MacOS等平台通用方法
 下列方法任选其一。
