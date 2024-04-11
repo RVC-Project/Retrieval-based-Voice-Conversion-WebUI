@@ -7,7 +7,7 @@ librosa==0.9.1
 llvmlite==0.39.0
 fairseq==0.12.2
 faiss-cpu==1.7.3
-gradio==4.11.0
+gradio==4.23.0
 Cython
 pydub>=0.25.1
 soundfile>=0.12.1
