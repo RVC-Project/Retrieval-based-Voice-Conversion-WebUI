@@ -214,9 +214,9 @@ sudo usermod -aG video $USERNAME
 ### 直接起動
 
 以下のコマンドで WebUI を起動します
-'''bash
+```bash
 python infer-web.py
-'''
+```
 
 ### 統合パッケージの使用
 
@@ -228,15 +228,15 @@ python infer-web.py
 
 #### MacOS ユーザー
 
-'''bash
+```bash
 sh ./run.sh
-'''
+```
 
 ### IPEX 技術が必要な I カードユーザー向け(Linux のみ)
 
-'''bash
+```bash
 source /opt/intel/oneapi/setvars.sh
-'''
+```
 
 ## 参考プロジェクト
 
