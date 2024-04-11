@@ -75,7 +75,7 @@ pip install torch torchvision torchaudio
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2
 ```
 
-Then can use poetry to install the other dependencies:
+Then you can use poetry to install the other dependencies:
 ```bash
 # Install the Poetry dependency management tool, skip if installed
 # Reference: https://python-poetry.org/docs/#installation
