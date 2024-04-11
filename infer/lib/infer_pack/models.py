@@ -52,7 +52,13 @@ class TextEncoder(nn.Module):
         )
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, phone: torch.Tensor, pitch: torch.Tensor, lengths: torch.Tensor, skip_head: Optional[torch.Tensor] = None):
+    def forward(
+        self,
+        phone: torch.Tensor,
+        pitch: torch.Tensor,
+        lengths: torch.Tensor,
+        skip_head: Optional[torch.Tensor] = None,
+    ):
         if pitch is None:
             x = self.emb_phone(phone)
         else:
@@ -67,8 +73,8 @@ class TextEncoder(nn.Module):
         if skip_head is not None:
             assert isinstance(skip_head, torch.Tensor)
             head = int(skip_head.item())
-            x = x[:, :, head : ]
-            x_mask = x_mask[:, :, head : ]
+            x = x[:, :, head:]
+            x_mask = x_mask[:, :, head:]
         stats = self.proj(x) * x_mask
         m, logs = torch.split(stats, self.out_channels, dim=1)
         return m, logs, x_mask
@@ -807,7 +813,7 @@ class SynthesizerTrnMs768NSFsid(SynthesizerTrnMs256NSFsid):
             spk_embed_dim,
             gin_channels,
             sr,
-            **kwargs 
+            **kwargs
         )
         del self.enc_p
         self.enc_p = TextEncoder(
@@ -1021,7 +1027,7 @@ class SynthesizerTrnMs768NSFsid_nono(SynthesizerTrnMs256NSFsid_nono):
             spk_embed_dim,
             gin_channels,
             sr,
-            **kwargs        
+            **kwargs
         )
         del self.enc_p
         self.enc_p = TextEncoder(
