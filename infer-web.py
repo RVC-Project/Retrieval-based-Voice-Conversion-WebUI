@@ -1174,8 +1174,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 if_f0_3 = gr.Radio(
                     label=i18n("模型是否带音高指导(唱歌一定要, 语音可以不要)"),
-                    choices=[True, False],
-                    value=True,
+                    choices=[i18n("是"), i18n("否")],
+                    value=i18n("是"),
                     interactive=True,
                 )
                 version19 = gr.Radio(
