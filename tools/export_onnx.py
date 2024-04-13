@@ -6,12 +6,12 @@ if __name__ == "__main__":
 
     ModelPath = "Shiroha/shiroha.pth"  # 模型路径
     ExportedPath = "model.onnx"  # 输出路径
-    hidden_channels = 256  # hidden_channels，为768Vec做准备
+    encoder_dim = 256  # encoder_dim
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     print(*cpt["config"])
 
-    test_phone = torch.rand(1, 200, hidden_channels)  # hidden unit
+    test_phone = torch.rand(1, 200, encoder_dim)  # hidden unit
     test_phone_lengths = torch.tensor([200]).long()  # hidden unit 长度（貌似没啥用）
     test_pitch = torch.randint(size=(1, 200), low=5, high=255)  # 基频（单位赫兹）
     test_pitchf = torch.rand(1, 200)  # nsf基频
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     device = "cpu"  # 导出时设备（不影响使用模型）
 
     net_g = SynthesizerTrnMsNSFsidM(
-        *cpt["config"], is_half=False
+        *cpt["config"], is_half=False, encoder_dim = encoder_dim
     )  # fp32导出（C++要支持fp16必须手动将内存重新排列所以暂时不用fp16）
     net_g.load_state_dict(cpt["weight"], strict=False)
     input_names = ["phone", "phone_lengths", "pitch", "pitchf", "ds", "rnd"]
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             "rnd": [2],
         },
         do_constant_folding=False,
-        opset_version=16,
+        opset_version=18,
         verbose=False,
         input_names=input_names,
         output_names=output_names,
