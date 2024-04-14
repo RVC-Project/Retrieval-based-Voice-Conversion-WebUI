@@ -636,15 +636,15 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
         self.enc_p = TextEncoder(
-                encoder_dim,
-                inter_channels,
-                hidden_channels,
-                filter_channels,
-                n_heads,
-                n_layers,
-                kernel_size,
-                float(p_dropout),
-            )
+            encoder_dim,
+            inter_channels,
+            hidden_channels,
+            filter_channels,
+            n_heads,
+            n_layers,
+            kernel_size,
+            float(p_dropout),
+        )
         self.dec = GeneratorNSF(
             inter_channels,
             resblock,
