@@ -6,7 +6,7 @@ This TIPS explains how data training is done.
 I will explain along the steps in the training tab of the GUI.
 
 ## step1
-Set the experiment name here. 
+Set the experiment name here.
 
 You can also set here whether the model should take pitch into account.
 If the model doesn't consider pitch, the model will be lighter, but not suitable for singing.
@@ -48,8 +48,8 @@ RVC starts training the model from pretrained weights instead of from 0, so it c
 
 By default
 
-- If you consider pitch, it loads `rvc-location/pretrained/f0G40k.pth` and `rvc-location/pretrained/f0D40k.pth`. 
-- If you don't consider pitch, it loads `rvc-location/pretrained/f0G40k.pth` and `rvc-location/pretrained/f0D40k.pth`. 
+- If you consider pitch, it loads `rvc-location/pretrained/f0G40k.pth` and `rvc-location/pretrained/f0D40k.pth`.
+- If you don't consider pitch, it loads `rvc-location/pretrained/G40k.pth` and `rvc-location/pretrained/D40k.pth`.
 
 When learning, model parameters are saved in `logs/your-experiment-name/G_{}.pth` and `logs/your-experiment-name/D_{}.pth` for each save_every_epoch, but by specifying this path, you can start learning. You can restart or start training from model weights learned in a different experiment.
 
