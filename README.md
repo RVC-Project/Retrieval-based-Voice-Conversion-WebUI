@@ -24,6 +24,8 @@
 
 > 请期待RVCv3的底模，参数更大，数据更大，效果更好，基本持平的推理速度，需要训练数据量更少。
 
+> 由于某些地区无法直连Hugging Face，即使设法成功访问，速度也十分缓慢，特推出模型/整合包/工具的一键下载器，欢迎试用：[RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
+
 <table>
    <tr>
 		<td align="center">训练推理界面</td>
@@ -111,7 +113,7 @@ sh ./run.sh
 ## 其他预模型准备
 RVC需要其他一些预模型来推理和训练。
 
-你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。
+你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。你也可以使用模型/整合包/工具的一键下载器：[RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
 
 ### 1. 下载 assets
 以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称。你可以在`tools`文件夹找到下载它们的脚本。
