@@ -165,7 +165,7 @@ dependencies:
       - opencv-python==4.7.0.72
       - pooch==1.6.0
       - portalocker==2.7.0
-      - pysimplegui==4.60.5
+      - FreeSimpleGUI
       - pywin32==306
       - pyworld==0.3.3
       - regex==2023.5.5

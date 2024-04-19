@@ -84,7 +84,7 @@ if __name__ == "__main__":
     import librosa
     from tools.torchgate import TorchGate
     import numpy as np
-    import PySimpleGUI as sg
+    import FreeSimpleGUI as sg
     import sounddevice as sd
     import torch
     import torch.nn.functional as F
