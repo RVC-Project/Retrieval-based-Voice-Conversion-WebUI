@@ -1,8 +1,7 @@
-import platform, os
+import platform
 import ffmpeg
 import numpy as np
 import av
-from io import BytesIO
 
 
 def wav2(i, o, format):

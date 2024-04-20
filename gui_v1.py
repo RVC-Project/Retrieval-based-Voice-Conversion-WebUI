@@ -75,14 +75,11 @@ if __name__ == "__main__":
     import json
     import multiprocessing
     import re
-    import threading
     import time
-    import traceback
     from multiprocessing import Queue, cpu_count
-    from queue import Empty
 
     import librosa
-    from tools.torchgate import TorchGate
+    from infer.modules.gui import TorchGate
     import numpy as np
     import FreeSimpleGUI as sg
     import sounddevice as sd
@@ -90,7 +87,7 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
-    import tools.rvc_for_realtime as rvc_for_realtime
+    import infer.lib.rtrvc as rtrvc
     from i18n.i18n import I18nAuto
     from configs.config import Config
 
@@ -688,7 +685,7 @@ if __name__ == "__main__":
 
         def start_vc(self):
             torch.cuda.empty_cache()
-            self.rvc = rvc_for_realtime.RVC(
+            self.rvc = rtrvc.RVC(
                 self.gui_config.pitch,
                 self.gui_config.pth_path,
                 self.gui_config.index_path,

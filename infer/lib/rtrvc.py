@@ -1,6 +1,5 @@
 from io import BytesIO
 import os
-import pickle
 import sys
 import traceback
 from infer.lib import jit
@@ -16,13 +15,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchcrepe
-
-from infer.lib.infer_pack.models import (
-    SynthesizerTrnMs256NSFsid,
-    SynthesizerTrnMs256NSFsid_nono,
-    SynthesizerTrnMs768NSFsid,
-    SynthesizerTrnMs768NSFsid_nono,
-)
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
