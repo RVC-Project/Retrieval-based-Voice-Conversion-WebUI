@@ -47,13 +47,5 @@ else
   fi
 fi
 
-# Download models
-chmod +x tools/dlmodels.sh
-./tools/dlmodels.sh
-
-if [ $? -ne 0 ]; then
-  exit 1
-fi
-
 # Run the main script
 python3.8 infer-web.py --pycmd python3.8
