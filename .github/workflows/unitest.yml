@@ -19,13 +19,14 @@ jobs:
       run: |
         sudo apt update
         sudo apt -y install ffmpeg
-        sudo apt -y install -qq aria2
-        aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt -d ./ -o hubert_base.pt
+        wget https://github.com/RVC-Project/RVC-Models-Downloader/releases/download/v0.2.1/rvcmd_linux_amd64.deb
+        sudo apt -y install ./rvcmd_linux_amd64.deb
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools
         python -m pip install --upgrade wheel
         pip install torch torchvision torchaudio
         pip install -r requirements.txt
+        rvcmd -notrs -w 1 -notui assets/all
     - name: Test step 1 & 2
       run: |
         mkdir -p logs/mi-test
