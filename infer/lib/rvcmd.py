@@ -30,6 +30,7 @@ def check_model(dir_name: Path, model_name: str, hash: str) -> bool:
             logger.info(f"{target} sha256 hash mismatch.")
             logger.info(f"expected: {hash}")
             logger.info(f"real val: {digest}")
+            os.remove(str(target))
             return False
     return True
 
@@ -113,7 +114,7 @@ def download_and_extract_tar_gz(url: str, folder: str):
     import tarfile
 
     logger.info(f"downloading {url}")
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=(5,10))
     with BytesIO() as out_file:
         out_file.write(response.content)
         out_file.seek(0)
@@ -127,7 +128,7 @@ def download_and_extract_zip(url: str, folder: str):
     import zipfile
 
     logger.info(f"downloading {url}")
-    response = requests.get(url)
+    response = requests.get(url, stream=True, timeout=(5,10))
     with BytesIO() as out_file:
         out_file.write(response.content)
         out_file.seek(0)
@@ -136,8 +137,14 @@ def download_and_extract_zip(url: str, folder: str):
             zip_ref.extractall(folder)
         logger.info(f"extracted into {folder}")
 
+def download_dns_yaml(url: str, folder: str):
+    logger.info(f"downloading {url}")
+    response = requests.get(url, stream=True, timeout=(5,10))
+    with open(f"{folder}/dns.yaml", "wb") as out_file:
+        out_file.write(response.content)
+        logger.info(f"downloaded into {folder}")
 
-def download_all_assets(tmpdir: str, version="0.2.1"):
+def download_all_assets(tmpdir: str, version="0.2.2"):
     import subprocess
     import platform
 
@@ -161,14 +168,35 @@ def download_all_assets(tmpdir: str, version="0.2.1"):
     if not architecture:
         logger.error(f"architecture {architecture} is not supported")
         exit(1)
-    BASE_URL = "https://github.com/RVC-Project/RVC-Models-Downloader/releases/download/"
-    suffix = "zip" if is_win else "tar.gz"
-    RVCMD_URL = BASE_URL + f"v{version}/rvcmd_{system_type}_{architecture}.{suffix}"
-    cmdfile = tmpdir + "/rvcmd"
-    if is_win:
-        download_and_extract_zip(RVCMD_URL, tmpdir)
-        cmdfile += ".exe"
-    else:
-        download_and_extract_tar_gz(RVCMD_URL, tmpdir)
-        os.chmod(cmdfile, 0o755)
-    subprocess.run([cmdfile, "-notui", "-w", "0", "assets/all"])
+    try:
+        BASE_URL = "https://github.com/RVC-Project/RVC-Models-Downloader/releases/download/"
+        suffix = "zip" if is_win else "tar.gz"
+        RVCMD_URL = BASE_URL + f"v{version}/rvcmd_{system_type}_{architecture}.{suffix}"
+        cmdfile = tmpdir + "/rvcmd"
+        if is_win:
+            download_and_extract_zip(RVCMD_URL, tmpdir)
+            cmdfile += ".exe"
+        else:
+            download_and_extract_tar_gz(RVCMD_URL, tmpdir)
+            os.chmod(cmdfile, 0o755)
+        subprocess.run([cmdfile, "-notui", "-w", "0", "assets/all"])
+    except Exception:
+        BASE_URL = "https://raw.gitcode.com/u011570312/RVC-Models-Downloader/assets/"
+        suffix = {
+            "darwin_amd64": "421",
+            "darwin_arm64": "422",
+            "linux_386": "423",
+            "linux_amd64": "424",
+            "linux_arm64": "425",
+            "windows_386": "426",
+            "windows_amd64": "427",
+        }[f"{system_type}_{architecture}"]
+        RVCMD_URL = BASE_URL + suffix
+        download_dns_yaml("https://raw.gitcode.com/u011570312/RVC-Models-Downloader/raw/main/dns.yaml", tmpdir)
+        if is_win:
+            download_and_extract_zip(RVCMD_URL, tmpdir)
+            cmdfile += ".exe"
+        else:
+            download_and_extract_tar_gz(RVCMD_URL, tmpdir)
+            os.chmod(cmdfile, 0o755)
+        subprocess.run([cmdfile, "-notui", "-w", "0", "-dns", f"{tmpdir}/dns.yaml", "assets/all"])

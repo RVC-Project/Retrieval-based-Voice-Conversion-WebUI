@@ -13,7 +13,6 @@ from infer.lib.train.process_ckpt import (
     merge,
     show_info,
 )
-from infer.lib.rvcmd import check_all_assets, download_all_assets
 from i18n.i18n import I18nAuto
 from configs.config import Config
 from sklearn.cluster import MiniBatchKMeans
@@ -54,11 +53,13 @@ torch.manual_seed(114514)
 config = Config()
 vc = VC(config)
 
-if not config.nocheck and not check_all_assets():
-    download_all_assets(tmpdir=tmp)
+if not config.nocheck:
+    from infer.lib.rvcmd import check_all_assets, download_all_assets
     if not check_all_assets():
-        logging.error("counld not satisfy all assets needed.")
-        exit(1)
+        download_all_assets(tmpdir=tmp)
+        if not check_all_assets():
+            logging.error("counld not satisfy all assets needed.")
+            exit(1)
 
 if config.dml == True:
 
