@@ -107,7 +107,9 @@ if __name__ == "__main__":
     opt_q = Queue()
     n_cpu = min(cpu_count(), 8)
     for _ in range(n_cpu):
-        Harvest(inp_q, opt_q).start()
+        p = Harvest(inp_q, opt_q)
+        p.daemon = True
+        p.start()
 
     class GUIConfig:
         def __init__(self) -> None:
