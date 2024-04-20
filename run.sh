@@ -48,4 +48,4 @@ else
 fi
 
 # Run the main script
-python3.8 infer-web.py --pycmd python3.8
+python3 infer-web.py --pycmd python3
