@@ -55,6 +55,7 @@ vc = VC(config)
 
 if not config.nocheck:
     from infer.lib.rvcmd import check_all_assets, download_all_assets
+
     if not check_all_assets():
         download_all_assets(tmpdir=tmp)
         if not check_all_assets():
