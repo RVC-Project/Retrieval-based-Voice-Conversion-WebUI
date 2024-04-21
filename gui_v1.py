@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import shutil
 
 load_dotenv()
+load_dotenv("sha256.env")
 
 os.environ["OMP_NUM_THREADS"] = "4"
 if sys.platform == "darwin":
