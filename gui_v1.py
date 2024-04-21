@@ -142,8 +142,22 @@ if __name__ == "__main__":
             self.input_devices_indices = None
             self.output_devices_indices = None
             self.stream = None
+            if not self.config.nocheck: self.check_assets()
             self.update_devices()
             self.launcher()
+        
+        def check_assets(self):
+            global now_dir
+            from infer.lib.rvcmd import check_all_assets, download_all_assets
+
+            tmp = os.path.join(now_dir, "TEMP")
+            shutil.rmtree(tmp, ignore_errors=True)
+            os.makedirs(tmp, exist_ok=True)
+            if not check_all_assets():
+                download_all_assets(tmpdir=tmp)
+                if not check_all_assets():
+                    printt("counld not satisfy all assets needed.")
+                    exit(1)
 
         def load(self):
             try:
