@@ -10,7 +10,6 @@ from torch import nn
 from torch.nn import AvgPool1d, Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
-
 from infer.lib.infer_pack import attentions, commons, modules
 from infer.lib.infer_pack.commons import get_padding, init_weights
 
@@ -250,7 +249,12 @@ class Generator(torch.nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None):
+    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None, n_res: Optional[torch.Tensor] = None):
+        if n_res is not None:
+            assert isinstance(n_res, torch.Tensor)
+            n = int(n_res.item())
+            if n != x.shape[-1]:
+                x = F.interpolate(x, size=n, mode='linear')
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -528,10 +532,17 @@ class GeneratorNSF(torch.nn.Module):
         self.upp = math.prod(upsample_rates)
 
         self.lrelu_slope = modules.LRELU_SLOPE
-
-    def forward(self, x, f0, g: Optional[torch.Tensor] = None):
+                
+    def forward(self, x, f0, g: Optional[torch.Tensor] = None, n_res: Optional[torch.Tensor] = None):
         har_source, noi_source, uv = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
+        if n_res is not None:
+            assert isinstance(n_res, torch.Tensor)
+            n = int(n_res.item())
+            if n * self.upp != har_source.shape[-1]:
+                har_source = F.interpolate(har_source, size=n*self.upp, mode='linear')
+            if n != x.shape[-1]:
+                x = F.interpolate(x, size=n, mode='linear')
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -558,6 +569,7 @@ class GeneratorNSF(torch.nn.Module):
         x = F.leaky_relu(x)
         x = self.conv_post(x)
         x = torch.tanh(x)
+
         return x
 
     def remove_weight_norm(self):
@@ -748,6 +760,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         sid: torch.Tensor,
         skip_head: Optional[torch.Tensor] = None,
         return_length: Optional[torch.Tensor] = None,
+        return_length2: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
@@ -767,7 +780,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
             m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
-        o = self.dec(z * x_mask, nsff0, g=g)
+        o = self.dec(z * x_mask, nsff0, g=g, n_res=return_length2)
         return o, x_mask, (z, z_p, m_p, logs_p)
 
 
@@ -963,6 +976,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         sid: torch.Tensor,
         skip_head: Optional[torch.Tensor] = None,
         return_length: Optional[torch.Tensor] = None,
+        return_length2: Optional[torch.Tensor] = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
@@ -981,7 +995,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
             m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
-        o = self.dec(z * x_mask, g=g)
+        o = self.dec(z * x_mask, g=g, n_res=return_length2)
         return o, x_mask, (z, z_p, m_p, logs_p)
 
 

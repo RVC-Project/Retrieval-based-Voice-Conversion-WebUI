@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchcrepe
+from torchaudio.transforms import Resample
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -40,6 +41,7 @@ class RVC:
     def __init__(
         self,
         key,
+        formant,
         pth_path,
         index_path,
         index_rate,
@@ -68,6 +70,7 @@ class RVC:
             # device="cpu"########强制cpu测试
             self.device = config.device
             self.f0_up_key = key
+            self.formant_shift = formant
             self.f0_min = 50
             self.f0_max = 1100
             self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
@@ -75,7 +78,7 @@ class RVC:
             self.n_cpu = n_cpu
             self.use_jit = self.config.use_jit
             self.is_half = config.is_half
-
+            
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
@@ -89,7 +92,9 @@ class RVC:
             self.cache_pitchf = torch.zeros(
                 1024, device=self.device, dtype=torch.float32
             )
-
+            
+            self.resample_kernel = {}
+            
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
@@ -186,7 +191,10 @@ class RVC:
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
-
+    
+    def change_formant(self, new_formant):
+        self.formant_shift = new_formant
+        
     def change_index_rate(self, new_index_rate):
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
@@ -198,7 +206,7 @@ class RVC:
         if not torch.is_tensor(f0):
             f0 = torch.from_numpy(f0)
         f0 = f0.float().to(self.device).squeeze()
-        f0_mel = 1127 * torch.log(1 + f0 / 700)
+        f0_mel = 1127 * torch.log(1 + f0 * pow(2, -self.formant_shift / 12) / 700)
         f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
             self.f0_mel_max - self.f0_mel_min
         ) + 1
@@ -410,6 +418,8 @@ class RVC:
         p_len = torch.LongTensor([p_len]).to(self.device)
         sid = torch.LongTensor([0]).to(self.device)
         skip_head = torch.LongTensor([skip_head])
+        factor = pow(2, self.formant_shift / 12)
+        return_length2 = torch.LongTensor([int(np.ceil(return_length * factor))])
         return_length = torch.LongTensor([return_length])
         with torch.no_grad():
             if self.if_f0 == 1:
@@ -421,11 +431,22 @@ class RVC:
                     sid,
                     skip_head,
                     return_length,
+                    return_length2,
                 )
             else:
                 infered_audio, _, _ = self.net_g.infer(
-                    feats, p_len, sid, skip_head, return_length
+                    feats, p_len, sid, skip_head, return_length, return_length2
                 )
+        infered_audio = infered_audio.squeeze(1).float()
+        upp_res = int(np.floor(factor * self.tgt_sr // 100))
+        if upp_res != self.tgt_sr // 100:
+            if upp_res not in self.resample_kernel:
+                self.resample_kernel[upp_res] = Resample(
+                    orig_freq=upp_res, 
+                    new_freq=self.tgt_sr // 100, 
+                    dtype=torch.float32,
+                ).to(self.device)
+            infered_audio = self.resample_kernel[upp_res](infered_audio[: ,: return_length * upp_res])
         t5 = ttime()
         printt(
             "Spent time: fea = %.3fs, index = %.3fs, f0 = %.3fs, model = %.3fs",
@@ -434,4 +455,4 @@ class RVC:
             t4 - t3,
             t5 - t4,
         )
-        return infered_audio.squeeze().float()
+        return infered_audio.squeeze()
