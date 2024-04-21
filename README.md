@@ -54,19 +54,29 @@
 + 可以通过模型融合来改变音色(借助ckpt处理选项卡中的ckpt-merge)
 + 简单易用的网页界面
 + 可调用UVR5模型来快速分离人声和伴奏
-+ 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题。效果最好（显著地）但比crepe_full更快、资源占用更小
++ 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题，效果更好，运行更快，资源占用更少
 + A卡I卡加速支持
 
 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
 ## 环境配置
-以下指令需在以下 Python 版本的环境中执行，建议使用 conda 管理 Python 环境
- - 3.8 <= Python < 3.11 参考[bug](https://github.com/facebookresearch/fairseq/issues/5012)
+### Python 版本限制
+> 建议使用 conda 管理 Python 环境
 
-### Windows/Linux/MacOS等平台通用方法
-下列方法任选其一。
-#### 1. 通过 pip 安装依赖
-1. 安装Pytorch及其核心依赖，若已安装则跳过。参考自: https://pytorch.org/get-started/locally/
+> 版本限制原因参见此[bug](https://github.com/facebookresearch/fairseq/issues/5012)
+
+```bash
+python --version # 3.8 <= Python < 3.11
+```
+
+### Linux/MacOS 一键依赖安装启动脚本
+执行项目根目录下`run.sh`即可一键配置`venv`虚拟环境、自动安装所需依赖并启动主程序。
+```bash
+sh ./run.sh
+```
+
+### 手动安装依赖
+1. 安装`pytorch`及其核心依赖，若已安装则跳过。参考自: https://pytorch.org/get-started/locally/
 ```bash
 pip install torch torchvision torchaudio
 ```
@@ -92,45 +102,42 @@ pip install -r requirements-amd.txt
 pip install -r requirements-ipex.txt
 ```
 
-#### 2. 通过 poetry 来安装依赖
-安装 Poetry 依赖管理工具，若已安装则跳过。参考自: https://python-poetry.org/docs/#installation
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
+## 其他资源准备
+### 1. assets
+> RVC需要位于`assets`文件夹下的一些模型资源进行推理和训练。
+#### 自动下载资源(默认)
+默认情况下，RVC可在主程序启动时自动检查并下载所需资源。如果下载失败，您还可以选择手动下载后存放到相应位置。
 
-通过 Poetry 安装依赖时，python 建议使用 3.7-3.10 版本，其余版本在安装 llvmlite==0.39.0 时会出现冲突
-```bash
-poetry init -n
-poetry env use "path to your python.exe"
-poetry run pip install -r requirements.txt
-```
+#### 手动下载资源
+> 所有资源文件均位于[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-### MacOS
-可以通过 `run.sh` 来安装依赖
-```bash
-sh ./run.sh
-```
+> 你可以在`tools`文件夹找到下载它们的脚本
 
-## 其他预模型准备
-RVC需要其他一些预模型来推理和训练。
+> 你也可以使用模型/整合包/工具的一键下载器：[RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
 
-你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。你也可以使用模型/整合包/工具的一键下载器：[RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
-
-### 1. 下载 assets
-以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称。你可以在`tools`文件夹找到下载它们的脚本。
+以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称。
 
 - ./assets/hubert/hubert_base.pt
-
-- ./assets/pretrained 
-
+	```bash
+	rvcmd assets/hubert # RVC-Models-Downloader command
+	```
+- ./assets/pretrained
+	```bash
+	rvcmd assets/v1 # RVC-Models-Downloader command
+	```
 - ./assets/uvr5_weights
-
+	```bash
+	rvcmd assets/uvr5 # RVC-Models-Downloader command
+	```
 想使用v2版本模型的话，需要额外下载
 
 - ./assets/pretrained_v2
+	```bash
+	rvcmd assets/v2 # RVC-Models-Downloader command
+	```
 
-### 2. 安装 ffmpeg
-若ffmpeg和ffprobe已安装则跳过。
+### 2. 安装 ffmpeg 工具
+若已安装`ffmpeg`和`ffprobe`则可跳过此步骤。
 
 #### Ubuntu/Debian 用户
 ```bash
@@ -142,6 +149,9 @@ brew install ffmpeg
 ```
 #### Windows 用户
 下载后放置在根目录。
+```bash
+rvcmd tools/ffmpeg # RVC-Models-Downloader command
+```
 - 下载[ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
 
 - 下载[ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
@@ -151,10 +161,16 @@ brew install ffmpeg
 如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于RVC根目录。
 
 - 下载[rmvpe.pt](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
+	```bash
+	rvcmd assets/rmvpe # RVC-Models-Downloader command
+	```
 
 #### 下载 rmvpe 的 dml 环境(可选, A卡/I卡用户)
 
 - 下载[rmvpe.onnx](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
+	```bash
+	rvcmd assets/rmvpe # RVC-Models-Downloader command
+	```
 
 ### 4. AMD显卡Rocm(可选, 仅Linux)
 
@@ -181,23 +197,19 @@ sudo usermod -aG video $USERNAME
 ```bash
 python infer-web.py
 ```
-
-若先前使用 Poetry 安装依赖，则可以通过以下方式启动WebUI
+### Linux/MacOS 用户
 ```bash
-poetry run python infer-web.py
-```
-
-### 使用整合包
-下载并解压`RVC-beta.7z`
-#### Windows 用户
-双击`go-web.bat`
-#### MacOS 用户
-```bash
-sh ./run.sh
+./run.sh
 ```
 ### 对于需要使用IPEX技术的I卡用户(仅Linux)
 ```bash
 source /opt/intel/oneapi/setvars.sh
+./run.sh
+```
+### 使用整合包 (Windows 用户)
+下载并解压`RVC-beta.7z`，解压后双击`go-web.bat`即可一键启动。
+```bash
+rvcmd packs/general/latest # RVC-Models-Downloader command
 ```
 
 ## 参考项目
