@@ -249,12 +249,17 @@ class Generator(torch.nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x: torch.Tensor, g: Optional[torch.Tensor] = None, n_res: Optional[torch.Tensor] = None):
+    def forward(
+        self,
+        x: torch.Tensor,
+        g: Optional[torch.Tensor] = None,
+        n_res: Optional[torch.Tensor] = None,
+    ):
         if n_res is not None:
             assert isinstance(n_res, torch.Tensor)
             n = int(n_res.item())
             if n != x.shape[-1]:
-                x = F.interpolate(x, size=n, mode='linear')
+                x = F.interpolate(x, size=n, mode="linear")
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
@@ -532,17 +537,23 @@ class GeneratorNSF(torch.nn.Module):
         self.upp = math.prod(upsample_rates)
 
         self.lrelu_slope = modules.LRELU_SLOPE
-                
-    def forward(self, x, f0, g: Optional[torch.Tensor] = None, n_res: Optional[torch.Tensor] = None):
+
+    def forward(
+        self,
+        x,
+        f0,
+        g: Optional[torch.Tensor] = None,
+        n_res: Optional[torch.Tensor] = None,
+    ):
         har_source, noi_source, uv = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
         if n_res is not None:
             assert isinstance(n_res, torch.Tensor)
             n = int(n_res.item())
             if n * self.upp != har_source.shape[-1]:
-                har_source = F.interpolate(har_source, size=n*self.upp, mode='linear')
+                har_source = F.interpolate(har_source, size=n * self.upp, mode="linear")
             if n != x.shape[-1]:
-                x = F.interpolate(x, size=n, mode='linear')
+                x = F.interpolate(x, size=n, mode="linear")
         x = self.conv_pre(x)
         if g is not None:
             x = x + self.cond(g)
