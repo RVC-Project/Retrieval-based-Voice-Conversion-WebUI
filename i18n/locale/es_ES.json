@@ -37,6 +37,7 @@
     "修改模型信息(仅支持weights文件夹下提取的小模型文件)": "Modificar la información del modelo (solo admite archivos de modelos pequeños extraídos en la carpeta weights)",
     "停止音频转换": "Detener la conversión de audio",
     "全流程结束！": "¡Todo el proceso ha terminado!",
+    "共振偏移": "共振偏移",
     "刷新音色列表和索引路径": "Actualizar la lista de modelos e índice de rutas",
     "加载模型": "Cargar modelo",
     "加载预训练底模D路径": "Cargue la ruta del modelo D base pre-entrenada.",
