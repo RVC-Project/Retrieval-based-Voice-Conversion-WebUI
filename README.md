@@ -77,30 +77,30 @@ sh ./run.sh
 
 ### 手动安装依赖
 1. 安装`pytorch`及其核心依赖，若已安装则跳过。参考自: https://pytorch.org/get-started/locally/
-```bash
-pip install torch torchvision torchaudio
-```
+	```bash
+	pip install torch torchvision torchaudio
+	```
 2. 如果是 win 系统 + Nvidia Ampere 架构(RTX30xx)，根据 #21 的经验，需要指定 pytorch 对应的 cuda 版本
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-```
+	```bash
+	pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+	```
 3. 根据自己的显卡安装对应依赖
 - N卡
-```bash
-pip install -r requirements.txt
-```
+	```bash
+	pip install -r requirements.txt
+	```
 - A卡/I卡
-```bash
-pip install -r requirements-dml.txt
-```
+	```bash
+	pip install -r requirements-dml.txt
+	```
 - A卡ROCM(Linux)
-```bash
-pip install -r requirements-amd.txt
-```
+	```bash
+	pip install -r requirements-amd.txt
+	```
 - I卡IPEX(Linux)
-```bash
-pip install -r requirements-ipex.txt
-```
+	```bash
+	pip install -r requirements-ipex.txt
+	```
 
 ## 其他资源准备
 ### 1. assets

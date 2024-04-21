@@ -77,30 +77,30 @@ sh ./run.sh
 
 ### Manual Installation of Dependencies
 1. Install `pytorch` and its core dependencies, skip if already installed. Refer to: https://pytorch.org/get-started/locally/
-```bash
-pip install torch torchvision torchaudio
-```
+	```bash
+	pip install torch torchvision torchaudio
+	```
 2. If you are using Nvidia Ampere architecture (RTX30xx) in Windows, according to the experience of #21, you need to specify the cuda version corresponding to pytorch.
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-```
+	```bash
+	pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+	```
 3. Install the corresponding dependencies according to your own graphics card.
 - Nvidia GPU
-```bash
-pip install -r requirements.txt
-```
+	```bash
+	pip install -r requirements.txt
+	```
 - AMD/Intel GPU
-```bash
-pip install -r requirements-dml.txt
-```
+	```bash
+	pip install -r requirements-dml.txt
+	```
 - AMD ROCM (Linux)
-```bash
-pip install -r requirements-amd.txt
-```
+	```bash
+	pip install -r requirements-amd.txt
+	```
 - Intel IPEX (Linux)
-```bash
-pip install -r requirements-ipex.txt
-```
+	```bash
+	pip install -r requirements-ipex.txt
+	```
 
 ## Preparation of Other Files
 ### 1. Assets
