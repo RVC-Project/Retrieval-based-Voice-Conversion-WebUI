@@ -143,10 +143,11 @@ if __name__ == "__main__":
             self.input_devices_indices = None
             self.output_devices_indices = None
             self.stream = None
-            if not self.config.nocheck: self.check_assets()
+            if not self.config.nocheck:
+                self.check_assets()
             self.update_devices()
             self.launcher()
-        
+
         def check_assets(self):
             global now_dir
             from infer.lib.rvcmd import check_all_assets, download_all_assets
