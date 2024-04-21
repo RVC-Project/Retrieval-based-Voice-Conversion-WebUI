@@ -206,7 +206,7 @@ class RVC:
         if not torch.is_tensor(f0):
             f0 = torch.from_numpy(f0)
         f0 = f0.float().to(self.device).squeeze()
-        f0_mel = 1127 * torch.log(1 + f0 * pow(2, -self.formant_shift / 12) / 700)
+        f0_mel = 1127 * torch.log(1 + f0 / 700)
         f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
             self.f0_mel_max - self.f0_mel_min
         ) + 1
@@ -398,12 +398,14 @@ class RVC:
             printt("Index search FAILED")
         t3 = ttime()
         p_len = input_wav.shape[0] // 160
+        factor = pow(2, self.formant_shift / 12)
+        return_length2 = int(np.ceil(return_length * factor))
         if self.if_f0 == 1:
             f0_extractor_frame = block_frame_16k + 800
             if f0method == "rmvpe":
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
             pitch, pitchf = self.get_f0(
-                input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method
+                input_wav[-f0_extractor_frame:], self.f0_up_key - self.formant_shift, self.n_cpu, f0method
             )
             shift = block_frame_16k // 160
             self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()
@@ -411,15 +413,14 @@ class RVC:
             self.cache_pitch[4 - pitch.shape[0] :] = pitch[3:-1]
             self.cache_pitchf[4 - pitch.shape[0] :] = pitchf[3:-1]
             cache_pitch = self.cache_pitch[None, -p_len:]
-            cache_pitchf = self.cache_pitchf[None, -p_len:]
+            cache_pitchf = self.cache_pitchf[None, -p_len:] * return_length2 / return_length
         t4 = ttime()
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]
         p_len = torch.LongTensor([p_len]).to(self.device)
         sid = torch.LongTensor([0]).to(self.device)
         skip_head = torch.LongTensor([skip_head])
-        factor = pow(2, self.formant_shift / 12)
-        return_length2 = torch.LongTensor([int(np.ceil(return_length * factor))])
+        return_length2 = torch.LongTensor([return_length2])
         return_length = torch.LongTensor([return_length])
         with torch.no_grad():
             if self.if_f0 == 1:
