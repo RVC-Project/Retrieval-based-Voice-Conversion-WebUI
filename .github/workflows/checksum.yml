@@ -17,6 +17,7 @@ jobs:
         run: |
           wget https://github.com/RVC-Project/RVC-Models-Downloader/releases/download/v0.2.2/rvcmd_linux_amd64.deb
           sudo apt -y install ./rvcmd_linux_amd64.deb
+          rm -f ./rvcmd_linux_amd64.deb
           rvcmd -notrs -w 1 -notui assets/all
       
       - name: Calculate all Checksums
