@@ -1,2 +1,2 @@
-runtime\python.exe --nocheck gui_v1.py
+runtime\python.exe gui_v1.py --nocheck 
 pause
