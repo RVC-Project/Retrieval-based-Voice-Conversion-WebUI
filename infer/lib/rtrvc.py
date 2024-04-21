@@ -78,7 +78,7 @@ class RVC:
             self.n_cpu = n_cpu
             self.use_jit = self.config.use_jit
             self.is_half = config.is_half
-            
+
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
@@ -92,9 +92,9 @@ class RVC:
             self.cache_pitchf = torch.zeros(
                 1024, device=self.device, dtype=torch.float32
             )
-            
+
             self.resample_kernel = {}
-            
+
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
                     ["assets/hubert/hubert_base.pt"],
@@ -191,10 +191,10 @@ class RVC:
 
     def change_key(self, new_key):
         self.f0_up_key = new_key
-    
+
     def change_formant(self, new_formant):
         self.formant_shift = new_formant
-        
+
     def change_index_rate(self, new_index_rate):
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
@@ -442,11 +442,13 @@ class RVC:
         if upp_res != self.tgt_sr // 100:
             if upp_res not in self.resample_kernel:
                 self.resample_kernel[upp_res] = Resample(
-                    orig_freq=upp_res, 
-                    new_freq=self.tgt_sr // 100, 
+                    orig_freq=upp_res,
+                    new_freq=self.tgt_sr // 100,
                     dtype=torch.float32,
                 ).to(self.device)
-            infered_audio = self.resample_kernel[upp_res](infered_audio[: ,: return_length * upp_res])
+            infered_audio = self.resample_kernel[upp_res](
+                infered_audio[:, : return_length * upp_res]
+            )
         t5 = ttime()
         printt(
             "Spent time: fea = %.3fs, index = %.3fs, f0 = %.3fs, model = %.3fs",
