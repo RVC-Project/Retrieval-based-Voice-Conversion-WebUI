@@ -37,6 +37,7 @@
     "修改模型信息(仅支持weights文件夹下提取的小模型文件)": "Model bilgilerini düzenle (sadece 'weights' klasöründen çıkarılan küçük model dosyaları desteklenir)",
     "停止音频转换": "Ses dönüştürmeyi durdur",
     "全流程结束！": "Tüm işlemler tamamlandı!",
+    "共振偏移": "共振偏移",
     "刷新音色列表和索引路径": "Ses listesini ve indeks yolunu yenile",
     "加载模型": "Model yükle",
     "加载预训练底模D路径": "Önceden eğitilmiş temel D modelini yükleme yolu:",
