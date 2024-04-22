@@ -25,7 +25,7 @@ def export_onnx(ModelPath, ExportedPath):
     output_names = [
         "audio",
     ]
-    # net_g.construct_spkmixmap(n_speaker) 多角色混合轨道导出
+    #net_g.construct_spkmixmap() #多角色混合轨道导出
     torch.onnx.export(
         net_g,
         (
@@ -44,8 +44,8 @@ def export_onnx(ModelPath, ExportedPath):
             "rnd": [2],
         },
         do_constant_folding=False,
-        opset_version=18,
-        verbose=True,
+        opset_version=17,
+        verbose=False,
         input_names=input_names,
         output_names=output_names,
     )
