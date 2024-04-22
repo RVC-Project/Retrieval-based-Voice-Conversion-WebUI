@@ -16,7 +16,9 @@ def sha256(f) -> str:
     return sha256_hash.hexdigest()
 
 
-def check_model(dir_name: Path, model_name: str, hash: str, remove_incorrect=False) -> bool:
+def check_model(
+    dir_name: Path, model_name: str, hash: str, remove_incorrect=False
+) -> bool:
     target = dir_name / model_name
     relname = target.as_posix()
     relname = relname[relname.rindex("assets/") :]
@@ -30,7 +32,8 @@ def check_model(dir_name: Path, model_name: str, hash: str, remove_incorrect=Fal
             logger.info(f"{target} sha256 hash mismatch.")
             logger.info(f"expected: {hash}")
             logger.info(f"real val: {digest}")
-            if remove_incorrect: os.remove(str(target))
+            if remove_incorrect:
+                os.remove(str(target))
             return False
     return True
 
@@ -48,11 +51,17 @@ def check_all_assets(update=False) -> bool:
     ):
         return False
     if not check_model(
-        BASE_DIR / "assets" / "rmvpe", "rmvpe.pt", os.environ["sha256_rmvpe_pt"], update,
+        BASE_DIR / "assets" / "rmvpe",
+        "rmvpe.pt",
+        os.environ["sha256_rmvpe_pt"],
+        update,
     ):
         return False
     if not check_model(
-        BASE_DIR / "assets" / "rmvpe", "rmvpe.onnx", os.environ["sha256_rmvpe_onnx"], update,
+        BASE_DIR / "assets" / "rmvpe",
+        "rmvpe.onnx",
+        os.environ["sha256_rmvpe_onnx"],
+        update,
     ):
         return False
 
@@ -74,14 +83,18 @@ def check_all_assets(update=False) -> bool:
     ]
     for model in model_names:
         menv = model.replace(".", "_")
-        if not check_model(rvc_models_dir, model, os.environ[f"sha256_v1_{menv}"], update):
+        if not check_model(
+            rvc_models_dir, model, os.environ[f"sha256_v1_{menv}"], update
+        ):
             return False
 
     rvc_models_dir = BASE_DIR / "assets" / "pretrained_v2"
     logger.info("checking pretrained models v2...")
     for model in model_names:
         menv = model.replace(".", "_")
-        if not check_model(rvc_models_dir, model, os.environ[f"sha256_v2_{menv}"], update):
+        if not check_model(
+            rvc_models_dir, model, os.environ[f"sha256_v2_{menv}"], update
+        ):
             return False
 
     logger.info("checking uvr5_weights...")
@@ -98,12 +111,15 @@ def check_all_assets(update=False) -> bool:
     ]
     for model in model_names:
         menv = model.replace(".", "_")
-        if not check_model(rvc_models_dir, model, os.environ[f"sha256_uvr5_{menv}"], update):
+        if not check_model(
+            rvc_models_dir, model, os.environ[f"sha256_uvr5_{menv}"], update
+        ):
             return False
     if not check_model(
         BASE_DIR / "assets" / "uvr5_weights" / "onnx_dereverb_By_FoxJoy",
         "vocals.onnx",
-        os.environ[f"sha256_uvr5_vocals_onnx"], update,
+        os.environ[f"sha256_uvr5_vocals_onnx"],
+        update,
     ):
         return False
 
