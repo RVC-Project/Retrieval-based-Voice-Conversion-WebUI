@@ -207,5 +207,13 @@ def download_all_assets(tmpdir: str, version="0.2.2"):
             download_and_extract_tar_gz(RVCMD_URL, tmpdir)
             os.chmod(cmdfile, 0o755)
         subprocess.run(
-            [cmdfile, "-notui", "-w", "0", "-dns", os.path.join(tmpdir, "dns.yaml"), "assets/all"]
+            [
+                cmdfile,
+                "-notui",
+                "-w",
+                "0",
+                "-dns",
+                os.path.join(tmpdir, "dns.yaml"),
+                "assets/all",
+            ]
         )
