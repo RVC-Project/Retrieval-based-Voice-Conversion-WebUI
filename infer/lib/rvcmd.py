@@ -18,7 +18,7 @@ def sha256(f) -> str:
 
 def check_model(dir_name: Path, model_name: str, hash: str) -> bool:
     target = dir_name / model_name
-    relname = str(target)
+    relname = target.as_posix()
     relname = relname[relname.rindex("assets/") :]
     logger.debug(f"checking {relname}...")
     if not os.path.exists(target):
@@ -41,21 +41,21 @@ def check_all_assets() -> bool:
     logger.info("checking hubret & rmvpe...")
 
     if not check_model(
-        BASE_DIR / "assets/hubert",
+        BASE_DIR / "assets" / "hubert",
         "hubert_base.pt",
         os.environ["sha256_hubert_base_pt"],
     ):
         return False
     if not check_model(
-        BASE_DIR / "assets/rmvpe", "rmvpe.pt", os.environ["sha256_rmvpe_pt"]
+        BASE_DIR / "assets" / "rmvpe", "rmvpe.pt", os.environ["sha256_rmvpe_pt"]
     ):
         return False
     if not check_model(
-        BASE_DIR / "assets/rmvpe", "rmvpe.onnx", os.environ["sha256_rmvpe_onnx"]
+        BASE_DIR / "assets" / "rmvpe", "rmvpe.onnx", os.environ["sha256_rmvpe_onnx"]
     ):
         return False
 
-    rvc_models_dir = BASE_DIR / "assets/pretrained"
+    rvc_models_dir = BASE_DIR / "assets" / "pretrained"
     logger.info("checking pretrained models...")
     model_names = [
         "D32k.pth",
@@ -76,7 +76,7 @@ def check_all_assets() -> bool:
         if not check_model(rvc_models_dir, model, os.environ[f"sha256_v1_{menv}"]):
             return False
 
-    rvc_models_dir = BASE_DIR / "assets/pretrained_v2"
+    rvc_models_dir = BASE_DIR / "assets" / "pretrained_v2"
     logger.info("checking pretrained models v2...")
     for model in model_names:
         menv = model.replace(".", "_")
@@ -84,7 +84,7 @@ def check_all_assets() -> bool:
             return False
 
     logger.info("checking uvr5_weights...")
-    rvc_models_dir = BASE_DIR / "assets/uvr5_weights"
+    rvc_models_dir = BASE_DIR / "assets" / "uvr5_weights"
     model_names = [
         "HP2-人声vocals+非人声instrumentals.pth",
         "HP2_all_vocals.pth",
@@ -100,7 +100,7 @@ def check_all_assets() -> bool:
         if not check_model(rvc_models_dir, model, os.environ[f"sha256_uvr5_{menv}"]):
             return False
     if not check_model(
-        BASE_DIR / "assets/uvr5_weights/onnx_dereverb_By_FoxJoy",
+        BASE_DIR / "assets" / "uvr5_weights" / "onnx_dereverb_By_FoxJoy",
         "vocals.onnx",
         os.environ[f"sha256_uvr5_vocals_onnx"],
     ):
@@ -141,7 +141,7 @@ def download_and_extract_zip(url: str, folder: str):
 def download_dns_yaml(url: str, folder: str):
     logger.info(f"downloading {url}")
     response = requests.get(url, stream=True, timeout=(5, 10))
-    with open(f"{folder}/dns.yaml", "wb") as out_file:
+    with open(os.path.join(folder, "dns.yaml"), "wb") as out_file:
         out_file.write(response.content)
         logger.info(f"downloaded into {folder}")
 
@@ -176,7 +176,7 @@ def download_all_assets(tmpdir: str, version="0.2.2"):
         )
         suffix = "zip" if is_win else "tar.gz"
         RVCMD_URL = BASE_URL + f"v{version}/rvcmd_{system_type}_{architecture}.{suffix}"
-        cmdfile = tmpdir + "/rvcmd"
+        cmdfile = os.path.join(tmpdir, "rvcmd")
         if is_win:
             download_and_extract_zip(RVCMD_URL, tmpdir)
             cmdfile += ".exe"
@@ -207,5 +207,5 @@ def download_all_assets(tmpdir: str, version="0.2.2"):
             download_and_extract_tar_gz(RVCMD_URL, tmpdir)
             os.chmod(cmdfile, 0o755)
         subprocess.run(
-            [cmdfile, "-notui", "-w", "0", "-dns", f"{tmpdir}/dns.yaml", "assets/all"]
+            [cmdfile, "-notui", "-w", "0", "-dns", os.path.join(tmpdir, "dns.yaml"), "assets/all"]
         )
