@@ -11,8 +11,9 @@ from torch.nn import AvgPool1d, Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
 from torch.nn.utils import remove_weight_norm, spectral_norm, weight_norm
 
-from infer.lib.infer_pack import attentions, commons, modules
+from infer.lib.infer_pack import commons, modules
 from infer.lib.infer_pack.commons import get_padding, init_weights
+import infer.lib.infer_pack.attentions_onnx as attentions
 
 has_xpu = bool(hasattr(torch, "xpu") and torch.xpu.is_available())
 
@@ -636,15 +637,15 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
         self.enc_p = TextEncoder(
-            encoder_dim,
-            inter_channels,
-            hidden_channels,
-            filter_channels,
-            n_heads,
-            n_layers,
-            kernel_size,
-            float(p_dropout),
-        )
+                encoder_dim,
+                inter_channels,
+                hidden_channels,
+                filter_channels,
+                n_heads,
+                n_layers,
+                kernel_size,
+                float(p_dropout),
+            )
         self.dec = GeneratorNSF(
             inter_channels,
             resblock,
@@ -676,6 +677,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
             + ", self.spk_embed_dim: "
             + str(self.spk_embed_dim)
         )
+        self.speaker_map = None
 
     def remove_weight_norm(self):
         self.dec.remove_weight_norm()
