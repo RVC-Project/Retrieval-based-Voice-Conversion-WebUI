@@ -156,11 +156,12 @@ if __name__ == "__main__":
             tmp = os.path.join(now_dir, "TEMP")
             shutil.rmtree(tmp, ignore_errors=True)
             os.makedirs(tmp, exist_ok=True)
-            if not check_all_assets():
-                download_all_assets(tmpdir=tmp)
-                if not check_all_assets():
-                    printt("counld not satisfy all assets needed.")
-                    exit(1)
+            if not check_all_assets(update=self.config.update):
+                if self.config.update:
+                    download_all_assets(tmpdir=tmp)
+                    if not check_all_assets(update=False):
+                        printt("counld not satisfy all assets needed.")
+                        exit(1)
 
         def load(self):
             try:

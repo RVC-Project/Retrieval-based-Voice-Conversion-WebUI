@@ -58,6 +58,7 @@ class Config:
             self.noautoopen,
             self.dml,
             self.nocheck,
+            self.update,
         ) = self.arg_parse()
         self.instead = ""
         self.preprocess_per = 3.7
@@ -97,6 +98,9 @@ class Config:
         parser.add_argument(
             "--nocheck", action="store_true", help="Run without checking assets"
         )
+        parser.add_argument(
+            "--update", action="store_true", help="Update to latest assets"
+        )
         cmd_opts = parser.parse_args()
 
         cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
@@ -109,6 +113,7 @@ class Config:
             cmd_opts.noautoopen,
             cmd_opts.dml,
             cmd_opts.nocheck,
+            cmd_opts.update,
         )
 
     # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.

@@ -57,11 +57,12 @@ vc = VC(config)
 if not config.nocheck:
     from infer.lib.rvcmd import check_all_assets, download_all_assets
 
-    if not check_all_assets():
-        download_all_assets(tmpdir=tmp)
-        if not check_all_assets():
-            logging.error("counld not satisfy all assets needed.")
-            exit(1)
+    if not check_all_assets(update=config.update):
+        if config.update:
+            download_all_assets(tmpdir=tmp)
+            if not check_all_assets(update=False):
+                logging.error("counld not satisfy all assets needed.")
+                exit(1)
 
 if config.dml == True:
 
