@@ -188,7 +188,7 @@ def download_all_assets(tmpdir: str, version="0.2.2"):
     }
     system_type = platform.system().lower()
     architecture = platform.machine().lower()
-    is_win = architecture == "windows"
+    is_win = system_type == "windows"
 
     architecture = archs.get(architecture, None)
     if not architecture:
