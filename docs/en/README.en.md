@@ -105,8 +105,13 @@ sh ./run.sh
 ## Preparation of Other Files
 ### 1. Assets
 > RVC requires some models located in the `assets` folder for inference and training.
-#### Download Automatically (Default)
-By default, RVC can automatically check and download the required resources when the main program starts. If the download fails, you can also choose to manually download and place them in the corresponding location.
+#### Check/Download Automatically (Default)
+> By default, RVC can automatically check the integrity of the required resources when the main program starts.
+
+> Even if the resources are not complete, the program will continue to start.
+
+- If you want to download all resources, please add the `--update` parameter.
+- If you want to skip the resource integrity check at startup, please add the `--nocheck` parameter.
 
 #### Download Manually
 > All resource files are located in [Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
@@ -157,7 +162,7 @@ rvcmd tools/ffmpeg # RVC-Models-Downloader command
 
 ### 3. Download the required files for the rmvpe vocal pitch extraction algorithm
 
-If you want to use the latest RMVPE vocal pitch extraction algorithm, you need to download the pitch extraction model parameters and place them in the RVC root directory.
+If you want to use the latest RMVPE vocal pitch extraction algorithm, you need to download the pitch extraction model parameters and place them in `assets/rmvpe`.
 
 - [rmvpe.pt](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
 	```bash

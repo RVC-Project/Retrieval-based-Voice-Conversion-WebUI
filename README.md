@@ -42,7 +42,7 @@
 	</tr>
   <tr>
     <td align="center">可以自由选择想要执行的操作。</td>
-		<td align="center">我们已经实现端到端170ms延迟。如使用ASIO输入输出设备，已能实现端到端90ms延迟，但非常依赖硬件驱动支持。</td>
+	<td align="center">我们已经实现端到端170ms延迟。如使用ASIO输入输出设备，已能实现端到端90ms延迟，但非常依赖硬件驱动支持。</td>
 	</tr>
 </table>
 
@@ -80,7 +80,7 @@ sh ./run.sh
 	```bash
 	pip install torch torchvision torchaudio
 	```
-2. 如果是 win 系统 + Nvidia Ampere 架构(RTX30xx)，根据 #21 的经验，需要指定 pytorch 对应的 cuda 版本
+2. 如果是 win 系统 + Nvidia Ampere 架构(RTX30xx)，根据 #21 的经验，需要指定 pytorch 对应的 CUDA 版本
 	```bash
 	pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
 	```
@@ -105,8 +105,13 @@ sh ./run.sh
 ## 其他资源准备
 ### 1. assets
 > RVC需要位于`assets`文件夹下的一些模型资源进行推理和训练。
-#### 自动下载资源(默认)
-默认情况下，RVC可在主程序启动时自动检查并下载所需资源。如果下载失败，您还可以选择手动下载后存放到相应位置。
+#### 自动检查/下载资源(默认)
+> 默认情况下，RVC可在主程序启动时自动检查所需资源的完整性。
+
+> 即使资源不完整，程序也将继续启动。
+
+- 如果您希望下载所有资源，请添加`--update`参数
+- 如果您希望跳过启动时的资源完整性检查，请添加`--nocheck`参数
 
 #### 手动下载资源
 > 所有资源文件均位于[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
@@ -158,7 +163,7 @@ rvcmd tools/ffmpeg # RVC-Models-Downloader command
 
 ### 3. 下载 rmvpe 人声音高提取算法所需文件
 
-如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于RVC根目录。
+如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于`assets/rmvpe`。
 
 - 下载[rmvpe.pt](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
 	```bash
