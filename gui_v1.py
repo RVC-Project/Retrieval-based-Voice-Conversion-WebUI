@@ -159,7 +159,7 @@ if __name__ == "__main__":
             if not check_all_assets(update=self.config.update):
                 if self.config.update:
                     download_all_assets(tmpdir=tmp)
-                    if not check_all_assets(update=False):
+                    if not check_all_assets(update=self.config.update):
                         printt("counld not satisfy all assets needed.")
                         exit(1)
 

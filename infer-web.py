@@ -60,7 +60,7 @@ if not config.nocheck:
     if not check_all_assets(update=config.update):
         if config.update:
             download_all_assets(tmpdir=tmp)
-            if not check_all_assets(update=False):
+            if not check_all_assets(update=config.update):
                 logging.error("counld not satisfy all assets needed.")
                 exit(1)
 
@@ -1608,13 +1608,16 @@ with gr.Blocks(title="RVC WebUI") as app:
             except:
                 gr.Markdown(traceback.format_exc())
 
-    if config.iscolab:
-        app.queue(max_size=1022).launch(share=True, max_threads=511)
-    else:
-        app.queue(max_size=1022).launch(
-            max_threads=511,
-            server_name="0.0.0.0",
-            inbrowser=not config.noautoopen,
-            server_port=config.listen_port,
-            quiet=True,
-        )
+    try:
+        if config.iscolab:
+            app.queue(max_size=1022).launch(share=True, max_threads=511)
+        else:
+            app.queue(max_size=1022).launch(
+                max_threads=511,
+                server_name="0.0.0.0",
+                inbrowser=not config.noautoopen,
+                server_port=config.listen_port,
+                quiet=True,
+            )
+    except Exception as e:
+        logger.error(str(e))
