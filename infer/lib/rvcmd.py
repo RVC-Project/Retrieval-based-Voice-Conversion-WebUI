@@ -37,7 +37,8 @@ def check_model(
             if remove_incorrect:
                 if not os.path.exists(bakfile):
                     os.rename(str(target), bakfile)
-                else: os.remove(str(target))
+                else:
+                    os.remove(str(target))
             return False
         if remove_incorrect and os.path.exists(bakfile):
             os.remove(bakfile)
