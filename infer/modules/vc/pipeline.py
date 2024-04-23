@@ -164,12 +164,17 @@ class Pipeline(object):
 
                 logger.info("Loading fcpe model")
                 self.model_fcpe = spawn_bundled_infer_model(self.device)
-            f0 = self.model_fcpe.infer(
-                torch.from_numpy(x).to(self.device).unsqueeze(0).float(),
-                sr=16000,
-                decoder_mode="local_argmax",
-                threshold=0.006,
-            ).squeeze().cpu().numpy()
+            f0 = (
+                self.model_fcpe.infer(
+                    torch.from_numpy(x).to(self.device).unsqueeze(0).float(),
+                    sr=16000,
+                    decoder_mode="local_argmax",
+                    threshold=0.006,
+                )
+                .squeeze()
+                .cpu()
+                .numpy()
+            )
 
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
