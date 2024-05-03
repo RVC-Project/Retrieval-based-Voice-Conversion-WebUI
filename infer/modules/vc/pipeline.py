@@ -291,6 +291,8 @@ class Pipeline(object):
         del feats, p_len, padding_mask
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
         t2 = ttime()
         times[0] += t1 - t0
         times[2] += t2 - t1
@@ -472,4 +474,6 @@ class Pipeline(object):
         del pitch, pitchf, sid
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
         return audio_opt
