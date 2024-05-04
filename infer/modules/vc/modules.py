@@ -88,16 +88,8 @@ class VC:
                     torch.mps.empty_cache()
             return (
                 {"visible": False, "__type__": "update"},
-                {
-                    "visible": True,
-                    "value": to_return_protect0,
-                    "__type__": "update",
-                },
-                {
-                    "visible": True,
-                    "value": to_return_protect1,
-                    "__type__": "update",
-                },
+                to_return_protect0,
+                to_return_protect1,
                 "",
                 "",
             )
