@@ -170,7 +170,7 @@ def download_dns_yaml(url: str, folder: str):
         logger.info(f"downloaded into {folder}")
 
 
-def download_all_assets(tmpdir: str, version="0.2.2"):
+def download_all_assets(tmpdir: str, version="0.2.3"):
     import subprocess
     import platform
 
