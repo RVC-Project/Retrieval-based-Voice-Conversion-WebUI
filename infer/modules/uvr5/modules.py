@@ -105,4 +105,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             logger.info("Executed torch.cuda.empty_cache()")
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+            logger.info("Executed torch.mps.empty_cache()")
     yield "\n".join(infos)
