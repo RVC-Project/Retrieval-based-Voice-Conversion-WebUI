@@ -211,13 +211,13 @@ def download_all_assets(tmpdir: str, version="0.2.3"):
     except Exception:
         BASE_URL = "https://raw.gitcode.com/u011570312/RVC-Models-Downloader/assets/"
         suffix = {
-            "darwin_amd64": "421",
-            "darwin_arm64": "422",
-            "linux_386": "423",
-            "linux_amd64": "424",
-            "linux_arm64": "425",
-            "windows_386": "426",
-            "windows_amd64": "427",
+            "darwin_amd64": "460",
+            "darwin_arm64": "461",
+            "linux_386":    "462",
+            "linux_amd64":  "463",
+            "linux_arm64":  "464",
+            "windows_386":  "465",
+            "windows_amd64":"466",
         }[f"{system_type}_{architecture}"]
         RVCMD_URL = BASE_URL + suffix
         download_dns_yaml(
