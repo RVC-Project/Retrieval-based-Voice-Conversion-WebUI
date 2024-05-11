@@ -213,11 +213,11 @@ def download_all_assets(tmpdir: str, version="0.2.3"):
         suffix = {
             "darwin_amd64": "460",
             "darwin_arm64": "461",
-            "linux_386":    "462",
-            "linux_amd64":  "463",
-            "linux_arm64":  "464",
-            "windows_386":  "465",
-            "windows_amd64":"466",
+            "linux_386": "462",
+            "linux_amd64": "463",
+            "linux_arm64": "464",
+            "windows_386": "465",
+            "windows_amd64": "466",
         }[f"{system_type}_{architecture}"]
         RVCMD_URL = BASE_URL + suffix
         download_dns_yaml(
