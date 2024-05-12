@@ -20,13 +20,11 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 </div>
 
-> [데모 영상](https://www.bilibili.com/video/BV1pm4y1z7Gm/)을 확인해 보세요!
-
-> RVC를 활용한 실시간 음성변환: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
-
 > 기본 모델은 50시간 가량의 고퀄리티 오픈 소스 VCTK 데이터셋을 사용하였으므로, 저작권상의 염려가 없으니 안심하고 사용하시기 바랍니다.
 
 > 더 큰 매개변수, 더 큰 데이터, 더 나은 효과, 기본적으로 동일한 추론 속도, 더 적은 양의 훈련 데이터가 필요한 RVCv3의 기본 모델을 기대해 주십시오.
+
+> 특정 지역에서 Hugging Face에 직접 연결할 수 없는 경우가 있으며, 성공적으로 연결해도 속도가 매우 느릴 수 있으므로, 모델/통합 패키지/도구의 일괄 다운로더를 특별히 소개합니다. [RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
 
 <table>
    <tr>
@@ -49,7 +47,7 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 ## 소개
 
-본 Repo는 다음과 같은 특징을 가지고 있습니다:
+본 프로젝트는 다음과 같은 특징을 가지고 있습니다:
 
 - top1 검색을 이용하여 입력 음색 특징을 훈련 세트 음색 특징으로 대체하여 음색의 누출을 방지
 - 상대적으로 낮은 성능의 GPU에서도 빠른 훈련 가능
@@ -132,29 +130,194 @@ poetry install
 sh ./run.sh
 ```
 
+<!--
+
+## 其他资源准备
+### 1. assets
+> RVC需要位于`assets`文件夹下的一些模型资源进行推理和训练。
+#### 自动检查/下载资源(默认)
+> 默认情况下，RVC可在主程序启动时自动检查所需资源的完整性。
+
+> 即使资源不完整，程序也将继续启动。
+
+- 如果您希望下载所有资源，请添加`--update`参数
+- 如果您希望跳过启动时的资源完整性检查，请添加`--nocheck`参数
+
+#### 手动下载资源
+> 所有资源文件均位于[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
+
+> 你可以在`tools`文件夹找到下载它们的脚本
+
+> 你也可以使用模型/整合包/工具的一键下载器：[RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
+
+以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称。
+
+- ./assets/hubert/hubert_base.pt
+	```bash
+	rvcmd assets/hubert # RVC-Models-Downloader command
+	```
+- ./assets/pretrained
+	```bash
+	rvcmd assets/v1 # RVC-Models-Downloader command
+	```
+- ./assets/uvr5_weights
+	```bash
+	rvcmd assets/uvr5 # RVC-Models-Downloader command
+	```
+想使用v2版本模型的话，需要额外下载
+
+- ./assets/pretrained_v2
+	```bash
+	rvcmd assets/v2 # RVC-Models-Downloader command
+	```
+
+### 2. 安装 ffmpeg 工具
+若已安装`ffmpeg`和`ffprobe`则可跳过此步骤。
+
+#### Ubuntu/Debian 用户
+```bash
+sudo apt install ffmpeg
+```
+#### MacOS 用户
+```bash
+brew install ffmpeg
+```
+#### Windows 用户
+下载后放置在根目录。
+```bash
+rvcmd tools/ffmpeg # RVC-Models-Downloader command
+```
+- 下载[ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
+
+- 下载[ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
+
+### 3. 下载 rmvpe 人声音高提取算法所需文件
+
+如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于`assets/rmvpe`。
+
+- 下载[rmvpe.pt](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
+	```bash
+	rvcmd assets/rmvpe # RVC-Models-Downloader command
+	```
+
+#### 下载 rmvpe 的 dml 环境(可选, A卡/I卡用户)
+
+- 下载[rmvpe.onnx](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
+	```bash
+	rvcmd assets/rmvpe # RVC-Models-Downloader command
+	```
+
+### 4. AMD显卡Rocm(可选, 仅Linux)
+
+如果你想基于AMD的Rocm技术在Linux系统上运行RVC，请先在[这里](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)安装所需的驱动。
+
+若你使用的是Arch Linux，可以使用pacman来安装所需驱动：
+````
+pacman -S rocm-hip-sdk rocm-opencl-sdk
+````
+对于某些型号的显卡，你可能需要额外配置如下的环境变量（如：RX6700XT）：
+````
+export ROCM_PATH=/opt/rocm
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+````
+同时确保你的当前用户处于`render`与`video`用户组内：
+````
+sudo usermod -aG render $USERNAME
+sudo usermod -aG video $USERNAME
+````
+
+## 开始使用
+### 直接启动
+使用以下指令来启动 WebUI
+```bash
+python infer-web.py
+```
+### Linux/MacOS 用户
+```bash
+./run.sh
+```
+### 对于需要使用IPEX技术的I卡用户(仅Linux)
+```bash
+source /opt/intel/oneapi/setvars.sh
+./run.sh
+```
+### 使用整合包 (Windows 用户)
+下载并解压`RVC-beta.7z`，解压后双击`go-web.bat`即可一键启动。
+```bash
+rvcmd packs/general/latest # RVC-Models-Downloader command
+```
+
+## 参考项目
++ [ContentVec](https://github.com/auspicious3000/contentvec/)
++ [VITS](https://github.com/jaywalnut310/vits)
++ [HIFIGAN](https://github.com/jik876/hifi-gan)
++ [Gradio](https://github.com/gradio-app/gradio)
++ [FFmpeg](https://github.com/FFmpeg/FFmpeg)
++ [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [audio-slicer](https://github.com/openvpi/audio-slicer)
++ [Vocal pitch extraction:RMVPE](https://github.com/Dream-High/RMVPE)
+  + The pretrained model is trained and tested by [yxlllc](https://github.com/yxlllc/RMVPE) and [RVC-Boss](https://github.com/RVC-Boss).
+
+## 感谢所有贡献者作出的努力
+<a href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/graphs/contributors" target="_blank">
+  <img src="https://contrib.rocks/image?repo=RVC-Project/Retrieval-based-Voice-Conversion-WebUI" />
+</a>
+
+translate to Korean
+-->
+
 ## 기타 사전 훈련된 모델 준비
 
-RVC는 추론과 훈련을 위해 다른 일부 사전 훈련된 모델이 필요합니다.
+### assets
 
-이러한 모델은 저희의 [Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)에서 다운로드할 수 있습니다.
+> RVC는 추론과 훈련을 위해 assets 폴더 하위에 사전 훈련된 모델이 필요합니다.
 
-### 1. assets 다운로드
+#### 자동 검사/다운로드 리소스(기본값)
 
-다음은 RVC에 필요한 모든 사전 훈련된 모델과 기타 파일의 목록입니다. `tools` 폴더에서 이들을 다운로드하는 스크립트를 찾을 수 있습니다.
+> 기본적으로 RVC는 시작할 때 필요한 리소스의 무결성을 자동으로 확인할 수 있습니다.
+
+> 리소스가 불완전하더라도 프로그램은 계속 실행됩니다.
+
+- 모든 리소스를 다운로드하려면 `--update` 매개변수를 추가하세요
+- 시작 시 리소스 무결성 검사를 건너뛰려면 `--nocheck` 매개변수를 추가하세요
+
+#### 리소스 수동 다운로드
+
+> 모든 리소스 파일은 [Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)에 있습니다.
+
+> 이들을 다운로드하는 스크립트는 `tools` 폴더에서 찾을 수 있습니다.
+
+> 모델/통합 패키지/도구의 일괄 다운로더를 사용할 수도 있습니다: [RVC-Models-Downloader](https://github.com/RVC-Project/RVC-Models-Downloader)
+
+다음은 RVC에 필요한 모든 사전 훈련된 모델과 기타 파일의 목록입니다.
 
 - ./assets/hubert/hubert_base.pt
 
+  ```bash
+  rvcmd assets/hubert # RVC-Models-Downloader command
+  ```
+
 - ./assets/pretrained
 
+  ```bash
+  rvcmd assets/v1 # RVC-Models-Downloader command
+  ```
+
 - ./assets/uvr5_weights
+  ```bash
+  rvcmd assets/uvr5 # RVC-Models-Downloader command
+  ```
 
 v2 버전 모델을 사용하려면 추가로 다음을 다운로드해야 합니다.
 
 - ./assets/pretrained_v2
+  ```bash
+  rvcmd assets/v2 # RVC-Models-Downloader command
+  ```
 
 ### 2. ffmpeg 설치
 
-ffmpeg와 ffprobe가 이미 설치되어 있다면 건너뜁니다.
+`ffmpeg`와 `ffprobe`가 이미 설치되어 있다면 건너뜁니다.
 
 #### Ubuntu/Debian 사용자
 
