@@ -253,7 +253,7 @@ if __name__ == "__main__":
                                     initial_folder=os.path.join(
                                         os.getcwd(), "assets/weights"
                                     ),
-                                    file_types=((". pth"),),
+                                    file_types=[('Model File', '*.pth')],
                                 ),
                             ],
                             [
@@ -264,7 +264,7 @@ if __name__ == "__main__":
                                 sg.FileBrowse(
                                     i18n("选择.index文件"),
                                     initial_folder=os.path.join(os.getcwd(), "logs"),
-                                    file_types=((". index"),),
+                                    file_types=[('Index File', '*.index')],
                                 ),
                             ],
                         ],
