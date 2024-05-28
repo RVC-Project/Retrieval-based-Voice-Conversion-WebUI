@@ -34,7 +34,7 @@ check_file_pretrained() {
       echo failed. starting download from huggingface.
       if command -v aria2c > /dev/null 2>&1; then
           aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/"$1"/"$2" -d ./assets/"$1" -o "$2"
-          [ -f "./assets/""$1""/""$2""" ] && echo "download successful." || echo "please try again!" && exit 1
+          [ -f "./assets/""$1""/""$2""" ] && echo "download successful." || (echo "please try again!" && exit 1)
       else
           echo "aria2c command not found. Please install aria2c and try again."
           exit 1
@@ -50,7 +50,7 @@ check_file_special() {
       echo failed. starting download from huggingface.
       if command -v aria2c > /dev/null 2>&1; then
           aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/"$2" -d ./assets/"$1" -o "$2"
-          [ -f "./assets/""$1""/""$2""" ] && echo "download successful." || echo "please try again!" && exit 1
+          [ -f "./assets/""$1""/""$2""" ] && echo "download successful." || (echo "please try again!" && exit 1)
       else
           echo "aria2c command not found. Please install aria2c and try again."
           exit 1
