@@ -14,7 +14,7 @@ else
   requirements_file="requirements.txt"
 
   # Check if Python 3.8 is installed
-  if ! command -v python3.8 >/dev/null 2>&1 || pyenv versions --bare | grep -q "3.8"; then
+  if ! (command -v python3.8 >/dev/null 2>&1 || pyenv versions --bare | grep -q "3.8"); then
     echo "Python 3 not found. Attempting to install 3.8..."
     if [ "$(uname)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
       brew install python@3.8
