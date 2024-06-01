@@ -163,7 +163,7 @@ class VC:
             audio = load_audio(input_audio_path, 16000)
             audio_max = np.abs(audio).max() / 0.95
             if audio_max > 1:
-                audio /= audio_max
+                np.divide(audio, audio_max, audio)
             times = [0, 0, 0]
 
             if self.hubert_model is None:

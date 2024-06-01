@@ -146,7 +146,7 @@ class Config:
         self.preprocess_per = 3.0
         logger.info("overwrite preprocess_per to %d" % (self.preprocess_per))
 
-    def device_config(self) -> tuple:
+    def device_config(self):
         if torch.cuda.is_available():
             if self.has_xpu():
                 self.device = self.instead = "xpu:0"
