@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from configs.config import Config
 from i18n.i18n import I18nAuto
-from infer.modules.vc.modules import VC
+from infer.modules.vc import VC
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("markdown_it").setLevel(logging.WARNING)

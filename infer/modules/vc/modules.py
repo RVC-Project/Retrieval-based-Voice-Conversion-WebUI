@@ -1,5 +1,6 @@
 import traceback
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,9 @@ from infer.lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-from infer.modules.vc.pipeline import Pipeline
-from infer.modules.vc.utils import *
+
+from .pipeline import Pipeline
+from .utils import get_index_path_from_model, load_hubert
 
 
 class VC:

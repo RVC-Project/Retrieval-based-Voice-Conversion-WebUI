@@ -144,7 +144,7 @@ class Pipeline(object):
                 from infer.lib.rmvpe import RMVPE
 
                 logger.info(
-                    "Loading rmvpe model,%s" % "%s/rmvpe.pt" % os.environ["rmvpe_root"]
+                    "Loading rmvpe model %s" % "%s/rmvpe.pt" % os.environ["rmvpe_root"]
                 )
                 self.model_rmvpe = RMVPE(
                     "%s/rmvpe.pt" % os.environ["rmvpe_root"],
