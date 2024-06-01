@@ -188,7 +188,6 @@ class VC:
                 self.net_g,
                 sid,
                 audio,
-                input_audio_path,
                 times,
                 f0_up_key,
                 f0_method,
