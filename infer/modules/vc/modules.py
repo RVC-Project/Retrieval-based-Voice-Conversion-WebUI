@@ -165,7 +165,7 @@ class VC:
             times = [0, 0, 0]
 
             if self.hubert_model is None:
-                self.hubert_model = load_hubert(self.config)
+                self.hubert_model = load_hubert(self.config.device, self.config.is_half)
 
             if file_index:
                 file_index = (
