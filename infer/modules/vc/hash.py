@@ -189,7 +189,7 @@ def _extend_difference(n, a, b):
     return n
 
 
-def hash_similarity(h1: str, h2: str) -> int:
+def hash_similarity(h1: str, h2: str) -> float:
     h1b, h2b = decode_from_string(h1), decode_from_string(h2)
     if len(h1b) != half_hash_len * 2 or len(h2b) != half_hash_len * 2:
         raise Exception("invalid hash length")
