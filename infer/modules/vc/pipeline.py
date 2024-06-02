@@ -288,7 +288,7 @@ class Pipeline(object):
             hasp = pitch is not None and pitchf is not None
             arg = (feats, p_len, pitch, pitchf, sid) if hasp else (feats, p_len, sid)
             audio1 = (net_g.infer(*arg)[0][0, 0]).data.cpu().float().numpy()
-            del hasp, arg
+            del arg
         del feats, p_len, padding_mask
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -469,7 +469,7 @@ class Pipeline(object):
         max_int16 = 32768
         if audio_max > 1:
             max_int16 /= audio_max
-        audio_opt = (audio_opt * max_int16).astype(np.int16)
+        np.multiply(audio_opt, max_int16, audio_opt)
         del pitch, pitchf, sid
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

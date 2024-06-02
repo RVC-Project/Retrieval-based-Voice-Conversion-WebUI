@@ -201,7 +201,7 @@ class VC:
                 self.version,
                 protect,
                 f0_file,
-            )
+            ).astype(np.int16)
             if self.tgt_sr != resample_sr >= 16000:
                 tgt_sr = resample_sr
             else:

@@ -6,6 +6,10 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 load_dotenv()
 load_dotenv("sha256.env")
+
+if sys.platform == "darwin":
+    os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
 from infer.modules.vc import VC
 from infer.modules.uvr5.modules import uvr
 from infer.lib.train.process_ckpt import (

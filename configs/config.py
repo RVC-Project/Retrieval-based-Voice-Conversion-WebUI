@@ -32,7 +32,7 @@ version_config_list = [
 
 def singleton_variable(func):
     def wrapper(*args, **kwargs):
-        if not wrapper.instance:
+        if wrapper.instance is None:
             wrapper.instance = func(*args, **kwargs)
         return wrapper.instance
 
