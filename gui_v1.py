@@ -536,9 +536,9 @@ if __name__ == "__main__":
                         default=True,
                         enable_events=True,
                     ),
-                    sg.Text(i18n("算法延迟(ms):")),
+                    sg.Text(i18n("算法延迟(ms)")),
                     sg.Text("0", key="delay_time"),
-                    sg.Text(i18n("推理时间(ms):")),
+                    sg.Text(i18n("推理时间(ms)")),
                     sg.Text("0", key="infer_time"),
                 ],
             ]
