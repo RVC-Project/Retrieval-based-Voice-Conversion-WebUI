@@ -72,7 +72,7 @@
     "指定输出主人声文件夹": "Vokal için çıkış klasörünü belirtin:",
     "指定输出文件夹": "Çıkış klasörünü belirt:",
     "指定输出非主人声文件夹": "Müzik ve diğer sesler için çıkış klasörünü belirtin:",
-    "推理时间(ms)": "推理时间(ms)",
+    "推理时间(ms)": "Çıkarsama süresi (ms)",
     "推理音色": "Ses çıkartma (Inference):",
     "提取": "Çıkart",
     "提取音高和处理数据使用的CPU进程数": "Ses yüksekliği çıkartmak (Pitch) ve verileri işlemek için kullanılacak CPU işlemci sayısı:",

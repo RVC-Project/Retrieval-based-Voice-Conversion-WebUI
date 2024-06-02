@@ -72,7 +72,7 @@
     "指定输出主人声文件夹": "Especifique la carpeta de salida para la voz principal",
     "指定输出文件夹": "Especificar carpeta de salida",
     "指定输出非主人声文件夹": "Especifique la carpeta de salida para las voces no principales",
-    "推理时间(ms)": "推理时间(ms)",
+    "推理时间(ms)": "Inferir tiempo (ms)",
     "推理音色": "inferencia de voz",
     "提取": "Extraer",
     "提取音高和处理数据使用的CPU进程数": "Número de procesos de CPU utilizados para extraer el tono y procesar los datos",

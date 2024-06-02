@@ -369,7 +369,7 @@ if __name__ == "__main__":
                                 ),
                             ],
                             [
-                                sg.Text(i18n("Index Rate")),
+                                sg.Text(i18n("检索特征占比")),
                                 sg.Slider(
                                     range=(0.0, 1.0),
                                     key="index_rate",

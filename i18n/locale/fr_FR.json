@@ -72,7 +72,7 @@
     "指定输出主人声文件夹": "Spécifiez le dossier de sortie pour les fichiers de voix :",
     "指定输出文件夹": "Spécifiez le dossier de sortie :",
     "指定输出非主人声文件夹": "Spécifiez le dossier de sortie pour l'accompagnement :",
-    "推理时间(ms)": "推理时间(ms)",
+    "推理时间(ms)": "Temps d'inférence (ms)",
     "推理音色": "Voix pour l'inférence",
     "提取": "Extraire",
     "提取音高和处理数据使用的CPU进程数": "Nombre de processus CPU utilisés pour l'extraction de la hauteur et le traitement des données :",

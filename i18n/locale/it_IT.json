@@ -72,7 +72,7 @@
     "指定输出主人声文件夹": "Specifica la cartella di output per le voci:",
     "指定输出文件夹": "Specifica la cartella di output:",
     "指定输出非主人声文件夹": "Specificare la cartella di output per l'accompagnamento:",
-    "推理时间(ms)": "推理时间(ms)",
+    "推理时间(ms)": "Tempo di inferenza (ms)",
     "推理音色": "Voce di inferenza:",
     "提取": "Estrai",
     "提取音高和处理数据使用的CPU进程数": "Numero di processi CPU utilizzati per l'estrazione del tono e l'elaborazione dei dati:",
