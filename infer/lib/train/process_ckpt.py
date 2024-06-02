@@ -1,16 +1,17 @@
 import os
-import sys
 import traceback
 from collections import OrderedDict
+from time import time
 
 import torch
 
 from i18n.i18n import I18nAuto
+from infer.modules.vc import model_hash_ckpt, hash_id
 
 i18n = I18nAuto()
 
-
-def savee(ckpt, sr, if_f0, name, epoch, version, hps):
+# add author sign
+def save_small_model(ckpt, sr, if_f0, name, epoch, version, hps):
     try:
         opt = OrderedDict()
         opt["weight"] = {}
@@ -39,24 +40,16 @@ def savee(ckpt, sr, if_f0, name, epoch, version, hps):
             hps.data.sampling_rate,
         ]
         opt["info"] = "%sepoch" % epoch
+        opt["name"] = name
+        opt["timestamp"] = int(time())
         opt["sr"] = sr
         opt["f0"] = if_f0
         opt["version"] = version
+        h = model_hash_ckpt(opt)
+        opt["hash"] = h
+        opt["id"] = hash_id(h)
         torch.save(opt, "assets/weights/%s.pth" % name)
         return "Success."
-    except:
-        return traceback.format_exc()
-
-
-def show_info(path):
-    try:
-        a = torch.load(path, map_location="cpu")
-        return "模型信息:%s\n采样率:%s\n模型是否输入音高引导:%s\n版本:%s" % (
-            a.get("info", "None"),
-            a.get("sr", "None"),
-            a.get("f0", "None"),
-            a.get("version", "None"),
-        )
     except:
         return traceback.format_exc()
 
@@ -182,9 +175,14 @@ def extract_small_model(path, name, sr, if_f0, info, version):
         if info == "":
             info = "Extracted model."
         opt["info"] = info
+        opt["name"] = name
+        opt["timestamp"] = int(time())
         opt["version"] = version
         opt["sr"] = sr
         opt["f0"] = int(if_f0)
+        h = model_hash_ckpt(opt)
+        opt["hash"] = h
+        opt["id"] = hash_id(h)
         torch.save(opt, "assets/weights/%s.pth" % name)
         return "Success."
     except:
@@ -251,10 +249,15 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
         elif(sr=="48k"):opt["config"] = [1025, 32, 192, 192, 768, 2, 6, 3, 0, "1", [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]], [10,6,2,2,2], 512, [16, 16, 4, 4], 109, 256, 48000]
         elif(sr=="32k"):opt["config"] = [513, 32, 192, 192, 768, 2, 6, 3, 0, "1", [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]], [10, 4, 2, 2, 2], 512, [16, 16, 4, 4,4], 109, 256, 32000]
         """
+        opt["name"] = name
+        opt["timestamp"] = int(time())
         opt["sr"] = sr
         opt["f0"] = 1 if f0 == i18n("是") else 0
         opt["version"] = version
         opt["info"] = info
+        h = model_hash_ckpt(opt)
+        opt["hash"] = h
+        opt["id"] = hash_id(h)
         torch.save(opt, "assets/weights/%s.pth" % name)
         return "Success."
     except:

@@ -16,7 +16,7 @@ from infer.lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
-
+from .info import show_model_info
 from .pipeline import Pipeline
 from .utils import get_index_path_from_model, load_hubert
 
@@ -136,6 +136,7 @@ class VC:
                 to_return_protect1,
                 index,
                 index,
+                show_model_info(self.cpt)
             )
             if to_return_protect
             else {"visible": True, "maximum": n_spk, "__type__": "update"}
@@ -158,6 +159,8 @@ class VC:
     ):
         if input_audio_path is None:
             return "You need to upload an audio", None
+        elif hasattr(input_audio_path, "name"):
+            input_audio_path = str(input_audio_path.name)
         f0_up_key = int(f0_up_key)
         try:
             audio = load_audio(input_audio_path, 16000)
@@ -170,6 +173,7 @@ class VC:
                 self.hubert_model = load_hubert(self.config.device, self.config.is_half)
 
             if file_index:
+                if hasattr(file_index, "name"): file_index = str(file_index.name)
                 file_index = (
                     file_index.strip(" ")
                     .strip('"')
@@ -207,12 +211,12 @@ class VC:
             else:
                 tgt_sr = self.tgt_sr
             index_info = (
-                "Index:\n%s." % file_index
+                "Index: %s." % file_index
                 if os.path.exists(file_index)
                 else "Index not used."
             )
             return (
-                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
+                "Success.\n%s\nTime: npy: %.2fs, f0: %.2fs, infer: %.2fs."
                 % (index_info, *times),
                 (tgt_sr, audio_opt),
             )

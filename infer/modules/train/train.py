@@ -74,7 +74,7 @@ from infer.lib.train.losses import (
     kl_loss,
 )
 from infer.lib.train.mel_processing import mel_spectrogram_torch, spec_to_mel_torch
-from infer.lib.train.process_ckpt import savee
+from infer.lib.train.process_ckpt import save_small_model
 
 global_step = 0
 
@@ -602,7 +602,7 @@ def train_and_evaluate(
                 % (
                     hps.name,
                     epoch,
-                    savee(
+                    save_small_model(
                         ckpt,
                         hps.sample_rate,
                         hps.if_f0,
@@ -626,7 +626,7 @@ def train_and_evaluate(
         logger.info(
             "saving final ckpt:%s"
             % (
-                savee(
+                save_small_model(
                     ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch, hps.version, hps
                 )
             )

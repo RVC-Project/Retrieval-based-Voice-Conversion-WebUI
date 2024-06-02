@@ -10,13 +10,12 @@ load_dotenv("sha256.env")
 if sys.platform == "darwin":
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
-from infer.modules.vc import VC
+from infer.modules.vc import VC, show_info
 from infer.modules.uvr5.modules import uvr
 from infer.lib.train.process_ckpt import (
     change_info,
     extract_small_model,
     merge,
-    show_info,
 )
 from i18n.i18n import I18nAuto
 from configs.config import Config
@@ -838,6 +837,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 clean_button.click(
                     fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
                 )
+            modelinfo = gr.Textbox(label=i18n("模型信息"))
             with gr.TabItem(i18n("单次推理")):
                 with gr.Group():
                     with gr.Row():
@@ -846,24 +846,23 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"),
                                 value=0,
                             )
-                            input_audio0 = gr.Textbox(
+                            input_audio0 = gr.File(
                                 label=i18n(
-                                    "输入待处理音频文件路径(默认是正确格式示例)"
+                                    "待处理音频文件"
                                 ),
-                                placeholder="C:\\Users\\Desktop\\audio_example.wav",
-                            )
-                            file_index1 = gr.Textbox(
-                                label=i18n(
-                                    "特征检索库文件路径,为空则使用下拉的选择结果"
-                                ),
-                                placeholder="C:\\Users\\Desktop\\model_example.index",
-                                interactive=True,
+                                file_types=["audio"]
                             )
                             file_index2 = gr.Dropdown(
                                 label=i18n("自动检测index路径,下拉式选择(dropdown)"),
                                 choices=sorted(index_paths),
                                 interactive=True,
                             )
+                            file_index1 = gr.File(
+                                label=i18n(
+                                    "特征检索库文件路径,为空则使用下拉的选择结果"
+                                ),
+                            )
+                        with gr.Column():
                             f0method0 = gr.Radio(
                                 label=i18n(
                                     "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
@@ -876,8 +875,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 value="rmvpe",
                                 interactive=True,
                             )
-
-                        with gr.Column():
                             resample_sr0 = gr.Slider(
                                 minimum=0,
                                 maximum=48000,
@@ -928,6 +925,10 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 ),
                                 visible=False,
                             )
+                            but0 = gr.Button(i18n("转换"), variant="primary")
+                            vc_output2 = gr.Audio(
+                                label=i18n("输出音频(右下角三个点,点了可以下载)")
+                            )
 
                             refresh_button.click(
                                 fn=change_choices,
@@ -935,19 +936,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 outputs=[sid0, file_index2],
                                 api_name="infer_refresh",
                             )
-                            # file_big_npy1 = gr.Textbox(
-                            #     label=i18n("特征文件路径"),
-                            #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
-                            #     interactive=True,
-                            # )
                 with gr.Group():
-                    with gr.Column():
-                        but0 = gr.Button(i18n("转换"), variant="primary")
-                        with gr.Row():
-                            vc_output1 = gr.Textbox(label=i18n("输出信息"))
-                            vc_output2 = gr.Audio(
-                                label=i18n("输出音频(右下角三个点,点了可以下载)")
-                            )
+                        vc_output1 = gr.Textbox(label=i18n("输出信息"))
 
                         but0.click(
                             vc.vc_single,
@@ -981,36 +971,28 @@ with gr.Blocks(title="RVC WebUI") as app:
                             label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"),
                             value=0,
                         )
+                        dir_input = gr.Textbox(
+                            label=i18n(
+                                "输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"
+                            ),
+                            placeholder="C:\\Users\\Desktop\\input_vocal_dir",
+                        )
+                        inputs = gr.File(
+                            file_count="multiple",
+                            label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹"),
+                        )
                         opt_input = gr.Textbox(
                             label=i18n("指定输出文件夹"), value="opt"
-                        )
-                        file_index3 = gr.Textbox(
-                            label=i18n("特征检索库文件路径,为空则使用下拉的选择结果"),
-                            value="",
-                            interactive=True,
                         )
                         file_index4 = gr.Dropdown(
                             label=i18n("自动检测index路径,下拉式选择(dropdown)"),
                             choices=sorted(index_paths),
                             interactive=True,
                         )
-                        f0method1 = gr.Radio(
+                        file_index3 = gr.File(
                             label=i18n(
-                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
+                                "特征检索库文件路径,为空则使用下拉的选择结果"
                             ),
-                            choices=(
-                                ["pm", "harvest", "crepe", "rmvpe"]
-                                if config.dml == False
-                                else ["pm", "harvest", "rmvpe"]
-                            ),
-                            value="rmvpe",
-                            interactive=True,
-                        )
-                        format1 = gr.Radio(
-                            label=i18n("导出文件格式"),
-                            choices=["wav", "flac", "mp3", "m4a"],
-                            value="wav",
-                            interactive=True,
                         )
 
                         refresh_button.click(
@@ -1026,6 +1008,18 @@ with gr.Blocks(title="RVC WebUI") as app:
                         # )
 
                     with gr.Column():
+                        f0method1 = gr.Radio(
+                            label=i18n(
+                                "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
+                            ),
+                            choices=(
+                                ["pm", "harvest", "crepe", "rmvpe"]
+                                if config.dml == False
+                                else ["pm", "harvest", "rmvpe"]
+                            ),
+                            value="rmvpe",
+                            interactive=True,
+                        )
                         resample_sr1 = gr.Slider(
                             minimum=0,
                             maximum=48000,
@@ -1070,48 +1064,42 @@ with gr.Blocks(title="RVC WebUI") as app:
                             value=1,
                             interactive=True,
                         )
-                with gr.Row():
-                    dir_input = gr.Textbox(
-                        label=i18n(
-                            "输入待处理音频文件夹路径(去文件管理器地址栏拷就行了)"
-                        ),
-                        placeholder="C:\\Users\\Desktop\\input_vocal_dir",
-                    )
-                    inputs = gr.File(
-                        file_count="multiple",
-                        label=i18n("也可批量输入音频文件, 二选一, 优先读文件夹"),
-                    )
+                        format1 = gr.Radio(
+                            label=i18n("导出文件格式"),
+                            choices=["wav", "flac", "mp3", "m4a"],
+                            value="wav",
+                            interactive=True,
+                        )
+                        but1 = gr.Button(i18n("转换"), variant="primary")
 
-                with gr.Row():
-                    but1 = gr.Button(i18n("转换"), variant="primary")
-                    vc_output3 = gr.Textbox(label=i18n("输出信息"))
+                vc_output3 = gr.Textbox(label=i18n("输出信息"))
 
-                    but1.click(
-                        vc.vc_multi,
-                        [
-                            spk_item,
-                            dir_input,
-                            opt_input,
-                            inputs,
-                            vc_transform1,
-                            f0method1,
-                            file_index3,
-                            file_index4,
-                            # file_big_npy2,
-                            index_rate2,
-                            filter_radius1,
-                            resample_sr1,
-                            rms_mix_rate1,
-                            protect1,
-                            format1,
-                        ],
-                        [vc_output3],
-                        api_name="infer_convert_batch",
-                    )
+                but1.click(
+                    vc.vc_multi,
+                    [
+                        spk_item,
+                        dir_input,
+                        opt_input,
+                        inputs,
+                        vc_transform1,
+                        f0method1,
+                        file_index3,
+                        file_index4,
+                        # file_big_npy2,
+                        index_rate2,
+                        filter_radius1,
+                        resample_sr1,
+                        rms_mix_rate1,
+                        protect1,
+                        format1,
+                    ],
+                    [vc_output3],
+                    api_name="infer_convert_batch",
+                )
                 sid0.change(
                     fn=vc.get_vc,
                     inputs=[sid0, protect0, protect1],
-                    outputs=[spk_item, protect0, protect1, file_index2, file_index4],
+                    outputs=[spk_item, protect0, protect1, file_index2, file_index4, modelinfo],
                     api_name="infer_change_voice",
                 )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):

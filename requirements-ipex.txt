@@ -53,3 +53,4 @@ av
 FreeSimpleGUI
 sounddevice
 torchfcpe
+pybase16384
