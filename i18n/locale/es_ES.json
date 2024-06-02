@@ -7,7 +7,6 @@
     "F0曲线文件, 可选, 一行一个音高, 代替默认F0及升降调": "Archivo de curva F0, opcional, un tono por línea, en lugar de F0 predeterminado y cambio de tono",
     "ID(短)": "ID(短)",
     "ID(长)": "ID(长)",
-    "Index Rate": "Tasa de índice",
     "Onnx导出": "Exportar Onnx",
     "Onnx输出路径": "Ruta de salida Onnx",
     "RVC模型路径": "Ruta del modelo RVC",
