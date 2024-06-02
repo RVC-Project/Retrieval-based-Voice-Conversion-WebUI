@@ -1417,18 +1417,20 @@ with gr.Blocks(title="RVC WebUI") as app:
 
         with gr.TabItem(i18n("ckpt处理")):
             with gr.Group():
-                gr.Markdown(value=i18n("### 模型比较\n> 模型ID(长)请于下方`查看模型信息`中获得\n\n可用于比较两模型推理相似度"))
+                gr.Markdown(
+                    value=i18n(
+                        "### 模型比较\n> 模型ID(长)请于下方`查看模型信息`中获得\n\n可用于比较两模型推理相似度"
+                    )
+                )
                 with gr.Row():
                     with gr.Column():
-                        id_a = gr.Textbox(
-                            label=i18n("A模型ID(长)"), value=""
-                        )
-                        id_b = gr.Textbox(
-                            label=i18n("B模型ID(长)"), value=""
-                        )
+                        id_a = gr.Textbox(label=i18n("A模型ID(长)"), value="")
+                        id_b = gr.Textbox(label=i18n("B模型ID(长)"), value="")
                     with gr.Column():
                         butmodelcmp = gr.Button(i18n("计算"), variant="primary")
-                        infomodelcmp = gr.Textbox(label=i18n("相似度(0到1)"), value="", max_lines=8)
+                        infomodelcmp = gr.Textbox(
+                            label=i18n("相似度(0到1)"), value="", max_lines=8
+                        )
                 butmodelcmp.click(
                     hash_similarity,
                     [
@@ -1505,7 +1507,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )  # def merge(path1,path2,alpha1,sr,f0,info):
             with gr.Group():
                 gr.Markdown(
-                    value=i18n("### 修改模型信息\n> 仅支持weights文件夹下提取的小模型文件")
+                    value=i18n(
+                        "### 修改模型信息\n> 仅支持weights文件夹下提取的小模型文件"
+                    )
                 )
                 with gr.Row():
                     ckpt_path0 = gr.Textbox(
@@ -1534,7 +1538,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
             with gr.Group():
                 gr.Markdown(
-                    value=i18n("### 查看模型信息\n> 仅支持weights文件夹下提取的小模型文件")
+                    value=i18n(
+                        "### 查看模型信息\n> 仅支持weights文件夹下提取的小模型文件"
+                    )
                 )
                 with gr.Row():
                     ckpt_path1 = gr.Textbox(
