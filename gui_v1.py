@@ -325,7 +325,7 @@ if __name__ == "__main__":
                                     default=data.get("sr_device", False),
                                     enable_events=True,
                                 ),
-                                sg.Text(i18n("采样率:")),
+                                sg.Text(i18n("采样率")),
                                 sg.Text("", key="sr_stream"),
                             ],
                         ],
