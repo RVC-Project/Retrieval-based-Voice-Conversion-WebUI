@@ -847,10 +847,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 value=0,
                             )
                             input_audio0 = gr.File(
-                                label=i18n(
-                                    "待处理音频文件"
-                                ),
-                                file_types=["audio"]
+                                label=i18n("待处理音频文件"), file_types=["audio"]
                             )
                             file_index2 = gr.Dropdown(
                                 label=i18n("自动检测index路径,下拉式选择(dropdown)"),
@@ -937,28 +934,28 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 api_name="infer_refresh",
                             )
                 with gr.Group():
-                        vc_output1 = gr.Textbox(label=i18n("输出信息"))
+                    vc_output1 = gr.Textbox(label=i18n("输出信息"))
 
-                        but0.click(
-                            vc.vc_single,
-                            [
-                                spk_item,
-                                input_audio0,
-                                vc_transform0,
-                                f0_file,
-                                f0method0,
-                                file_index1,
-                                file_index2,
-                                # file_big_npy1,
-                                index_rate1,
-                                filter_radius0,
-                                resample_sr0,
-                                rms_mix_rate0,
-                                protect0,
-                            ],
-                            [vc_output1, vc_output2],
-                            api_name="infer_convert",
-                        )
+                    but0.click(
+                        vc.vc_single,
+                        [
+                            spk_item,
+                            input_audio0,
+                            vc_transform0,
+                            f0_file,
+                            f0method0,
+                            file_index1,
+                            file_index2,
+                            # file_big_npy1,
+                            index_rate1,
+                            filter_radius0,
+                            resample_sr0,
+                            rms_mix_rate0,
+                            protect0,
+                        ],
+                        [vc_output1, vc_output2],
+                        api_name="infer_convert",
+                    )
             with gr.TabItem(i18n("批量推理")):
                 gr.Markdown(
                     value=i18n(
@@ -990,9 +987,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             interactive=True,
                         )
                         file_index3 = gr.File(
-                            label=i18n(
-                                "特征检索库文件路径,为空则使用下拉的选择结果"
-                            ),
+                            label=i18n("特征检索库文件路径,为空则使用下拉的选择结果"),
                         )
 
                         refresh_button.click(
@@ -1099,7 +1094,14 @@ with gr.Blocks(title="RVC WebUI") as app:
                 sid0.change(
                     fn=vc.get_vc,
                     inputs=[sid0, protect0, protect1],
-                    outputs=[spk_item, protect0, protect1, file_index2, file_index4, modelinfo],
+                    outputs=[
+                        spk_item,
+                        protect0,
+                        protect1,
+                        file_index2,
+                        file_index4,
+                        modelinfo,
+                    ],
                     api_name="infer_change_voice",
                 )
         with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):

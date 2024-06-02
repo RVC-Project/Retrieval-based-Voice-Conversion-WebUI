@@ -10,6 +10,7 @@ from infer.modules.vc import model_hash_ckpt, hash_id
 
 i18n = I18nAuto()
 
+
 # add author sign
 def save_small_model(ckpt, sr, if_f0, name, epoch, version, hps):
     try:

@@ -136,7 +136,7 @@ class VC:
                 to_return_protect1,
                 index,
                 index,
-                show_model_info(self.cpt)
+                show_model_info(self.cpt),
             )
             if to_return_protect
             else {"visible": True, "maximum": n_spk, "__type__": "update"}
@@ -173,7 +173,8 @@ class VC:
                 self.hubert_model = load_hubert(self.config.device, self.config.is_half)
 
             if file_index:
-                if hasattr(file_index, "name"): file_index = str(file_index.name)
+                if hasattr(file_index, "name"):
+                    file_index = str(file_index.name)
                 file_index = (
                     file_index.strip(" ")
                     .strip('"')
