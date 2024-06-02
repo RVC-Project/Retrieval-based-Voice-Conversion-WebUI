@@ -114,6 +114,7 @@ class Pipeline(object):
                 )
         elif f0_method == "harvest":
             from hashlib import md5
+
             f0_cache_key = md5(x.tobytes()).digest()
             input_audio_path2wav[f0_cache_key] = x.astype(np.double)
             f0 = cache_harvest_f0(f0_cache_key, self.sr, f0_max, f0_min, 10)
