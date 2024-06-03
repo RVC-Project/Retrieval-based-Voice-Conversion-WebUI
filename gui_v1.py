@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     import infer.lib.rtrvc as rtrvc
     from i18n.i18n import I18nAuto
-    from configs.config import Config
+    from configs import Config
 
     i18n = I18nAuto()
 

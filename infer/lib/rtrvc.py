@@ -21,7 +21,7 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 from multiprocessing import Manager as M
 
-from configs.config import Config
+from configs import Config
 
 # config = Config()
 

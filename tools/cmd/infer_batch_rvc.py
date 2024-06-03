@@ -12,7 +12,7 @@ import tqdm as tq
 from dotenv import load_dotenv
 from scipy.io import wavfile
 
-from configs.config import Config
+from configs import Config
 from infer.modules.vc import VC
 
 

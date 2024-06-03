@@ -2,7 +2,7 @@ import os
 
 from fairseq import checkpoint_utils
 
-from configs.config import singleton_variable
+from configs import singleton_variable
 
 
 def get_index_path_from_model(sid):

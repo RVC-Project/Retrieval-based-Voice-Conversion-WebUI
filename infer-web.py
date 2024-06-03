@@ -18,7 +18,7 @@ from infer.lib.train.process_ckpt import (
     merge,
 )
 from i18n.i18n import I18nAuto
-from configs.config import Config
+from configs import Config
 from sklearn.cluster import MiniBatchKMeans
 import torch, platform
 import numpy as np

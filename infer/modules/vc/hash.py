@@ -11,7 +11,7 @@ if __name__ == "__main__":
     now_dir = os.getcwd()
     sys.path.append(now_dir)
 
-from configs.config import Config, singleton_variable
+from configs import Config, singleton_variable
 
 from .pipeline import Pipeline
 from .utils import load_hubert

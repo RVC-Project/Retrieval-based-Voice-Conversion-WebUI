@@ -5,7 +5,7 @@ import os
 import gradio as gr
 from dotenv import load_dotenv
 
-from configs.config import Config
+from configs import Config
 from i18n.i18n import I18nAuto
 from infer.modules.vc import VC
 
