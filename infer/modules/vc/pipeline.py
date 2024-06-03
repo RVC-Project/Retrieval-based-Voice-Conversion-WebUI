@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 from functools import lru_cache
 from time import time
 
-import faiss
 import librosa
 import numpy as np
 import parselmouth
@@ -331,9 +330,9 @@ class Pipeline(object):
             and os.path.exists(file_index)
             and index_rate != 0
         ):
+            if "faiss" not in sys.modules: import faiss
             try:
                 index = faiss.read_index(file_index)
-                # big_npy = np.load(file_big_npy)
                 big_npy = index.reconstruct_n(0, index.ntotal)
             except:
                 traceback.print_exc()
