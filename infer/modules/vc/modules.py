@@ -96,7 +96,8 @@ class VC:
                     {"value": to_return_protect[2], "__type__": "update"},
                     {"value": to_return_protect[3], "__type__": "update"},
                     {"value": "", "__type__": "update"},
-                ) if to_return_protect
+                )
+                if to_return_protect
                 else {"visible": True, "maximum": 0, "__type__": "update"}
             )
         person = f'{os.getenv("weight_root")}/{sid}'
