@@ -9,12 +9,13 @@ def load_language_list(language):
         language_list = json.load(f)
     return language_list
 
+
 @singleton_variable
 class I18nAuto:
     def __init__(self, language=None):
         if language in ["Auto", None]:
             language = locale.getdefaultlocale(
-                envvars=('LANG', 'LC_ALL', 'LC_CTYPE', 'LANGUAGE')
+                envvars=("LANG", "LC_ALL", "LC_CTYPE", "LANGUAGE")
             )[0]
         if not os.path.exists(f"./i18n/locale/{language}.json"):
             language = "en_US"
