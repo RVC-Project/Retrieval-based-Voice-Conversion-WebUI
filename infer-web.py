@@ -1093,7 +1093,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 sid0.change(
                     fn=vc.get_vc,
-                    inputs=[sid0, protect0, protect1],
+                    inputs=[sid0, protect0, protect1, file_index2, file_index4],
                     outputs=[
                         spk_item,
                         protect0,

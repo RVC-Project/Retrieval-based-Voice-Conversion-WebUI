@@ -89,11 +89,15 @@ class VC:
                 elif torch.backends.mps.is_available():
                     torch.mps.empty_cache()
             return (
-                {"visible": False, "__type__": "update"},
-                to_return_protect0,
-                to_return_protect1,
-                "",
-                "",
+                (
+                    {"visible": False, "__type__": "update"},
+                    to_return_protect0,
+                    to_return_protect1,
+                    {"value": to_return_protect[2], "__type__": "update"},
+                    {"value": to_return_protect[3], "__type__": "update"},
+                    {"value": "", "__type__": "update"},
+                ) if to_return_protect
+                else {"visible": True, "maximum": 0, "__type__": "update"}
             )
         person = f'{os.getenv("weight_root")}/{sid}'
         logger.info(f"Loading: {person}")
@@ -221,10 +225,10 @@ class VC:
                 % (index_info, *times),
                 (tgt_sr, audio_opt),
             )
-        except:
+        except Exception as e:
             info = traceback.format_exc()
             logger.warning(info)
-            return info, (None, None)
+            return str(e), None
 
     def vc_multi(
         self,

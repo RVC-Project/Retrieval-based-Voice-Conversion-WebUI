@@ -190,27 +190,30 @@ def _extend_difference(n, a, b):
 
 
 def hash_similarity(h1: str, h2: str) -> float:
-    h1b, h2b = decode_from_string(h1), decode_from_string(h2)
-    if len(h1b) != half_hash_len * 2 or len(h2b) != half_hash_len * 2:
-        raise Exception("invalid hash length")
-    h1n, h2n = np.frombuffer(h1b, dtype=">i2"), np.frombuffer(h2b, dtype=">i2")
-    d = 0
-    for i in range(half_hash_len // 4):
-        a = i * 2
-        b = a + 1
-        ax = complex(h1n[a], h1n[b])
-        bx = complex(h2n[a], h2n[b])
-        if abs(ax) == 0 or abs(bx) == 0:
-            continue
-        d += np.abs(ax - bx)
-    frac = np.linalg.norm(h1n) * np.linalg.norm(h2n)
-    cosine = (
-        np.dot(h1n.astype(np.float32), h2n.astype(np.float32)) / frac
-        if frac != 0
-        else 1.0
-    )
-    distance = _extend_difference(np.exp(-d / expand_factor), 0.5, 1.0)
-    return round((abs(cosine) + distance) / 2, 6)
+    try:
+        h1b, h2b = decode_from_string(h1), decode_from_string(h2)
+        if len(h1b) != half_hash_len * 2 or len(h2b) != half_hash_len * 2:
+            raise Exception("invalid hash length")
+        h1n, h2n = np.frombuffer(h1b, dtype=">i2"), np.frombuffer(h2b, dtype=">i2")
+        d = 0
+        for i in range(half_hash_len // 4):
+            a = i * 2
+            b = a + 1
+            ax = complex(h1n[a], h1n[b])
+            bx = complex(h2n[a], h2n[b])
+            if abs(ax) == 0 or abs(bx) == 0:
+                continue
+            d += np.abs(ax - bx)
+        frac = np.linalg.norm(h1n) * np.linalg.norm(h2n)
+        cosine = (
+            np.dot(h1n.astype(np.float32), h2n.astype(np.float32)) / frac
+            if frac != 0
+            else 1.0
+        )
+        distance = _extend_difference(np.exp(-d / expand_factor), 0.5, 1.0)
+        return round((abs(cosine) + distance) / 2, 6)
+    except Exception as e:
+        return str(e)
 
 
 def hash_id(h: str) -> str:

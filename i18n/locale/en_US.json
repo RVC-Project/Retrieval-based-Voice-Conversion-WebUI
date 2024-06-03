@@ -53,7 +53,7 @@
     "加载预训练底模D路径": "Load pre-trained base model D path",
     "加载预训练底模G路径": "Load pre-trained base model G path",
     "单次推理": "Single Inference",
-    "卸载音色省显存": "Unload voice to save GPU memory",
+    "卸载音色省显存": "Unload model to save GPU memory",
     "变调(整数, 半音数量, 升八度12降八度-12)": "Transpose (integer, number of semitones, raise by an octave: 12, lower by an octave: -12)",
     "后处理重采样至最终采样率，0为不进行重采样": "Resample the output audio in post-processing to the final sample rate. Set to 0 for no resampling",
     "否": "No",

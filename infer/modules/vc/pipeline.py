@@ -253,7 +253,10 @@ class Pipeline(object):
             # _, I = index.search(npy, 1)
             # npy = big_npy[I.squeeze()]
 
-            score, ix = index.search(npy, k=8)
+            try:
+                score, ix = index.search(npy, k=8)
+            except:
+                raise Exception("index mistatch")
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
             npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
