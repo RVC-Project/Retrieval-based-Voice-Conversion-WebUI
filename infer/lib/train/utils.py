@@ -358,6 +358,9 @@ def get_hparams(init=True):
         required=True,
         help="if caching the dataset in GPU memory, 1 or 0",
     )
+    parser.add_argument(
+        "-a", "--author", type=str, default="", help="Model author"
+    )
 
     args = parser.parse_args()
     name = args.experiment_dir
@@ -383,9 +386,10 @@ def get_hparams(init=True):
     hparams.save_every_weights = args.save_every_weights
     hparams.if_cache_data_in_gpu = args.if_cache_data_in_gpu
     hparams.data.training_files = "%s/filelist.txt" % experiment_dir
+    hparams.author = args.author
     return hparams
 
-
+"""
 def get_hparams_from_dir(model_dir):
     config_save_path = os.path.join(model_dir, "config.json")
     with open(config_save_path, "r") as f:
@@ -429,7 +433,7 @@ def check_git_hash(model_dir):
             )
     else:
         open(path, "w").write(cur_hash)
-
+"""
 
 def get_logger(model_dir, filename="train.log"):
     global logger

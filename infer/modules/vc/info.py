@@ -38,18 +38,20 @@ def show_model_info(cpt, show_long_id=False):
             )
         txt = f"""{i18n("模型名")}: %s
 {i18n("封装时间")}: %s
+{i18n("模型作者")}: %s
 {i18n("信息")}: %s
 {i18n("采样率")}: %s
 {i18n("音高引导(f0)")}: %s
 {i18n("版本")}: %s
 {i18n("ID(短)")}: %s
 {i18n("ID(长)")}: %s""" % (
-            cpt.get("name", "None"),
+            cpt.get("name", i18n("Unknown")),
             datetime.fromtimestamp(float(cpt.get("timestamp", 0))),
-            cpt.get("info", "None"),
-            cpt.get("sr", "None"),
+            cpt.get("author", i18n("Unknown")),
+            cpt.get("info", i18n("None")),
+            cpt.get("sr", i18n("Unknown")),
             i18n("有") if cpt.get("f0", 0) == 1 else i18n("无"),
-            cpt.get("version", "None"),
+            cpt.get("version", i18n("None")),
             id,
             h,
         )
