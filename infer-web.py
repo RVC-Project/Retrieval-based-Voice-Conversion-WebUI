@@ -822,8 +822,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"),
                                 value=0,
                             )
-                            input_audio0 = gr.File(
-                                label=i18n("待处理音频文件"), file_types=["audio"]
+                            input_audio0 = gr.Audio(
+                                label=i18n("待处理音频文件"), type="filepath"
                             )
                             file_index2 = gr.Dropdown(
                                 label=i18n("自动检测index路径,下拉式选择(dropdown)"),

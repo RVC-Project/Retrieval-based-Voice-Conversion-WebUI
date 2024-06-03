@@ -262,3 +262,51 @@ class Config:
             % (self.is_half, self.device)
         )
         return x_pad, x_query, x_center, x_max
+
+@singleton_variable
+class CPUConfig:
+    def __init__(self):
+        self.device = "cpu"
+        self.is_half = False
+        self.use_jit = False
+        self.n_cpu = 0
+        self.gpu_name = None
+        self.json_config = self.load_config_json()
+        self.gpu_mem = None
+        self.instead = "cpu"
+        self.preprocess_per = 3.7
+        self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
+
+    @staticmethod
+    def load_config_json() -> dict:
+        d = {}
+        for config_file in version_config_list:
+            p = f"configs/inuse/{config_file}"
+            if not os.path.exists(p):
+                shutil.copy(f"configs/{config_file}", p)
+            with open(f"configs/inuse/{config_file}", "r") as f:
+                d[config_file] = json.load(f)
+        return d
+
+    def use_fp32_config(self):
+        for config_file in version_config_list:
+            self.json_config[config_file]["train"]["fp16_run"] = False
+            with open(f"configs/inuse/{config_file}", "r") as f:
+                strr = f.read().replace("true", "false")
+            with open(f"configs/inuse/{config_file}", "w") as f:
+                f.write(strr)
+        self.preprocess_per = 3.0
+
+    def device_config(self):
+        self.use_fp32_config()
+
+        if self.n_cpu == 0:
+            self.n_cpu = cpu_count()
+
+        # 5G显存配置
+        x_pad = 1
+        x_query = 6
+        x_center = 38
+        x_max = 41
+
+        return x_pad, x_query, x_center, x_max

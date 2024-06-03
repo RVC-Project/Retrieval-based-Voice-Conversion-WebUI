@@ -2,8 +2,6 @@ import os
 
 from fairseq import checkpoint_utils
 
-from configs import singleton_variable
-
 
 def get_index_path_from_model(sid):
     return next(
@@ -22,7 +20,6 @@ def get_index_path_from_model(sid):
     )
 
 
-@singleton_variable
 def load_hubert(device, is_half):
     models, _, _ = checkpoint_utils.load_model_ensemble_and_task(
         ["assets/hubert/hubert_base.pt"],

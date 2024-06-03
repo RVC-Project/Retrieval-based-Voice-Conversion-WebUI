@@ -3,6 +3,7 @@ import sys
 import logging
 
 logger = logging.getLogger(__name__)
+logging.getLogger("numba").setLevel(logging.WARNING)
 
 now_dir = os.getcwd()
 sys.path.append(os.path.join(now_dir))
