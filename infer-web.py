@@ -569,7 +569,9 @@ def click_train(
                 sort_keys=True,
             )
             f.write("\n")
-    cmd = '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s -a "%s"' % (
+    cmd = (
+        '"%s" infer/modules/train/train.py -e "%s" -sr %s -f0 %s -bs %s -te %s -se %s %s %s -l %s -c %s -sw %s -v %s -a "%s"'
+        % (
             config.python_cmd,
             exp_dir1,
             sr2,
@@ -583,8 +585,9 @@ def click_train(
             1 if if_cache_gpu17 == i18n("是") else 0,
             1 if if_save_every_weights18 == i18n("是") else 0,
             version19,
-            author
+            author,
         )
+    )
     if gpus16:
         cmd += '-g "%s"' % (gpus16)
 
@@ -713,7 +716,7 @@ def train1key(
     if_save_every_weights18,
     version19,
     gpus_rmvpe,
-    author
+    author,
 ):
     infos = []
 
@@ -751,7 +754,7 @@ def train1key(
         if_cache_gpu17,
         if_save_every_weights18,
         version19,
-        author
+        author,
     )
     yield get_info_str(
         i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log")
@@ -1245,7 +1248,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         but2 = gr.Button(i18n("特征提取"), variant="primary")
-                        info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                        info2 = gr.Textbox(
+                            label=i18n("输出信息"), value="", max_lines=8
+                        )
                     f0method8.change(
                         fn=change_f0_method,
                         inputs=[f0method8],
@@ -1266,7 +1271,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                         api_name="train_extract_f0_feature",
                     )
             with gr.Group():
-                gr.Markdown(value=i18n("### 第三步 开始训练\n填写训练设置, 开始训练模型和索引."))
+                gr.Markdown(
+                    value=i18n("### 第三步 开始训练\n填写训练设置, 开始训练模型和索引.")
+                )
                 with gr.Row():
                     with gr.Column():
                         save_epoch10 = gr.Slider(
@@ -1348,7 +1355,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             [if_f0_3, sr2, version19],
                             [f0method8, gpus_rmvpe, pretrained_G14, pretrained_D15],
                         )
-                        
+
                         but3 = gr.Button(i18n("训练模型"), variant="primary")
                         but4 = gr.Button(i18n("训练特征索引"), variant="primary")
                         but5 = gr.Button(i18n("一键训练"), variant="primary")
@@ -1521,7 +1528,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         but7 = gr.Button(i18n("修改"), variant="primary")
-                        info5 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                        info5 = gr.Textbox(
+                            label=i18n("输出信息"), value="", max_lines=8
+                        )
                 but7.click(
                     change_info,
                     [ckpt_path0, info_, name_to_save1],
@@ -1541,7 +1550,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                         but8 = gr.Button(i18n("查看"), variant="primary")
                     with gr.Column():
-                        info6 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                        info6 = gr.Textbox(
+                            label=i18n("输出信息"), value="", max_lines=8
+                        )
                 but8.click(show_info, [ckpt_path1], info6, api_name="ckpt_show")
             with gr.Group():
                 gr.Markdown(
@@ -1592,13 +1603,23 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         but9 = gr.Button(i18n("提取"), variant="primary")
-                        info7 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                        info7 = gr.Textbox(
+                            label=i18n("输出信息"), value="", max_lines=8
+                        )
                         ckpt_path2.change(
                             change_info_, [ckpt_path2], [sr__, if_f0__, version_1]
                         )
                 but9.click(
                     extract_small_model,
-                    [ckpt_path2, save_name, extauthor, sr__, if_f0__, info___, version_1],
+                    [
+                        ckpt_path2,
+                        save_name,
+                        extauthor,
+                        sr__,
+                        if_f0__,
+                        info___,
+                        version_1,
+                    ],
                     info7,
                     api_name="ckpt_extract",
                 )
