@@ -1240,9 +1240,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         but2 = gr.Button(i18n("特征提取"), variant="primary")
-                        info2 = gr.Textbox(
-                            label=i18n("输出信息"), value="", max_lines=8
-                        )
+                        info2 = gr.Textbox(label=i18n("输出信息"), value="")
                     f0method8.change(
                         fn=change_f0_method,
                         inputs=[f0method8],
@@ -1352,7 +1350,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         but4 = gr.Button(i18n("训练特征索引"), variant="primary")
                         but5 = gr.Button(i18n("一键训练"), variant="primary")
                 with gr.Row():
-                    info3 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=10)
+                    info3 = gr.Textbox(label=i18n("输出信息"), value="")
                     but3.click(
                         click_train,
                         [
@@ -1417,7 +1415,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     with gr.Column():
                         butmodelcmp = gr.Button(i18n("计算"), variant="primary")
                         infomodelcmp = gr.Textbox(
-                            label=i18n("相似度(0到1)"), value="", max_lines=8
+                            label=i18n("相似度(0到1)"), value="", max_lines=1
                         )
                 butmodelcmp.click(
                     hash_similarity,
@@ -1479,7 +1477,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                         but6 = gr.Button(i18n("融合"), variant="primary")
                 with gr.Row():
-                    info4 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info4 = gr.Textbox(label=i18n("输出信息"), value="")
                 but6.click(
                     merge,
                     [
@@ -1515,14 +1513,12 @@ with gr.Blocks(title="RVC WebUI") as app:
                         name_to_save1 = gr.Textbox(
                             label=i18n("保存的文件名, 默认空为和源文件同名"),
                             value="",
-                            max_lines=8,
+                            max_lines=1,
                             interactive=True,
                         )
                     with gr.Column():
                         but7 = gr.Button(i18n("修改"), variant="primary")
-                        info5 = gr.Textbox(
-                            label=i18n("输出信息"), value="", max_lines=8
-                        )
+                        info5 = gr.Textbox(label=i18n("输出信息"), value="")
                 but7.click(
                     change_info,
                     [ckpt_path0, info_, name_to_save1],
@@ -1542,9 +1538,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                         but8 = gr.Button(i18n("查看"), variant="primary")
                     with gr.Column():
-                        info6 = gr.Textbox(
-                            label=i18n("输出信息"), value="", max_lines=8
-                        )
+                        info6 = gr.Textbox(label=i18n("输出信息"), value="")
                 but8.click(show_info, [ckpt_path1], info6, api_name="ckpt_show")
             with gr.Group():
                 gr.Markdown(
@@ -1595,9 +1589,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         but9 = gr.Button(i18n("提取"), variant="primary")
-                        info7 = gr.Textbox(
-                            label=i18n("输出信息"), value="", max_lines=8
-                        )
+                        info7 = gr.Textbox(label=i18n("输出信息"), value="")
                         ckpt_path2.change(
                             change_info_, [ckpt_path2], [sr__, if_f0__, version_1]
                         )
