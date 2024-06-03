@@ -291,10 +291,6 @@ class CPUConfig:
     def use_fp32_config(self):
         for config_file in version_config_list:
             self.json_config[config_file]["train"]["fp16_run"] = False
-            with open(f"configs/inuse/{config_file}", "r") as f:
-                strr = f.read().replace("true", "false")
-            with open(f"configs/inuse/{config_file}", "w") as f:
-                f.write(strr)
         self.preprocess_per = 3.0
 
     def device_config(self):
