@@ -667,7 +667,7 @@ def train_index(exp_dir1, version19):
         exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19
     )
     faiss.write_index(index, index_save_path)
-    infos.append(f"{i18n("成功构建索引到")} {index_save_path}")
+    infos.append(i18n("成功构建索引到") + " " + index_save_path)
     link_target = "%s/%s_IVF%s_Flat_nprobe_%s_%s_%s.index" % (
         outside_index_root,
         exp_dir1,
@@ -679,9 +679,9 @@ def train_index(exp_dir1, version19):
     try:
         link = os.link if platform.system() == "Windows" else os.symlink
         link(index_save_path, link_target)
-        infos.append(f"{i18n("链接索引到外部")} {link_target}")
+        infos.append(i18n("链接索引到外部") + " " + link_target)
     except:
-        infos.append(f"{i18n("链接索引到外部")} {link_target} {i18n("失败")}")
+        infos.append(i18n("链接索引到外部") + " " + link_target + " " + i18n("失败"))
 
     # faiss.write_index(index, '%s/added_IVF%s_Flat_FastScan_%s.index'%(exp_dir,n_ivf,version19))
     # infos.append("成功构建索引，added_IVF%s_Flat_FastScan_%s.index"%(n_ivf,version19))
