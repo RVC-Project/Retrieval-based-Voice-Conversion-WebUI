@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from functools import lru_cache
-from time import time as ttime
+from time import time
 
 import faiss
 import librosa
@@ -235,7 +235,7 @@ class Pipeline(object):
             "padding_mask": padding_mask,
             "output_layer": 9 if version == "v1" else 12,
         }
-        t0 = ttime()
+        t0 = time()
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
@@ -270,7 +270,7 @@ class Pipeline(object):
             feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
                 0, 2, 1
             )
-        t1 = ttime()
+        t1 = time()
         p_len = audio0.shape[0] // self.window
         if feats.shape[1] < p_len:
             p_len = feats.shape[1]
@@ -296,7 +296,7 @@ class Pipeline(object):
             torch.cuda.empty_cache()
         elif torch.backends.mps.is_available():
             torch.mps.empty_cache()
-        t2 = ttime()
+        t2 = time()
         times[0] += t1 - t0
         times[2] += t2 - t1
         return audio1
@@ -356,7 +356,7 @@ class Pipeline(object):
         s = 0
         audio_opt = []
         t = None
-        t1 = ttime()
+        t1 = time()
         audio_pad = np.pad(audio, (self.t_pad, self.t_pad), mode="reflect")
         p_len = audio_pad.shape[0] // self.window
         inp_f0 = None
@@ -387,7 +387,7 @@ class Pipeline(object):
                 pitchf = pitchf.astype(np.float32)
             pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
-        t2 = ttime()
+        t2 = time()
         times[1] += t2 - t1
         for t in opt_ts:
             t = t // self.window * self.window
