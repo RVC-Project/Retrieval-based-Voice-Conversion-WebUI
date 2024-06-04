@@ -270,7 +270,7 @@ class CPUConfig:
         self.device = "cpu"
         self.is_half = False
         self.use_jit = False
-        self.n_cpu = 0
+        self.n_cpu = 1
         self.gpu_name = None
         self.json_config = self.load_config_json()
         self.gpu_mem = None
@@ -282,10 +282,7 @@ class CPUConfig:
     def load_config_json() -> dict:
         d = {}
         for config_file in version_config_list:
-            p = f"configs/inuse/{config_file}"
-            if not os.path.exists(p):
-                shutil.copy(f"configs/{config_file}", p)
-            with open(f"configs/inuse/{config_file}", "r") as f:
+            with open(f"configs/{config_file}", "r") as f:
                 d[config_file] = json.load(f)
         return d
 
