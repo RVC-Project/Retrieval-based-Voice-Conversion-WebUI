@@ -263,6 +263,7 @@ class Config:
         )
         return x_pad, x_query, x_center, x_max
 
+
 @singleton_variable
 class CPUConfig:
     def __init__(self):

@@ -664,7 +664,11 @@ def train_index(exp_dir1, version19):
     for i in range(0, big_npy.shape[0], batch_size_add):
         index.add(big_npy[i : i + batch_size_add])
     index_save_path = "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index" % (
-        exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19
+        exp_dir,
+        n_ivf,
+        index_ivf.nprobe,
+        exp_dir1,
+        version19,
     )
     faiss.write_index(index, index_save_path)
     infos.append(i18n("成功构建索引到") + " " + index_save_path)
@@ -1640,11 +1644,13 @@ with gr.Blocks(title="RVC WebUI") as app:
 
 try:
     import signal
+
     def cleanup(signum, frame):
         signame = signal.Signals(signum).name
-        print(f'Got signal {signame} ({signum})')
+        print(f"Got signal {signame} ({signum})")
         app.close()
         sys.exit(0)
+
     signal.signal(signal.SIGINT, cleanup)
     signal.signal(signal.SIGTERM, cleanup)
     if config.iscolab:
