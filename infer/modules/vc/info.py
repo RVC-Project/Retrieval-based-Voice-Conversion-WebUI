@@ -3,7 +3,7 @@ from i18n.i18n import I18nAuto
 from datetime import datetime
 import torch
 
-from .hash import model_hash_ckpt, hash_id
+from .hash import model_hash_ckpt, hash_id, hash_similarity
 
 i18n = I18nAuto()
 
@@ -24,18 +24,14 @@ def show_model_info(cpt, show_long_id=False):
                 + i18n("从模型中读取")
                 + ")"
             )
+        sim = hash_similarity(h, hread)
+        if sim is float: sim = "%.2f%" % (sim*100)
         if not show_long_id:
             h = i18n("不显示")
+            if h != hread:
+                h = i18n("相似度") + " " + sim + " -> " + h
         elif h != hread:
-            h += (
-                "("
-                + i18n("实际计算")
-                + "), "
-                + hread
-                + "("
-                + i18n("从模型中读取")
-                + ")"
-            )
+            h = i18n("相似度") + " " + sim + " -> " + h + "(" + i18n("实际计算") + "), " + hread + "(" + i18n("从模型中读取") + ")"
         txt = f"""{i18n("模型名")}: %s
 {i18n("封装时间")}: %s
 {i18n("模型作者")}: %s

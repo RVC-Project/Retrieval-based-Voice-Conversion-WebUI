@@ -136,7 +136,7 @@ def model_hash_ckpt(cpt):
 
     with TorchSeedContext(114514):
         tgt_sr = cpt["config"][-1]
-        if_f0 = 0
+        if_f0 = cpt.get("f0", 1)
         version = cpt.get("version", "v1")
         synthesizer_class = {
             ("v1", 1): SynthesizerTrnMs256NSFsid,
