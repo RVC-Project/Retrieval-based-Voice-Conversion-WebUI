@@ -16,6 +16,7 @@ import pyworld
 import torch
 import torch.nn.functional as F
 import torchcrepe
+import pathlib
 from scipy import signal
 
 now_dir = os.getcwd()
@@ -374,15 +375,22 @@ class Pipeline(object):
                 traceback.print_exc()
         sid = torch.tensor(sid, device=self.device).unsqueeze(0).long()
         pitch, pitchf = None, None
-        if if_f0 == 1:
-            pitch, pitchf = self.get_f0(
-                audio_pad,
-                p_len,
-                f0_up_key,
-                f0_method,
-                filter_radius,
-                inp_f0,
-            )
+        if if_f0:
+            if if_f0 == 1:
+                pitch, pitchf = self.get_f0(
+                    audio_pad,
+                    p_len,
+                    f0_up_key,
+                    f0_method,
+                    filter_radius,
+                    inp_f0,
+                )
+                """
+                np.savez_compressed(pathlib.Path(__file__).parent / "lgdsng_f0.npz", pitch=pitch, pitchf=pitchf)
+                """
+            elif if_f0 == 2:
+                pitchz = np.load(pathlib.Path(__file__).parent / "lgdsng_f0.npz")
+                pitch, pitchf = pitchz["pitch"], pitchz["pitchf"]
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
             if "mps" not in str(self.device) or "xpu" not in str(self.device):
@@ -393,7 +401,7 @@ class Pipeline(object):
         times[1] += t2 - t1
         for t in opt_ts:
             t = t // self.window * self.window
-            if if_f0 == 1:
+            if if_f0:
                 audio_opt.append(
                     self.vc(
                         model,
@@ -428,7 +436,7 @@ class Pipeline(object):
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             s = t
-        if if_f0 == 1:
+        if if_f0:
             audio_opt.append(
                 self.vc(
                     model,

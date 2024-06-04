@@ -102,7 +102,7 @@ def model_hash(config, tgt_sr, net_g, if_f0, version):
         "rmvpe",
         "",
         0,
-        if_f0,
+        2 if if_f0 else 0,
         3,
         tgt_sr,
         16000,
