@@ -27,17 +27,21 @@ class TorchSeedContext:
 half_hash_len = 512
 expand_factor = 65536 * 8
 
+
 @singleton_variable
 def original_audio_storage():
     return np.load(pathlib.Path(__file__).parent / "lgdsng.npz")
+
 
 @singleton_variable
 def original_audio():
     return original_audio_storage()["a"]
 
+
 @singleton_variable
 def original_audio_time_minus():
     return original_audio_storage()["t"]
+
 
 @singleton_variable
 def original_audio_freq_minus():

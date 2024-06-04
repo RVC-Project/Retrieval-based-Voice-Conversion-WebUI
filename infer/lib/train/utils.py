@@ -66,6 +66,7 @@ def load_checkpoint_d(checkpoint_path, combd, sbd, optimizer=None, load_opt=1):
     return model, optimizer, learning_rate, iteration
 """
 
+
 def load_checkpoint(checkpoint_path, model, optimizer=None, load_opt=1):
     assert os.path.isfile(checkpoint_path)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
@@ -130,6 +131,7 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
         checkpoint_path,
     )
 
+
 """
 def save_checkpoint_d(combd, sbd, optimizer, learning_rate, iteration, checkpoint_path):
     logger.info(
@@ -156,6 +158,7 @@ def save_checkpoint_d(combd, sbd, optimizer, learning_rate, iteration, checkpoin
         checkpoint_path,
     )
 """
+
 
 def summarize(
     writer,
