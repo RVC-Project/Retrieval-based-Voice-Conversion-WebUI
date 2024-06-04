@@ -5,7 +5,6 @@ import pathlib
 from scipy.fft import fft
 from pybase16384 import encode_to_string, decode_from_string
 
-from infer.lib.audio import load_audio
 from configs import CPUConfig, singleton_variable
 
 from .pipeline import Pipeline
@@ -28,24 +27,21 @@ class TorchSeedContext:
 half_hash_len = 512
 expand_factor = 65536 * 8
 
+@singleton_variable
+def original_audio_storage():
+    return np.load(pathlib.Path(__file__).parent / "lgdsng.npz")
+
+@singleton_variable
+def original_audio():
+    return original_audio_storage()["a"]
 
 @singleton_variable
 def original_audio_time_minus():
-    __original_audio = load_audio(
-        str(pathlib.Path(__file__).parent / "lgdsng.mp3"), 16000
-    )
-    np.divide(__original_audio, np.abs(__original_audio).max(), __original_audio)
-    return -__original_audio
-
+    return original_audio_storage()["t"]
 
 @singleton_variable
 def original_audio_freq_minus():
-    __original_audio = load_audio(
-        str(pathlib.Path(__file__).parent / "lgdsng.mp3"), 16000
-    )
-    np.divide(__original_audio, np.abs(__original_audio).max(), __original_audio)
-    __original_audio = fft(__original_audio)
-    return -__original_audio
+    return original_audio_storage()["f"]
 
 
 def _cut_u16(n):
@@ -85,13 +81,9 @@ def wave_hash(time_field):
     return encode_to_string(hash.tobytes())
 
 
-def audio_hash(file):
-    return wave_hash(load_audio(file, 16000))
-
-
 def model_hash(config, tgt_sr, net_g, if_f0, version):
     pipeline = Pipeline(tgt_sr, config)
-    audio = load_audio(str(pathlib.Path(__file__).parent / "lgdsng.mp3"), 16000)
+    audio = original_audio()
     audio_max = np.abs(audio).max() / 0.95
     if audio_max > 1:
         np.divide(audio, audio_max, audio)
