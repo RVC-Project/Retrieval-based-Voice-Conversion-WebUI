@@ -113,6 +113,7 @@
     "独占 WASAPI 设备": "独占 WASAPI 设备",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Tecla +12 recomendada para conversión de voz de hombre a mujer, tecla -12 para conversión de voz de mujer a hombre. Si el rango de tono es demasiado amplio y causa distorsión, ajústelo usted mismo a un rango adecuado.",
     "目标采样率": "Tasa de muestreo objetivo",
+    "相似度": "相似度",
     "相似度(0到1)": "相似度(0到1)",
     "算法延迟(ms)": "算法延迟(ms)",
     "自动检测index路径,下拉式选择(dropdown)": "Detección automática de la ruta del índice, selección desplegable (dropdown)",

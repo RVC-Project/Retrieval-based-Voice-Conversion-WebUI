@@ -113,6 +113,7 @@
     "独占 WASAPI 设备": "Takeover WASAPI device",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Recommended +12 key for male to female conversion, and -12 key for female to male conversion. If the sound range goes too far and the voice is distorted, you can also adjust it to the appropriate range by yourself.",
     "目标采样率": "Target sample rate",
+    "相似度": "相似度",
     "相似度(0到1)": "Similarity (from 0 to 1)",
     "算法延迟(ms)": "Algorithmic delays(ms)",
     "自动检测index路径,下拉式选择(dropdown)": "Auto-detect index path and select from the dropdown",

@@ -113,6 +113,7 @@
     "独占 WASAPI 设备": "独占 WASAPI 设备",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Il est recommandé d'utiliser la clé +12 pour la conversion homme-femme et la clé -12 pour la conversion femme-homme. Si la plage sonore est trop large et que la voix est déformée, vous pouvez également l'ajuster vous-même à la plage appropriée.",
     "目标采样率": "Taux d'échantillonnage cible :",
+    "相似度": "相似度",
     "相似度(0到1)": "相似度(0到1)",
     "算法延迟(ms)": "算法延迟(ms)",
     "自动检测index路径,下拉式选择(dropdown)": "Détecter automatiquement le chemin d'accès à l'index et le sélectionner dans la liste déroulante :",

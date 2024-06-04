@@ -113,6 +113,7 @@
     "独占 WASAPI 设备": "独占 WASAPI 设备",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Erkekten kadına çevirmek için +12 tuş önerilir, kadından erkeğe çevirmek için ise -12 tuş önerilir. Eğer ses aralığı çok fazla genişler ve ses bozulursa, isteğe bağlı olarak uygun aralığa kendiniz de ayarlayabilirsiniz.",
     "目标采样率": "Hedef örnekleme oranı:",
+    "相似度": "相似度",
     "相似度(0到1)": "相似度(0到1)",
     "算法延迟(ms)": "算法延迟(ms)",
     "自动检测index路径,下拉式选择(dropdown)": "İndeks yolunu otomatik olarak tespit et ve açılır menüden seçim yap.",
