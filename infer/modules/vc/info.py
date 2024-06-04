@@ -25,7 +25,7 @@ def show_model_info(cpt, show_long_id=False):
                 + ")"
             )
         sim = hash_similarity(h, hread)
-        if sim is float: sim = "%.2f%" % (sim*100)
+        if not isinstance(sim, str): sim = "%.2f%%" % (sim*100)
         if not show_long_id:
             h = i18n("不显示")
             if h != hread:
