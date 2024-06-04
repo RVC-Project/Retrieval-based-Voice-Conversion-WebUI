@@ -1638,16 +1638,24 @@ with gr.Blocks(title="RVC WebUI") as app:
             except:
                 gr.Markdown(traceback.format_exc())
 
-    try:
-        if config.iscolab:
-            app.queue(max_size=1022).launch(share=True, max_threads=511)
-        else:
-            app.queue(max_size=1022).launch(
-                max_threads=511,
-                server_name="0.0.0.0",
-                inbrowser=not config.noautoopen,
-                server_port=config.listen_port,
-                quiet=True,
-            )
-    except Exception as e:
-        logger.error(str(e))
+try:
+    import signal
+    def cleanup(signum, frame):
+        signame = signal.Signals(signum).name
+        print(f'Got signal {signame} ({signum})')
+        app.close()
+        sys.exit(0)
+    signal.signal(signal.SIGINT, cleanup)
+    signal.signal(signal.SIGTERM, cleanup)
+    if config.iscolab:
+        app.queue(max_size=1022).launch(share=True, max_threads=511)
+    else:
+        app.queue(max_size=1022).launch(
+            max_threads=511,
+            server_name="0.0.0.0",
+            inbrowser=not config.noautoopen,
+            server_port=config.listen_port,
+            quiet=True,
+        )
+except Exception as e:
+    logger.error(str(e))
