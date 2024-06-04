@@ -4,7 +4,7 @@
     "### 模型提取\n> 输入logs文件夹下大文件模型路径\n\n适用于训一半不想训了模型没有自动提取保存小文件模型, 或者想测试中间模型的情况": "### Model çıkartma\n> Büyük dosya modeli yolunu 'logs' klasöründe girin.\n\nBu, eğitimi yarıda bırakmak istediğinizde ve manuel olarak küçük bir model dosyası çıkartmak ve kaydetmek istediğinizde veya bir ara modeli test etmek istediğinizde kullanışlıdır.",
     "### 模型比较\n> 模型ID(长)请于下方`查看模型信息`中获得\n\n可用于比较两模型推理相似度": "### 模型比较\n> 模型ID(长)请于下方`查看模型信息`中获得\n\n可用于比较两模型推理相似度",
     "### 模型融合\n可用于测试音色融合": "### Model birleştirme\nSes rengi birleştirmesi için kullanılabilir.",
-    "### 第一步 填写实验配置\n实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件.": "### 第一步 填写实验配置\n实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件.",
+    "### 第一步 填写实验配置\n实验数据放在logs下, 每个实验一个文件夹, 需手工输入实验名路径, 内含实验配置, 日志, 训练得到的模型文件.": "### Adım 1. Deneysel yapılandırmayı doldurun.\nDeneysel veriler 'logs' klasöründe saklanır ve her bir deney için ayrı bir klasör vardır. Deneysel adı yolu manuel olarak girin; bu yol, deneysel yapılandırmayı, günlükleri ve eğitilmiş model dosyalarını içerir.",
     "### 第三步 开始训练\n填写训练设置, 开始训练模型和索引.": "### 第三步 开始训练\n填写训练设置, 开始训练模型和索引.",
     "### 第二步 音频处理\n#### 1. 音频切片\n自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练.": "### 第二步 音频处理\n#### 1. 音频切片\n自动遍历训练文件夹下所有可解码成音频的文件并进行切片归一化, 在实验目录下生成2个wav文件夹; 暂时只支持单人训练.",
     "#### 2. 特征提取\n使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号).": "#### 2. 特征提取\n使用CPU提取音高(如果模型带音高), 使用GPU提取特征(选择卡号).",
