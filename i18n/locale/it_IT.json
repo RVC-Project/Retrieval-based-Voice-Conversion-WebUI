@@ -113,6 +113,7 @@
     "独占 WASAPI 设备": "独占 WASAPI 设备",
     "男转女推荐+12key, 女转男推荐-12key, 如果音域爆炸导致音色失真也可以自己调整到合适音域. ": "Tonalità +12 consigliata per la conversione da maschio a femmina e tonalità -12 per la conversione da femmina a maschio. ",
     "目标采样率": "Frequenza di campionamento target:",
+    "相似度": "相似度",
     "相似度(0到1)": "相似度(0到1)",
     "算法延迟(ms)": "算法延迟(ms)",
     "自动检测index路径,下拉式选择(dropdown)": "Rileva automaticamente il percorso dell'indice e seleziona dal menu a tendina:",
