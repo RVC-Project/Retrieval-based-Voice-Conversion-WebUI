@@ -16,7 +16,6 @@ import pyworld
 import torch
 import torch.nn.functional as F
 import torchcrepe
-import pathlib
 from scipy import signal
 
 now_dir = os.getcwd()
@@ -385,12 +384,8 @@ class Pipeline(object):
                     filter_radius,
                     inp_f0,
                 )
-                """
-                np.savez_compressed(pathlib.Path(__file__).parent / "lgdsng_f0.npz", pitch=pitch, pitchf=pitchf)
-                """
             elif if_f0 == 2:
-                pitchz = np.load(pathlib.Path(__file__).parent / "lgdsng_f0.npz")
-                pitch, pitchf = pitchz["pitch"], pitchz["pitchf"]
+                pitch, pitchf = f0_method
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
             if "mps" not in str(self.device) or "xpu" not in str(self.device):

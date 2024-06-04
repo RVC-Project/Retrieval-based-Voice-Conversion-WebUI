@@ -47,6 +47,11 @@ def original_audio_time_minus():
 def original_audio_freq_minus():
     return original_audio_storage()["f"]
 
+@singleton_variable
+def original_rmvpe_f0():
+    x = original_audio_storage()
+    return x["pitch"], x["pitchf"]
+
 
 def _cut_u16(n):
     if n > 16384:
@@ -88,9 +93,6 @@ def wave_hash(time_field):
 def model_hash(config, tgt_sr, net_g, if_f0, version):
     pipeline = Pipeline(tgt_sr, config)
     audio = original_audio()
-    audio_max = np.abs(audio).max() / 0.95
-    if audio_max > 1:
-        np.divide(audio, audio_max, audio)
     hbt = load_hubert(config.device, config.is_half)
     audio_opt = pipeline.pipeline(
         hbt,
@@ -99,7 +101,7 @@ def model_hash(config, tgt_sr, net_g, if_f0, version):
         audio,
         [0, 0, 0],
         6,
-        "rmvpe",
+        original_rmvpe_f0(),
         "",
         0,
         2 if if_f0 else 0,
