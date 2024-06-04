@@ -47,6 +47,7 @@ def original_audio_time_minus():
 def original_audio_freq_minus():
     return original_audio_storage()["f"]
 
+
 @singleton_variable
 def original_rmvpe_f0():
     x = original_audio_storage()

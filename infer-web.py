@@ -1536,9 +1536,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 with gr.Row():
                     with gr.Column():
-                        ckpt_path1 = gr.File(
-                            label=i18n("模型路径")
-                        )
+                        ckpt_path1 = gr.File(label=i18n("模型路径"))
                         but8 = gr.Button(i18n("查看"), variant="primary")
                     with gr.Column():
                         info6 = gr.Textbox(label=i18n("输出信息"), value="")
