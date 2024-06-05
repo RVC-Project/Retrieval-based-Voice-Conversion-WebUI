@@ -1,5 +1,6 @@
 import torch
 
+
 def get_synthesizer_ckpt(cpt, device=torch.device("cpu")):
     from infer.lib.infer_pack.models import (
         SynthesizerTrnMs256NSFsid,
@@ -35,7 +36,9 @@ def get_synthesizer_ckpt(cpt, device=torch.device("cpu")):
     net_g.remove_weight_norm()
     return net_g, cpt
 
+
 def get_synthesizer(pth_path, device=torch.device("cpu")):
     return get_synthesizer_ckpt(
-        torch.load(pth_path, map_location=torch.device("cpu")), device,
+        torch.load(pth_path, map_location=torch.device("cpu")),
+        device,
     )
