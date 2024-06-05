@@ -84,13 +84,13 @@ if __name__ == "__main__":
     import librosa
     from tools.torchgate import TorchGate
     import numpy as np
-    import PySimpleGUI as sg
+    import FreeSimpleGUI as sg
     import sounddevice as sd
     import torch
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
-    import tools.rvc_for_realtime as rvc_for_realtime
+    from infer.lib import rtrvc as rvc_for_realtime
     from i18n.i18n import I18nAuto
     from configs.config import Config
 
@@ -107,13 +107,16 @@ if __name__ == "__main__":
     opt_q = Queue()
     n_cpu = min(cpu_count(), 8)
     for _ in range(n_cpu):
-        Harvest(inp_q, opt_q).start()
+        p = Harvest(inp_q, opt_q)
+        p.daemon = True
+        p.start()
 
     class GUIConfig:
         def __init__(self) -> None:
             self.pth_path: str = ""
             self.index_path: str = ""
             self.pitch: int = 0
+            self.formant=0.0
             self.sr_type: str = "sr_model"
             self.block_time: float = 0.25  # s
             self.threhold: int = -60
@@ -197,6 +200,7 @@ if __name__ == "__main__":
                         "sr_type": "sr_model",
                         "threhold": -60,
                         "pitch": 0,
+                        "formant": 0.0,
                         "index_rate": 0,
                         "rms_mix_rate": 0,
                         "block_time": 0.25,
@@ -331,11 +335,22 @@ if __name__ == "__main__":
                             [
                                 sg.Text(i18n("音调设置")),
                                 sg.Slider(
-                                    range=(-24, 24),
+                                    range=(-16, 16),
                                     key="pitch",
                                     resolution=1,
                                     orientation="h",
                                     default_value=data.get("pitch", 0),
+                                    enable_events=True,
+                                ),
+                            ],
+                            [
+                                sg.Text(i18n("性别因子/声线粗细")),
+                                sg.Slider(
+                                    range=(-2, 2),
+                                    key="formant",
+                                    resolution=0.05,
+                                    orientation="h",
+                                    default_value=data.get("formant", 0.0),
                                     enable_events=True,
                                 ),
                             ],
@@ -606,6 +621,10 @@ if __name__ == "__main__":
                     self.gui_config.pitch = values["pitch"]
                     if hasattr(self, "rvc"):
                         self.rvc.change_key(values["pitch"])
+                elif event == "formant":
+                    self.gui_config.formant = values["formant"]
+                    if hasattr(self, "rvc"):
+                        self.rvc.change_formant(values["formant"])
                 elif event == "index_rate":
                     self.gui_config.index_rate = values["index_rate"]
                     if hasattr(self, "rvc"):
@@ -664,6 +683,7 @@ if __name__ == "__main__":
             ]
             self.gui_config.threhold = values["threhold"]
             self.gui_config.pitch = values["pitch"]
+            self.gui_config.formant = values["formant"]
             self.gui_config.block_time = values["block_time"]
             self.gui_config.crossfade_time = values["crossfade_length"]
             self.gui_config.extra_time = values["extra_time"]
@@ -688,6 +708,7 @@ if __name__ == "__main__":
             torch.cuda.empty_cache()
             self.rvc = rvc_for_realtime.RVC(
                 self.gui_config.pitch,
+                self.gui_config.formant,
                 self.gui_config.pth_path,
                 self.gui_config.index_path,
                 self.gui_config.index_rate,
