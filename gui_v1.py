@@ -116,7 +116,7 @@ if __name__ == "__main__":
             self.pth_path: str = ""
             self.index_path: str = ""
             self.pitch: int = 0
-            self.formant=0.0
+            self.formant = 0.0
             self.sr_type: str = "sr_model"
             self.block_time: float = 0.25  # s
             self.threhold: int = -60
