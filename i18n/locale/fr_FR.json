@@ -56,6 +56,7 @@
     "常规设置": "Paramètres généraux",
     "开始音频转换": "Démarrer la conversion audio.",
     "很遗憾您这没有能用的显卡来支持您训练": "Malheureusement, il n'y a pas de GPU compatible disponible pour prendre en charge votre entrainement.",
+    "性别因子/声线粗细": "性别因子/声线粗细",
     "性能设置": "Paramètres de performance",
     "总训练轮数total_epoch": "Nombre total d'époques d'entraînement (total_epoch) :",
     "批量推理": "批量推理",

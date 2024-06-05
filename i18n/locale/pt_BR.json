@@ -56,6 +56,7 @@
     "常规设置": "Configurações gerais",
     "开始音频转换": "Iniciar conversão de áudio",
     "很遗憾您这没有能用的显卡来支持您训练": "Infelizmente, não há GPU compatível disponível para apoiar o seu treinamento.",
+    "性别因子/声线粗细": "性别因子/声线粗细",
     "性能设置": "Configurações de desempenho.",
     "总训练轮数total_epoch": "Número total de ciclos(epoch) de treino (se escolher um valor alto demais, o seu modelo parecerá terrivelmente sobretreinado):",
     "批量推理": "Conversão em Lote",
