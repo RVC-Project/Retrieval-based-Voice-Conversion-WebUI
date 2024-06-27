@@ -1,6 +1,6 @@
 joblib>=1.1.0
 numba
-numpy==1.26.4
+numpy==1.23.5
 hydra-core==1.0.7
 omegaconf==2.0.6
 scipy
