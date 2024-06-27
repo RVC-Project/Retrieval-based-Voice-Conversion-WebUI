@@ -4,7 +4,7 @@ numpy==1.26.4
 scipy
 librosa==0.9.1
 llvmlite
-fairseq
+fairseq==0.12.2
 faiss-cpu
 gradio==3.34.0
 Cython
