@@ -1,6 +1,6 @@
 joblib>=1.1.0
 numba
-numpy==1.23.5
+numpy==1.26.4
 scipy
 fairseq==0.12.2
 librosa==0.9.1
