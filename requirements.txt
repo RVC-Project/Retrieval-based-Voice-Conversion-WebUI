@@ -1,7 +1,7 @@
 joblib>=1.1.0
 numba
 numpy==1.26.4
-fairseq @ git+https://github.com/VarunGumma/fairseq.git
+fairseq
 scipy
 librosa==0.9.1
 llvmlite
