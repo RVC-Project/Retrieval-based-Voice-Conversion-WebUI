@@ -2,7 +2,7 @@ joblib>=1.1.0
 numba
 numpy==1.23.5
 scipy
-fairseq==0.10.2
+fairseq==0.12.2
 librosa==0.9.1
 llvmlite
 fairseq
