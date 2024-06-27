@@ -1,11 +1,10 @@
-omegaconf==2.0.6
 joblib>=1.1.0
 numba
 numpy==1.26.4
 scipy
 librosa==0.9.1
 llvmlite
-fairseq==0.12.2
+fairseq
 faiss-cpu
 gradio==3.34.0
 Cython
@@ -47,3 +46,6 @@ torchfcpe
 ffmpy==0.3.1
 python-dotenv>=1.0.0
 av
+torch
+torchvision
+torchaudio
