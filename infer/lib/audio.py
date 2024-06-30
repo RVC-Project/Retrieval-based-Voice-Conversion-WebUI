@@ -3,6 +3,7 @@ import ffmpeg
 import numpy as np
 import av
 from io import BytesIO
+import traceback
 
 
 def wav2(i, o, format):
