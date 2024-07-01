@@ -2,7 +2,7 @@ joblib>=1.1.0
 numba
 numpy
 scipy
-librosa==0.9.1
+librosa==0.10.2
 llvmlite
 fairseq @ git+https://github.com/One-sixth/fairseq.git
 faiss-cpu
@@ -40,7 +40,7 @@ pyworld==0.3.2
 httpx
 onnxruntime; sys_platform == 'darwin'
 onnxruntime-gpu; sys_platform != 'darwin'
-torchcrepe==0.0.20
+torchcrepe==0.0.23
 fastapi==0.88
 torchfcpe
 ffmpy==0.3.1
