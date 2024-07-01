@@ -188,7 +188,7 @@ python infer-web.py
 ### Use the integration package
 Download and extract file `RVC-beta.7z`, then follow the steps below according to your system:
 #### For Windows users
-双击`go-web.bat`
+Double click `go-web.bat`
 #### For MacOS users
 ```bash
 sh ./run.sh
