@@ -826,15 +826,28 @@ if __name__ == "__main__":
                     extra_settings = sd.WasapiSettings(exclusive=True)
                 else:
                     extra_settings = None
-                self.stream = sd.Stream(
-                    callback=self.audio_callback,
-                    blocksize=self.block_frame,
-                    samplerate=self.gui_config.samplerate,
-                    channels=self.gui_config.channels,
-                    dtype="float32",
-                    extra_settings=extra_settings,
-                )
-                self.stream.start()
+
+                if self.gui_config.sg_hostapi == "ASIO":
+                    self.stream = sd.Stream(
+                        blocksize=self.block_frame,
+                        samplerate=self.gui_config.samplerate,
+                        channels=self.gui_config.channels,
+                        dtype="float32",
+                        extra_settings=extra_settings,
+                    )
+                    self.stream.start()
+                    audio_thread = threading.Thread(target=self.audio_thread, daemon=True)
+                    audio_thread.start()
+                else:
+                    self.stream = sd.Stream(
+                        callback=self.audio_callback,
+                        blocksize=self.block_frame,
+                        samplerate=self.gui_config.samplerate,
+                        channels=self.gui_config.channels,
+                        dtype="float32",
+                        extra_settings=extra_settings,
+                    )
+                    self.stream.start()
 
         def stop_stream(self):
             global flag_vc
@@ -845,9 +858,22 @@ if __name__ == "__main__":
                     self.stream.close()
                     self.stream = None
 
-        def audio_callback(
-            self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
-        ):
+        def audio_thread(self):
+            global flag_vc
+            while flag_vc and self.stream and self.stream.active:
+                indata, overflow = self.stream.read(self.block_frame)
+                if overflow:
+                    printt("Overflow occurred, consider increasing the block_frame to avoid data loss.")
+                outdata = np.ascontiguousarray(self.vc_pipeline(indata))
+                if self.stream and self.stream.active:
+                    underflow = self.stream.write(outdata)
+                    if underflow:
+                        printt("Underflow occurred, consider increasing the block_frame to avoid audio glitches.")
+
+        def audio_callback(self, indata: np.ndarray, outdata: np.ndarray, frames, times, status):
+            outdata[:] = self.vc_pipeline(indata)
+
+        def vc_pipeline(self, indata: np.ndarray) -> np.ndarray:
             """
             音频处理
             """
@@ -995,7 +1021,7 @@ if __name__ == "__main__":
             self.sola_buffer[:] = infer_wav[
                 self.block_frame : self.block_frame + self.sola_buffer_frame
             ]
-            outdata[:] = (
+            outdata = (
                 infer_wav[: self.block_frame]
                 .repeat(self.gui_config.channels, 1)
                 .t()
@@ -1006,6 +1032,7 @@ if __name__ == "__main__":
             if flag_vc:
                 self.window["infer_time"].update(int(total_time * 1000))
             printt("Infer time: %.2f", total_time)
+            return outdata
 
         def update_devices(self, hostapi_name=None):
             """获取设备列表"""
