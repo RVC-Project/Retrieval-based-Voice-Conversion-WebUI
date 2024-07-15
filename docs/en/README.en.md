@@ -82,7 +82,7 @@ Then can use poetry to install the other dependencies:
 curl -sSL https://install.python-poetry.org | python3 -
 
 # Install the project dependencies
-poetry install
+poetry install --no-root
 ```
 
 You can also use pip to install them:
