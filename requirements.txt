@@ -1,11 +1,11 @@
 joblib>=1.1.0
-numba
-numpy
+numba==0.56.4
+numpy==1.23.5
 scipy
-librosa==0.10.2
-llvmlite
-fairseq
-faiss-cpu
+librosa==0.9.1
+llvmlite==0.39.0
+fairseq==0.12.2
+faiss-cpu==1.7.3
 gradio==3.34.0
 Cython
 pydub>=0.25.1
@@ -40,7 +40,7 @@ pyworld==0.3.2
 httpx
 onnxruntime; sys_platform == 'darwin'
 onnxruntime-gpu; sys_platform != 'darwin'
-torchcrepe==0.0.23
+torchcrepe==0.0.20
 fastapi==0.88
 torchfcpe
 ffmpy==0.3.1
