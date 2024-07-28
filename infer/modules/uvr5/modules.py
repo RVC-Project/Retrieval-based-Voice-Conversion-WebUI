@@ -65,7 +65,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                     os.path.basename(inp_path),
                 )
                 os.system(
-                    "ffmpeg -i %s -vn -acodec pcm_s16le -ac 2 -ar 44100 %s -y"
+                    'ffmpeg -i "%s" -vn -acodec pcm_s16le -ac 2 -ar 44100 "%s" -y'
                     % (inp_path, tmp_path)
                 )
                 inp_path = tmp_path
