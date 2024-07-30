@@ -583,14 +583,14 @@ def train_and_evaluate(
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "G_{}.pth".format(2333333)),
+                os.path.join(hps.model_dir, "G_latest.pth"),
             )
             utils.save_checkpoint(
                 net_d,
                 optim_d,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "D_{}.pth".format(2333333)),
+                os.path.join(hps.model_dir, "D_latest.pth"),
             )
         if rank == 0 and hps.save_every_weights == "1":
             if hasattr(net_g, "module"):
@@ -632,7 +632,7 @@ def train_and_evaluate(
             )
         )
         sleep(1)
-        os._exit(2333333)
+        os._exit(0)
 
 
 if __name__ == "__main__":
