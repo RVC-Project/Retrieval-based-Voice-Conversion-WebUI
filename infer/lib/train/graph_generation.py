@@ -1,6 +1,7 @@
 import os
 from typing import List
 import matplotlib.pyplot as plt
+import numpy as np
 import logging
 
 # Suppress TensorBoard event processing logs
@@ -58,11 +59,21 @@ def extract_scalar_data(log_dir):
         if tag in ea.Tags()['scalars']:
             scalar_events = ea.Scalars(tag)
             scalar_data[tag] = {}
+            previous_value = 0.0  # Initialize fallback value
+
             for event in scalar_events:
+                value = event.value
+                # Check if value is NaN, use previous value or fallback to 0.0
+                if np.isnan(value):
+                    value = previous_value
+
                 if event.step not in scalar_data[tag]:
-                    scalar_data[tag][event.step] = [event.value]
+                    scalar_data[tag][event.step] = [value]
                 else:
-                    scalar_data[tag][event.step].append(event.value)
+                    scalar_data[tag][event.step].append(value)
+
+                previous_value = value  # Update previous value for the next iteration
+
             # Calculate the average for each step. Restarting training can cause multiple events for the same step.
             scalar_data[tag] = {step: sum(values) / len(values) for step, values in scalar_data[tag].items()}
         else:
