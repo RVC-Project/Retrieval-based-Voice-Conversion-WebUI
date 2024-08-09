@@ -72,7 +72,9 @@ def extract_scalar_data(log_dir):
                 else:
                     scalar_data[tag][event.step].append(value)
 
-                previous_value = value  # Update previous value for the next iteration
+                # Update previous value for the next iteration only if the value is not NaN
+                if not np.isnan(value):
+                    previous_value = value
 
             # Calculate the average for each step. Restarting training can cause multiple events for the same step.
             scalar_data[tag] = {step: sum(values) / len(values) for step, values in scalar_data[tag].items()}
