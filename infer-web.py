@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 from dotenv import load_dotenv
@@ -806,6 +807,100 @@ def change_f0_method(f0method8):
     return {"visible": visible, "__type__": "update"}
 
 
+# start tab loss graph helper functions
+desired_tags = ["loss_d_total", "loss_g_total", "loss_g_fm", "loss_g_mel", "loss_g_kl"]
+
+def get_projects():
+    """
+    Get the list of projects.
+    """
+    return [name for name in os.listdir(index_root) if os.path.isdir(os.path.join(index_root, name)) and name != 'mute' and os.path.isdir(os.path.join(index_root, name, 'loss_graphs'))]
+
+def get_loss_graph_images(selection):
+    """
+    Gets loss graph images for a given project, assuming filenames match desired order.
+
+    Args:
+        selection (str): Project name.
+
+    Returns:
+        dict: A dictionary of image paths keyed by desired_tags.
+    """
+    loss_graphs_path = os.path.join(index_root, selection, 'loss_graphs')
+    if not os.path.exists(loss_graphs_path):
+        print(f"Directory not found: {loss_graphs_path}")
+        return {}
+
+    graphs = {}
+    for tag in desired_tags:
+        image_path = os.path.join(loss_graphs_path, f"{tag}.jpeg")
+        if os.path.exists(image_path):
+            graphs[tag] = image_path
+
+    return graphs
+
+def get_loss_graph_tabs(project):
+    """
+    Create Gradio Tabs and Image fields for the loss graphs.
+
+    Args:
+        project (str): Project name.
+
+    Returns:
+        gr.Tabs, list: A tuple containing the Gradio Tabs component and a list of image fields.
+    """
+    loss_graph_tabs = gr.Tabs()
+    loss_graph_images = get_loss_graph_images(project)
+    loss_graph_image_fields = {}
+
+    with loss_graph_tabs:
+        for tag, image_path in loss_graph_images.items():
+            with gr.TabItem(tag):
+                image_field = gr.Image(value=image_path, width="100%")
+                loss_graph_image_fields[tag] = image_field
+    return loss_graph_tabs, list(loss_graph_image_fields.values())
+
+def update_loss_graph_images(selection):
+    """
+    Update the loss graph images for a given project.
+    """
+    loss_graph_images = get_loss_graph_images(selection)
+    updated_values = []
+
+    for i, tag in enumerate(desired_tags):
+        if i < len(image_fields):
+            if tag in loss_graph_images:
+                image_path = loss_graph_images[tag]
+                if os.path.exists(image_path) and os.path.isfile(image_path):
+                    updated_values.append(image_path)
+                else:
+                    print(f"Warning: Image file does not exist or is not a file: {image_path}")
+                    updated_values.append(None)
+            else:
+                print(f"Warning: No image found for tag: {tag}")
+                updated_values.append(None)
+
+    return updated_values
+
+def update_projects():
+    """
+    Update the list of projects.
+    """
+    projects = get_projects()
+    return {"choices": sorted(projects), "__type__": "update"}
+
+projects = get_projects()
+
+# Check if there are any projects before accessing
+if projects:
+    default_project = projects[0]
+    default_loss_graph_images = get_loss_graph_images(projects[0])
+else:
+    print("No projects found.")
+    default_project = None
+    default_loss_graph_images = []
+
+# gradio app
 with gr.Blocks(title="RVC WebUI") as app:
     gr.Markdown("## RVC WebUI")
     gr.Markdown(
@@ -1420,7 +1515,48 @@ with gr.Blocks(title="RVC WebUI") as app:
                         info3,
                         api_name="train_start_all",
                     )
+        with gr.TabItem(i18n("损失图")):
+            gr.Markdown(
+                value=i18n(
+                    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。"
+                )
+            )
+            with gr.Row():
+                voice_list_dropdown = gr.Dropdown(
+                    label=i18n("选择语音"), 
+                    choices=sorted(projects), 
+                    interactive=True, 
+                    value=default_project
+                )
+                with gr.Column():
+                    update_voice_list_button = gr.Button(
+                        i18n("更新语音列表"), 
+                        variant="primary"
+                    )
+                    update_loss_graph_button = gr.Button(
+                        i18n("更新损失图"), 
+                        variant="primary"
+                    )
+                update_voice_list_button.click(
+                    fn=update_projects, 
+                    inputs=[], 
+                    outputs=[voice_list_dropdown], 
+                    api_name="infer_refresh"
+                )
+            with gr.Row():
+                tabs, image_fields = get_loss_graph_tabs(default_project)
 
+                voice_list_dropdown.change(
+                    fn=update_loss_graph_images,
+                    inputs=voice_list_dropdown,
+                    outputs=image_fields
+                )
+
+                update_loss_graph_button.click(
+                    fn=update_loss_graph_images,
+                    inputs=voice_list_dropdown,
+                    outputs=image_fields
+                )
         with gr.TabItem(i18n("ckpt处理")):
             with gr.Group():
                 gr.Markdown(value=i18n("模型融合, 可用于测试音色融合"))
