@@ -133,5 +133,10 @@
     "音调设置": "Pitch settings",
     "音频设备": "Audio device",
     "音高算法": "pitch detection algorithm",
-    "额外推理时长": "Extra inference time"
+    "额外推理时长": "Extra inference time",
+    "损失图": "Loss Graph",
+    "选择语音": "Select voice",
+    "更新损失图": "Update Loss Graph",
+    "更新语音列表": "Update Voice List",
+    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。": "Training Progress Overview: Lower values indicate better model performance. For detailed insights, explore TensorBoard."
 }

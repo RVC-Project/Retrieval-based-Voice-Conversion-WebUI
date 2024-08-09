@@ -133,5 +133,10 @@
     "音调设置": "Pitch ayarları",
     "音频设备": "Ses cihazı",
     "音高算法": "音高算法",
-    "额外推理时长": "Ekstra çıkartma süresi"
+    "额外推理时长": "Ekstra çıkartma süresi",
+    "损失图": "Kayıp grafiği",
+    "选择语音": "Konuşma seç",
+    "更新损失图": "Kayıp grafiğini güncelle",
+    "更新语音列表": "Konuşma listesini güncelle",
+    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。": "Eğitim ilerlemesi özeti: Düşük değerler, model performansının daha iyi olduğunu gösterir. Daha fazla ayrıntı için TensorBoard'u keşfedin."
 }
