@@ -443,7 +443,7 @@ def change_version19(sr2, if_f0_3, version19):
     to_return_sr2 = (
         {"choices": ["32k", "40k", "48k"], "__type__": "update", "value": sr2}
         if version19 == "v1"
-        else {"choices": ["32k", "48k"], "__type__": "update", "value": sr2}
+        else {"choices": ["32k", "40k", "48k"], "__type__": "update", "value": sr2}
     )
     f0_str = "f0" if if_f0_3 else ""
     return (
@@ -552,7 +552,7 @@ def click_train(
         logger.info("No pretrained Generator")
     if pretrained_D15 == "":
         logger.info("No pretrained Discriminator")
-    if version19 == "v1" or sr2 == "40k":
+    if version19 == "v1" or sr2 == "40k": # v2 40k falls back to v1
         config_path = "v1/%s.json" % sr2
     else:
         config_path = "v2/%s.json" % sr2
@@ -1185,7 +1185,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
-                    choices=["32k", "48k"],
+                    choices=["32k", "40k", "48k"],
                     value="48k",
                     interactive=True,
                 )
