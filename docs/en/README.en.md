@@ -154,7 +154,7 @@ sudo apt install ffmpeg
 ```bash
 brew install ffmpeg
 ```
-#### For Windwos users
+#### For Windows users
 Download these files and place them in the root folder:
 - [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
 
