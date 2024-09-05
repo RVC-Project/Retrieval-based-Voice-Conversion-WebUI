@@ -9,7 +9,7 @@ sys.path.append(os.path.join(now_dir))
 
 import datetime
 
-from infer.lib.train import utils
+from infer.lib.train import utils, graph_generation
 
 hps = utils.get_hparams()
 os.environ["CUDA_VISIBLE_DEVICES"] = hps.gpus.replace("-", ",")
@@ -558,6 +558,7 @@ def train_and_evaluate(
                     images=image_dict,
                     scalars=scalar_dict,
                 )
+                graph_generation.generate_loss_graphs(hps.model_dir)
         global_step += 1
     # /Run steps
 

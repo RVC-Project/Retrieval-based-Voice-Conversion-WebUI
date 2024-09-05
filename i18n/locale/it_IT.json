@@ -133,5 +133,10 @@
     "音调设置": "Impostazioni del tono",
     "音频设备": "Dispositivo audio",
     "音高算法": "音高算法",
-    "额外推理时长": "Tempo di inferenza extra"
+    "额外推理时长": "Tempo di inferenza extra",
+    "损失图": "Grafico delle perdite",
+    "选择语音": "Seleziona la voce",
+    "更新损失图": "Aggiornare il grafico delle perdite",
+    "更新语音列表": "Aggiornare l'elenco delle voci",
+    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。": "Riepilogo del progresso dell'addestramento: i valori più bassi indicano prestazioni di modello migliori. Per una comprensione più approfondita, esplora TensorBoard."
 }
