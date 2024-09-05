@@ -23,7 +23,7 @@ tensorboard
 tqdm
 wave
 PySimpleGUI
-sounddevice
+sounddevice<0.5.0
 gradio
 noisereduce
 onnxruntime-directml
