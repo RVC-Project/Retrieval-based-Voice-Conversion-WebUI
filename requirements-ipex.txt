@@ -51,5 +51,5 @@ ffmpy==0.3.1
 python-dotenv>=1.0.0
 av
 PySimpleGUI
-sounddevice
+sounddevice<0.5.0
 torchfcpe
