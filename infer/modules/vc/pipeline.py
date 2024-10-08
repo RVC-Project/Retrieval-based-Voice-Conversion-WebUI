@@ -341,11 +341,13 @@ class Pipeline(object):
         if hasattr(f0_file, "name"):
             try:
                 with open(f0_file.name, "r") as f:
-                    lines = f.read().strip("\n").split("\n")
-                inp_f0 = []
-                for line in lines:
-                    inp_f0.append([float(i) for i in line.split(",")])
-                inp_f0 = np.array(inp_f0, dtype="float32")
+                    raw_lines = f.read()
+                    if len(raw_lines) > 0:
+                        lines = raw_lines.strip("\n").split("\n")
+                        inp_f0 = []
+                        for line in lines:
+                            inp_f0.append([float(i) for i in line.split(",")])
+                        inp_f0 = np.array(inp_f0, dtype="float32")
             except:
                 traceback.print_exc()
         sid = torch.tensor(sid, device=self.device).unsqueeze(0).long()
