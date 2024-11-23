@@ -2,7 +2,6 @@ import torch
 
 from infer.lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 
-
 def export_onnx(ModelPath, ExportedPath):
     cpt = torch.load(ModelPath, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
@@ -44,7 +43,7 @@ def export_onnx(ModelPath, ExportedPath):
             "rnd": [2],
         },
         do_constant_folding=False,
-        opset_version=13,
+        opset_version=18,
         verbose=False,
         input_names=input_names,
         output_names=output_names,
