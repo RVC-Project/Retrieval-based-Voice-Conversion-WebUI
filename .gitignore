@@ -26,3 +26,4 @@ rmvpe.pt
 /assets/weights/*
 ffmpeg.*
 ffprobe.*
+venv
