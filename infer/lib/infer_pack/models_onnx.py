@@ -1,3 +1,12 @@
+############################## Warning! ##############################
+#                                                                    #
+#           Onnx Export Not Support All Of Non-Torch Types           #
+#           Include Python Built-in Types!!!!!!!!!!!!!!!!!           #
+#                   If You Want TO Change This File                  #
+#                  Do Not Use All Of Non-Torch Types!                #
+#                                                                    #
+############################## Warning! ##############################
+
 import math
 import logging
 
