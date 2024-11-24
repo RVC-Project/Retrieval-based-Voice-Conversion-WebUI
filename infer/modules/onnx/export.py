@@ -1,5 +1,6 @@
 import torch
-
+import onnxsim
+import onnx
 from infer.lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 
 def export_onnx(ModelPath, ExportedPath):
@@ -48,4 +49,6 @@ def export_onnx(ModelPath, ExportedPath):
         input_names=input_names,
         output_names=output_names,
     )
+    model, _ = onnxsim.simplify(ExportedPath)
+    onnx.save(model, ExportedPath)
     return "Finished"
