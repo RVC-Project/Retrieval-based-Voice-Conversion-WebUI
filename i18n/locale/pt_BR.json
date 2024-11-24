@@ -133,5 +133,10 @@
     "音调设置": "Configurações de tom",
     "音频设备": "音频设备",
     "音高算法": "Algoritmo de detecção de pitch",
-    "额外推理时长": "Tempo extra de inferência"
+    "额外推理时长": "Tempo extra de inferência",
+    "损失图": "Gráfico de perda",
+    "选择语音": "Selecione o áudio",
+    "更新损失图": "Atualizar gráfico de perda",
+    "更新语音列表": "Atualizar lista de áudio",
+    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。": "Visão geral do progresso do treinamento: quanto menor o valor, melhor o desempenho do modelo. Para obter insights detalhados, explore o TensorBoard."
 }

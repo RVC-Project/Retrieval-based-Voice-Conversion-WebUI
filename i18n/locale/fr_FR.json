@@ -133,5 +133,10 @@
     "音调设置": "Réglages de la hauteur",
     "音频设备": "Périphérique audio",
     "音高算法": "algorithme de détection de la hauteur",
-    "额外推理时长": "Temps d'inférence supplémentaire"
+    "额外推理时长": "Temps d'inférence supplémentaire",
+    "损失图": "Graphique de perte",
+    "选择语音": "Sélectionner la voix",
+    "更新损失图": "Actualiser le graphique de perte",
+    "更新语音列表": "Actualiser la liste des voix",
+    "训练进度概览：值越低，模型性能越好。如需详细见解，请探索 TensorBoard。": "Aperçu de la progression de l'entraînement : les valeurs inférieures indiquent des performances de modèle plus élevées. Pour une compréhension détaillée, explorez TensorBoard."
 }
