@@ -1,0 +1,146 @@
+# Docker Buildfile for RVC WebUI Installation with ROCm 5.4.2 for RX580 / Polaris / gfx803 AMD GPU
+# Created, Built, and Compiled by Levent Sunay (lsunay) - May-April 2025
+#
+# Description:
+# This Dockerfile is the second stage of a multi-stage build for installing the Retrieval-based-Voice-Conversion-WebUI (RVC)
+# on top of a base image with ROCm 5.4.2 and PyTorch compiled for gfx803 architecture (e.g., AMD RX580 / Polaris GPUs).
+# It sets up the necessary environment, dependencies, and configurations to run the RVC WebUI application.
+#
+# File Name: Dockerfile.rvc_original - Stage 2: Original RVC WebUI Installation (Based on ROCm 5.4.2)
+
+FROM rocm542_gfx803_base:5.4.2
+# Base image tag from Stage 1
+
+# === Environment Variables ===
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
+ENV PIP_ROOT_USER_ACTION='ignore'
+ENV HSA_OVERRIDE_GFX_VERSION=8.0.3
+ENV PYTORCH_ROCM_ARCH=gfx803
+ENV ROCM_ARCH=gfx803
+ENV RVC_PORT=7865
+ENV NODE_VERSION=22.9.0
+ENV NVM_DIR="/root/.nvm"
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin:${PATH}"
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        aria2 \
+        git wget curl ffmpeg \
+    && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# === RVC WebUI Installation ===
+# Clone the RVC project repository into the /app directory.
+RUN echo "Cloning RVC repository..." && \
+    git clone https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git . && \
+    echo "RVC repository cloned into /app."
+
+# Create a Python 3.10 virtual environment (.venv)
+RUN python3 -m venv .venv # .venv will be created under /app
+
+# Create constraints.txt to use PyTorch wheels and other pinned versions from Stage 1
+RUN echo "** Creating constraints.txt **" && \
+    export PATH="/opt/rocm/bin:/opt/rocm/hip/bin:${PATH}" && \
+    PYTORCH_WHEEL_FILE_PATH=$(cat /opt/pytorch_wheel_name.txt) && \
+    TORCHVISION_WHEEL_FILE_PATH=$(cat /opt/torchvision_wheel_name.txt) && \
+    TORCHAUDIO_WHEEL_FILE_PATH=$(cat /opt/torchaudio_wheel_name.txt) && \
+    echo "torch @ file://${PYTORCH_WHEEL_FILE_PATH}" > .venv/constraints.txt && \
+    echo "torchvision @ file://${TORCHVISION_WHEEL_FILE_PATH}" >> .venv/constraints.txt && \
+    echo "torchaudio @ file://${TORCHAUDIO_WHEEL_FILE_PATH}" >> .venv/constraints.txt && \
+    echo "numpy==1.23.5" >> .venv/constraints.txt && \
+    echo "protobuf==4.25.3" >> .venv/constraints.txt && \
+    echo "matplotlib==3.7.2" >> .venv/constraints.txt && \
+    echo "joblib==1.1.0" >> .venv/constraints.txt && \
+    echo "numba==0.56.4" >> .venv/constraints.txt && \
+    echo "llvmlite==0.39.0" >> .venv/constraints.txt && \
+    echo "fairseq==0.12.2" >> .venv/constraints.txt && \
+    echo "faiss-cpu==1.7.3" >> .venv/constraints.txt && \
+    echo "gradio==3.34.0" >> .venv/constraints.txt && \
+    echo "pyworld==0.3.2" >> .venv/constraints.txt && \
+    echo "torchcrepe==0.0.23" >> .venv/constraints.txt && \
+    echo "torchfcpe" >> .venv/constraints.txt && \
+    echo "Contents of constraints.txt:" && cat .venv/constraints.txt
+
+# Process RVC's main requirements.txt and requirements-amd.txt files
+RUN echo "Processing RVC requirements files" && \
+    # ---- Debugging: Check files for troubleshooting ----
+    echo "Current directory: $(pwd)" && ls -la && \
+    # ---- End of debugging ----
+    if [ ! -f "requirements.txt" ]; then echo "ERROR: requirements.txt NOT FOUND in $(pwd)" >&2; exit 1; fi && \
+    if [ ! -f "requirements-amd.txt" ]; then echo "ERROR: requirements-amd.txt NOT FOUND in $(pwd)" >&2; exit 1; fi && \
+    echo "--- Original requirements.txt ---" && cat requirements.txt && echo "--- End ---" && \
+    echo "--- Original requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---" && \
+    \
+    # Remove torch*, fairseq, and extension_* lines from requirements.txt
+    sed -i -E '/^torch(vision|audio)?\s*(==|>=)?/d' requirements.txt && \
+    sed -i '/^fairseq @ /d' requirements.txt && \
+    sed -i '/^extension_/d' requirements.txt && \
+    sed -i "/; sys_platform 'win32'/d" requirements.txt && \
+    sed -i "/; sys_platform 'darwin'/d" requirements.txt && \
+    echo "--- Cleaned main requirements.txt ---" && cat requirements.txt && echo "--- End ---" && \
+    \
+    # Remove torch*, numpy, numba, llvmlite, fairseq, faiss-cpu, gradio, pyworld, torchcrepe,
+    # torchfcpe, and onnxruntime* packages from requirements-amd.txt
+    sed -i -E '/^torch(vision|audio)?\\s*(==|>=)?/d' requirements-amd.txt && \
+    sed -i '/^tensorflow-rocm/d' requirements-amd.txt && \
+    sed -i '/^joblib/d' requirements-amd.txt && \
+    sed -i '/^numba/d' requirements-amd.txt && \
+    sed -i '/^numpy/d' requirements-amd.txt && \
+    sed -i '/^scipy/d' requirements-amd.txt && \
+    sed -i '/^librosa/d' requirements-amd.txt && \
+    sed -i '/^llvmlite/d' requirements-amd.txt && \
+    sed -i '/^fairseq/d' requirements-amd.txt && \
+    sed -i '/^faiss-cpu/d' requirements-amd.txt && \
+    sed -i '/^gradio/d' requirements-amd.txt && \
+    sed -i '/^Cython/d' requirements-amd.txt && \
+    sed -i '/^pyworld/d' requirements-amd.txt && \
+    sed -i '/^torchcrepe/d' requirements-amd.txt && \
+    sed -i '/^torchfcpe/d' requirements-amd.txt && \
+    sed -i '/^onnxruntime/d' requirements-amd.txt && \
+    sed -i "/; sys_platform 'darwin'/d" requirements-amd.txt && \
+    echo "--- Cleaned requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---"
+    # You can end this RUN block here to debug sed errors if needed.
+
+# === Installation (Separate RUN blocks) ===
+# Install remaining dependencies from the cleaned main requirements.txt
+RUN echo "** Installing RVC dependencies from main requirements.txt (cleaned) **" && \
+    ./.venv/bin/python -m pip install --no-cache-dir -r requirements.txt -c .venv/constraints.txt
+
+# Install remaining dependencies from the cleaned requirements-amd.txt
+RUN echo "** Installing RVC specific dependencies from requirements-amd.txt (cleaned) **" && \
+    ./.venv/bin/python -m pip install --no-cache-dir -r requirements-amd.txt -c .venv/constraints.txt
+
+# Install additional dependencies manually or with constraints, which are not in requirements files or have different pins
+RUN echo "** Installing other essential dependencies into venv **" && \
+    ./.venv/bin/python -m pip install --no-cache-dir \
+    -c .venv/constraints.txt \
+    Cython scipy librosa==0.10.2 pydub>=0.25.1 soundfile>=0.12.1 ffmpeg-python>=0.2.0 \
+    tensorboardX Jinja2>=3.1.2 json5 Markdown matplotlib>=3.7.2 matplotlib-inline>=0.1.3 \
+    praat-parselmouth>=0.4.2 Pillow>=9.1.1 resampy>=0.4.2 scikit-learn tensorboard \
+    tqdm>=4.63.1 tornado>=6.1 Werkzeug>=2.2.3 uc-micro-py>=1.0.1 sympy>=1.11.1 \
+    tabulate>=0.8.10 PyYAML>=6.0 pyasn1>=0.4.8 pyasn1-modules>=0.2.8 fsspec>=2022.11.0 \
+    absl-py>=1.2.0 audioread uvicorn>=0.21.1 colorama>=0.4.5 httpx fastapi==0.88 \
+    ffmpy==0.3.1 python-dotenv>=1.0.0 av torchcrepe==0.0.23 torchfcpe joblib==1.1.0 \
+    numba==0.56.4 llvmlite==0.39.0 fairseq==0.12.2 faiss-cpu==1.7.3 gradio==3.34.0 \
+    pyworld==0.3.2 \
+    # onnxruntime-rocm \ # <-- Comment or remove this line
+    # Try installing standard onnxruntime instead (if RVC supports it)
+    onnxruntime \
+    && \
+    echo "Essential dependencies installed into venv."
+
+# Set executable permissions for RVC scripts
+RUN chmod +x *.sh
+
+# RVC Application Launch
+EXPOSE ${RVC_PORT}
+# Default port for RVC (typically 7865, verify as needed)
+
+# Copy and set up the entrypoint script for RVC
+COPY entrypoint_rvc.sh /entrypoint_rvc.sh
+RUN chmod +x /entrypoint_rvc.sh
+ENTRYPOINT ["/entrypoint_rvc.sh"]

@@ -1,0 +1,144 @@
+# Docker Base Buildfile for ROCm 5.4.2 to Support Retrieval-based-Voice-Conversion-WebUI with RX580 / Polaris / gfx803 AMD GPU
+# Created, Built, and Compiled by Levent Sunay (lsunay) - May-April 2025
+#
+# Description:
+# This Dockerfile is designed to build a base image for ROCm 5.4.2, specifically targeting the gfx803 architecture
+# (e.g., AMD RX580 / Polaris GPUs). It compiles PyTorch, TorchVision, and TorchAudio from source with ROCm support
+# to enable machine learning workloads, such as Retrieval-based-Voice-Conversion-WebUI. This image includes necessary
+# environment variables, build tools, and configurations for compatibility with older AMD GPUs.
+#
+# File Name: Dockerfile.base_rocm5.4_source_compile - Stage 1
+
+FROM rocm/dev-ubuntu-22.04:5.4.2-complete
+
+# === Environment Variables ===
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
+ENV PIP_ROOT_USER_ACTION='ignore'
+ENV MAX_JOBS=14
+ENV HSA_OVERRIDE_GFX_VERSION=8.0.3
+ENV PYTORCH_ROCM_ARCH=gfx803
+ENV ROCM_ARCH=gfx803
+ENV TORCH_BLAS_PREFER_HIPBLASLT=0
+ENV ROC_ENABLE_PRE_VEGA=1
+ENV USE_NINJA=1
+# Ninja is used for builds if enabled, so ninja-build must be installed
+ENV REQS_FILE='requirements.txt'
+# CMAKE_POLICY_VERSION_MINIMUM may be required if the installed cmake version via pip is too new.
+# For instance, cmake 3.20+ might cause issues with Protobuf in PyTorch 2.0.1.
+ENV CMAKE_POLICY_VERSION_MINIMUM="3.18"
+# Alternatively, versions like 3.13 or 3.5 can be used
+
+# Write critical environment variables to /etc/environment for persistence
+RUN echo "MAX_JOBS=${MAX_JOBS}" >> /etc/environment && \
+    echo "HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION}" >> /etc/environment && \
+    echo "PYTORCH_ROCM_ARCH=${PYTORCH_ROCM_ARCH}" >> /etc/environment && \
+    echo "ROCM_ARCH=${ROCM_ARCH}" >> /etc/environment && \
+    echo "TORCH_BLAS_PREFER_HIPBLASLT=${TORCH_BLAS_PREFER_HIPBLASLT}" >> /etc/environment && \
+    echo "ROC_ENABLE_PRE_VEGA=${ROC_ENABLE_PRE_VEGA}" >> /etc/environment && \
+    echo "PIP_ROOT_USER_ACTION=${PIP_ROOT_USER_ACTION}" >> /etc/environment && \
+    echo "CMAKE_POLICY_VERSION_MINIMUM=${CMAKE_POLICY_VERSION_MINIMUM}" >> /etc/environment && \
+    true
+
+# === System Updates and Build Tools ===
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        git wget curl \
+        ffmpeg \
+        python3.10 python3-pip python3.10-dev python3.10-venv \
+        cmake ninja-build \
+        libopenblas-dev libomp-dev pkg-config \
+        # Confirm/install ROCm development libraries
+        # rocm-dev meta-package may pull in all dev packages
+        # OR specifically install rocrand-dev
+        rocm-dev \
+        # This should include rocrand-dev, hiprand-dev, etc.
+        # OR use: apt-get install -y rocrand librocrand-dev # Verify package names
+    && \
+    python3 -m pip install --upgrade pip wheel setuptools && \
+    python3 -m pip install "cmake==3.20.2" && \
+    # This line is still here for pip-installed cmake
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    true
+
+# Verify Python and CMake versions
+RUN python3 --version && pip3 --version && cmake --version
+
+# ... (rocBLAS installation can remain commented or be added as needed) ...
+
+# === PyTorch v2.0.1 Source Compilation for ROCm 5.4.2 / gfx803 ===
+WORKDIR /
+ENV PYTORCH_GIT_TAG="v2.0.1"
+RUN echo "Checkout PyTorch Version: ${PYTORCH_GIT_TAG}" && \
+    git clone --depth 1 --recursive --branch ${PYTORCH_GIT_TAG} https://github.com/pytorch/pytorch.git /pytorch && \
+    true
+
+WORKDIR /pytorch
+RUN echo "BUILDING PYTORCH ${PYTORCH_GIT_TAG} for ${PYTORCH_ROCM_ARCH} *** " && \
+    python3 --version && \
+    # dpkg -r --force-depends python3-yaml python3-filelock || true &&
+    mkdir -p /pytorch/dist && \
+    python3 setup.py clean && \
+    # Install PyTorch's own requirements.txt
+    echo "Installing PyTorch build requirements from ${REQS_FILE}..." && \
+    python3 -m pip install --break-system-packages -r ${REQS_FILE} && \
+    # ---- Re-pin NumPy version after requirements install ----
+    echo "Re-pinning NumPy to 1.23.5 after PyTorch requirements install..." && \
+    python3 -m pip install --break-system-packages "numpy==1.23.5" --force-reinstall && \
+    python3 -c "import numpy; print(f'NumPy version for PyTorch build: {numpy.__version__}')" && \
+    # ---- End of NumPy pinning ----
+    echo "Running amd_build.py..." && \
+    python3 tools/amd_build/build_amd.py && \
+    echo "Running setup.py bdist_wheel..." && \
+    python3 setup.py bdist_wheel && \
+    echo "Installing built PyTorch wheel..." && \
+    python3 -m pip install --break-system-packages dist/torch*.whl && \
+    ls /pytorch/dist/torch*.whl | head -n 1 > /opt/pytorch_wheel_name.txt && \
+    true
+
+WORKDIR /
+ENV TORCHVISION_GIT_TAG="v0.15.2"
+RUN echo "Checkout Torchvision Version: ${TORCHVISION_GIT_TAG}" && \
+    git clone --depth 1 --branch ${TORCHVISION_GIT_TAG} https://github.com/pytorch/vision.git /vision && \
+    true
+
+WORKDIR /vision
+RUN echo "BUILDING TorchVision ${TORCHVISION_GIT_TAG} *** " && \
+    python3 setup.py bdist_wheel && \
+    python3 -m pip install --break-system-packages dist/torchvision-*.whl && \
+    ls /vision/dist/torchvision*.whl | head -n 1 > /opt/torchvision_wheel_name.txt && \
+    true
+
+WORKDIR /
+ENV TORCHAUDIO_GIT_TAG="v2.0.2"
+RUN echo "Checkout Torchaudio Version: ${TORCHAUDIO_GIT_TAG}" && \
+    git clone --depth 1 --branch ${TORCHAUDIO_GIT_TAG} https://github.com/pytorch/audio.git /audio && \
+    true
+
+WORKDIR /audio
+RUN echo "BUILDING Torchaudio ${TORCHAUDIO_GIT_TAG}" && \
+    apt-get update && apt-get install -y --no-install-recommends libsndfile1-dev libsox-dev sox && \
+    # Try adding /opt/rocm to CMAKE_PREFIX_PATH
+    export CMAKE_PREFIX_PATH="/opt/rocm:${CMAKE_PREFIX_PATH}" && \
+    python3 setup.py bdist_wheel && \
+    python3 -m pip install --break-system-packages dist/torchaudio*.whl && \
+    ls /audio/dist/torchaudio*.whl | head -n 1 > /opt/torchaudio_wheel_name.txt && \
+    apt-get purge -y --auto-remove libsndfile1-dev libsox-dev sox && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN echo "Configuring ROCm library paths" && \
+    echo "/opt/rocm/lib" > /etc/ld.so.conf.d/rocm.conf && \
+    (test -d /opt/rocm/lib64 && echo "/opt/rocm/lib64" >> /etc/ld.so.conf.d/rocm.conf || true) && \
+    ldconfig && \
+    true
+
+RUN echo "** Verifying PyTorch, TorchVision, TorchAudio Installation **" && \
+    python3 -c "import sys; import platform; import torch; import torchvision; import torchaudio; \
+                print(f'System Python Version (sys.version): {sys.version.split()[0]}'); \
+                print(f'Platform Python Version (platform.python_version): {platform.python_version()}'); \
+                print(f'Torch Version: {torch.__version__}'); \
+                print(f'TorchVision Version: {torchvision.__version__}'); \
+                print(f'TorchAudio Version: {torchaudio.__version__}'); \
+                print(f'ROCm available: {torch.cuda.is_available()}'); \
+                print(f'PyTorch built with ROCm/HIP: {torch.version.hip if hasattr(torch.version, \"hip\") else \"HIP not available or not a ROCm build\"}')"

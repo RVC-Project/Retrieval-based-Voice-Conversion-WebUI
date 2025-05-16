@@ -1,0 +1,828 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 7.25kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/rocm542_gfx803_base:5.4.2
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/13] FROM docker.io/library/rocm542_gfx803_base:5.4.2
+#4 DONE 0.0s
+
+#5 [ 3/13] WORKDIR /app
+#5 CACHED
+
+#6 [ 4/13] RUN echo "Cloning RVC repository..." &&     git clone https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git . &&     echo "RVC repository cloned into /app."
+#6 CACHED
+
+#7 [ 2/13] RUN apt-get update -y &&     apt-get install -y --no-install-recommends         aria2         git wget curl ffmpeg     &&     apt-get clean && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 5/13] RUN python3 -m venv .venv # .venv /app altında oluşacak
+#8 CACHED
+
+#9 [internal] load build context
+#9 transferring context: 39B done
+#9 DONE 0.0s
+
+#10 [ 6/13] RUN echo "** Creating constraints.txt **" &&     export PATH="/opt/rocm/bin:/opt/rocm/hip/bin:/root/.nvm/versions/node/v22.9.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" &&     PYTORCH_WHEEL_FILE_PATH=$(cat /opt/pytorch_wheel_name.txt) &&     TORCHVISION_WHEEL_FILE_PATH=$(cat /opt/torchvision_wheel_name.txt) &&     TORCHAUDIO_WHEEL_FILE_PATH=$(cat /opt/torchaudio_wheel_name.txt) &&     echo "torch @ file://${PYTORCH_WHEEL_FILE_PATH}" > .venv/constraints.txt &&     echo "torchvision @ file://${TORCHVISION_WHEEL_FILE_PATH}" >> .venv/constraints.txt &&     echo "torchaudio @ file://${TORCHAUDIO_WHEEL_FILE_PATH}" >> .venv/constraints.txt &&     echo "numpy==1.23.5" >> .venv/constraints.txt &&     echo "protobuf==4.25.3" >> .venv/constraints.txt &&     echo "matplotlib==3.7.2" >> .venv/constraints.txt &&     echo "joblib==1.1.0" >> .venv/constraints.txt &&     echo "numba==0.56.4" >> .venv/constraints.txt &&     echo "llvmlite==0.39.0" >> .venv/constraints.txt &&     echo "fairseq==0.12.2" >> .venv/constraints.txt &&     echo "faiss-cpu==1.7.3" >> .venv/constraints.txt &&     echo "gradio==3.34.0" >> .venv/constraints.txt &&     echo "pyworld==0.3.2" >> .venv/constraints.txt &&     echo "torchcrepe==0.0.23" >> .venv/constraints.txt &&     echo "torchfcpe" >> .venv/constraints.txt &&     echo "Contents of constraints.txt:" && cat .venv/constraints.txt
+#10 0.271 ** Creating constraints.txt **
+#10 0.274 Contents of constraints.txt:
+#10 0.274 torch @ file:///pytorch/dist/torch-2.0.0a0+gite9ebda2-cp310-cp310-linux_x86_64.whl
+#10 0.274 torchvision @ file:///vision/dist/torchvision-0.15.2a0+fa99a53-cp310-cp310-linux_x86_64.whl
+#10 0.274 torchaudio @ file:///audio/dist/torchaudio-2.0.2+31de77d-cp310-cp310-linux_x86_64.whl
+#10 0.274 numpy==1.23.5
+#10 0.274 protobuf==4.25.3
+#10 0.274 matplotlib==3.7.2
+#10 0.274 joblib==1.1.0
+#10 0.274 numba==0.56.4
+#10 0.274 llvmlite==0.39.0
+#10 0.274 fairseq==0.12.2
+#10 0.274 faiss-cpu==1.7.3
+#10 0.274 gradio==3.34.0
+#10 0.274 pyworld==0.3.2
+#10 0.274 torchcrepe==0.0.23
+#10 0.274 torchfcpe
+#10 DONE 0.3s
+
+#11 [ 7/13] RUN echo "Processing RVC requirements files" &&     echo "Current directory: $(pwd)" && ls -la &&     if [ ! -f "requirements.txt" ]; then echo "ERROR: requirements.txt NOT FOUND in $(pwd)" >&2; exit 1; fi &&     if [ ! -f "requirements-amd.txt" ]; then echo "ERROR: requirements-amd.txt NOT FOUND in $(pwd)" >&2; exit 1; fi &&     echo "--- Original requirements.txt ---" && cat requirements.txt && echo "--- End ---" &&     echo "--- Original requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---" &&         sed -i -E '/^torch(vision|audio)?\s*(==|>=)?/d' requirements.txt &&     sed -i '/^fairseq @ /d' requirements.txt &&     sed -i '/^extension_/d' requirements.txt &&     sed -i "/; sys_platform 'win32'/d" requirements.txt &&     sed -i "/; sys_platform 'darwin'/d" requirements.txt &&     echo "--- Cleaned main requirements.txt ---" && cat requirements.txt && echo "--- End ---" &&         sed -i -E '/^torch(vision|audio)?\\s*(==|>=)?/d' requirements-amd.txt &&     sed -i '/^tensorflow-rocm/d' requirements-amd.txt &&     sed -i '/^joblib/d' requirements-amd.txt &&     sed -i '/^numba/d' requirements-amd.txt &&     sed -i '/^numpy/d' requirements-amd.txt &&     sed -i '/^scipy/d' requirements-amd.txt &&     sed -i '/^librosa/d' requirements-amd.txt &&     sed -i '/^llvmlite/d' requirements-amd.txt &&     sed -i '/^fairseq/d' requirements-amd.txt &&     sed -i '/^faiss-cpu/d' requirements-amd.txt &&     sed -i '/^gradio/d' requirements-amd.txt &&     sed -i '/^Cython/d' requirements-amd.txt &&     sed -i '/^pyworld/d' requirements-amd.txt &&     sed -i '/^torchcrepe/d' requirements-amd.txt &&     sed -i '/^torchfcpe/d' requirements-amd.txt &&     sed -i '/^onnxruntime/d' requirements-amd.txt &&     sed -i "/; sys_platform 'darwin'/d" requirements-amd.txt &&     echo "--- Cleaned requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---"
+#11 0.346 Processing RVC requirements files
+#11 0.346 Current directory: /app
+#11 0.348 total 756
+#11 0.348 drwxr-xr-x 1 root root   4096 May 15 17:30 .
+#11 0.348 drwxr-xr-x 1 root root   4096 May 16 07:11 ..
+#11 0.348 -rw-r--r-- 1 root root    277 May 15 17:30 .env
+#11 0.348 drwxr-xr-x 8 root root   4096 May 15 17:30 .git
+#11 0.348 drwxr-xr-x 3 root root   4096 May 15 17:30 .github
+#11 0.348 -rw-r--r-- 1 root root    349 May 15 17:30 .gitignore
+#11 0.348 drwxr-xr-x 1 root root   4096 May 16 07:11 .venv
+#11 0.348 -rw-r--r-- 1 root root    776 May 15 17:30 CONTRIBUTING.md
+#11 0.348 -rw-r--r-- 1 root root   2644 May 15 17:30 Dockerfile
+#11 0.348 -rw-r--r-- 1 root root   1142 May 15 17:30 LICENSE
+#11 0.348 -rw-r--r-- 1 root root   1986 May 15 17:30 MIT协议暨相关引用库协议
+#11 0.348 -rw-r--r-- 1 root root   8914 May 15 17:30 README.md
+#11 0.348 -rw-r--r-- 1 root root  15917 May 15 17:30 Retrieval_based_Voice_Conversion_WebUI.ipynb
+#11 0.348 -rw-r--r-- 1 root root  18907 May 15 17:30 Retrieval_based_Voice_Conversion_WebUI_v2.ipynb
+#11 0.348 -rw-r--r-- 1 root root  19023 May 15 17:30 api_231006.py
+#11 0.348 -rw-r--r-- 1 root root  22181 May 15 17:30 api_240604.py
+#11 0.348 drwxr-xr-x 9 root root   4096 May 15 17:30 assets
+#11 0.348 drwxr-xr-x 5 root root   4096 May 15 17:30 configs
+#11 0.348 -rw-r--r-- 1 root root    482 May 15 17:30 docker-compose.yml
+#11 0.348 drwxr-xr-x 9 root root   4096 May 15 17:30 docs
+#11 0.348 -rw-r--r-- 1 root root   5871 May 15 17:30 environment_dml.yaml
+#11 0.348 -rw-r--r-- 1 root root     70 May 15 17:30 go-realtime-gui-dml.bat
+#11 0.348 -rw-r--r-- 1 root root     37 May 15 17:30 go-realtime-gui.bat
+#11 0.348 -rw-r--r-- 1 root root     83 May 15 17:30 go-web-dml.bat
+#11 0.348 -rw-r--r-- 1 root root     77 May 15 17:30 go-web.bat
+#11 0.348 -rw-r--r-- 1 root root  48651 May 15 17:30 gui_v1.py
+#11 0.348 drwxr-xr-x 3 root root   4096 May 15 17:30 i18n
+#11 0.348 drwxr-xr-x 4 root root   4096 May 15 17:30 infer
+#11 0.348 -rw-r--r-- 1 root root  64230 May 15 17:30 infer-web.py
+#11 0.348 drwxr-xr-x 3 root root   4096 May 15 17:30 logs
+#11 0.348 -rw-r--r-- 1 root root 414084 May 15 17:30 poetry.lock
+#11 0.348 -rw-r--r-- 1 root root   1306 May 15 17:30 pyproject.toml
+#11 0.348 -rw-r--r-- 1 root root    713 May 15 17:30 requirements-amd.txt
+#11 0.348 -rw-r--r-- 1 root root    689 May 15 17:30 requirements-dml.txt
+#11 0.348 -rw-r--r-- 1 root root   1102 May 15 17:30 requirements-ipex.txt
+#11 0.348 -rw-r--r-- 1 root root    757 May 15 17:30 requirements-py311.txt
+#11 0.348 -rw-r--r-- 1 root root    573 May 15 17:30 requirements-win-for-realtime_vc_gui-dml.txt
+#11 0.348 -rw-r--r-- 1 root root    552 May 15 17:30 requirements-win-for-realtime_vc_gui.txt
+#11 0.348 -rw-r--r-- 1 root root    754 May 15 17:30 requirements.txt
+#11 0.348 -rwxr-xr-x 1 root root   1807 May 15 17:30 run.sh
+#11 0.348 drwxr-xr-x 4 root root   4096 May 15 17:30 tools
+#11 0.348 -rwxr-xr-x 1 root root     35 May 15 17:30 venv.sh
+#11 0.348 --- Original requirements.txt ---
+#11 0.349 aria2
+#11 0.349 joblib>=1.1.0
+#11 0.349 numba==0.56.4
+#11 0.349 numpy==1.23.5
+#11 0.349 scipy
+#11 0.349 librosa==0.9.1
+#11 0.349 llvmlite==0.39.0
+#11 0.349 fairseq==0.12.2
+#11 0.349 faiss-cpu==1.7.3
+#11 0.349 gradio==3.34.0
+#11 0.349 Cython
+#11 0.349 pydub>=0.25.1
+#11 0.349 soundfile>=0.12.1
+#11 0.349 ffmpeg-python>=0.2.0
+#11 0.349 tensorboardX
+#11 0.349 Jinja2>=3.1.2
+#11 0.349 json5
+#11 0.349 Markdown
+#11 0.349 matplotlib>=3.7.0
+#11 0.349 matplotlib-inline>=0.1.3
+#11 0.349 praat-parselmouth>=0.4.2
+#11 0.349 Pillow>=9.1.1
+#11 0.349 resampy>=0.4.2
+#11 0.349 scikit-learn
+#11 0.349 tensorboard
+#11 0.349 tqdm>=4.63.1
+#11 0.349 tornado>=6.1
+#11 0.349 Werkzeug>=2.2.3
+#11 0.349 uc-micro-py>=1.0.1
+#11 0.349 sympy>=1.11.1
+#11 0.349 tabulate>=0.8.10
+#11 0.349 PyYAML>=6.0
+#11 0.349 pyasn1>=0.4.8
+#11 0.349 pyasn1-modules>=0.2.8
+#11 0.349 fsspec>=2022.11.0
+#11 0.349 absl-py>=1.2.0
+#11 0.349 audioread
+#11 0.349 uvicorn>=0.21.1
+#11 0.349 colorama>=0.4.5
+#11 0.349 pyworld==0.3.2
+#11 0.349 httpx
+#11 0.349 onnxruntime; sys_platform == 'darwin'
+#11 0.349 onnxruntime-gpu; sys_platform != 'darwin'
+#11 0.349 torchcrepe==0.0.20
+#11 0.349 fastapi==0.88
+#11 0.349 torchfcpe
+#11 0.349 ffmpy==0.3.1
+#11 0.349 python-dotenv>=1.0.0
+#11 0.349 av
+#11 0.349 --- End ---
+#11 0.349 --- Original requirements-amd.txt ---
+#11 0.349 tensorflow-rocm
+#11 0.349 joblib>=1.1.0
+#11 0.349 numba==0.56.4
+#11 0.349 numpy==1.23.5
+#11 0.349 scipy
+#11 0.349 librosa==0.10.2
+#11 0.349 llvmlite==0.39.0
+#11 0.349 fairseq==0.12.2
+#11 0.349 faiss-cpu==1.7.3
+#11 0.349 gradio==3.34.0
+#11 0.349 Cython
+#11 0.349 pydub>=0.25.1
+#11 0.349 soundfile>=0.12.1
+#11 0.349 ffmpeg-python>=0.2.0
+#11 0.349 tensorboardX
+#11 0.349 Jinja2>=3.1.2
+#11 0.349 json5
+#11 0.349 Markdown
+#11 0.349 matplotlib>=3.7.0
+#11 0.349 matplotlib-inline>=0.1.3
+#11 0.349 praat-parselmouth>=0.4.2
+#11 0.349 Pillow>=9.1.1
+#11 0.349 resampy>=0.4.2
+#11 0.349 scikit-learn
+#11 0.349 tensorboard
+#11 0.349 tqdm>=4.63.1
+#11 0.349 tornado>=6.1
+#11 0.349 Werkzeug>=2.2.3
+#11 0.349 uc-micro-py>=1.0.1
+#11 0.349 sympy>=1.11.1
+#11 0.349 tabulate>=0.8.10
+#11 0.349 PyYAML>=6.0
+#11 0.349 pyasn1>=0.4.8
+#11 0.349 pyasn1-modules>=0.2.8
+#11 0.349 fsspec>=2022.11.0
+#11 0.349 absl-py>=1.2.0
+#11 0.349 audioread
+#11 0.349 uvicorn>=0.21.1
+#11 0.349 colorama>=0.4.5
+#11 0.349 pyworld==0.3.2
+#11 0.349 httpx
+#11 0.349 onnxruntime
+#11 0.349 onnxruntime-gpu
+#11 0.349 torchcrepe==0.0.23
+#11 0.349 fastapi==0.88
+#11 0.349 ffmpy==0.3.1
+#11 0.349 python-dotenv>=1.0.0
+#11 0.349 av
+#11 0.349 torchfcpe
+#11 0.349 --- End ---
+#11 0.354 --- Cleaned main requirements.txt ---
+#11 0.355 aria2
+#11 0.355 joblib>=1.1.0
+#11 0.355 numba==0.56.4
+#11 0.355 numpy==1.23.5
+#11 0.355 scipy
+#11 0.355 librosa==0.9.1
+#11 0.355 llvmlite==0.39.0
+#11 0.355 fairseq==0.12.2
+#11 0.355 faiss-cpu==1.7.3
+#11 0.355 gradio==3.34.0
+#11 0.355 Cython
+#11 0.355 pydub>=0.25.1
+#11 0.355 soundfile>=0.12.1
+#11 0.355 ffmpeg-python>=0.2.0
+#11 0.355 tensorboardX
+#11 0.355 Jinja2>=3.1.2
+#11 0.355 json5
+#11 0.355 Markdown
+#11 0.355 matplotlib>=3.7.0
+#11 0.355 matplotlib-inline>=0.1.3
+#11 0.355 praat-parselmouth>=0.4.2
+#11 0.355 Pillow>=9.1.1
+#11 0.355 resampy>=0.4.2
+#11 0.355 scikit-learn
+#11 0.355 tensorboard
+#11 0.355 tqdm>=4.63.1
+#11 0.355 tornado>=6.1
+#11 0.355 Werkzeug>=2.2.3
+#11 0.355 uc-micro-py>=1.0.1
+#11 0.355 sympy>=1.11.1
+#11 0.355 tabulate>=0.8.10
+#11 0.355 PyYAML>=6.0
+#11 0.355 pyasn1>=0.4.8
+#11 0.355 pyasn1-modules>=0.2.8
+#11 0.355 fsspec>=2022.11.0
+#11 0.355 absl-py>=1.2.0
+#11 0.355 audioread
+#11 0.355 uvicorn>=0.21.1
+#11 0.355 colorama>=0.4.5
+#11 0.355 pyworld==0.3.2
+#11 0.355 httpx
+#11 0.355 onnxruntime; sys_platform == 'darwin'
+#11 0.355 onnxruntime-gpu; sys_platform != 'darwin'
+#11 0.355 fastapi==0.88
+#11 0.355 ffmpy==0.3.1
+#11 0.355 python-dotenv>=1.0.0
+#11 0.355 av
+#11 0.355 --- End ---
+#11 0.372 --- Cleaned requirements-amd.txt ---
+#11 0.372 pydub>=0.25.1
+#11 0.372 soundfile>=0.12.1
+#11 0.372 ffmpeg-python>=0.2.0
+#11 0.372 tensorboardX
+#11 0.372 Jinja2>=3.1.2
+#11 0.372 json5
+#11 0.372 Markdown
+#11 0.372 matplotlib>=3.7.0
+#11 0.372 matplotlib-inline>=0.1.3
+#11 0.372 praat-parselmouth>=0.4.2
+#11 0.372 Pillow>=9.1.1
+#11 0.372 resampy>=0.4.2
+#11 0.372 scikit-learn
+#11 0.372 tensorboard
+#11 0.372 tqdm>=4.63.1
+#11 0.372 tornado>=6.1
+#11 0.372 Werkzeug>=2.2.3
+#11 0.372 uc-micro-py>=1.0.1
+#11 0.372 sympy>=1.11.1
+#11 0.372 tabulate>=0.8.10
+#11 0.372 PyYAML>=6.0
+#11 0.372 pyasn1>=0.4.8
+#11 0.372 pyasn1-modules>=0.2.8
+#11 0.372 fsspec>=2022.11.0
+#11 0.372 absl-py>=1.2.0
+#11 0.372 audioread
+#11 0.372 uvicorn>=0.21.1
+#11 0.372 colorama>=0.4.5
+#11 0.372 httpx
+#11 0.372 fastapi==0.88
+#11 0.372 ffmpy==0.3.1
+#11 0.372 python-dotenv>=1.0.0
+#11 0.372 av
+#11 0.372 --- End ---
+#11 DONE 0.4s
+
+#12 [ 8/13] RUN echo "** Installing RVC dependencies from main requirements.txt (cleaned) **" &&     ./.venv/bin/python -m pip install --no-cache-dir -r requirements.txt -c .venv/constraints.txt
+#12 0.328 ** Installing RVC dependencies from main requirements.txt (cleaned) **
+#12 0.679 Ignoring onnxruntime: markers 'sys_platform == "darwin"' don't match your environment
+#12 6.035 Collecting aria2
+#12 6.375   Downloading aria2-0.0.1b0-py3-none-manylinux_2_17_x86_64.whl (5.3 MB)
+#12 7.038      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.3/5.3 MB 8.1 MB/s eta 0:00:00
+#12 7.152 Collecting joblib>=1.1.0
+#12 7.216   Downloading joblib-1.1.0-py2.py3-none-any.whl (306 kB)
+#12 7.242      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 307.0/307.0 KB 12.0 MB/s eta 0:00:00
+#12 7.592 Collecting numba==0.56.4
+#12 7.654   Downloading numba-0.56.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (3.5 MB)
+#12 7.952      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.5/3.5 MB 11.7 MB/s eta 0:00:00
+#12 8.420 Collecting numpy==1.23.5
+#12 8.482   Downloading numpy-1.23.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.1 MB)
+#12 10.05      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.1/17.1 MB 10.4 MB/s eta 0:00:00
+#12 10.35 Collecting scipy
+#12 10.41   Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+#12 13.73      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.7/37.7 MB 11.7 MB/s eta 0:00:00
+#12 13.84 Collecting librosa==0.9.1
+#12 13.91   Downloading librosa-0.9.1-py3-none-any.whl (213 kB)
+#12 13.92      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 213.1/213.1 KB 12.1 MB/s eta 0:00:00
+#12 14.10 Collecting llvmlite==0.39.0
+#12 14.16   Downloading llvmlite-0.39.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (34.6 MB)
+#12 17.20      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.6/34.6 MB 10.7 MB/s eta 0:00:00
+#12 17.31 Collecting fairseq==0.12.2
+#12 17.37   Downloading fairseq-0.12.2.tar.gz (9.6 MB)
+#12 18.19      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.6/9.6 MB 11.7 MB/s eta 0:00:00
+#12 18.81   Installing build dependencies: started
+#12 28.45   Installing build dependencies: finished with status 'done'
+#12 28.45   Getting requirements to build wheel: started
+#12 28.59   Getting requirements to build wheel: finished with status 'done'
+#12 28.72   Installing backend dependencies: started
+#12 39.29   Installing backend dependencies: finished with status 'done'
+#12 39.30   Preparing metadata (pyproject.toml): started
+#12 39.55   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 39.67 Collecting faiss-cpu==1.7.3
+#12 39.73   Downloading faiss_cpu-1.7.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.0 MB)
+#12 41.18      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.0/17.0 MB 11.7 MB/s eta 0:00:00
+#12 41.44 Collecting gradio==3.34.0
+#12 41.50   Downloading gradio-3.34.0-py3-none-any.whl (20.0 MB)
+#12 43.21      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 20.0/20.0 MB 11.7 MB/s eta 0:00:00
+#12 43.83 Collecting Cython
+#12 43.90   Downloading cython-3.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+#12 44.18      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 11.8 MB/s eta 0:00:00
+#12 44.27 Collecting pydub>=0.25.1
+#12 44.33   Downloading pydub-0.25.1-py2.py3-none-any.whl (32 kB)
+#12 44.41 Collecting soundfile>=0.12.1
+#12 44.47   Downloading soundfile-0.13.1-py2.py3-none-manylinux_2_28_x86_64.whl (1.3 MB)
+#12 44.59      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 11.8 MB/s eta 0:00:00
+#12 44.66 Collecting ffmpeg-python>=0.2.0
+#12 44.72   Downloading ffmpeg_python-0.2.0-py3-none-any.whl (25 kB)
+#12 44.80 Collecting tensorboardX
+#12 44.86   Downloading tensorboardX-2.6.2.2-py2.py3-none-any.whl (101 kB)
+#12 44.87      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 101.7/101.7 KB 12.6 MB/s eta 0:00:00
+#12 44.95 Collecting Jinja2>=3.1.2
+#12 45.02   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+#12 45.03      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 KB 12.3 MB/s eta 0:00:00
+#12 45.11 Collecting json5
+#12 45.18   Downloading json5-0.12.0-py3-none-any.whl (36 kB)
+#12 45.27 Collecting Markdown
+#12 45.33   Downloading markdown-3.8-py3-none-any.whl (106 kB)
+#12 45.34      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 106.2/106.2 KB 12.5 MB/s eta 0:00:00
+#12 45.71 Collecting matplotlib>=3.7.0
+#12 45.78   Downloading matplotlib-3.7.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.6 MB)
+#12 46.76      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.6/11.6 MB 11.7 MB/s eta 0:00:00
+#12 46.85 Collecting matplotlib-inline>=0.1.3
+#12 46.91   Downloading matplotlib_inline-0.1.7-py3-none-any.whl (9.9 kB)
+#12 47.06 Collecting praat-parselmouth>=0.4.2
+#12 47.12   Downloading praat_parselmouth-0.4.5-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (10.7 MB)
+#12 48.04      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.7/10.7 MB 11.7 MB/s eta 0:00:00
+#12 48.46 Collecting Pillow>=9.1.1
+#12 48.52   Downloading pillow-11.2.1-cp310-cp310-manylinux_2_28_x86_64.whl (4.6 MB)
+#12 48.92      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.6/4.6 MB 11.7 MB/s eta 0:00:00
+#12 48.99 Collecting resampy>=0.4.2
+#12 49.06   Downloading resampy-0.4.3-py3-none-any.whl (3.1 MB)
+#12 49.32      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 11.7 MB/s eta 0:00:00
+#12 49.57 Collecting scikit-learn
+#12 49.64   Downloading scikit_learn-1.6.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.5 MB)
+#12 50.79      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.5/13.5 MB 11.7 MB/s eta 0:00:00
+#12 50.89 Collecting tensorboard
+#12 50.96   Downloading tensorboard-2.19.0-py3-none-any.whl (5.5 MB)
+#12 51.43      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 11.7 MB/s eta 0:00:00
+#12 51.59 Collecting tqdm>=4.63.1
+#12 51.65   Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+#12 51.66      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 KB 12.9 MB/s eta 0:00:00
+#12 51.79 Collecting tornado>=6.1
+#12 51.85   Downloading tornado-6.5-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (442 kB)
+#12 51.89      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 442.5/442.5 KB 11.8 MB/s eta 0:00:00
+#12 51.99 Collecting Werkzeug>=2.2.3
+#12 52.05   Downloading werkzeug-3.1.3-py3-none-any.whl (224 kB)
+#12 52.07      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 224.5/224.5 KB 12.1 MB/s eta 0:00:00
+#12 52.14 Collecting uc-micro-py>=1.0.1
+#12 52.20   Downloading uc_micro_py-1.0.3-py3-none-any.whl (6.2 kB)
+#12 52.29 Collecting sympy>=1.11.1
+#12 52.35   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+#12 52.89      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 11.7 MB/s eta 0:00:00
+#12 52.98 Collecting tabulate>=0.8.10
+#12 53.04   Downloading tabulate-0.9.0-py3-none-any.whl (35 kB)
+#12 53.17 Collecting PyYAML>=6.0
+#12 53.24   Downloading PyYAML-6.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (751 kB)
+#12 53.30      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 751.2/751.2 KB 11.8 MB/s eta 0:00:00
+#12 53.40 Collecting pyasn1>=0.4.8
+#12 53.46   Downloading pyasn1-0.6.1-py3-none-any.whl (83 kB)
+#12 53.47      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.1/83.1 KB 12.7 MB/s eta 0:00:00
+#12 53.56 Collecting pyasn1-modules>=0.2.8
+#12 53.62   Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+#12 53.64      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 KB 12.3 MB/s eta 0:00:00
+#12 53.74 Collecting fsspec>=2022.11.0
+#12 53.80   Downloading fsspec-2025.3.2-py3-none-any.whl (194 kB)
+#12 53.82      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 194.4/194.4 KB 12.1 MB/s eta 0:00:00
+#12 53.90 Collecting absl-py>=1.2.0
+#12 53.96   Downloading absl_py-2.2.2-py3-none-any.whl (135 kB)
+#12 53.97      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 135.6/135.6 KB 12.3 MB/s eta 0:00:00
+#12 54.05 Collecting audioread
+#12 54.11   Downloading audioread-3.0.1-py3-none-any.whl (23 kB)
+#12 54.21 Collecting uvicorn>=0.21.1
+#12 54.28   Downloading uvicorn-0.34.2-py3-none-any.whl (62 kB)
+#12 54.28      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.5/62.5 KB 13.2 MB/s eta 0:00:00
+#12 54.36 Collecting colorama>=0.4.5
+#12 54.42   Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+#12 54.50 Collecting pyworld==0.3.2
+#12 54.57   Downloading pyworld-0.3.2.tar.gz (214 kB)
+#12 54.59      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 214.4/214.4 KB 12.1 MB/s eta 0:00:00
+#12 54.74   Installing build dependencies: started
+#12 65.19   Installing build dependencies: finished with status 'done'
+#12 65.20   Getting requirements to build wheel: started
+#12 65.41   Getting requirements to build wheel: finished with status 'done'
+#12 65.41   Preparing metadata (pyproject.toml): started
+#12 65.65   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 65.74 Collecting httpx
+#12 65.81   Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+#12 65.81      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 KB 13.7 MB/s eta 0:00:00
+#12 65.91 Collecting onnxruntime-gpu
+#12 65.97   Downloading onnxruntime_gpu-1.22.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (283.2 MB)
+#12 90.71      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 283.2/283.2 MB 11.4 MB/s eta 0:00:00
+#12 91.11 Collecting fastapi==0.88
+#12 91.17   Downloading fastapi-0.88.0-py3-none-any.whl (55 kB)
+#12 91.18      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 55.5/55.5 KB 13.6 MB/s eta 0:00:00
+#12 91.25 Collecting ffmpy==0.3.1
+#12 91.31   Downloading ffmpy-0.3.1.tar.gz (5.5 kB)
+#12 91.31   Preparing metadata (setup.py): started
+#12 91.45   Preparing metadata (setup.py): finished with status 'done'
+#12 91.54 Collecting python-dotenv>=1.0.0
+#12 91.60   Downloading python_dotenv-1.1.0-py3-none-any.whl (20 kB)
+#12 91.78 Collecting av
+#12 91.84   Downloading av-14.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (34.7 MB)
+#12 94.96      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.7/34.7 MB 10.8 MB/s eta 0:00:00
+#12 94.99 Requirement already satisfied: setuptools in ./.venv/lib/python3.10/site-packages (from numba==0.56.4->-r requirements.txt (line 3)) (59.6.0)
+#12 95.11 Collecting decorator>=4.0.10
+#12 95.17   Downloading decorator-5.2.1-py3-none-any.whl (9.2 kB)
+#12 95.27 Collecting pooch>=1.0
+#12 95.33   Downloading pooch-1.8.2-py3-none-any.whl (64 kB)
+#12 95.34      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.6/64.6 KB 13.0 MB/s eta 0:00:00
+#12 95.43 Collecting packaging>=20.0
+#12 95.49   Downloading packaging-25.0-py3-none-any.whl (66 kB)
+#12 95.49      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 66.5/66.5 KB 13.0 MB/s eta 0:00:00
+#12 96.38 Collecting regex
+#12 96.45   Downloading regex-2024.11.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (781 kB)
+#12 96.51      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 781.7/781.7 KB 11.7 MB/s eta 0:00:00
+#12 96.60 Collecting sacrebleu>=1.4.12
+#12 96.67   Downloading sacrebleu-2.5.1-py3-none-any.whl (104 kB)
+#12 96.67      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 104.1/104.1 KB 12.5 MB/s eta 0:00:00
+#12 96.97 Collecting cffi
+#12 97.04   Downloading cffi-1.17.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (446 kB)
+#12 97.08      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 446.2/446.2 KB 11.9 MB/s eta 0:00:00
+#12 97.60 Collecting bitarray
+#12 97.67   Downloading bitarray-3.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (306 kB)
+#12 97.69      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 306.8/306.8 KB 12.0 MB/s eta 0:00:00
+#12 97.81 Collecting omegaconf<2.1
+#12 97.87   Downloading omegaconf-2.0.6-py3-none-any.whl (36 kB)
+#12 97.88 Processing /pytorch/dist/torch-2.0.0a0+gite9ebda2-cp310-cp310-linux_x86_64.whl
+#12 97.93 Processing /audio/dist/torchaudio-2.0.2+31de77d-cp310-cp310-linux_x86_64.whl
+#12 98.10 Collecting hydra-core<1.1,>=1.0.7
+#12 98.16   Downloading hydra_core-1.0.7-py3-none-any.whl (123 kB)
+#12 98.17      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 123.8/123.8 KB 12.4 MB/s eta 0:00:00
+#12 98.45 Collecting websockets>=10.0
+#12 98.51   Downloading websockets-15.0.1-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (181 kB)
+#12 98.53      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.6/181.6 KB 12.5 MB/s eta 0:00:00
+#12 98.69 Collecting markupsafe
+#12 98.75   Downloading MarkupSafe-3.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (20 kB)
+#12 98.84 Collecting typing-extensions
+#12 98.90   Downloading typing_extensions-4.13.2-py3-none-any.whl (45 kB)
+#12 98.90      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.8/45.8 KB 14.2 MB/s eta 0:00:00
+#12 98.98 Collecting altair>=4.2.0
+#12 99.04   Downloading altair-5.5.0-py3-none-any.whl (731 kB)
+#12 99.11      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 731.2/731.2 KB 11.8 MB/s eta 0:00:00
+#12 99.29 Collecting gradio-client>=0.2.6
+#12 99.35   Downloading gradio_client-1.10.1-py3-none-any.whl (323 kB)
+#12 99.38      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 323.1/323.1 KB 12.0 MB/s eta 0:00:00
+#12 100.4 Collecting aiohttp
+#12 100.4   Downloading aiohttp-3.11.18-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.6 MB)
+#12 100.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 11.8 MB/s eta 0:00:00
+#12 100.8 Collecting pandas
+#12 100.9   Downloading pandas-2.2.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.1 MB)
+#12 102.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.1/13.1 MB 11.7 MB/s eta 0:00:00
+#12 102.3 Collecting pydantic
+#12 102.4   Downloading pydantic-2.11.4-py3-none-any.whl (443 kB)
+#12 102.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 443.9/443.9 KB 11.9 MB/s eta 0:00:00
+#12 102.5 Collecting semantic-version
+#12 102.6   Downloading semantic_version-2.10.0-py2.py3-none-any.whl (15 kB)
+#12 102.7 Collecting markdown-it-py[linkify]>=2.0.0
+#12 102.7   Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+#12 102.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.5/87.5 KB 12.8 MB/s eta 0:00:00
+#12 102.9 Collecting huggingface-hub>=0.14.0
+#12 102.9   Downloading huggingface_hub-0.31.2-py3-none-any.whl (484 kB)
+#12 103.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 484.2/484.2 KB 11.9 MB/s eta 0:00:00
+#12 103.0 Collecting mdit-py-plugins<=0.3.3
+#12 103.1   Downloading mdit_py_plugins-0.3.3-py3-none-any.whl (50 kB)
+#12 103.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.5/50.5 KB 14.0 MB/s eta 0:00:00
+#12 103.2 Collecting pygments>=2.12.0
+#12 103.3   Downloading pygments-2.19.1-py3-none-any.whl (1.2 MB)
+#12 103.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 11.8 MB/s eta 0:00:00
+#12 103.5 Collecting requests
+#12 103.5   Downloading requests-2.32.3-py3-none-any.whl (64 kB)
+#12 103.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.9/64.9 KB 12.8 MB/s eta 0:00:00
+#12 103.6 Collecting aiofiles
+#12 103.7   Downloading aiofiles-24.1.0-py3-none-any.whl (15 kB)
+#12 103.8 Collecting python-multipart
+#12 103.8   Downloading python_multipart-0.0.20-py3-none-any.whl (24 kB)
+#12 104.5 Collecting orjson
+#12 104.5   Downloading orjson-3.10.18-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (132 kB)
+#12 104.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 132.8/132.8 KB 12.9 MB/s eta 0:00:00
+#12 104.7 Collecting starlette==0.22.0
+#12 104.7   Downloading starlette-0.22.0-py3-none-any.whl (64 kB)
+#12 104.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.3/64.3 KB 13.2 MB/s eta 0:00:00
+#12 104.8 Collecting pydantic
+#12 104.8   Downloading pydantic-1.10.22-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+#12 105.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 11.7 MB/s eta 0:00:00
+#12 105.2 Collecting anyio<5,>=3.4.0
+#12 105.3   Downloading anyio-4.9.0-py3-none-any.whl (100 kB)
+#12 105.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.9/100.9 KB 12.6 MB/s eta 0:00:00
+#12 105.4 Collecting future
+#12 105.5   Downloading future-1.0.0-py3-none-any.whl (491 kB)
+#12 105.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 491.3/491.3 KB 11.9 MB/s eta 0:00:00
+#12 105.9 Collecting protobuf>=3.20
+#12 106.0   Downloading protobuf-4.25.3-cp37-abi3-manylinux2014_x86_64.whl (294 kB)
+#12 106.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.6/294.6 KB 11.9 MB/s eta 0:00:00
+#12 106.4 Collecting fonttools>=4.22.0
+#12 106.5   Downloading fonttools-4.58.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (4.7 MB)
+#12 106.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 11.7 MB/s eta 0:00:00
+#12 107.1 Collecting contourpy>=1.0.1
+#12 107.2   Downloading contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+#12 107.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 325.0/325.0 KB 11.9 MB/s eta 0:00:00
+#12 107.2 Collecting cycler>=0.10
+#12 107.3   Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+#12 107.4 Collecting pyparsing<3.1,>=2.3.1
+#12 107.5   Downloading pyparsing-3.0.9-py3-none-any.whl (98 kB)
+#12 107.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.3/98.3 KB 12.8 MB/s eta 0:00:00
+#12 107.6 Collecting python-dateutil>=2.7
+#12 107.6   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+#12 107.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 KB 12.2 MB/s eta 0:00:00
+#12 107.8 Collecting kiwisolver>=1.0.1
+#12 107.9   Downloading kiwisolver-1.4.8-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+#12 108.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 11.8 MB/s eta 0:00:00
+#12 108.1 Collecting traitlets
+#12 108.2   Downloading traitlets-5.14.3-py3-none-any.whl (85 kB)
+#12 108.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.4/85.4 KB 13.1 MB/s eta 0:00:00
+#12 108.3 Collecting threadpoolctl>=3.1.0
+#12 108.4   Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+#12 108.4 Collecting scikit-learn
+#12 108.5   Downloading scikit_learn-1.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.5 MB)
+#12 109.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.5/13.5 MB 12.3 MB/s eta 0:00:00
+#12 109.9   Downloading scikit_learn-1.5.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.3 MB)
+#12 111.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.3/13.3 MB 11.3 MB/s eta 0:00:00
+#12 111.2   Downloading scikit_learn-1.5.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.4 MB)
+#12 112.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.4/13.4 MB 11.7 MB/s eta 0:00:00
+#12 112.4   Downloading scikit_learn-1.5.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.3 MB)
+#12 113.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.3/13.3 MB 11.7 MB/s eta 0:00:00
+#12 113.7   Downloading scikit_learn-1.4.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.1 MB)
+#12 114.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.1/12.1 MB 11.7 MB/s eta 0:00:00
+#12 114.8   Downloading scikit_learn-1.4.1.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.1 MB)
+#12 115.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.1/12.1 MB 11.7 MB/s eta 0:00:00
+#12 116.0   Downloading scikit_learn-1.4.0-1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.1 MB)
+#12 117.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.1/12.1 MB 11.7 MB/s eta 0:00:00
+#12 117.1   Downloading scikit_learn-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (10.8 MB)
+#12 118.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.8/10.8 MB 11.7 MB/s eta 0:00:00
+#12 118.1   Downloading scikit_learn-1.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (10.8 MB)
+#12 119.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.8/10.8 MB 11.7 MB/s eta 0:00:00
+#12 119.2   Downloading scikit_learn-1.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (10.8 MB)
+#12 120.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.8/10.8 MB 11.7 MB/s eta 0:00:00
+#12 120.2   Downloading scikit_learn-1.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (9.6 MB)
+#12 121.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.6/9.6 MB 11.3 MB/s eta 0:00:00
+#12 121.2   Downloading scikit_learn-1.2.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (9.6 MB)
+#12 122.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.6/9.6 MB 11.4 MB/s eta 0:00:00
+#12 122.1   Downloading scikit_learn-1.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (9.5 MB)
+#12 123.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.5/9.5 MB 11.4 MB/s eta 0:00:00
+#12 123.1   Downloading scikit_learn-1.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (30.5 MB)
+#12 125.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 30.5/30.5 MB 11.7 MB/s eta 0:00:00
+#12 125.8 Collecting tensorboard-data-server<0.8.0,>=0.7.0
+#12 125.9   Downloading tensorboard_data_server-0.7.2-py3-none-manylinux_2_31_x86_64.whl (6.6 MB)
+#12 126.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 11.7 MB/s eta 0:00:00
+#12 126.6 Collecting six>1.9
+#12 126.6   Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+#12 128.1 Collecting grpcio>=1.48.2
+#12 128.2   Downloading grpcio-1.71.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (5.9 MB)
+#12 128.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.9/5.9 MB 11.7 MB/s eta 0:00:00
+#12 128.8 Collecting mpmath<1.4,>=1.1.0
+#12 128.9   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+#12 128.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 KB 11.9 MB/s eta 0:00:00
+#12 129.1 Collecting click>=7.0
+#12 129.2   Downloading click-8.2.0-py3-none-any.whl (102 kB)
+#12 129.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 102.2/102.2 KB 12.6 MB/s eta 0:00:00
+#12 129.3 Collecting h11>=0.8
+#12 129.4   Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+#12 129.5 Collecting idna
+#12 129.6   Downloading idna-3.10-py3-none-any.whl (70 kB)
+#12 129.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 70.4/70.4 KB 13.5 MB/s eta 0:00:00
+#12 129.7 Collecting certifi
+#12 129.7   Downloading certifi-2025.4.26-py3-none-any.whl (159 kB)
+#12 129.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 159.6/159.6 KB 12.4 MB/s eta 0:00:00
+#12 129.8 Collecting httpcore==1.*
+#12 129.9   Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+#12 129.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.8/78.8 KB 12.8 MB/s eta 0:00:00
+#12 130.0 Collecting flatbuffers
+#12 130.1   Downloading flatbuffers-25.2.10-py2.py3-none-any.whl (30 kB)
+#12 130.2 Collecting coloredlogs
+#12 130.2   Downloading coloredlogs-15.0.1-py2.py3-none-any.whl (46 kB)
+#12 130.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.0/46.0 KB 14.0 MB/s eta 0:00:00
+#12 130.4 Collecting narwhals>=1.14.2
+#12 130.5   Downloading narwhals-1.39.1-py3-none-any.whl (355 kB)
+#12 130.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 355.0/355.0 KB 12.0 MB/s eta 0:00:00
+#12 130.6 Collecting jsonschema>=3.0
+#12 130.7   Downloading jsonschema-4.23.0-py3-none-any.whl (88 kB)
+#12 130.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 88.5/88.5 KB 13.1 MB/s eta 0:00:00
+#12 130.8 Collecting sniffio>=1.1
+#12 130.8   Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+#12 130.9 Collecting exceptiongroup>=1.0.2
+#12 131.0   Downloading exceptiongroup-1.3.0-py3-none-any.whl (16 kB)
+#12 131.0 Collecting pycparser
+#12 131.1   Downloading pycparser-2.22-py3-none-any.whl (117 kB)
+#12 131.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 117.6/117.6 KB 12.6 MB/s eta 0:00:00
+#12 131.4 Collecting filelock
+#12 131.4   Downloading filelock-3.18.0-py3-none-any.whl (16 kB)
+#12 131.5 Collecting antlr4-python3-runtime==4.8
+#12 131.6   Downloading antlr4-python3-runtime-4.8.tar.gz (112 kB)
+#12 131.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 112.4/112.4 KB 12.5 MB/s eta 0:00:00
+#12 131.6   Preparing metadata (setup.py): started
+#12 131.7   Preparing metadata (setup.py): finished with status 'done'
+#12 131.9 Collecting mdurl~=0.1
+#12 131.9   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#12 132.0 Collecting linkify-it-py<3,>=1
+#12 132.1   Downloading linkify_it_py-2.0.3-py3-none-any.whl (19 kB)
+#12 132.1 Collecting mdit-py-plugins<=0.3.3
+#12 132.1   Downloading mdit_py_plugins-0.3.2-py3-none-any.whl (50 kB)
+#12 132.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.4/50.4 KB 13.9 MB/s eta 0:00:00
+#12 132.2   Downloading mdit_py_plugins-0.3.1-py3-none-any.whl (46 kB)
+#12 132.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.5/46.5 KB 14.3 MB/s eta 0:00:00
+#12 132.3   Downloading mdit_py_plugins-0.3.0-py3-none-any.whl (43 kB)
+#12 132.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 43.7/43.7 KB 14.2 MB/s eta 0:00:00
+#12 132.4   Downloading mdit_py_plugins-0.2.8-py3-none-any.whl (41 kB)
+#12 132.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.0/41.0 KB 14.8 MB/s eta 0:00:00
+#12 132.4   Downloading mdit_py_plugins-0.2.7-py3-none-any.whl (41 kB)
+#12 132.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.0/41.0 KB 14.5 MB/s eta 0:00:00
+#12 132.5   Downloading mdit_py_plugins-0.2.6-py3-none-any.whl (39 kB)
+#12 132.6   Downloading mdit_py_plugins-0.2.5-py3-none-any.whl (39 kB)
+#12 132.7   Downloading mdit_py_plugins-0.2.4-py3-none-any.whl (39 kB)
+#12 132.7   Downloading mdit_py_plugins-0.2.3-py3-none-any.whl (39 kB)
+#12 132.8   Downloading mdit_py_plugins-0.2.2-py3-none-any.whl (39 kB)
+#12 132.9   Downloading mdit_py_plugins-0.2.1-py3-none-any.whl (38 kB)
+#12 133.0   Downloading mdit_py_plugins-0.2.0-py3-none-any.whl (38 kB)
+#12 133.0   Downloading mdit_py_plugins-0.1.0-py3-none-any.whl (37 kB)
+#12 133.1 INFO: pip is looking at multiple versions of markupsafe to determine which version is compatible with other requirements. This could take a while.
+#12 133.1 Collecting markupsafe
+#12 133.1   Downloading MarkupSafe-3.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (20 kB)
+#12 133.1 INFO: pip is looking at multiple versions of markdown-it-py[linkify] to determine which version is compatible with other requirements. This could take a while.
+#12 133.1 Collecting markdown-it-py[linkify]>=2.0.0
+#12 133.2   Downloading markdown_it_py-2.2.0-py3-none-any.whl (84 kB)
+#12 133.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.5/84.5 KB 12.9 MB/s eta 0:00:00
+#12 133.4 Collecting platformdirs>=2.5.0
+#12 133.4   Downloading platformdirs-4.3.8-py3-none-any.whl (18 kB)
+#12 133.6 Collecting urllib3<3,>=1.21.1
+#12 133.7   Downloading urllib3-2.4.0-py3-none-any.whl (128 kB)
+#12 133.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 128.7/128.7 KB 12.4 MB/s eta 0:00:00
+#12 133.9 Collecting charset-normalizer<4,>=2
+#12 133.9   Downloading charset_normalizer-3.4.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (149 kB)
+#12 134.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 149.5/149.5 KB 12.3 MB/s eta 0:00:00
+#12 134.1 Collecting portalocker
+#12 134.1   Downloading portalocker-3.1.1-py3-none-any.whl (19 kB)
+#12 134.6 Collecting lxml
+#12 134.6   Downloading lxml-5.4.0-cp310-cp310-manylinux_2_28_x86_64.whl (5.1 MB)
+#12 135.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.1/5.1 MB 11.7 MB/s eta 0:00:00
+#12 135.3 Collecting frozenlist>=1.1.1
+#12 135.4   Downloading frozenlist-1.6.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (287 kB)
+#12 135.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 287.3/287.3 KB 12.0 MB/s eta 0:00:00
+#12 135.5 Collecting async-timeout<6.0,>=4.0
+#12 135.6   Downloading async_timeout-5.0.1-py3-none-any.whl (6.2 kB)
+#12 136.0 Collecting multidict<7.0,>=4.5
+#12 136.1   Downloading multidict-6.4.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (219 kB)
+#12 136.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 219.8/219.8 KB 12.0 MB/s eta 0:00:00
+#12 136.2 Collecting attrs>=17.3.0
+#12 136.2   Downloading attrs-25.3.0-py3-none-any.whl (63 kB)
+#12 136.2      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 63.8/63.8 KB 12.9 MB/s eta 0:00:00
+#12 136.3 Collecting aiohappyeyeballs>=2.3.0
+#12 136.4   Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+#12 137.0 Collecting yarl<2.0,>=1.17.0
+#12 137.0   Downloading yarl-1.20.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (333 kB)
+#12 137.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 333.9/333.9 KB 12.0 MB/s eta 0:00:00
+#12 137.1 Collecting aiosignal>=1.1.2
+#12 137.2   Downloading aiosignal-1.3.2-py2.py3-none-any.whl (7.6 kB)
+#12 137.3 Collecting propcache>=0.2.0
+#12 137.4   Downloading propcache-0.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (206 kB)
+#12 137.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 206.6/206.6 KB 12.2 MB/s eta 0:00:00
+#12 137.5 Collecting humanfriendly>=9.1
+#12 137.6   Downloading humanfriendly-10.0-py2.py3-none-any.whl (86 kB)
+#12 137.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 86.8/86.8 KB 12.8 MB/s eta 0:00:00
+#12 137.8 Collecting pytz>=2020.1
+#12 137.9   Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+#12 137.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 509.2/509.2 KB 11.9 MB/s eta 0:00:00
+#12 138.0 Collecting tzdata>=2022.7
+#12 138.1   Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+#12 138.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 347.8/347.8 KB 12.0 MB/s eta 0:00:00
+#12 138.2 Collecting networkx
+#12 138.3   Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+#12 138.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 11.8 MB/s eta 0:00:00
+#12 138.6 Collecting pytorch-triton-rocm<2.1,>=2.0.0
+#12 138.7   Downloading pytorch_triton_rocm-2.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (167.4 MB)
+#12 153.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 167.4/167.4 MB 11.7 MB/s eta 0:00:00
+#12 153.5 Collecting jsonschema-specifications>=2023.03.6
+#12 153.5   Downloading jsonschema_specifications-2025.4.1-py3-none-any.whl (18 kB)
+#12 154.2 Collecting rpds-py>=0.7.1
+#12 154.3   Downloading rpds_py-0.25.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (386 kB)
+#12 154.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 386.8/386.8 KB 11.9 MB/s eta 0:00:00
+#12 154.4 Collecting referencing>=0.28.4
+#12 154.5   Downloading referencing-0.36.2-py3-none-any.whl (26 kB)
+#12 155.0 Collecting cmake
+#12 155.0   Downloading cmake-4.0.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (27.9 MB)
+#12 157.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.9/27.9 MB 11.7 MB/s eta 0:00:00
+#12 157.7 Collecting lit
+#12 157.7   Downloading lit-18.1.8-py3-none-any.whl (96 kB)
+#12 157.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 96.4/96.4 KB 13.0 MB/s eta 0:00:00
+#12 158.0 Using legacy 'setup.py install' for ffmpy, since package 'wheel' is not installed.
+#12 158.0 Using legacy 'setup.py install' for antlr4-python3-runtime, since package 'wheel' is not installed.
+#12 158.0 Building wheels for collected packages: fairseq, pyworld
+#12 158.0   Building wheel for fairseq (pyproject.toml): started
+#12 170.5   Building wheel for fairseq (pyproject.toml): finished with status 'done'
+#12 170.5   Created wheel for fairseq: filename=fairseq-0.12.2-cp310-cp310-linux_x86_64.whl size=11293791 sha256=9e46180108e7738da416ff56a3aeb1597e0c27381c0fa8353d467c3e8acbb1bb
+#12 170.5   Stored in directory: /tmp/pip-ephem-wheel-cache-y54tsw36/wheels/e4/35/55/9c66f65ec7c83fd6fbc2b9502a0ac81b2448a1196159dacc32
+#12 170.5   Building wheel for pyworld (pyproject.toml): started
+#12 180.7   Building wheel for pyworld (pyproject.toml): finished with status 'done'
+#12 180.7   Created wheel for pyworld: filename=pyworld-0.3.2-cp310-cp310-linux_x86_64.whl size=898053 sha256=12e811bf8c24e1dba7c891bdbe189f40b2522f33a9959bf78c3589aa5921e5f1
+#12 180.7   Stored in directory: /tmp/pip-ephem-wheel-cache-y54tsw36/wheels/35/48/7e/e25bdd25fda4326d47010c157709436a6ee7a1423e18a24195
+#12 180.7 Successfully built fairseq pyworld
+#12 181.5 Installing collected packages: pytz, pydub, mpmath, lit, flatbuffers, ffmpy, faiss-cpu, bitarray, antlr4-python3-runtime, websockets, urllib3, uc-micro-py, tzdata, typing-extensions, traitlets, tqdm, tornado, threadpoolctl, tensorboard-data-server, tabulate, sympy, sniffio, six, semantic-version, rpds-py, regex, PyYAML, python-multipart, python-dotenv, pyparsing, pygments, pycparser, pyasn1, protobuf, propcache, portalocker, platformdirs, Pillow, packaging, orjson, numpy, networkx, narwhals, mdurl, markupsafe, Markdown, lxml, llvmlite, kiwisolver, json5, joblib, idna, humanfriendly, h11, grpcio, future, fsspec, frozenlist, fonttools, filelock, decorator, Cython, cycler, colorama, cmake, click, charset-normalizer, certifi, av, audioread, attrs, async-timeout, aria2, aiohappyeyeballs, aiofiles, absl-py, Werkzeug, uvicorn, tensorboardX, scipy, sacrebleu, requests, referencing, pyworld, python-dateutil, pydantic, pyasn1-modules, praat-parselmouth, omegaconf, numba, multidict, matplotlib-inline, markdown-it-py, linkify-it-py, Jinja2, httpcore, ffmpeg-python, exceptiongroup, contourpy, coloredlogs, cffi, aiosignal, yarl, tensorboard, soundfile, scikit-learn, resampy, pooch, pandas, onnxruntime-gpu, mdit-py-plugins, matplotlib, jsonschema-specifications, hydra-core, huggingface-hub, anyio, starlette, librosa, jsonschema, httpx, aiohttp, gradio-client, fastapi, altair, gradio, pytorch-triton-rocm, torch, torchaudio, fairseq
+#12 181.9   Running setup.py install for ffmpy: started
+#12 182.1   Running setup.py install for ffmpy: finished with status 'done'
+#12 182.6   Running setup.py install for antlr4-python3-runtime: started
+#12 182.8   Running setup.py install for antlr4-python3-runtime: finished with status 'done'
+#12 221.0 Successfully installed Cython-3.1.0 Jinja2-3.1.6 Markdown-3.8 Pillow-11.2.1 PyYAML-6.0.2 Werkzeug-3.1.3 absl-py-2.2.2 aiofiles-24.1.0 aiohappyeyeballs-2.6.1 aiohttp-3.11.18 aiosignal-1.3.2 altair-5.5.0 antlr4-python3-runtime-4.8 anyio-4.9.0 aria2-0.0.1b0 async-timeout-5.0.1 attrs-25.3.0 audioread-3.0.1 av-14.3.0 bitarray-3.4.1 certifi-2025.4.26 cffi-1.17.1 charset-normalizer-3.4.2 click-8.2.0 cmake-4.0.2 colorama-0.4.6 coloredlogs-15.0.1 contourpy-1.3.2 cycler-0.12.1 decorator-5.2.1 exceptiongroup-1.3.0 fairseq-0.12.2 faiss-cpu-1.7.3 fastapi-0.88.0 ffmpeg-python-0.2.0 ffmpy-0.3.1 filelock-3.18.0 flatbuffers-25.2.10 fonttools-4.58.0 frozenlist-1.6.0 fsspec-2025.3.2 future-1.0.0 gradio-3.34.0 gradio-client-1.10.1 grpcio-1.71.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 huggingface-hub-0.31.2 humanfriendly-10.0 hydra-core-1.0.7 idna-3.10 joblib-1.1.0 json5-0.12.0 jsonschema-4.23.0 jsonschema-specifications-2025.4.1 kiwisolver-1.4.8 librosa-0.9.1 linkify-it-py-2.0.3 lit-18.1.8 llvmlite-0.39.0 lxml-5.4.0 markdown-it-py-2.2.0 markupsafe-3.0.2 matplotlib-3.7.2 matplotlib-inline-0.1.7 mdit-py-plugins-0.3.3 mdurl-0.1.2 mpmath-1.3.0 multidict-6.4.3 narwhals-1.39.1 networkx-3.4.2 numba-0.56.4 numpy-1.23.5 omegaconf-2.0.6 onnxruntime-gpu-1.22.0 orjson-3.10.18 packaging-25.0 pandas-2.2.3 platformdirs-4.3.8 pooch-1.8.2 portalocker-3.1.1 praat-parselmouth-0.4.5 propcache-0.3.1 protobuf-4.25.3 pyasn1-0.6.1 pyasn1-modules-0.4.2 pycparser-2.22 pydantic-1.10.22 pydub-0.25.1 pygments-2.19.1 pyparsing-3.0.9 python-dateutil-2.9.0.post0 python-dotenv-1.1.0 python-multipart-0.0.20 pytorch-triton-rocm-2.0.2 pytz-2025.2 pyworld-0.3.2 referencing-0.36.2 regex-2024.11.6 requests-2.32.3 resampy-0.4.3 rpds-py-0.25.0 sacrebleu-2.5.1 scikit-learn-1.1.3 scipy-1.15.3 semantic-version-2.10.0 six-1.17.0 sniffio-1.3.1 soundfile-0.13.1 starlette-0.22.0 sympy-1.14.0 tabulate-0.9.0 tensorboard-2.19.0 tensorboard-data-server-0.7.2 tensorboardX-2.6.2.2 threadpoolctl-3.6.0 torch-2.0.0a0+gite9ebda2 torchaudio-2.0.2+31de77d tornado-6.5 tqdm-4.67.1 traitlets-5.14.3 typing-extensions-4.13.2 tzdata-2025.2 uc-micro-py-1.0.3 urllib3-2.4.0 uvicorn-0.34.2 websockets-15.0.1 yarl-1.20.0
+#12 DONE 228.9s
+
+#13 [ 9/13] RUN echo "** Installing RVC specific dependencies from requirements-amd.txt (cleaned) **" &&     ./.venv/bin/python -m pip install --no-cache-dir -r requirements-amd.txt -c .venv/constraints.txt
+#13 0.275 ** Installing RVC specific dependencies from requirements-amd.txt (cleaned) **
+#13 0.619 Requirement already satisfied: pydub>=0.25.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 1)) (0.25.1)
+#13 0.619 Requirement already satisfied: soundfile>=0.12.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 2)) (0.13.1)
+#13 0.620 Requirement already satisfied: ffmpeg-python>=0.2.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 3)) (0.2.0)
+#13 0.620 Requirement already satisfied: tensorboardX in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 4)) (2.6.2.2)
+#13 0.621 Requirement already satisfied: Jinja2>=3.1.2 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 5)) (3.1.6)
+#13 0.621 Requirement already satisfied: json5 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 6)) (0.12.0)
+#13 0.622 Requirement already satisfied: Markdown in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 7)) (3.8)
+#13 0.622 Requirement already satisfied: matplotlib>=3.7.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 8)) (3.7.2)
+#13 0.623 Requirement already satisfied: matplotlib-inline>=0.1.3 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 9)) (0.1.7)
+#13 0.623 Requirement already satisfied: praat-parselmouth>=0.4.2 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 10)) (0.4.5)
+#13 0.624 Requirement already satisfied: Pillow>=9.1.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 11)) (11.2.1)
+#13 0.624 Requirement already satisfied: resampy>=0.4.2 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 12)) (0.4.3)
+#13 0.624 Requirement already satisfied: scikit-learn in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 13)) (1.1.3)
+#13 0.625 Requirement already satisfied: tensorboard in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 14)) (2.19.0)
+#13 0.625 Requirement already satisfied: tqdm>=4.63.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 15)) (4.67.1)
+#13 0.625 Requirement already satisfied: tornado>=6.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 16)) (6.5)
+#13 0.626 Requirement already satisfied: Werkzeug>=2.2.3 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 17)) (3.1.3)
+#13 0.626 Requirement already satisfied: uc-micro-py>=1.0.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 18)) (1.0.3)
+#13 0.627 Requirement already satisfied: sympy>=1.11.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 19)) (1.14.0)
+#13 0.627 Requirement already satisfied: tabulate>=0.8.10 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 20)) (0.9.0)
+#13 0.628 Requirement already satisfied: PyYAML>=6.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 21)) (6.0.2)
+#13 0.628 Requirement already satisfied: pyasn1>=0.4.8 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 22)) (0.6.1)
+#13 0.629 Requirement already satisfied: pyasn1-modules>=0.2.8 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 23)) (0.4.2)
+#13 0.629 Requirement already satisfied: fsspec>=2022.11.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 24)) (2025.3.2)
+#13 0.630 Requirement already satisfied: absl-py>=1.2.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 25)) (2.2.2)
+#13 0.630 Requirement already satisfied: audioread in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 26)) (3.0.1)
+#13 0.630 Requirement already satisfied: uvicorn>=0.21.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 27)) (0.34.2)
+#13 0.631 Requirement already satisfied: colorama>=0.4.5 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 28)) (0.4.6)
+#13 0.631 Requirement already satisfied: httpx in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 29)) (0.28.1)
+#13 0.631 Requirement already satisfied: fastapi==0.88 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 30)) (0.88.0)
+#13 0.632 Requirement already satisfied: ffmpy==0.3.1 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 31)) (0.3.1)
+#13 0.632 Requirement already satisfied: python-dotenv>=1.0.0 in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 32)) (1.1.0)
+#13 0.633 Requirement already satisfied: av in ./.venv/lib/python3.10/site-packages (from -r requirements-amd.txt (line 33)) (14.3.0)
+#13 0.660 Requirement already satisfied: starlette==0.22.0 in ./.venv/lib/python3.10/site-packages (from fastapi==0.88->-r requirements-amd.txt (line 30)) (0.22.0)
+#13 0.660 Requirement already satisfied: pydantic!=1.7,!=1.7.1,!=1.7.2,!=1.7.3,!=1.8,!=1.8.1,<2.0.0,>=1.6.2 in ./.venv/lib/python3.10/site-packages (from fastapi==0.88->-r requirements-amd.txt (line 30)) (1.10.22)
+#13 0.665 Requirement already satisfied: anyio<5,>=3.4.0 in ./.venv/lib/python3.10/site-packages (from starlette==0.22.0->fastapi==0.88->-r requirements-amd.txt (line 30)) (4.9.0)
+#13 0.667 Requirement already satisfied: numpy in ./.venv/lib/python3.10/site-packages (from soundfile>=0.12.1->-r requirements-amd.txt (line 2)) (1.23.5)
+#13 0.668 Requirement already satisfied: cffi>=1.0 in ./.venv/lib/python3.10/site-packages (from soundfile>=0.12.1->-r requirements-amd.txt (line 2)) (1.17.1)
+#13 0.672 Requirement already satisfied: future in ./.venv/lib/python3.10/site-packages (from ffmpeg-python>=0.2.0->-r requirements-amd.txt (line 3)) (1.0.0)
+#13 0.674 Requirement already satisfied: protobuf>=3.20 in ./.venv/lib/python3.10/site-packages (from tensorboardX->-r requirements-amd.txt (line 4)) (4.25.3)
+#13 0.675 Requirement already satisfied: packaging in ./.venv/lib/python3.10/site-packages (from tensorboardX->-r requirements-amd.txt (line 4)) (25.0)
+#13 0.677 Requirement already satisfied: MarkupSafe>=2.0 in ./.venv/lib/python3.10/site-packages (from Jinja2>=3.1.2->-r requirements-amd.txt (line 5)) (3.0.2)
+#13 0.697 Requirement already satisfied: contourpy>=1.0.1 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (1.3.2)
+#13 0.697 Requirement already satisfied: pyparsing<3.1,>=2.3.1 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (3.0.9)
+#13 0.698 Requirement already satisfied: python-dateutil>=2.7 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (2.9.0.post0)
+#13 0.698 Requirement already satisfied: fonttools>=4.22.0 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (4.58.0)
+#13 0.699 Requirement already satisfied: kiwisolver>=1.0.1 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (1.4.8)
+#13 0.699 Requirement already satisfied: cycler>=0.10 in ./.venv/lib/python3.10/site-packages (from matplotlib>=3.7.0->-r requirements-amd.txt (line 8)) (0.12.1)
+#13 0.701 Requirement already satisfied: traitlets in ./.venv/lib/python3.10/site-packages (from matplotlib-inline>=0.1.3->-r requirements-amd.txt (line 9)) (5.14.3)
+#13 0.720 Requirement already satisfied: numba>=0.53 in ./.venv/lib/python3.10/site-packages (from resampy>=0.4.2->-r requirements-amd.txt (line 12)) (0.56.4)
+#13 0.750 Requirement already satisfied: threadpoolctl>=2.0.0 in ./.venv/lib/python3.10/site-packages (from scikit-learn->-r requirements-amd.txt (line 13)) (3.6.0)
+#13 0.750 Requirement already satisfied: joblib>=1.0.0 in ./.venv/lib/python3.10/site-packages (from scikit-learn->-r requirements-amd.txt (line 13)) (1.1.0)
+#13 0.751 Requirement already satisfied: scipy>=1.3.2 in ./.venv/lib/python3.10/site-packages (from scikit-learn->-r requirements-amd.txt (line 13)) (1.15.3)
+#13 0.757 Requirement already satisfied: setuptools>=41.0.0 in ./.venv/lib/python3.10/site-packages (from tensorboard->-r requirements-amd.txt (line 14)) (59.6.0)
+#13 0.757 Requirement already satisfied: six>1.9 in ./.venv/lib/python3.10/site-packages (from tensorboard->-r requirements-amd.txt (line 14)) (1.17.0)
+#13 0.758 Requirement already satisfied: grpcio>=1.48.2 in ./.venv/lib/python3.10/site-packages (from tensorboard->-r requirements-amd.txt (line 14)) (1.71.0)
+#13 0.758 Requirement already satisfied: tensorboard-data-server<0.8.0,>=0.7.0 in ./.venv/lib/python3.10/site-packages (from tensorboard->-r requirements-amd.txt (line 14)) (0.7.2)
+#13 0.774 Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./.venv/lib/python3.10/site-packages (from sympy>=1.11.1->-r requirements-amd.txt (line 19)) (1.3.0)
+#13 0.854 Requirement already satisfied: typing-extensions>=4.0 in ./.venv/lib/python3.10/site-packages (from uvicorn>=0.21.1->-r requirements-amd.txt (line 27)) (4.13.2)
+#13 0.854 Requirement already satisfied: click>=7.0 in ./.venv/lib/python3.10/site-packages (from uvicorn>=0.21.1->-r requirements-amd.txt (line 27)) (8.2.0)
+#13 0.855 Requirement already satisfied: h11>=0.8 in ./.venv/lib/python3.10/site-packages (from uvicorn>=0.21.1->-r requirements-amd.txt (line 27)) (0.16.0)
+#13 0.865 Requirement already satisfied: httpcore==1.* in ./.venv/lib/python3.10/site-packages (from httpx->-r requirements-amd.txt (line 29)) (1.0.9)
+#13 0.865 Requirement already satisfied: certifi in ./.venv/lib/python3.10/site-packages (from httpx->-r requirements-amd.txt (line 29)) (2025.4.26)
+#13 0.865 Requirement already satisfied: idna in ./.venv/lib/python3.10/site-packages (from httpx->-r requirements-amd.txt (line 29)) (3.10)
+#13 0.888 Requirement already satisfied: exceptiongroup>=1.0.2 in ./.venv/lib/python3.10/site-packages (from anyio<5,>=3.4.0->starlette==0.22.0->fastapi==0.88->-r requirements-amd.txt (line 30)) (1.3.0)
+#13 0.889 Requirement already satisfied: sniffio>=1.1 in ./.venv/lib/python3.10/site-packages (from anyio<5,>=3.4.0->starlette==0.22.0->fastapi==0.88->-r requirements-amd.txt (line 30)) (1.3.1)
+#13 0.891 Requirement already satisfied: pycparser in ./.venv/lib/python3.10/site-packages (from cffi>=1.0->soundfile>=0.12.1->-r requirements-amd.txt (line 2)) (2.22)
+#13 0.954 Requirement already satisfied: llvmlite<0.40,>=0.39.0dev0 in ./.venv/lib/python3.10/site-packages (from numba>=0.53->resampy>=0.4.2->-r requirements-amd.txt (line 12)) (0.39.0)
+#13 DONE 1.5s
+
+#14 [10/13] RUN echo "** Installing other essential dependencies into venv **" &&     ./.venv/bin/python -m pip install --no-cache-dir     -c .venv/constraints.txt     Cython scipy librosa==0.10.2 pydub>=0.25.1 soundfile>=0.12.1 ffmpeg-python>=0.2.0     tensorboardX Jinja2>=3.1.2 json5 Markdown matplotlib>=3.7.2 matplotlib-inline>=0.1.3     praat-parselmouth>=0.4.2 Pillow>=9.1.1 resampy>=0.4.2 scikit-learn tensorboard     tqdm>=4.63.1 tornado>=6.1 Werkzeug>=2.2.3 uc-micro-py>=1.0.1 sympy>=1.11.1     tabulate>=0.8.10 PyYAML>=6.0 pyasn1>=0.4.8 pyasn1-modules>=0.2.8 fsspec>=2022.11.0     absl-py>=1.2.0 audioread uvicorn>=0.21.1 colorama>=0.4.5 httpx fastapi==0.88     ffmpy==0.3.1 python-dotenv>=1.0.0 av torchcrepe==0.0.23 torchfcpe joblib==1.1.0     numba==0.56.4 llvmlite==0.39.0 fairseq==0.12.2 faiss-cpu==1.7.3 gradio==3.34.0     pyworld==0.3.2     onnxruntime     &&     echo "Essential dependencies installed into venv."
+#14 0.325 ** Installing other essential dependencies into venv **
+#14 29.01 Essential dependencies installed into venv.
+#14 DONE 29.5s
+
+#15 [11/13] RUN chmod +x *.sh
+#15 DONE 0.3s
+
+#16 [12/13] COPY entrypoint_rvc.sh /entrypoint_rvc.sh
+#16 DONE 0.1s
+
+#17 [13/13] RUN chmod +x /entrypoint_rvc.sh
+#17 DONE 0.3s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 6.1s done
+#18 writing image sha256:82cba4b07b7982f4fe10b763433c00669d6d5279404da76625c19695d6c51bbf done
+#18 naming to docker.io/library/rvc_webui_rocm:5.4.2 done
+#18 DONE 6.2s

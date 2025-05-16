@@ -1,0 +1,279 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 9.28kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/rocm542_gfx803_base:5.4.2
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/14] FROM docker.io/library/rocm542_gfx803_base:5.4.2
+#4 DONE 0.0s
+
+#5 [ 3/14] WORKDIR /app
+#5 CACHED
+
+#6 [ 5/14] RUN python3 -m venv .venv # .venv /app altında oluşacak
+#6 CACHED
+
+#7 [ 2/14] RUN apt-get update -y &&     apt-get install -y --no-install-recommends         aria2         git wget curl ffmpeg     &&     apt-get clean && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 8/14] RUN echo "** Installing RVC dependencies from main requirements.txt (cleaned) **" &&     ./.venv/bin/python -m pip install --no-cache-dir -r requirements.txt -c .venv/constraints.txt
+#8 CACHED
+
+#9 [ 4/14] RUN echo "Cloning RVC repository..." &&     git clone https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git . &&     echo "RVC repository cloned into /app."
+#9 CACHED
+
+#10 [ 7/14] RUN echo "Processing RVC requirements files" &&     echo "Current directory: $(pwd)" && ls -la &&     if [ ! -f "requirements.txt" ]; then echo "ERROR: requirements.txt NOT FOUND in $(pwd)" >&2; exit 1; fi &&     if [ ! -f "requirements-amd.txt" ]; then echo "ERROR: requirements-amd.txt NOT FOUND in $(pwd)" >&2; exit 1; fi &&     echo "--- Original requirements.txt ---" && cat requirements.txt && echo "--- End ---" &&     echo "--- Original requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---" &&         sed -i -E '/^torch(vision|audio)?\s*(==|>=)?/d' requirements.txt &&     sed -i '/^fairseq @ /d' requirements.txt &&     sed -i '/^extension_/d' requirements.txt &&     sed -i "/; sys_platform 'win32'/d" requirements.txt &&     sed -i "/; sys_platform 'darwin'/d" requirements.txt &&     echo "--- Cleaned main requirements.txt ---" && cat requirements.txt && echo "--- End ---" &&         sed -i -E '/^torch(vision|audio)?\\s*(==|>=)?/d' requirements-amd.txt &&     sed -i '/^tensorflow-rocm/d' requirements-amd.txt &&     sed -i '/^joblib/d' requirements-amd.txt &&     sed -i '/^numba/d' requirements-amd.txt &&     sed -i '/^numpy/d' requirements-amd.txt &&     sed -i '/^scipy/d' requirements-amd.txt &&     sed -i '/^librosa/d' requirements-amd.txt &&     sed -i '/^llvmlite/d' requirements-amd.txt &&     sed -i '/^fairseq/d' requirements-amd.txt &&     sed -i '/^faiss-cpu/d' requirements-amd.txt &&     sed -i '/^gradio/d' requirements-amd.txt &&     sed -i '/^Cython/d' requirements-amd.txt &&     sed -i '/^pyworld/d' requirements-amd.txt &&     sed -i '/^torchcrepe/d' requirements-amd.txt &&     sed -i '/^torchfcpe/d' requirements-amd.txt &&     sed -i '/^onnxruntime/d' requirements-amd.txt &&     sed -i "/; sys_platform 'darwin'/d" requirements-amd.txt &&     echo "--- Cleaned requirements-amd.txt ---" && cat requirements-amd.txt && echo "--- End ---"
+#10 CACHED
+
+#11 [ 6/14] RUN echo "** Creating constraints.txt **" &&     export PATH="/opt/rocm/bin:/opt/rocm/hip/bin:/root/.nvm/versions/node/v22.9.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" &&     PYTORCH_WHEEL_FILE_PATH=$(cat /opt/pytorch_wheel_name.txt) &&     TORCHVISION_WHEEL_FILE_PATH=$(cat /opt/torchvision_wheel_name.txt) &&     TORCHAUDIO_WHEEL_FILE_PATH=$(cat /opt/torchaudio_wheel_name.txt) &&     echo "torch @ file://${PYTORCH_WHEEL_FILE_PATH}" > .venv/constraints.txt &&     echo "torchvision @ file://${TORCHVISION_WHEEL_FILE_PATH}" >> .venv/constraints.txt &&     echo "torchaudio @ file://${TORCHAUDIO_WHEEL_FILE_PATH}" >> .venv/constraints.txt &&     echo "numpy==1.23.5" >> .venv/constraints.txt &&     echo "protobuf==4.25.3" >> .venv/constraints.txt &&     echo "matplotlib" >> .venv/constraints.txt &&     echo "joblib==1.1.0" >> .venv/constraints.txt &&     echo "numba==0.56.4" >> .venv/constraints.txt &&     echo "llvmlite==0.39.0" >> .venv/constraints.txt &&     echo "fairseq==0.12.2" >> .venv/constraints.txt &&     echo "faiss-cpu==1.7.3" >> .venv/constraints.txt &&     echo "gradio==3.34.0" >> .venv/constraints.txt &&     echo "pyworld==0.3.2" >> .venv/constraints.txt &&     echo "torchcrepe==0.0.23" >> .venv/constraints.txt &&     echo "torchfcpe" >> .venv/constraints.txt &&     echo "Contents of constraints.txt:" && cat .venv/constraints.txt
+#11 CACHED
+
+#12 [ 9/14] RUN echo "** Installing RVC specific dependencies from requirements-amd.txt (cleaned) **" &&     ./.venv/bin/python -m pip install --no-cache-dir -r requirements-amd.txt -c .venv/constraints.txt
+#12 CACHED
+
+#13 [internal] load build context
+#13 transferring context: 39B done
+#13 DONE 0.0s
+
+#14 [10/14] RUN echo "** Installing other essential dependencies into venv **" &&     ./.venv/bin/python -m pip install --no-cache-dir     -c .venv/constraints.txt     Cython scipy librosa==0.10.2 pydub>=0.25.1 soundfile>=0.12.1 ffmpeg-python>=0.2.0     tensorboardX Jinja2>=3.1.2 json5 Markdown matplotlib>=3.7.0 matplotlib-inline>=0.1.3     praat-parselmouth>=0.4.2 Pillow>=9.1.1 resampy>=0.4.2 scikit-learn tensorboard     tqdm>=4.63.1 tornado>=6.1 Werkzeug>=2.2.3 uc-micro-py>=1.0.1 sympy>=1.11.1     tabulate>=0.8.10 PyYAML>=6.0 pyasn1>=0.4.8 pyasn1-modules>=0.2.8 fsspec>=2022.11.0     absl-py>=1.2.0 audioread uvicorn>=0.21.1 colorama>=0.4.5 httpx fastapi==0.88     ffmpy==0.3.1 python-dotenv>=1.0.0 av torchcrepe==0.0.23 torchfcpe joblib==1.1.0     numba==0.56.4 llvmlite==0.39.0 fairseq==0.12.2 faiss-cpu==1.7.3 gradio==3.34.0     pyworld==0.3.2     onnxruntime     &&     echo "Essential dependencies installed into venv."
+#14 0.250 ** Installing other essential dependencies into venv **
+#14 29.45 Essential dependencies installed into venv.
+#14 DONE 30.0s
+
+#15 [11/14] RUN echo "** Downloading RVC pre-models **" &&     mkdir -p assets/pretrained_v2 assets/uvr5_weights assets/hubert assets/rmvpe &&     aria2c --console-log-level=error -c -x 16 -s 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/D40k.pth -d assets/pretrained_v2/ -o D40k.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/G40k.pth -d assets/pretrained_v2/ -o G40k.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/f0D40k.pth -d assets/pretrained_v2/ -o f0D40k.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/f0G40k.pth -d assets/pretrained_v2/ -o f0G40k.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP2-人声vocals+非人声instrumentals.pth -d assets/uvr5_weights/ -o HP2-人声vocals+非人声instrumentals.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP5-主旋律人声vocals+其他instrumentals.pth -d assets/uvr5_weights/ -o HP5-主旋律人声vocals+其他instrumentals.pth &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt -d assets/hubert -o hubert_base.pt &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/rmvpe.pt -d assets/rmvpe -o rmvpe.pt &&     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/rmvpe.onnx -d assets/rmvpe/ -o rmvpe.onnx &&     echo "RVC pre-models downloaded."
+#15 0.297 ** Downloading RVC pre-models **
+#15 15.09 [#049b59 1.0MiB/136MiB(0%) CN:16 DL:3.0MiB ETA:44s]
+#15 15.09 [#049b59 9.2MiB/136MiB(6%) CN:16 DL:7.0MiB ETA:17s]
+#15 15.09 [#049b59 18MiB/136MiB(13%) CN:16 DL:8.0MiB ETA:14s]
+#15 15.09 [#049b59 29MiB/136MiB(21%) CN:16 DL:9.0MiB ETA:11s]
+#15 15.09 [#049b59 37MiB/136MiB(27%) CN:16 DL:8.6MiB ETA:11s]
+#15 15.09 [#049b59 50MiB/136MiB(37%) CN:16 DL:9.5MiB ETA:8s]
+#15 15.09 [#049b59 61MiB/136MiB(45%) CN:16 DL:9.8MiB ETA:7s]
+#15 15.09 [#049b59 72MiB/136MiB(53%) CN:16 DL:9.9MiB ETA:6s]
+#15 15.09 [#049b59 84MiB/136MiB(62%) CN:16 DL:10MiB ETA:5s]
+#15 15.09 [#049b59 93MiB/136MiB(68%) CN:16 DL:10MiB ETA:4s]
+#15 15.09 [#049b59 104MiB/136MiB(76%) CN:16 DL:10MiB ETA:3s]
+#15 15.09 [#049b59 114MiB/136MiB(84%) CN:16 DL:10MiB ETA:2s]
+#15 15.09 [#049b59 126MiB/136MiB(93%) CN:16 DL:10MiB]
+#15 15.09 [#049b59 134MiB/136MiB(98%) CN:5 DL:10MiB]
+#15 15.09 
+#15 15.09 Download Results:
+#15 15.09 gid   |stat|avg speed  |path/URI
+#15 15.09 ======+====+===========+=======================================================
+#15 15.09 049b59|OK  |   9.8MiB/s|assets/pretrained_v2//D40k.pth
+#15 15.09 
+#15 15.09 Status Legend:
+#15 15.09 (OK):download completed.
+#15 24.53 [#2ab009 0.9MiB/69MiB(1%) CN:16 DL:2.4MiB ETA:28s]
+#15 24.53 [#2ab009 8.0MiB/69MiB(11%) CN:16 DL:5.9MiB ETA:10s]
+#15 24.53 [#2ab009 17MiB/69MiB(24%) CN:16 DL:7.2MiB ETA:7s]
+#15 24.53 [#2ab009 28MiB/69MiB(40%) CN:16 DL:8.4MiB ETA:4s]
+#15 24.53 [#2ab009 44MiB/69MiB(63%) CN:16 DL:10MiB ETA:2s]
+#15 24.53 [#2ab009 53MiB/69MiB(76%) CN:16 DL:10MiB ETA:1s]
+#15 24.53 [#2ab009 62MiB/69MiB(89%) CN:16 DL:9.8MiB]
+#15 24.53 [#2ab009 68MiB/69MiB(98%) CN:3 DL:9.3MiB]
+#15 24.53 [#2ab009 69MiB/69MiB(99%) CN:1 DL:8.3MiB]
+#15 24.53 
+#15 24.53 Download Results:
+#15 24.53 gid   |stat|avg speed  |path/URI
+#15 24.53 ======+====+===========+=======================================================
+#15 24.53 2ab009|OK  |   8.0MiB/s|assets/pretrained_v2//G40k.pth
+#15 24.53 
+#15 24.53 Status Legend:
+#15 24.53 (OK):download completed.
+#15 39.87 [#5e8395 736KiB/136MiB(0%) CN:16 DL:1.9MiB ETA:1m10s]
+#15 39.87 [#5e8395 8.4MiB/136MiB(6%) CN:16 DL:6.2MiB ETA:20s]
+#15 39.87 [#5e8395 18MiB/136MiB(13%) CN:16 DL:7.9MiB ETA:14s]
+#15 39.87 [#5e8395 28MiB/136MiB(21%) CN:16 DL:8.6MiB ETA:12s]
+#15 39.87 [#5e8395 42MiB/136MiB(31%) CN:16 DL:9.8MiB ETA:9s]
+#15 39.87 [#5e8395 53MiB/136MiB(39%) CN:16 DL:10MiB ETA:8s]
+#15 39.87 [#5e8395 63MiB/136MiB(46%) CN:16 DL:10MiB ETA:7s]
+#15 39.87 [#5e8395 74MiB/136MiB(54%) CN:16 DL:10MiB ETA:6s]
+#15 39.87 [#5e8395 85MiB/136MiB(62%) CN:16 DL:10MiB ETA:4s]
+#15 39.87 [#5e8395 95MiB/136MiB(69%) CN:16 DL:10MiB ETA:4s]
+#15 39.87 [#5e8395 106MiB/136MiB(78%) CN:16 DL:10MiB ETA:2s]
+#15 39.87 [#5e8395 118MiB/136MiB(86%) CN:16 DL:11MiB ETA:1s]
+#15 39.87 [#5e8395 128MiB/136MiB(94%) CN:15 DL:11MiB]
+#15 39.87 [#5e8395 135MiB/136MiB(99%) CN:3 DL:10MiB]
+#15 39.87 [#5e8395 136MiB/136MiB(99%) CN:1 DL:9.3MiB]
+#15 39.87 
+#15 39.87 Download Results:
+#15 39.87 gid   |stat|avg speed  |path/URI
+#15 39.87 ======+====+===========+=======================================================
+#15 39.87 5e8395|OK  |   9.4MiB/s|assets/pretrained_v2//f0D40k.pth
+#15 39.87 
+#15 39.87 Status Legend:
+#15 39.87 (OK):download completed.
+#15 49.21 [#c4f322 656KiB/69MiB(0%) CN:16 DL:1.7MiB ETA:40s]
+#15 49.21 [#c4f322 8.5MiB/69MiB(12%) CN:16 DL:6.3MiB ETA:9s]
+#15 49.21 [#c4f322 18MiB/69MiB(26%) CN:16 DL:7.8MiB ETA:6s]
+#15 49.21 [#c4f322 30MiB/69MiB(44%) CN:16 DL:9.2MiB ETA:4s]
+#15 49.21 [#c4f322 40MiB/69MiB(57%) CN:16 DL:9.2MiB ETA:3s]
+#15 49.21 [#c4f322 53MiB/69MiB(76%) CN:16 DL:10MiB ETA:1s]
+#15 49.21 [#c4f322 63MiB/69MiB(90%) CN:14 DL:9.9MiB]
+#15 49.21 [#c4f322 68MiB/69MiB(98%) CN:3 DL:9.3MiB]
+#15 49.21 [#c4f322 69MiB/69MiB(99%) CN:2 DL:8.3MiB]
+#15 49.21 
+#15 49.21 Download Results:
+#15 49.21 gid   |stat|avg speed  |path/URI
+#15 49.21 ======+====+===========+=======================================================
+#15 49.21 c4f322|OK  |   8.1MiB/s|assets/pretrained_v2//f0G40k.pth
+#15 49.21 
+#15 49.21 Status Legend:
+#15 49.21 (OK):download completed.
+#15 59.76 [#e21d2c 736KiB/60MiB(1%) CN:16 DL:2.0MiB ETA:28s]
+#15 59.76 [#e21d2c 7.5MiB/60MiB(12%) CN:16 DL:5.6MiB ETA:9s]
+#15 59.76 [#e21d2c 18MiB/60MiB(29%) CN:16 DL:7.7MiB ETA:5s]
+#15 59.76 [#e21d2c 29MiB/60MiB(48%) CN:16 DL:8.8MiB ETA:3s]
+#15 59.76 [#e21d2c 41MiB/60MiB(68%) CN:16 DL:9.6MiB ETA:1s]
+#15 59.76 [#e21d2c 51MiB/60MiB(85%) CN:16 DL:9.7MiB]
+#15 59.76 [#e21d2c 58MiB/60MiB(97%) CN:6 DL:9.3MiB]
+#15 59.76 [#e21d2c 60MiB/60MiB(99%) CN:1 DL:8.2MiB]
+#15 59.76 [#e21d2c 60MiB/60MiB(99%) CN:1 DL:7.2MiB]
+#15 59.76 [#e21d2c 60MiB/60MiB(99%) CN:1 DL:6.4MiB]
+#15 59.76 
+#15 59.76 Download Results:
+#15 59.76 gid   |stat|avg speed  |path/URI
+#15 59.76 ======+====+===========+=======================================================
+#15 59.76 e21d2c|OK  |   6.2MiB/s|assets/uvr5_weights//HP2-人声vocals+非人声instrumentals.pth
+#15 59.76 
+#15 59.76 Status Legend:
+#15 59.76 (OK):download completed.
+#15 70.27 [#7cbdef 1.1MiB/60MiB(1%) CN:16 DL:3.0MiB ETA:19s]
+#15 70.27 [#7cbdef 9.3MiB/60MiB(15%) CN:16 DL:6.8MiB ETA:7s]
+#15 70.27 [#7cbdef 17MiB/60MiB(28%) CN:16 DL:7.4MiB ETA:5s]
+#15 70.27 [#7cbdef 31MiB/60MiB(52%) CN:16 DL:9.3MiB ETA:3s]
+#15 70.27 [#7cbdef 42MiB/60MiB(70%) CN:16 DL:9.7MiB ETA:1s]
+#15 70.27 [#7cbdef 50MiB/60MiB(83%) CN:16 DL:9.3MiB ETA:1s]
+#15 70.27 [#7cbdef 58MiB/60MiB(96%) CN:7 DL:9.1MiB]
+#15 70.27 [#7cbdef 60MiB/60MiB(99%) CN:2 DL:8.1MiB]
+#15 70.27 [#7cbdef 60MiB/60MiB(99%) CN:1 DL:7.1MiB]
+#15 70.27 [#7cbdef 60MiB/60MiB(99%) CN:1 DL:6.4MiB]
+#15 70.27 
+#15 70.27 Download Results:
+#15 70.27 gid   |stat|avg speed  |path/URI
+#15 70.27 ======+====+===========+=======================================================
+#15 70.27 7cbdef|OK  |   6.2MiB/s|assets/uvr5_weights//HP5-主旋律人声vocals+其他instrumentals.pth
+#15 70.27 
+#15 70.27 Status Legend:
+#15 70.27 (OK):download completed.
+#15 90.98 [#be7665 1.1MiB/180MiB(0%) CN:16 DL:3.3MiB ETA:54s]
+#15 90.98 [#be7665 9.0MiB/180MiB(4%) CN:16 DL:6.8MiB ETA:25s]
+#15 90.98 [#be7665 20MiB/180MiB(11%) CN:16 DL:8.6MiB ETA:18s]
+#15 90.98 [#be7665 30MiB/180MiB(16%) CN:16 DL:9.1MiB ETA:16s]
+#15 90.98 [#be7665 43MiB/180MiB(23%) CN:16 DL:10MiB ETA:13s]
+#15 90.98 [#be7665 49MiB/180MiB(27%) CN:16 DL:9.2MiB ETA:14s]
+#15 90.98 [#be7665 58MiB/180MiB(32%) CN:16 DL:9.2MiB ETA:13s]
+#15 90.98 [#be7665 69MiB/180MiB(38%) CN:16 DL:9.5MiB ETA:11s]
+#15 90.98 [#be7665 80MiB/180MiB(44%) CN:16 DL:9.7MiB ETA:10s]
+#15 90.98 [#be7665 90MiB/180MiB(50%) CN:16 DL:9.8MiB ETA:9s]
+#15 90.98 [#be7665 100MiB/180MiB(55%) CN:16 DL:10MiB ETA:8s]
+#15 90.98 [#be7665 111MiB/180MiB(61%) CN:16 DL:10MiB ETA:6s]
+#15 90.98 [#be7665 123MiB/180MiB(68%) CN:16 DL:10MiB ETA:5s]
+#15 90.98 [#be7665 134MiB/180MiB(74%) CN:16 DL:10MiB ETA:4s]
+#15 90.98 [#be7665 146MiB/180MiB(80%) CN:16 DL:10MiB ETA:3s]
+#15 90.98 [#be7665 156MiB/180MiB(86%) CN:16 DL:11MiB ETA:2s]
+#15 90.98 [#be7665 168MiB/180MiB(93%) CN:16 DL:11MiB ETA:1s]
+#15 90.98 [#be7665 176MiB/180MiB(97%) CN:9 DL:10MiB]
+#15 90.98 [#be7665 179MiB/180MiB(99%) CN:2 DL:9.8MiB]
+#15 90.98 [#be7665 180MiB/180MiB(99%) CN:1 DL:8.9MiB]
+#15 90.98 
+#15 90.98 Download Results:
+#15 90.98 gid   |stat|avg speed  |path/URI
+#15 90.98 ======+====+===========+=======================================================
+#15 90.98 be7665|OK  |   9.2MiB/s|assets/hubert/hubert_base.pt
+#15 90.98 
+#15 90.98 Status Legend:
+#15 90.98 (OK):download completed.
+#15 108.7 [#a11f34 1.2MiB/172MiB(0%) CN:16 DL:3.0MiB ETA:55s]
+#15 108.7 [#a11f34 9.3MiB/172MiB(5%) CN:16 DL:6.8MiB ETA:23s]
+#15 108.7 [#a11f34 17MiB/172MiB(9%) CN:16 DL:7.2MiB ETA:21s]
+#15 108.7 [#a11f34 32MiB/172MiB(18%) CN:16 DL:9.6MiB ETA:14s]
+#15 108.7 [#a11f34 44MiB/172MiB(25%) CN:16 DL:10MiB ETA:12s]
+#15 108.7 [#a11f34 54MiB/172MiB(31%) CN:16 DL:10MiB ETA:11s]
+#15 108.7 [#a11f34 64MiB/172MiB(37%) CN:16 DL:10MiB ETA:10s]
+#15 108.7 [#a11f34 74MiB/172MiB(43%) CN:16 DL:10MiB ETA:9s]
+#15 108.7 [#a11f34 86MiB/172MiB(49%) CN:16 DL:10MiB ETA:8s]
+#15 108.7 [#a11f34 97MiB/172MiB(56%) CN:16 DL:10MiB ETA:7s]
+#15 108.7 [#a11f34 107MiB/172MiB(62%) CN:16 DL:10MiB ETA:6s]
+#15 108.7 [#a11f34 119MiB/172MiB(69%) CN:16 DL:11MiB ETA:4s]
+#15 108.7 [#a11f34 129MiB/172MiB(75%) CN:16 DL:10MiB ETA:3s]
+#15 108.7 [#a11f34 141MiB/172MiB(82%) CN:16 DL:10MiB ETA:2s]
+#15 108.7 [#a11f34 152MiB/172MiB(88%) CN:16 DL:10MiB ETA:1s]
+#15 108.7 [#a11f34 162MiB/172MiB(94%) CN:16 DL:11MiB]
+#15 108.7 [#a11f34 171MiB/172MiB(99%) CN:4 DL:10MiB]
+#15 108.7 
+#15 108.7 Download Results:
+#15 108.7 gid   |stat|avg speed  |path/URI
+#15 108.7 ======+====+===========+=======================================================
+#15 108.7 a11f34|OK  |    10MiB/s|assets/rmvpe/rmvpe.pt
+#15 108.7 
+#15 108.7 Status Legend:
+#15 108.7 (OK):download completed.
+#15 143.9 [#365402 64KiB/344MiB(0%) CN:16 DL:1.1MiB ETA:5m4s]
+#15 143.9 [#365402 4.7MiB/344MiB(1%) CN:16 DL:4.5MiB ETA:1m14s]
+#15 143.9 [#365402 14MiB/344MiB(4%) CN:16 DL:6.9MiB ETA:47s]
+#15 143.9 [#365402 26MiB/344MiB(7%) CN:16 DL:8.6MiB ETA:36s]
+#15 143.9 [#365402 36MiB/344MiB(10%) CN:16 DL:9.1MiB ETA:33s]
+#15 143.9 [#365402 48MiB/344MiB(14%) CN:16 DL:9.6MiB ETA:30s]
+#15 143.9 [#365402 57MiB/344MiB(16%) CN:16 DL:9.5MiB ETA:29s]
+#15 143.9 [#365402 69MiB/344MiB(20%) CN:16 DL:9.9MiB ETA:27s]
+#15 143.9 [#365402 79MiB/344MiB(23%) CN:16 DL:9.9MiB ETA:26s]
+#15 143.9 [#365402 89MiB/344MiB(25%) CN:16 DL:9.9MiB ETA:25s]
+#15 143.9 [#365402 101MiB/344MiB(29%) CN:16 DL:10MiB ETA:24s]
+#15 143.9 [#365402 112MiB/344MiB(32%) CN:16 DL:10MiB ETA:21s]
+#15 143.9 [#365402 123MiB/344MiB(35%) CN:16 DL:11MiB ETA:20s]
+#15 143.9 [#365402 135MiB/344MiB(39%) CN:16 DL:10MiB ETA:19s]
+#15 143.9 [#365402 145MiB/344MiB(42%) CN:16 DL:11MiB ETA:18s]
+#15 143.9 [#365402 157MiB/344MiB(45%) CN:16 DL:10MiB ETA:17s]
+#15 143.9 [#365402 168MiB/344MiB(48%) CN:16 DL:11MiB ETA:15s]
+#15 143.9 [#365402 179MiB/344MiB(52%) CN:16 DL:11MiB ETA:14s]
+#15 143.9 [#365402 188MiB/344MiB(54%) CN:16 DL:11MiB ETA:14s]
+#15 143.9 [#365402 200MiB/344MiB(58%) CN:16 DL:11MiB ETA:12s]
+#15 143.9 [#365402 211MiB/344MiB(61%) CN:16 DL:11MiB ETA:11s]
+#15 143.9 [#365402 223MiB/344MiB(64%) CN:16 DL:11MiB ETA:10s]
+#15 143.9 [#365402 233MiB/344MiB(67%) CN:16 DL:11MiB ETA:10s]
+#15 143.9 [#365402 244MiB/344MiB(70%) CN:16 DL:11MiB ETA:9s]
+#15 143.9 [#365402 255MiB/344MiB(73%) CN:16 DL:11MiB ETA:8s]
+#15 143.9 [#365402 266MiB/344MiB(77%) CN:16 DL:11MiB ETA:7s]
+#15 143.9 [#365402 276MiB/344MiB(80%) CN:16 DL:10MiB ETA:6s]
+#15 143.9 [#365402 287MiB/344MiB(83%) CN:16 DL:10MiB ETA:5s]
+#15 143.9 [#365402 296MiB/344MiB(86%) CN:16 DL:10MiB ETA:4s]
+#15 143.9 [#365402 308MiB/344MiB(89%) CN:16 DL:10MiB ETA:3s]
+#15 143.9 [#365402 319MiB/344MiB(92%) CN:16 DL:10MiB ETA:2s]
+#15 143.9 [#365402 331MiB/344MiB(96%) CN:16 DL:10MiB ETA:1s]
+#15 143.9 [#365402 341MiB/344MiB(98%) CN:8 DL:10MiB]
+#15 143.9 [#365402 344MiB/344MiB(99%) CN:1 DL:10MiB]
+#15 143.9 
+#15 143.9 Download Results:
+#15 143.9 gid   |stat|avg speed  |path/URI
+#15 143.9 ======+====+===========+=======================================================
+#15 143.9 365402|OK  |    10MiB/s|assets/rmvpe//rmvpe.onnx
+#15 143.9 
+#15 143.9 Status Legend:
+#15 143.9 (OK):download completed.
+#15 143.9 RVC pre-models downloaded.
+#15 DONE 144.1s
+
+#16 [12/14] RUN chmod +x *.sh
+#16 DONE 0.4s
+
+#17 [13/14] COPY entrypoint_rvc.sh /entrypoint_rvc.sh
+#17 DONE 0.1s
+
+#18 [14/14] RUN chmod +x /entrypoint_rvc.sh
+#18 DONE 0.5s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 7.4s done
+#19 writing image sha256:8059e06bc615570698abba5a23913c7a4ef0549580f36eaec824452c4d3102e0 done
+#19 naming to docker.io/library/rvc_webui_rocm:5.4.2 0.0s done
+#19 DONE 7.5s
