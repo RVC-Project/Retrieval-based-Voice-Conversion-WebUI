@@ -1,0 +1,5 @@
+/RVC_Edison
+├── dataset/
+│   └── dataset.wav  ← tu voz renombrada
+├── vocals/
+│   └── Mi_Loca_vocals.mp3 ← las voces instrumental
