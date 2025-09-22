@@ -1,3 +1,7 @@
+import sys
+sys.path.append('D:/GitHub/Retrieval-based-Voice-Conversion-WebUI')
+
+
 from io import BytesIO
 import os
 from typing import List, Optional, Tuple
@@ -6,16 +10,7 @@ import torch
 
 from infer.lib import jit
 
-try:
-    # Fix "Torch not compiled with CUDA enabled"
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
-
-        ipex_init()
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
 import torch.nn as nn
 import torch.nn.functional as F
 from librosa.util import normalize, pad_center, tiny
@@ -342,7 +337,7 @@ class Decoder(nn.Module):
 class DeepUnet(nn.Module):
     def __init__(
         self,
-        kernel_size,
+        kernel_size,    
         n_blocks,
         en_de_layers=5,
         inter_layers=4,
@@ -646,25 +641,241 @@ class RMVPE:
         return devided
 
 
-if __name__ == "__main__":
-    import librosa
-    import soundfile as sf
 
-    audio, sampling_rate = sf.read(r"C:\Users\liujing04\Desktop\Z\冬之花clip1.wav")
-    if len(audio.shape) > 1:
-        audio = librosa.to_mono(audio.transpose(1, 0))
-    audio_bak = audio.copy()
+
+
+
+# Mel 频谱计算类（TorchScript 兼容）
+class MelSpectrogramTS(torch.nn.Module):
+    def __init__(
+        self,
+        n_mel_channels=128,
+        sampling_rate=16000,
+        win_length=1024,
+        hop_length=160,
+        n_fft=1024,
+        mel_fmin=30,
+        mel_fmax=8000,
+        clamp=1e-5
+    ):
+        super().__init__()
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        self.win_length = win_length
+        self.sampling_rate = sampling_rate
+        self.n_mel_channels = n_mel_channels
+        self.clamp = clamp
+        
+        # 计算 Mel 滤波器组
+        mel_basis = mel(
+            sr=sampling_rate,
+            n_fft=n_fft,
+            n_mels=n_mel_channels,
+            fmin=mel_fmin,
+            fmax=mel_fmax,
+            htk=True,
+        )
+        mel_basis = torch.from_numpy(mel_basis).float()
+        self.register_buffer("mel_basis", mel_basis)
+        
+        # 预计算汉宁窗
+        hann_window = torch.hann_window(win_length)
+        self.register_buffer("hann_window", hann_window)
+
+    def forward(self, audio):
+        # 确保窗口与输入在同一设备上
+        window = self.hann_window.to(audio.device)
+
+        # STFT 计算
+        fft = torch.stft(
+            audio,
+            n_fft=self.n_fft,
+            hop_length=self.hop_length,
+            win_length=self.win_length,
+            window=window,
+            center=True,
+            return_complex=True,
+        )
+        magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
+        
+        # Mel 频谱计算
+        mel_basis = self.mel_basis.to(audio.device)  # 确保 mel_basis 也在正确设备上
+        mel_output = torch.matmul(mel_basis, magnitude)
+        log_mel_spec = torch.log(torch.clamp(mel_output, min=self.clamp))
+        return log_mel_spec
+
+# 完整的 RMVPE 模型，包含 Mel 计算和 F0 提取
+class RMVPEWithMel(nn.Module):
+    def __init__(self, model_path: str, is_half: bool = False, device: torch.device = torch.device("cpu"), use_jit: bool = False):
+        super().__init__()
+        self.resample_kernel = {}
+        self.is_half = is_half
+        self.device = device
+        self.mel_extractor = MelSpectrogramTS().to(device)
+
+        def get_default_model():
+            # The exact model constructor arguments may need adjustment to match checkpoint.
+            model = E2E(n_blocks=4, n_gru=1, kernel_size=(2, 2), en_de_layers=5, inter_layers=4, in_channels=1, en_out_channels=16)
+            ckpt = torch.load(model_path, map_location=device)
+            if isinstance(ckpt, dict) and "model" in ckpt:
+                ckpt = ckpt["model"]
+
+            model.load_state_dict(ckpt, strict=False)
+            model.eval()
+            model = model.to(device)
+            return model
+
+        self.model = get_default_model().to(device)
+        # 注册 cents_mapping 为缓冲区，使其成为模型的一部分
+        cents_mapping = 20 * torch.arange(360).float() + 1997.3794084376191
+        # pad as in decompiled code
+        cents_mapping = F.pad(cents_mapping, (4, 4))
+        self.register_buffer("cents_mapping", cents_mapping.to(device)) # 缓冲区也要移动到设备
+
+    def mel2hidden(self, mel: torch.Tensor) -> torch.Tensor:
+        # mel expected shape: (batch, n_mels, time)
+        with torch.no_grad():
+            n_frames = mel.size(-1)
+            n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
+            #if n_pad > 0:
+            mel = F.pad(mel, (0, n_pad), mode="constant", value=0.0)
+            
+            # 简化设备判断，专注于 TorchScript 导出
+            if self.is_half:
+                hidden = self.model(mel.half())
+                hidden = hidden.float()
+            else:
+                hidden = self.model(mel.float())
+            
+            # 如果模型输出是 [batch, time, 360]，则转置为 [batch, 360, time]
+            
+            hidden = hidden.transpose(1, 2)
+
+            # cut back to original frames
+            hidden = hidden[..., :n_frames]
+            return hidden
+
+    def decode(self, hidden: torch.Tensor, thred: float = 0.03) -> torch.Tensor:
+        cents_pred = self.to_local_average_cents(hidden, thred)
+        f0 = 10 * 2 ** (cents_pred / 1200.0)
+        mask = (f0 != 10).float()
+        f0 = f0 * mask
+        return f0
+
+    def infer_from_audio(self, audio: torch.Tensor, thred: float = 0.03) -> torch.Tensor:
+        if not torch.is_tensor(audio):
+            audio = torch.from_numpy(audio)
+        audio = audio.to(self.device)
+        mel = self.mel_extractor(audio.float().unsqueeze(0))  # (1, n_mels, t)
+        hidden = self.mel2hidden(mel)
+        #hidden = hidden[0]  # 移除批次维度
+        if self.is_half:
+            hidden = hidden.float()
+        f0 = self.decode(hidden, thred)
+        #return f0
+        return f0.squeeze(0)  # 移除批次维度，返回形状为 [n_time]
+
+    def to_local_average_cents(self, salience: torch.Tensor, thred: float = 0.05):
+        # salience: (batch, n_bins, time)
+        batch = salience.shape[0]
+        n_time = salience.shape[2]
+        
+        # 找到每个帧的最大值位置
+        center = torch.argmax(salience, dim=1)  # (batch, time)
+        
+        # 填充 salience
+        salience_p = F.pad(salience, (0, 0, 4, 4))  # 在频率维度上填充，左右各4
+        
+        # 使用向量化操作替代循环
+        # 创建索引张量
+        batch_indices = torch.arange(batch, device=salience.device).view(batch, 1, 1)
+        time_indices = torch.arange(n_time, device=salience.device).view(1, n_time, 1)
+        
+        # 调整 center 索引以考虑填充
+        center = center + 4
+        
+        # 创建窗口索引
+        window_indices = torch.arange(9, device=salience.device).view(1, 1, 9)
+        indices = center.unsqueeze(2) - 4 + window_indices  # (batch, time, 9)
+        
+        # 限制索引范围
+        indices = torch.clamp(indices, 0, self.cents_mapping.size(0) - 1)
+        
+        # 收集 salience 值
+        todo_salience = salience_p[batch_indices, indices, time_indices]  # (batch, time, 9)
+        
+        # 收集 cents_mapping 值
+        todo_cents = self.cents_mapping[indices]  # (batch, time, 9)
+        
+        # 计算加权平均
+        product_sum = torch.sum(todo_salience * todo_cents, dim=2)  # (batch, time)
+        weight_sum = torch.sum(todo_salience, dim=2)  # (batch, time)
+        
+        # 避免除以零
+        weight_sum = torch.where(weight_sum == 0, torch.ones_like(weight_sum), weight_sum)
+        devided = product_sum / weight_sum
+        
+        # 应用阈值
+        maxx = torch.max(salience, dim=1)[0]  # (batch, time)
+        devided[maxx <= thred] = 0
+        
+        return devided
+
+    def forward(self, audio: torch.Tensor, thred: float = 0.03):
+        return self.infer_from_audio(audio, thred)
+
+# 导出函数
+def export_rmvpe_with_mel(model_path, output_path, is_half=False):
+    # 检查 CUDA 是否可用
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("✅ 使用 CUDA 设备导出模型")
+    else:
+        device = torch.device("cpu")
+        print("⚠️ CUDA 不可用，使用 CPU 设备导出模型")
+
+    # 创建模型
+    model = RMVPEWithMel(model_path, is_half, device)
+    model.eval()
+    
+    # 使用真实音频进行测试
+    import soundfile as sf
+    import librosa
+    path = r"C:/Users/Administrator/Desktop/VC/NeuVC/NeuVC/exports/recorded_audio_1.wav"
+    audio, sampling_rate = sf.read(path)
+    if audio.ndim > 1:
+        audio = librosa.to_mono(audio.T)
     if sampling_rate != 16000:
         audio = librosa.resample(audio, orig_sr=sampling_rate, target_sr=16000)
-    model_path = r"D:\BaiduNetdiskDownload\RVC-beta-v2-0727AMD_realtime\rmvpe.pt"
-    thred = 0.03  # 0.01
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    rmvpe = RMVPE(model_path, is_half=False, device=device)
-    t0 = ttime()
-    f0 = rmvpe.infer_from_audio(audio, thred=thred)
-    # f0 = rmvpe.infer_from_audio(audio, thred=thred)
-    # f0 = rmvpe.infer_from_audio(audio, thred=thred)
-    # f0 = rmvpe.infer_from_audio(audio, thred=thred)
-    # f0 = rmvpe.infer_from_audio(audio, thred=thred)
-    t1 = ttime()
-    logger.info("%s %.2f", f0.shape, t1 - t0)
+    
+    # 将 NumPy 数组转换为 PyTorch 张量并移动到正确设备
+    audio_tensor = torch.from_numpy(audio).float().to(device)
+    
+    # 跟踪模型
+    traced_model = torch.jit.trace(model, (audio_tensor,))
+    
+    # 保存 TorchScript 模型
+    traced_model.save(output_path)
+    print(f"✅ TorchScript 模型已保存到: {output_path}")
+    
+    # 测试模型
+    with torch.no_grad():
+        f0 = traced_model(audio_tensor)
+        print(f"✅ 模型测试成功，输出 F0 形状: {f0.shape}")
+        print(f"✅ F0 范围: {f0.min().item():.2f} - {f0.max().item():.2f} Hz")
+        
+        # 输出一些非零 F0 值的统计信息
+        non_zero_f0 = f0[f0 > 0]
+        if len(non_zero_f0) > 0:
+            print(f"✅ 非零 F0 值数量: {len(non_zero_f0)}")
+            print(f"✅ 非零 F0 值范围: {non_zero_f0.min().item():.2f} - {non_zero_f0.max().item():.2f} Hz")
+            print(f"✅ 非零 F0 值平均值: {non_zero_f0.mean().item():.2f} Hz")
+        else:
+            print("⚠️ 没有检测到非零 F0 值")
+
+if __name__ == "__main__":
+    # 导出模型
+    model_path = "C:/Users/Administrator/Desktop/Model/rmvpe.pt"
+    output_path = "C:/Users/Administrator/Desktop/Model/rmvpe_with_mel.pt"
+    export_rmvpe_with_mel(model_path, output_path)
+
