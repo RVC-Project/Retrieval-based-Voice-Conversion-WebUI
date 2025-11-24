@@ -174,6 +174,20 @@ def change_choices():
     }
 
 
+def get_current_loaded_info():
+    current_model = getattr(vc, "loaded_model_id", None)
+
+    model_name = current_model if current_model else i18n("Model Not Loaded")
+
+    data = {
+        "status": "success",
+        "model_file_name": model_name,
+        "info": i18n("Successfully retrieved loaded voice info."),
+    }
+
+    return data
+
+
 def clean():
     return {"value": "", "__type__": "update"}
 
@@ -835,6 +849,18 @@ with gr.Blocks(title="RVC WebUI") as app:
                     fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
                 )
             with gr.TabItem(i18n("单次推理")):
+                vc_status_output_json = gr.JSON(
+                    label=i18n("Current Load Status JSON"),
+                    visible=False,
+                    value=get_current_loaded_info(),
+                )
+                vc_status_button = gr.Button(i18n("Check Load Status"), visible=False)
+                vc_status_button.click(
+                    fn=get_current_loaded_info,
+                    inputs=[],
+                    outputs=[vc_status_output_json],
+                    api_name="infer_loaded_voice",
+                )
                 with gr.Group():
                     with gr.Row():
                         with gr.Column():
