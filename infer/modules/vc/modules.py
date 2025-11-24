@@ -131,6 +131,8 @@ class VC:
         index = {"value": get_index_path_from_model(sid), "__type__": "update"}
         logger.info("Select index: " + index["value"])
 
+        self.loaded_model_id = sid
+
         return (
             (
                 {"visible": True, "maximum": n_spk, "__type__": "update"},
