@@ -162,12 +162,16 @@ class VC:
         protect,
     ):
 
-        if (input_audio_path is None or input_audio_path == ""):
+        if input_audio_path is None or input_audio_path == "":
             if isinstance(f0_file, str) and f0_file != "":
                 input_audio_path = f0_file
                 f0_file = None
-            elif hasattr(f0_file, 'name') and isinstance(getattr(f0_file, 'name'), str) and getattr(f0_file, 'name') != "":
-                input_audio_path = getattr(f0_file, 'name')
+            elif (
+                hasattr(f0_file, "name")
+                and isinstance(getattr(f0_file, "name"), str)
+                and getattr(f0_file, "name") != ""
+            ):
+                input_audio_path = getattr(f0_file, "name")
                 f0_file = None
 
         if input_audio_path is None:
@@ -227,20 +231,24 @@ class VC:
                 else "Index not used."
             )
 
-            audio_return = (tgt_sr, audio_opt) 
+            audio_return = (tgt_sr, audio_opt)
 
             cleaned_input_path = ""
             if input_audio_path and isinstance(input_audio_path, str):
                 cleaned_input_path = input_audio_path.strip(" ").strip('"').strip("\n")
 
-            temp_dir = os.path.dirname(cleaned_input_path) if cleaned_input_path and os.path.dirname(cleaned_input_path) else "./"
+            temp_dir = (
+                os.path.dirname(cleaned_input_path)
+                if cleaned_input_path and os.path.dirname(cleaned_input_path)
+                else "./"
+            )
 
-            temp_wav_path = os.path.join(temp_dir, f"temp_rvc_base64_{os.getpid()}.wav") 
+            temp_wav_path = os.path.join(temp_dir, f"temp_rvc_base64_{os.getpid()}.wav")
 
-            sf.write(temp_wav_path, audio_opt, tgt_sr, format='WAV') 
+            sf.write(temp_wav_path, audio_opt, tgt_sr, format="WAV")
 
             with open(temp_wav_path, "rb") as f:
-                raw_base64 = base64.b64encode(f.read()).decode('utf-8')
+                raw_base64 = base64.b64encode(f.read()).decode("utf-8")
 
             os.remove(temp_wav_path)
 
@@ -249,14 +257,12 @@ class VC:
             return (
                 "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
                 % (index_info, *times),
-
                 audio_return,
-
                 {
                     "name": "rvc_conversion.wav",
                     "data": base64_data_uri,
-                    "is_us_base64": True
-                }
+                    "is_us_base64": True,
+                },
             )
         except:
             info = traceback.format_exc()
