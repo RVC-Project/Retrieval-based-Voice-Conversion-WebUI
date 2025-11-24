@@ -5,6 +5,7 @@ import av
 from io import BytesIO
 import traceback
 import re
+import glob
 
 
 def wav2(i, o, format):
@@ -36,6 +37,17 @@ def load_audio(file, sr):
         # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
         # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
         file = clean_path(file)  # 防止小白拷路径头尾带了空格和"和回车
+
+        if os.path.exists(file) == False:
+            base_name = os.path.basename(file)
+            
+            if "." in base_name and file != "": 
+                search_path = file.rsplit(".", 1)[0] + "*" + "." + file.rsplit(".", 1)[1]
+                found_files = glob.glob(search_path)
+                
+                if len(found_files) > 0:
+                    file = found_files[0]
+
         if os.path.exists(file) == False:
             raise RuntimeError(
                 "You input a wrong audio path that does not exists, please fix it!"
@@ -58,3 +70,4 @@ def clean_path(path_str):
         path_str = path_str.replace("/", "\\")
     path_str = re.sub(r'[\u202a\u202b\u202c\u202d\u202e]', '', path_str)  # 移除 Unicode 控制字符
     return path_str.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
+
