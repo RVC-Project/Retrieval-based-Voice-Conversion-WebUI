@@ -835,6 +835,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
                 )
             with gr.TabItem(i18n("单次推理")):
+                vc_output3_base64 = gr.JSON(label="US_Base64_Data", visible=False)
                 with gr.Group():
                     with gr.Row():
                         with gr.Column():
@@ -962,7 +963,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 rms_mix_rate0,
                                 protect0,
                             ],
-                            [vc_output1, vc_output2],
+                            [vc_output1, vc_output2, vc_output3_base64],
                             api_name="infer_convert",
                         )
             with gr.TabItem(i18n("批量推理")):
