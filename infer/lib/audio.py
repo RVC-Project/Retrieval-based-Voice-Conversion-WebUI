@@ -40,11 +40,13 @@ def load_audio(file, sr):
 
         if os.path.exists(file) == False:
             base_name = os.path.basename(file)
-            
-            if "." in base_name and file != "": 
-                search_path = file.rsplit(".", 1)[0] + "*" + "." + file.rsplit(".", 1)[1]
+
+            if "." in base_name and file != "":
+                search_path = (
+                    file.rsplit(".", 1)[0] + "*" + "." + file.rsplit(".", 1)[1]
+                )
                 found_files = glob.glob(search_path)
-                
+
                 if len(found_files) > 0:
                     file = found_files[0]
 
@@ -64,10 +66,10 @@ def load_audio(file, sr):
     return np.frombuffer(out, np.float32).flatten()
 
 
-
 def clean_path(path_str):
     if platform.system() == "Windows":
         path_str = path_str.replace("/", "\\")
-    path_str = re.sub(r'[\u202a\u202b\u202c\u202d\u202e]', '', path_str)  # 移除 Unicode 控制字符
+    path_str = re.sub(
+        r"[\u202a\u202b\u202c\u202d\u202e]", "", path_str
+    )  # 移除 Unicode 控制字符
     return path_str.strip(" ").strip('"').strip("\n").strip('"').strip(" ")
-
