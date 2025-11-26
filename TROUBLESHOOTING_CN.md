@@ -1,6 +1,107 @@
 # RVC-WebUI 常见运行问题解决指南
 
-## 问题诊断: pip 命令无法识别
+## 目录
+1. [问题 1: "系统找不到指定的路径"](#问题1-系统找不到指定的路径)
+2. [问题 2: "pip 命令无法识别"](#问题2-pip-命令无法识别)
+3. [完整安装步骤](#完整安装步骤-从零开始)
+4. [常见问题 FAQ](#常见问题)
+
+---
+
+## 问题1: 系统找不到指定的路径
+
+### 错误信息
+```
+D:\Program Files\Retrieval-based-Voice-Conversion-WebUI>go-web.bat
+runtime\python.exe infer-web.py --pycmd runtime\python.exe --port 7897
+系统找不到指定的路径。
+```
+
+### 问题原因
+您的项目目录中**没有 `runtime` 文件夹**。这说明您是从 GitHub 克隆的源代码，而不是下载的完整整合包。
+
+原始的 `go-web.bat` 脚本依赖于 `runtime\python.exe`（项目自带的 Python 运行时），但源代码仓库中不包含这个文件夹。
+
+### ✅ 解决方案（两种方法任选其一）
+
+#### 方法 A: 使用新的启动脚本（推荐，最简单）
+
+我已经为您创建了适配系统 Python 的新脚本：
+
+**步骤 1**: 安装 Python
+- 如果系统中没有 Python，下载并安装 Python 3.8-3.11
+- 下载地址: https://www.python.org/downloads/
+- **重要**: 安装时必须勾选 "Add Python to PATH"
+
+**步骤 2**: 安装依赖
+```cmd
+双击运行: install-requirements.bat
+```
+这个脚本会自动：
+- 检测您的显卡类型
+- 安装对应版本的 PyTorch
+- 安装所有项目依赖
+
+**步骤 3**: 启动程序
+```cmd
+双击运行: go-web-system-python.bat
+```
+
+#### 方法 B: 手动安装（适合高级用户）
+
+**1. 确认 Python 已安装**
+```powershell
+python --version
+# 应该显示: Python 3.8.x 或 3.9.x 或 3.10.x 或 3.11.x
+```
+
+如果提示 "python 不是内部或外部命令"，需要先安装 Python。
+
+**2. 安装 PyTorch**
+
+如果您有 **NVIDIA 显卡**:
+```cmd
+python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+```
+
+如果您只有 **CPU 或 AMD/Intel 显卡**:
+```cmd
+python -m pip install torch torchvision torchaudio
+```
+
+**3. 安装项目依赖**
+
+NVIDIA 显卡用户:
+```cmd
+python -m pip install -r requirements.txt
+```
+
+AMD/Intel 显卡用户:
+```cmd
+python -m pip install -r requirements-dml.txt
+```
+
+**4. 下载预训练模型**
+
+访问 [Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/) 下载以下文件：
+- `hubert_base.pt` → 放到 `assets/hubert/` 文件夹
+- `pretrained` 文件夹 → 放到 `assets/` 文件夹
+- `uvr5_weights` 文件夹 → 放到 `assets/` 文件夹
+- `ffmpeg.exe` 和 `ffprobe.exe` → 放到项目根目录
+
+**5. 启动程序**
+```cmd
+双击运行: go-web-system-python.bat
+```
+
+或者在命令行运行:
+```cmd
+python infer-web.py
+```
+
+---
+
+## 问题2: pip 命令无法识别
 
 ### 错误信息
 ```
