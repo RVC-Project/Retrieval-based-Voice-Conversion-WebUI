@@ -1,0 +1,24 @@
+/opt/anaconda3/envs/rvc/lib/python3.10/site-packages/pyworld/__init__.py:13: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+2025-12-08 01:10:34 | INFO | configs.config | No supported Nvidia GPU found
+2025-12-08 01:10:34 | INFO | configs.config | MPS available but using CPU for stability
+2025-12-08 01:10:34 | INFO | configs.config | overwrite v1/32k.json
+2025-12-08 01:10:34 | INFO | configs.config | overwrite v1/40k.json
+2025-12-08 01:10:34 | INFO | configs.config | overwrite v1/48k.json
+2025-12-08 01:10:34 | INFO | configs.config | overwrite v2/48k.json
+2025-12-08 01:10:34 | INFO | configs.config | overwrite v2/32k.json
+2025-12-08 01:10:34 | INFO | configs.config | overwrite preprocess_per to 3
+2025-12-08 01:10:34 | INFO | configs.config | Use cpu instead
+2025-12-08 01:10:34 | INFO | configs.config | Half-precision floating-point: False, device: cpu
+2025-12-08 01:10:34 | INFO | infer.modules.vc.modules | Get sid: Voice_New.pth
+2025-12-08 01:10:34 | INFO | infer.modules.vc.modules | Loading: assets/weights/Voice_New.pth
+/opt/anaconda3/envs/rvc/lib/python3.10/site-packages/torch/nn/utils/weight_norm.py:144: FutureWarning: `torch.nn.utils.weight_norm` is deprecated in favor of `torch.nn.utils.parametrizations.weight_norm`.
+  WeightNorm.apply(module, name, dim)
+2025-12-08 01:10:34 | INFO | infer.modules.vc.modules | Select index: logs/Voice_New/added_IVF86_Flat_nprobe_1.index
+2025-12-08 01:10:34 | INFO | fairseq.tasks.hubert_pretraining | current directory is /Users/arunkumarv/Music/Voice Clone/rvc-webui
+2025-12-08 01:10:34 | INFO | fairseq.tasks.hubert_pretraining | HubertPretrainingTask Config {'_name': 'hubert_pretraining', 'data': 'metadata', 'fine_tuning': False, 'labels': ['km'], 'label_dir': 'label', 'label_rate': 50.0, 'sample_rate': 16000, 'normalize': False, 'enable_padding': False, 'max_keep_size': None, 'max_sample_size': 250000, 'min_sample_size': 32000, 'single_target': False, 'random_crop': True, 'pad_audio': False}
+2025-12-08 01:10:34 | INFO | fairseq.models.hubert.hubert | HubertModel Config: {'_name': 'hubert', 'label_rate': 50.0, 'extractor_mode': default, 'encoder_layers': 12, 'encoder_embed_dim': 768, 'encoder_ffn_embed_dim': 3072, 'encoder_attention_heads': 12, 'activation_fn': gelu, 'layer_type': transformer, 'dropout': 0.1, 'attention_dropout': 0.1, 'activation_dropout': 0.0, 'encoder_layerdrop': 0.05, 'dropout_input': 0.1, 'dropout_features': 0.1, 'final_dim': 256, 'untie_final_proj': True, 'layer_norm_first': False, 'conv_feature_layers': '[(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2', 'conv_bias': False, 'logit_temp': 0.1, 'target_glu': False, 'feature_grad_mult': 0.1, 'mask_length': 10, 'mask_prob': 0.8, 'mask_selection': static, 'mask_other': 0.0, 'no_mask_overlap': False, 'mask_min_space': 1, 'mask_channel_length': 10, 'mask_channel_prob': 0.0, 'mask_channel_selection': static, 'mask_channel_other': 0.0, 'no_mask_channel_overlap': False, 'mask_channel_min_space': 1, 'conv_pos': 128, 'conv_pos_groups': 16, 'latent_temp': [2.0, 0.5, 0.999995], 'skip_masked': False, 'skip_nomask': False, 'checkpoint_activations': False, 'required_seq_len_multiple': 2, 'depthwise_conv_kernel_size': 31, 'attn_type': '', 'pos_enc_type': 'abs', 'fp16': False}
+/opt/anaconda3/envs/rvc/lib/python3.10/site-packages/torch/nn/utils/weight_norm.py:144: FutureWarning: `torch.nn.utils.weight_norm` is deprecated in favor of `torch.nn.utils.parametrizations.weight_norm`.
+  WeightNorm.apply(module, name, dim)
+/opt/anaconda3/envs/rvc/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

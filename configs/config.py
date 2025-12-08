@@ -167,7 +167,8 @@ class Config:
                 self.preprocess_per = 3.0
         elif self.has_mps():
             logger.info("No supported Nvidia GPU found")
-            self.device = self.instead = "mps"
+            logger.info("MPS available but using CPU for stability")
+            self.device = self.instead = "cpu"
             self.is_half = False
             self.use_fp32_config()
         else:

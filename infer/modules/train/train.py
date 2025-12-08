@@ -18,6 +18,22 @@ from random import randint, shuffle
 
 import torch
 
+# Device detection for MPS (Apple Silicon), CUDA, or CPU
+USE_MPS = False
+USE_CUDA = False
+DEVICE = "cpu"
+
+if torch.backends.mps.is_available():
+    USE_MPS = True
+    DEVICE = "mps"
+    print("Using Apple Silicon MPS GPU acceleration")
+elif torch.cuda.is_available():
+    USE_CUDA = True
+    DEVICE = "cuda"
+    print("Using NVIDIA CUDA GPU acceleration")
+else:
+    print("No GPU detected, using CPU")
+
 try:
     import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
@@ -77,6 +93,15 @@ from infer.lib.train.mel_processing import mel_spectrogram_torch, spec_to_mel_to
 from infer.lib.train.process_ckpt import savee
 
 global_step = 0
+
+
+def to_device(tensor, rank=0):
+    """Move tensor to appropriate device (MPS, CUDA, or CPU)"""
+    if USE_MPS:
+        return tensor.to("mps")
+    elif USE_CUDA:
+        return tensor.cuda(rank, non_blocking=True)
+    return tensor
 
 
 class EpochRecorder:
@@ -167,7 +192,7 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
             **hps.model,
-            is_half=hps.train.fp16_run,
+            is_half=hps.train.fp16_run and not USE_MPS,  # MPS doesn't support fp16 well
             sr=hps.sample_rate,
         )
     else:
@@ -175,12 +200,17 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
             **hps.model,
-            is_half=hps.train.fp16_run,
+            is_half=hps.train.fp16_run and not USE_MPS,
         )
-    if torch.cuda.is_available():
+    # Move models to device
+    if USE_MPS:
+        net_g = net_g.to("mps")
+    elif USE_CUDA:
         net_g = net_g.cuda(rank)
     net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm)
-    if torch.cuda.is_available():
+    if USE_MPS:
+        net_d = net_d.to("mps")
+    elif USE_CUDA:
         net_d = net_d.cuda(rank)
     optim_g = torch.optim.AdamW(
         net_g.parameters(),
@@ -194,16 +224,16 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         betas=hps.train.betas,
         eps=hps.train.eps,
     )
-    # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
-    # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
+    # DDP wrapping (not used for MPS single-GPU)
     if hasattr(torch, "xpu") and torch.xpu.is_available():
         pass
-    elif torch.cuda.is_available():
+    elif USE_CUDA:
         net_g = DDP(net_g, device_ids=[rank])
         net_d = DDP(net_d, device_ids=[rank])
-    else:
+    elif not USE_MPS:
         net_g = DDP(net_g)
         net_d = DDP(net_d)
+    # MPS: no DDP needed for single GPU
 
     try:  # 如果能加载自动resume
         _, _, _, epoch_str = utils.load_checkpoint(
@@ -260,7 +290,8 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
     )
 
-    scaler = GradScaler(enabled=hps.train.fp16_run)
+    # MPS doesn't support fp16 GradScaler well
+    scaler = GradScaler(enabled=hps.train.fp16_run and not USE_MPS)
 
     cache = []
     for epoch in range(epoch_str, hps.train.epochs + 1):
@@ -341,18 +372,18 @@ def train_and_evaluate(
                         wave_lengths,
                         sid,
                     ) = info
-                # Load on CUDA
-                if torch.cuda.is_available():
-                    phone = phone.cuda(rank, non_blocking=True)
-                    phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
+                # Load on GPU (CUDA or MPS)
+                if USE_CUDA or USE_MPS:
+                    phone = to_device(phone, rank)
+                    phone_lengths = to_device(phone_lengths, rank)
                     if hps.if_f0 == 1:
-                        pitch = pitch.cuda(rank, non_blocking=True)
-                        pitchf = pitchf.cuda(rank, non_blocking=True)
-                    sid = sid.cuda(rank, non_blocking=True)
-                    spec = spec.cuda(rank, non_blocking=True)
-                    spec_lengths = spec_lengths.cuda(rank, non_blocking=True)
-                    wave = wave.cuda(rank, non_blocking=True)
-                    wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
+                        pitch = to_device(pitch, rank)
+                        pitchf = to_device(pitchf, rank)
+                    sid = to_device(sid, rank)
+                    spec = to_device(spec, rank)
+                    spec_lengths = to_device(spec_lengths, rank)
+                    wave = to_device(wave, rank)
+                    wave_lengths = to_device(wave_lengths, rank)
                 # Cache on list
                 if hps.if_f0 == 1:
                     cache.append(
@@ -412,21 +443,20 @@ def train_and_evaluate(
             ) = info
         else:
             phone, phone_lengths, spec, spec_lengths, wave, wave_lengths, sid = info
-        ## Load on CUDA
-        if (hps.if_cache_data_in_gpu == False) and torch.cuda.is_available():
-            phone = phone.cuda(rank, non_blocking=True)
-            phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
+        ## Load on GPU (CUDA or MPS)
+        if (hps.if_cache_data_in_gpu == False) and (USE_CUDA or USE_MPS):
+            phone = to_device(phone, rank)
+            phone_lengths = to_device(phone_lengths, rank)
             if hps.if_f0 == 1:
-                pitch = pitch.cuda(rank, non_blocking=True)
-                pitchf = pitchf.cuda(rank, non_blocking=True)
-            sid = sid.cuda(rank, non_blocking=True)
-            spec = spec.cuda(rank, non_blocking=True)
-            spec_lengths = spec_lengths.cuda(rank, non_blocking=True)
-            wave = wave.cuda(rank, non_blocking=True)
-            # wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
+                pitch = to_device(pitch, rank)
+                pitchf = to_device(pitchf, rank)
+            sid = to_device(sid, rank)
+            spec = to_device(spec, rank)
+            spec_lengths = to_device(spec_lengths, rank)
+            wave = to_device(wave, rank)
 
         # Calculate
-        with autocast(enabled=hps.train.fp16_run):
+        with autocast(enabled=hps.train.fp16_run and not USE_MPS):
             if hps.if_f0 == 1:
                 (
                     y_hat,

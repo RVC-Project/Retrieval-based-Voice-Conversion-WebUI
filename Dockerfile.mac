@@ -1,0 +1,37 @@
+FROM python:3.10-slim
+
+EXPOSE 7865
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y -qq ffmpeg aria2 git build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+COPY requirements.txt .
+
+RUN pip install --upgrade "pip<24.1" && \
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install fairseq==0.12.2 && \
+    pip install gradio==3.34.0 gradio-client==0.2.7
+
+COPY . .
+
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/D40k.pth -d assets/pretrained_v2/ -o D40k.pth && \
+    aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/G40k.pth -d assets/pretrained_v2/ -o G40k.pth && \
+    aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/f0D40k.pth -d assets/pretrained_v2/ -o f0D40k.pth && \
+    aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/pretrained_v2/f0G40k.pth -d assets/pretrained_v2/ -o f0G40k.pth
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt -d assets/hubert -o hubert_base.pt && \
+    aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/rmvpe.pt -d assets/rmvpe -o rmvpe.pt
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP2-%E4%BA%BA%E5%A3%B0vocals%2B%E9%9D%9E%E4%BA%BA%E5%A3%B0instrumentals.pth" -d assets/uvr5_weights/ -o "HP2-人声vocals+非人声instrumentals.pth" && \
+    aria2c --console-log-level=error -c -x 16 -s 16 -k 1M "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/uvr5_weights/HP5-%E4%B8%BB%E6%97%8B%E5%BE%8B%E4%BA%BA%E5%A3%B0vocals%2B%E5%85%B6%E4%BB%96instrumentals.pth" -d assets/uvr5_weights/ -o "HP5-主旋律人声vocals+其他instrumentals.pth"
+
+VOLUME [ "/app/weights", "/app/logs", "/app/assets/weights" ]
+
+CMD ["python", "infer-web.py"]

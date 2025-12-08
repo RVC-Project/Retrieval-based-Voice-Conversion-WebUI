@@ -114,16 +114,12 @@ if torch.cuda.is_available() or ngpu != 0:
 if if_gpu_ok and len(gpu_infos) > 0:
     gpu_info = "\n".join(gpu_infos)
     default_batch_size = min(mem) // 2
-elif torch.backends.mps.is_available():
-    if_gpu_ok = True
-    gpu_infos.append("0\tApple Silicon MPS")
-    gpu_info = "Apple Silicon MPS detected"
-    default_batch_size = 4
 else:
     gpu_info = i18n("很遗憾您这没有能用的显卡来支持您训练")
     default_batch_size = 1
 gpus = "-".join([i[0] for i in gpu_infos])
 
+from gradio.events import Dependency
 
 class ToolButton(gr.Button, gr.components.FormComponent):
     """Small button with single emoji as text, fits inside gradio forms"""
@@ -133,6 +129,11 @@ class ToolButton(gr.Button, gr.components.FormComponent):
 
     def get_block_name(self):
         return "button"
+    from typing import Callable, Literal, Sequence, Any, TYPE_CHECKING
+    from gradio.blocks import Block
+    if TYPE_CHECKING:
+        from gradio.components import Timer
+        from gradio.components.base import Component
 
 
 weight_root = os.getenv("weight_root")
@@ -225,14 +226,6 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     os.makedirs("%s/logs/%s" % (now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (now_dir, exp_dir), "w")
     f.close()
-    
-    # Verify trainset_dir exists
-    if not os.path.exists(trainset_dir):
-        error_msg = f"Training folder does not exist: {trainset_dir}"
-        logger.error(error_msg)
-        yield error_msg
-        return
-    
     cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
         config.python_cmd,
         trainset_dir,
@@ -244,19 +237,8 @@ def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
         config.preprocess_per,
     )
     logger.info("Execute: " + cmd)
-    print(f"Starting preprocessing: {cmd}")
-    # Use shell=False with proper argument list for better reliability
-    cmd_args = [
-        config.python_cmd,
-        "infer/modules/train/preprocess.py",
-        trainset_dir,
-        str(sr),
-        str(n_p),
-        f"{now_dir}/logs/{exp_dir}",
-        str(config.noparallel),
-        str(config.preprocess_per),
-    ]
-    p = Popen(cmd_args, cwd=now_dir)
+    # , stdin=PIPE, stdout=PIPE,stderr=PIPE,cwd=now_dir
+    p = Popen(cmd, shell=True)
     # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
     done = [False]
     threading.Thread(

@@ -86,6 +86,15 @@ if os.access(model_path, os.F_OK) == False:
         % model_path
     )
     exit(0)
+
+# Fix for PyTorch 2.6+ weights_only default change
+import torch.serialization
+try:
+    import fairseq.data.dictionary
+    torch.serialization.add_safe_globals([fairseq.data.dictionary.Dictionary])
+except:
+    pass
+
 models, saved_cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
     suffix="",

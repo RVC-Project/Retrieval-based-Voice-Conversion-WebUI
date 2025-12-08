@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  rvc-webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.mac
+    ports:
+      - "7865:7865"
+    volumes:
+      - ./weights:/app/weights
+      - ./logs:/app/logs
+      - ./assets/weights:/app/assets/weights
+      - ./datasets:/app/datasets
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    platform: linux/amd64
