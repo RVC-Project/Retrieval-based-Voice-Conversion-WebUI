@@ -26,3 +26,6 @@ rmvpe.pt
 /assets/weights/*
 ffmpeg.*
 ffprobe.*
+
+# Claude Code
+.claude/
