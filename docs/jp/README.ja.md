@@ -1,31 +1,26 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
+VITSに基づく使いやすい音声変換（voice changer）フレームワーク<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
 [![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
 [![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
-[**更新日誌**](./Changelog_JA.md) | [**よくある質問**](./faq_ja.md) | [**AutoDL·5 円で AI 歌手をトレーニング**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**対照実験記録**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**オンラインデモ**](https://modelscope.cn/studios/FlowerCry/RVCv2demo)
+[**更新日誌**](./Changelog_JA.md) | [**よくある質問**](./faq_ja.md)
 
 [**English**](../en/README.en.md) | [**中文简体**](../../README.md) | [**日本語**](../jp/README.ja.md) | [**한국어**](../kr/README.ko.md) ([**韓國語**](../kr/README.ko.han.md)) | [**Français**](../fr/README.fr.md) | [**Türkçe**](../tr/README.tr.md) | [**Português**](../pt/README.pt.md)
 
 </div>
 
-> デモ動画は[こちら](https://www.bilibili.com/video/BV1pm4y1z7Gm/)でご覧ください。
-
-> RVC によるリアルタイム音声変換: [w-okada/voice-changer](https://github.com/w-okada/voice-changer)
-
 > 著作権侵害を心配することなく使用できるように、基底モデルは約 50 時間の高品質なオープンソースデータセットで訓練されています。
 
-> RVCv3 の基底モデルルをご期待ください。より大きなパラメータ、より大きなデータ、より良い効果を提供し、基本的に同様の推論速度を維持しながら、トレーニングに必要なデータ量はより少なくなります。
+> RVCv3 の基底モデルをご期待ください。より大きなパラメータ、より大きなデータ、より良い効果を提供し、基本的に同様の推論速度を維持しながら、トレーニングに必要なデータ量はより少なくなります。
 
 <table>
    <tr>
@@ -56,189 +51,163 @@ VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
 - モデルを融合することで、音声を混ぜることができます。（ckpt processing タブの、ckpt merge を使用します。）
 - 使いやすい WebUI。
 - UVR5 Model も含んでいるため、人の声と BGM を素早く分離できます。
-- 最先端の[人間の声のピッチ抽出アルゴリズム InterSpeech2023-RMVPE](#参照プロジェクト)を使用して無声音問題を解決します。効果は最高（著しく）で、crepe_full よりも速く、リソース使用が少ないです。
-- A カードと I カードの加速サポート
+- 最先端の[人間の声のピッチ抽出アルゴリズム InterSpeech2023-RMVPE](#参照プロジェクト)を使用して無声音問題を解決します。
 
 私たちの[デモビデオ](https://www.bilibili.com/video/BV1pm4y1z7Gm/)をチェックしてください！
 
-## 環境構築
+## 環境構築 (Windows + uv)
 
-下記のコマンドは、Python3.8 以上の環境で実行する必要があります:
+### 必要条件
 
-### Windows/Linux/MacOS などのプラットフォーム共通方法
+- Windows 10/11
+- Python 3.10
+- NVIDIA GPU (CUDA 12.x対応)
+- [uv](https://docs.astral.sh/uv/) (Pythonパッケージマネージャー)
 
-以下の方法のいずれかを選択してください。
+### Step 1: uvのインストール
 
-#### 1. pip を通じた依存関係のインストール
+PowerShellで以下を実行:
 
-1. Pytorch 及びその主要な依存関係のインストール、すでにインストールされている場合はスキップ。参照：https://pytorch.org/get-started/locally/
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+または winget を使用:
 
 ```bash
-pip install torch torchvision torchaudio
+winget install --id=astral-sh.uv -e
 ```
 
-2. win システム + Nvidia Ampere アーキテクチャ（RTX30xx）の場合、#21 の経験に基づいて pytorch に対応する cuda バージョンを指定
+### Step 2: Python 3.10環境の作成
 
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+cd Retrieval-based-Voice-Conversion-WebUI
+uv venv --python 3.10
 ```
 
-3. 自分のグラフィックカードに合わせた依存関係のインストール
-
-- N カード
+### Step 3: 仮想環境の有効化
 
 ```bash
-pip install -r requirements.txt
+.venv\Scripts\activate
 ```
 
-- A カード/I カード
+### Step 4: PyTorchのインストール (CUDA 12.4対応)
 
 ```bash
-pip install -r requirements-dml.txt
+uv pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
 ```
 
-- A カード ROCM(Linux)
+> 古いGPUやドライバーの場合は、CUDA 11.8版を使用:
+> ```bash
+> uv pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu118
+> ```
+
+### Step 5: 依存パッケージのインストール
 
 ```bash
-pip install -r requirements-amd.txt
+uv pip install -r requirements.txt
 ```
 
-- I カード IPEX(Linux)
+### Step 6: fairseqのインストール
+
+fairseqはC++コンパイルが必要なため、以下の方法でインストール:
 
 ```bash
-pip install -r requirements-ipex.txt
+# Python 3.11の場合
+uv pip install fairseq @ git+https://github.com/One-sixth/fairseq.git
+
+# Python 3.10の場合（ビルドエラーが出る場合）
+set FAIRSEQ_BUILD_EXT=0
+uv pip install fairseq==0.12.2
 ```
 
-#### 2. poetry を通じた依存関係のインストール
-
-Poetry 依存関係管理ツールのインストール、すでにインストールされている場合はスキップ。参照：https://python-poetry.org/docs/#installation
+### Step 7: 必要なモデルのダウンロード
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+python tools/download_models.py
 ```
 
-poetry を使って依存関係をインストール
+または手動で[Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)からダウンロード:
+
+- `assets/hubert/hubert_base.pt`
+- `assets/pretrained_v2/` (事前学習モデル)
+- `assets/uvr5_weights/` (UVR5モデル)
+- `assets/rmvpe/rmvpe.pt` (RMVPE F0抽出モデル)
+
+### Step 8: ffmpegの確認
+
+ffmpegがPATHに含まれているか確認:
 
 ```bash
-poetry install
+ffmpeg -version
 ```
 
-### MacOS
+インストールされていない場合は [ffmpeg公式サイト](https://ffmpeg.org/download.html) からダウンロードしてPATHに追加するか、プロジェクトルートに配置。
 
-`run.sh`を使って依存関係をインストールできます
+## 使用方法
+
+### WebUIの起動
 
 ```bash
-sh ./run.sh
-```
-
-## その他の事前訓練されたモデルの準備
-
-RVC は推論とトレーニングのために他のいくつかの事前訓練されたモデルが必要です。
-
-これらのモデルは私たちの[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)でダウンロードできます。
-
-### 1. assets のダウンロード
-
-以下は、RVC に必要なすべての事前学習モデルとその他のファイルのリストです。`tools`フォルダーにこれらをダウンロードするスクリプトがあります。
-
-- ./assets/hubert/hubert_base.pt
-
-- ./assets/pretrained
-
-- ./assets/uvr5_weights
-
-v2 バージョンのモデルを使用する場合、追加で以下をダウンロードする必要があります。
-
-- ./assets/pretrained_v2
-
-### 2. ffmpeg のインストール
-
-ffmpeg と ffprobe が既にインストールされている場合はスキップします。
-
-#### Ubuntu/Debian ユーザー
-
-```bash
-sudo apt install ffmpeg
-```
-
-#### MacOS ユーザー
-
-```bash
-brew install ffmpeg
-```
-
-#### Windows ユーザー
-
-ダウンロード後、ルートディレクトリに配置してください。
-
-- [ffmpeg.exe をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
-
-- [ffprobe.exe をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
-
-### 3. RMVPE 人間の声のピッチ抽出アルゴリズムに必要なファイルのダウンロード
-
-最新の RMVPE 人間の声のピッチ抽出アルゴリズムを使用する場合、ピッチ抽出モデルのパラメータをダウンロードして RVC のルートディレクトリに配置する必要があります。
-
-- [rmvpe.pt をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
-
-#### dml 環境の RMVPE をダウンロード(オプション、A カード/I カードユーザー)
-
-- [rmvpe.onnx をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
-
-### 4. AMD グラフィックカード Rocm(オプション、Linux のみ)
-
-Linux システムで AMD の Rocm 技術をベースに RVC を実行したい場合、[こちら](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)で必要なドライバーを先にインストールしてください。
-
-Arch Linux を使用している場合、pacman を使用して必要なドライバーをインストールできます。
-
-```
-pacman -S rocm-hip-sdk rocm-opencl-sdk
-```
-
-一部のモデルのグラフィックカード（例：RX6700XT）の場合、以下のような環境変数を追加で設定する必要があるかもしれません。
-
-```
-export ROCM_PATH=/opt/rocm
-export HSA_OVERRIDE_GFX_VERSION=10.3.0
-```
-
-同時に、現在のユーザーが`render`および`video`ユーザーグループに属していることを確認してください。
-
-```
-sudo usermod -aG render $USERNAME
-sudo usermod -aG video $USERNAME
-```
-
-## 使用開始
-
-### 直接起動
-
-以下のコマンドで WebUI を起動します
-```bash
+.venv\Scripts\activate
 python infer-web.py
 ```
 
-### 統合パッケージの使用
+ブラウザで http://localhost:7865 にアクセス
 
-`RVC-beta.7z`をダウンロードして解凍
-
-#### Windows ユーザー
-
-`go-web.bat`をダブルクリック
-
-#### MacOS ユーザー
+### コマンドラインオプション
 
 ```bash
-sh ./run.sh
+python infer-web.py --port 7865 --noautoopen
 ```
 
-### IPEX 技術が必要な I カードユーザー向け(Linux のみ)
+### リアルタイム音声変換
 
 ```bash
-source /opt/intel/oneapi/setvars.sh
+python gui_v1.py
 ```
 
-## 参考プロジェクト
+### CLI推論
+
+```bash
+python tools/infer_cli.py ^
+  --model_name MODEL.pth ^
+  --input_path input.wav ^
+  --opt_path output.wav ^
+  --index_path logs/MODEL/added_IVF*.index ^
+  --f0method rmvpe
+```
+
+## トラブルシューティング
+
+### fairseqインストールエラー
+
+Visual Studio Build Toolsが必要な場合があります:
+
+```bash
+winget install Microsoft.VisualStudio.2022.BuildTools
+```
+
+または環境変数でC++拡張をスキップ:
+
+```bash
+set FAIRSEQ_BUILD_EXT=0
+uv pip install fairseq==0.12.2
+```
+
+### gradio-clientエラー
+
+```bash
+uv pip install gradio-client==0.2.7
+```
+
+### CUDAバージョンの確認
+
+```bash
+nvidia-smi
+```
+
+## 参照プロジェクト
 
 - [ContentVec](https://github.com/auspicious3000/contentvec/)
 - [VITS](https://github.com/jaywalnut310/vits)
