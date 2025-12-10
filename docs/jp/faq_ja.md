@@ -39,7 +39,7 @@ https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/myinfer.py<br>
 
 例：<br>
 
-runtime\python.exe myinfer.py 0 "E:\codes\py39\RVC-beta\todo-songs\1111.wav" "E:\codes\py39\logs\mi-test\added_IVF677_Flat_nprobe_7.index" harvest "test.wav" "weights/mi-test.pth" 0.6 cuda:0 True<br>
+.venv\Scripts\python.exe myinfer.py 0 "E:\codes\py39\RVC-beta\todo-songs\1111.wav" "E:\codes\py39\logs\mi-test\added_IVF677_Flat_nprobe_7.index" harvest "test.wav" "weights/mi-test.pth" 0.6 cuda:0 True<br>
 
 f0up_key=sys.argv[1]<br>
 input_path=sys.argv[2]<br>
