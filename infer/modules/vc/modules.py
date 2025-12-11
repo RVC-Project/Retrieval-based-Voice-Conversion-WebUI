@@ -160,6 +160,16 @@ class VC:
     ):
         if input_audio_path is None:
             return "You need to upload an audio", None
+
+        # gr.Audio が辞書やタプルを返す場合の対応
+        if isinstance(input_audio_path, dict):
+            input_audio_path = input_audio_path.get("name") or input_audio_path.get("path")
+        elif isinstance(input_audio_path, (list, tuple)):
+            input_audio_path = input_audio_path[0] if input_audio_path else None
+
+        if input_audio_path is None:
+            return "You need to upload an audio", None
+
         f0_up_key = int(f0_up_key)
         try:
             audio = load_audio(input_audio_path, 16000)
