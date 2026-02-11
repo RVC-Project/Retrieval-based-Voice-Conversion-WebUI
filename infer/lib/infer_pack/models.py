@@ -583,7 +583,7 @@ class GeneratorNSF(torch.nn.Module):
                 ):
                     torch.nn.utils.remove_weight_norm(l)
         for l in self.resblocks:
-            for hook in self.resblocks._forward_pre_hooks.values():
+            for hook in l._forward_pre_hooks.values():
                 if (
                     hook.__module__ == "torch.nn.utils.weight_norm"
                     and hook.__class__.__name__ == "WeightNorm"
