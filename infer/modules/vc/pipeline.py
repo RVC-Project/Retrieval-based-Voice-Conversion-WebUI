@@ -310,7 +310,7 @@ class Pipeline(object):
                 index = faiss.read_index(file_index)
                 # big_npy = np.load(file_big_npy)
                 big_npy = index.reconstruct_n(0, index.ntotal)
-            except:
+            except Exception:
                 traceback.print_exc()
                 index = big_npy = None
         else:
@@ -346,7 +346,7 @@ class Pipeline(object):
                 for line in lines:
                     inp_f0.append([float(i) for i in line.split(",")])
                 inp_f0 = np.array(inp_f0, dtype="float32")
-            except:
+            except Exception:
                 traceback.print_exc()
         sid = torch.tensor(sid, device=self.device).unsqueeze(0).long()
         pitch, pitchf = None, None

@@ -225,7 +225,7 @@ class Predictor:
                 if os.path.exists(opt_path_vocal):
                     try:
                         os.remove(path_vocal)
-                    except:
+                    except Exception:
                         pass
             if os.path.exists(path_other):
                 os.system(
@@ -234,7 +234,7 @@ class Predictor:
                 if os.path.exists(opt_path_other):
                     try:
                         os.remove(path_other)
-                    except:
+                    except Exception:
                         pass
 
 

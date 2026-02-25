@@ -150,7 +150,7 @@ class AudioPre:
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
         if vocal_root is not None:
             if is_hp3 == True:
@@ -191,7 +191,7 @@ class AudioPre:
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
 
 
@@ -327,7 +327,7 @@ class AudioPreDeEcho:
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
@@ -364,5 +364,5 @@ class AudioPreDeEcho:
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass

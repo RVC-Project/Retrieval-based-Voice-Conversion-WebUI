@@ -56,7 +56,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                         inp_path, save_root_ins, save_root_vocal, format0, is_hp3=is_hp3
                     )
                     done = 1
-            except:
+            except Exception:
                 need_reformat = 1
                 traceback.print_exc()
             if need_reformat == 1:
@@ -76,7 +76,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                     )
                 infos.append("%s->Success" % (os.path.basename(inp_path)))
                 yield "\n".join(infos)
-            except:
+            except Exception:
                 try:
                     if done == 0:
                         pre_fun._path_audio_(
@@ -84,12 +84,12 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
                         )
                     infos.append("%s->Success" % (os.path.basename(inp_path)))
                     yield "\n".join(infos)
-                except:
+                except Exception:
                     infos.append(
                         "%s->%s" % (os.path.basename(inp_path), traceback.format_exc())
                     )
                     yield "\n".join(infos)
-    except:
+    except Exception:
         infos.append(traceback.format_exc())
         yield "\n".join(infos)
     finally:
@@ -100,7 +100,7 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             else:
                 del pre_fun.model
                 del pre_fun
-        except:
+        except Exception:
             traceback.print_exc()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
