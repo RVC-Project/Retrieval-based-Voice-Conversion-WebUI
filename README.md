@@ -58,6 +58,7 @@
 
 ## 环境配置
 以下指令需在 Python 版本大于3.8的环境中执行。  
+> 温馨提示：requirements.txt需要小于3.11的版本才能使用，安装的时候记得查看安装的requirements.txt是不是自己应该安装的版本！
 
 ### Windows/Linux/MacOS等平台通用方法
 下列方法任选其一。
