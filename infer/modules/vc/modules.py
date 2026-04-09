@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import gradio as gr
 import numpy as np
 import soundfile as sf
 import torch
@@ -36,20 +37,18 @@ class VC:
     def get_vc(self, sid, *to_return_protect):
         logger.info("Get sid: " + sid)
 
-        to_return_protect0 = {
-            "visible": self.if_f0 != 0,
-            "value": (
+        to_return_protect0 = gr.update(
+            visible=self.if_f0 != 0,
+            value=(
                 to_return_protect[0] if self.if_f0 != 0 and to_return_protect else 0.5
             ),
-            "__type__": "update",
-        }
-        to_return_protect1 = {
-            "visible": self.if_f0 != 0,
-            "value": (
+        )
+        to_return_protect1 = gr.update(
+            visible=self.if_f0 != 0,
+            value=(
                 to_return_protect[1] if self.if_f0 != 0 and to_return_protect else 0.33
             ),
-            "__type__": "update",
-        }
+        )
 
         if sid == "" or sid == []:
             if (
@@ -83,24 +82,16 @@ class VC:
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
             return (
-                {"visible": False, "__type__": "update"},
-                {
-                    "visible": True,
-                    "value": to_return_protect0,
-                    "__type__": "update",
-                },
-                {
-                    "visible": True,
-                    "value": to_return_protect1,
-                    "__type__": "update",
-                },
+                gr.update(visible=False),
+                gr.update(visible=True, value=to_return_protect0),
+                gr.update(visible=True, value=to_return_protect1),
                 "",
                 "",
             )
         person = f'{os.getenv("weight_root")}/{sid}'
         logger.info(f"Loading: {person}")
 
-        self.cpt = torch.load(person, map_location="cpu")
+        self.cpt = torch.load(person, map_location="cpu", weights_only=False)
         self.tgt_sr = self.cpt["config"][-1]
         self.cpt["config"][-3] = self.cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
         self.if_f0 = self.cpt.get("f0", 1)
@@ -128,19 +119,20 @@ class VC:
 
         self.pipeline = Pipeline(self.tgt_sr, self.config)
         n_spk = self.cpt["config"][-3]
-        index = {"value": get_index_path_from_model(sid), "__type__": "update"}
-        logger.info("Select index: " + index["value"])
+        index_value = get_index_path_from_model(sid)
+        index = gr.update(value=index_value)
+        logger.info("Select index: " + index_value)
 
         return (
             (
-                {"visible": True, "maximum": n_spk, "__type__": "update"},
+                gr.update(visible=True, maximum=n_spk),
                 to_return_protect0,
                 to_return_protect1,
                 index,
                 index,
             )
             if to_return_protect
-            else {"visible": True, "maximum": n_spk, "__type__": "update"}
+            else gr.update(visible=True, maximum=n_spk)
         )
 
     def vc_single(
@@ -278,10 +270,10 @@ class VC:
                         os.path.join(dir_path, name) for name in os.listdir(dir_path)
                     ]
                 else:
-                    paths = [path.name for path in paths]
+                    paths = [p if isinstance(p, str) else p.name for p in paths]
             except:
                 traceback.print_exc()
-                paths = [path.name for path in paths]
+                paths = [p if isinstance(p, str) else p.name for p in paths]
             infos = []
             for path in paths:
                 info, opt = self.vc_single(

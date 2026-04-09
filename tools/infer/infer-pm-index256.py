@@ -78,7 +78,7 @@ net_g = SynthesizerTrn256(
 # weights=torch.load("infer/ft-mi-freeze-vocoder-flow-enc_q_1k.pt")
 # weights=torch.load("infer/ft-mi-freeze-vocoder_true_1k.pt")
 # weights=torch.load("infer/ft-mi-sim1k.pt")
-weights = torch.load("infer/ft-mi-no_opt-no_dropout.pt")
+weights = torch.load("infer/ft-mi-no_opt-no_dropout.pt", weights_only=False)
 logger.debug(net_g.load_state_dict(weights, strict=True))
 
 net_g.eval().to(device)

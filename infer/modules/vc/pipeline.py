@@ -338,9 +338,10 @@ class Pipeline(object):
         audio_pad = np.pad(audio, (self.t_pad, self.t_pad), mode="reflect")
         p_len = audio_pad.shape[0] // self.window
         inp_f0 = None
-        if hasattr(f0_file, "name"):
+        if f0_file is not None:
             try:
-                with open(f0_file.name, "r") as f:
+                f0_path = f0_file if isinstance(f0_file, str) else f0_file.name
+                with open(f0_path, "r") as f:
                     lines = f.read().strip("\n").split("\n")
                 inp_f0 = []
                 for line in lines:

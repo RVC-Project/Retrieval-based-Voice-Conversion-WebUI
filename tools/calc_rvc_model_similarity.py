@@ -55,7 +55,7 @@ def eval(model, n, input):
 
 def main(path, root):
     torch.manual_seed(114514)
-    model_a = torch.load(path, map_location="cpu")["weight"]
+    model_a = torch.load(path, map_location="cpu", weights_only=False)["weight"]
 
     logger.info("Query:\t\t%s\t%s" % (path, model_hash(path)))
 
@@ -74,7 +74,7 @@ def main(path, root):
 
     for name in sorted(list(os.listdir(root))):
         path = "%s/%s" % (root, name)
-        model_b = torch.load(path, map_location="cpu")["weight"]
+        model_b = torch.load(path, map_location="cpu", weights_only=False)["weight"]
 
         sims = []
         for n in range(6):

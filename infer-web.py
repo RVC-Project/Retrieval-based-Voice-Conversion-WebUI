@@ -119,15 +119,6 @@ else:
 gpus = "-".join([i[0] for i in gpu_infos])
 
 
-class ToolButton(gr.Button, gr.components.FormComponent):
-    """Small button with single emoji as text, fits inside gradio forms"""
-
-    def __init__(self, **kwargs):
-        super().__init__(variant="tool", **kwargs)
-
-    def get_block_name(self):
-        return "button"
-
 
 weight_root = os.getenv("weight_root")
 weight_uvr5_root = os.getenv("weight_uvr5_root")
@@ -167,14 +158,11 @@ def change_choices():
         for name in files:
             if name.endswith(".index") and "trained" not in name:
                 index_paths.append("%s/%s" % (root, name))
-    return {"choices": sorted(names), "__type__": "update"}, {
-        "choices": sorted(index_paths),
-        "__type__": "update",
-    }
+    return gr.update(choices=sorted(names)), gr.update(choices=sorted(index_paths))
 
 
 def clean():
-    return {"value": "", "__type__": "update"}
+    return gr.update(value="")
 
 
 def export_onnx(ModelPath, ExportedPath):
@@ -440,9 +428,9 @@ def change_version19(sr2, if_f0_3, version19):
     if sr2 == "32k" and version19 == "v1":
         sr2 = "40k"
     to_return_sr2 = (
-        {"choices": ["40k", "48k"], "__type__": "update", "value": sr2}
+        gr.update(choices=["40k", "48k"], value=sr2)
         if version19 == "v1"
-        else {"choices": ["40k", "48k", "32k"], "__type__": "update", "value": sr2}
+        else gr.update(choices=["40k", "48k", "32k"], value=sr2)
     )
     f0_str = "f0" if if_f0_3 else ""
     return (
@@ -454,8 +442,8 @@ def change_version19(sr2, if_f0_3, version19):
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
     path_str = "" if version19 == "v1" else "_v2"
     return (
-        {"visible": if_f0_3, "__type__": "update"},
-        {"visible": if_f0_3, "__type__": "update"},
+        gr.update(visible=if_f0_3),
+        gr.update(visible=if_f0_3),
         *get_pretrained_models(path_str, "f0" if if_f0_3 == True else "", sr2),
     )
 
@@ -780,7 +768,7 @@ def train1key(
 #                    ckpt_path2.change(change_info_,[ckpt_path2],[sr__,if_f0__])
 def change_info_(ckpt_path):
     if not os.path.exists(ckpt_path.replace(os.path.basename(ckpt_path), "train.log")):
-        return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
+        return gr.update(), gr.update(), gr.update()
     try:
         with open(
             ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r"
@@ -791,7 +779,7 @@ def change_info_(ckpt_path):
             return sr, str(f0), version
     except:
         traceback.print_exc()
-        return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
+        return gr.update(), gr.update(), gr.update()
 
 
 F0GPUVisible = config.dml == False
@@ -802,7 +790,7 @@ def change_f0_method(f0method8):
         visible = F0GPUVisible
     else:
         visible = False
-    return {"visible": visible, "__type__": "update"}
+    return gr.update(visible=visible)
 
 
 with gr.Blocks(title="RVC WebUI") as app:
@@ -845,7 +833,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 label=i18n(
                                     "输入待处理音频文件路径(默认是正确格式示例)"
                                 ),
-                                type="filepath",
                             )
                             file_index1 = gr.Textbox(
                                 label=i18n(
@@ -1266,7 +1253,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             visible=F0GPUVisible,
                         )
                     but2 = gr.Button(i18n("特征提取"), variant="primary")
-                    info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info2 = gr.Textbox(label=i18n("输出信息"), value="")
                     f0method8.change(
                         fn=change_f0_method,
                         inputs=[f0method8],
@@ -1371,7 +1358,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     but3 = gr.Button(i18n("训练模型"), variant="primary")
                     but4 = gr.Button(i18n("训练特征索引"), variant="primary")
                     but5 = gr.Button(i18n("一键训练"), variant="primary")
-                    info3 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=10)
+                    info3 = gr.Textbox(label=i18n("输出信息"), value="")
                     but3.click(
                         click_train,
                         [
@@ -1453,13 +1440,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                     info__ = gr.Textbox(
                         label=i18n("要置入的模型信息"),
                         value="",
-                        max_lines=8,
+
                         interactive=True,
                     )
                     name_to_save0 = gr.Textbox(
                         label=i18n("保存的模型名不带后缀"),
                         value="",
-                        max_lines=1,
+
                         interactive=True,
                     )
                     version_2 = gr.Radio(
@@ -1470,7 +1457,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
                 with gr.Row():
                     but6 = gr.Button(i18n("融合"), variant="primary")
-                    info4 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info4 = gr.Textbox(label=i18n("输出信息"), value="")
                 but6.click(
                     merge,
                     [
@@ -1497,18 +1484,18 @@ with gr.Blocks(title="RVC WebUI") as app:
                     info_ = gr.Textbox(
                         label=i18n("要改的模型信息"),
                         value="",
-                        max_lines=8,
+
                         interactive=True,
                     )
                     name_to_save1 = gr.Textbox(
                         label=i18n("保存的文件名, 默认空为和源文件同名"),
                         value="",
-                        max_lines=8,
+
                         interactive=True,
                     )
                 with gr.Row():
                     but7 = gr.Button(i18n("修改"), variant="primary")
-                    info5 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info5 = gr.Textbox(label=i18n("输出信息"), value="")
                 but7.click(
                     change_info,
                     [ckpt_path0, info_, name_to_save1],
@@ -1524,7 +1511,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                         label=i18n("模型路径"), value="", interactive=True
                     )
                     but8 = gr.Button(i18n("查看"), variant="primary")
-                    info6 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info6 = gr.Textbox(label=i18n("输出信息"), value="")
                 but8.click(show_info, [ckpt_path1], info6, api_name="ckpt_show")
             with gr.Group():
                 gr.Markdown(
@@ -1562,11 +1549,11 @@ with gr.Blocks(title="RVC WebUI") as app:
                     info___ = gr.Textbox(
                         label=i18n("要置入的模型信息"),
                         value="",
-                        max_lines=8,
+
                         interactive=True,
                     )
                     but9 = gr.Button(i18n("提取"), variant="primary")
-                    info7 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                    info7 = gr.Textbox(label=i18n("输出信息"), value="")
                     ckpt_path2.change(
                         change_info_, [ckpt_path2], [sr__, if_f0__, version_1]
                     )
@@ -1587,7 +1574,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                     label=i18n("Onnx输出路径"), value="", interactive=True
                 )
             with gr.Row():
-                infoOnnx = gr.Label(label="info")
+                infoOnnx = gr.Textbox(label="info")
             with gr.Row():
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
             butOnnx.click(
@@ -1608,9 +1595,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                 gr.Markdown(traceback.format_exc())
 
     if config.iscolab:
-        app.queue(concurrency_count=511, max_size=1022).launch(share=True)
+        app.queue(max_size=1022).launch(share=True)
     else:
-        app.queue(concurrency_count=511, max_size=1022).launch(
+        app.queue(max_size=1022).launch(
             server_name="0.0.0.0",
             inbrowser=not config.noautoopen,
             server_port=config.listen_port,

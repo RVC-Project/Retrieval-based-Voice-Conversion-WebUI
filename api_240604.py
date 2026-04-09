@@ -515,7 +515,7 @@ class AudioAPI:
 audio_api = AudioAPI()
 
 
-@app.get("/inputDevices", response_model=list)
+@app.get("/inputDevices", response_model=list[str])
 def get_input_devices():
     try:
         input_devices, _, _, _ = audio_api.get_devices()
@@ -525,7 +525,7 @@ def get_input_devices():
         raise HTTPException(status_code=500, detail="Failed to get input devices")
 
 
-@app.get("/outputDevices", response_model=list)
+@app.get("/outputDevices", response_model=list[str])
 def get_output_devices():
     try:
         _, output_devices, _, _ = audio_api.get_devices()
@@ -540,7 +540,7 @@ def configure_audio(config_data: ConfigData):
     try:
         logger.info(f"Configuring audio with data: {config_data}")
         if audio_api.set_values(config_data):
-            settings = config_data.dict()
+            settings = config_data.model_dump()
             settings["use_jit"] = False
             with open("configs/config.json", "w", encoding="utf-8") as j:
                 json.dump(settings, j, ensure_ascii=False)

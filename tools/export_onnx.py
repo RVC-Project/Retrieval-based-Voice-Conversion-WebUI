@@ -7,7 +7,7 @@ if __name__ == "__main__":
     ModelPath = "Shiroha/shiroha.pth"  # 模型路径
     ExportedPath = "model.onnx"  # 输出路径
     hidden_channels = 256  # hidden_channels，为768Vec做准备
-    cpt = torch.load(ModelPath, map_location="cpu")
+    cpt = torch.load(ModelPath, map_location="cpu", weights_only=False)
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]  # n_spk
     print(*cpt["config"])
 

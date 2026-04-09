@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 
 def load_inputs(path, device, is_half=False):
-    parm = torch.load(path, map_location=torch.device("cpu"))
+    parm = torch.load(path, map_location=torch.device("cpu"), weights_only=False)
     for key in parm.keys():
         parm[key] = parm[key].to(device)
         if is_half and parm[key].dtype == torch.float32:
