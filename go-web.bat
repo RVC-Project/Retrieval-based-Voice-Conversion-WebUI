@@ -1,4 +1,3 @@
 @echo off
-call .venv\Scripts\activate
-python infer-web.py
+uv run python infer-web.py
 pause

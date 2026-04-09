@@ -58,7 +58,6 @@ VITSに基づく使いやすい音声変換（voice changer）フレームワー
 ### 必要条件
 
 - Windows 10/11
-- Python 3.10
 - NVIDIA GPU (CUDA 12.x対応)
 - [uv](https://docs.astral.sh/uv/) (Pythonパッケージマネージャー)
 
@@ -76,53 +75,19 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 winget install --id=astral-sh.uv -e
 ```
 
-### Step 2: Python 3.10環境の作成
+### Step 2: 依存パッケージの一括インストール
 
 ```bash
 cd Retrieval-based-Voice-Conversion-WebUI
-uv venv --python 3.10
+uv sync
 ```
 
-### Step 3: 仮想環境の有効化
+> Python 3.12 が自動的にダウンロード・設定され、すべての依存パッケージ（PyTorch CUDA 12.4版含む）がインストールされます。
+
+### Step 3: 必要なモデルのダウンロード
 
 ```bash
-.venv\Scripts\activate
-```
-
-### Step 4: PyTorchのインストール (CUDA 12.4対応)
-
-```bash
-uv pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
-```
-
-> 古いGPUやドライバーの場合は、CUDA 11.8版を使用:
-> ```bash
-> uv pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu118
-> ```
-
-### Step 5: 依存パッケージのインストール
-
-```bash
-uv pip install -r requirements.txt
-```
-
-### Step 6: fairseqのインストール
-
-fairseqはC++コンパイルが必要なため、以下の方法でインストール:
-
-```bash
-# Python 3.11の場合
-uv pip install fairseq @ git+https://github.com/One-sixth/fairseq.git
-
-# Python 3.10の場合（ビルドエラーが出る場合）
-set FAIRSEQ_BUILD_EXT=0
-uv pip install fairseq==0.12.2
-```
-
-### Step 7: 必要なモデルのダウンロード
-
-```bash
-python tools/download_models.py
+uv run python tools/download_models.py
 ```
 
 または手動で[Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)からダウンロード:
@@ -132,7 +97,7 @@ python tools/download_models.py
 - `assets/uvr5_weights/` (UVR5モデル)
 - `assets/rmvpe/rmvpe.pt` (RMVPE F0抽出モデル)
 
-### Step 8: ffmpegの確認
+### Step 4: ffmpegの確認
 
 ffmpegがPATHに含まれているか確認:
 
@@ -147,8 +112,7 @@ ffmpeg -version
 ### WebUIの起動
 
 ```bash
-.venv\Scripts\activate
-python infer-web.py
+uv run python infer-web.py
 ```
 
 ブラウザで http://localhost:7865 にアクセス
@@ -156,19 +120,19 @@ python infer-web.py
 ### コマンドラインオプション
 
 ```bash
-python infer-web.py --port 7865 --noautoopen
+uv run python infer-web.py --port 7865 --noautoopen
 ```
 
 ### リアルタイム音声変換
 
 ```bash
-python gui_v1.py
+uv run python gui_v1.py
 ```
 
 ### CLI推論
 
 ```bash
-python tools/infer_cli.py ^
+uv run python tools/infer_cli.py ^
   --model_name MODEL.pth ^
   --input_path input.wav ^
   --opt_path output.wav ^
@@ -178,26 +142,19 @@ python tools/infer_cli.py ^
 
 ## トラブルシューティング
 
-### fairseqインストールエラー
+### fairseqビルドエラー
 
-Visual Studio Build Toolsが必要な場合があります:
+`uv sync` でfairseqのビルドに失敗する場合は、Visual Studio Build Tools が必要です:
 
 ```bash
 winget install Microsoft.VisualStudio.2022.BuildTools
 ```
 
-または環境変数でC++拡張をスキップ:
+インストール後、再度 `uv sync` を実行してください。fairseqは `uv sync` に統合済みのため、個別インストールは不要です。
 
-```bash
-set FAIRSEQ_BUILD_EXT=0
-uv pip install fairseq==0.12.2
-```
+### Python バージョンについて
 
-### gradio-clientエラー
-
-```bash
-uv pip install gradio-client==0.2.7
-```
+本プロジェクトは Python 3.12 を使用します。`uv sync` により自動的にダウンロード・設定されるため、手動でのPythonインストールは不要です。
 
 ### CUDAバージョンの確認
 
