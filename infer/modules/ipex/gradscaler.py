@@ -7,14 +7,10 @@ import intel_extension_for_pytorch._C as core  # pylint: disable=import-error, u
 
 OptState = ipex.cpu.autocast._grad_scaler.OptState
 _MultiDeviceReplicator = ipex.cpu.autocast._grad_scaler._MultiDeviceReplicator
-_refresh_per_optimizer_state = (
-    ipex.cpu.autocast._grad_scaler._refresh_per_optimizer_state
-)
+_refresh_per_optimizer_state = ipex.cpu.autocast._grad_scaler._refresh_per_optimizer_state
 
 
-def _unscale_grads_(
-    self, optimizer, inv_scale, found_inf, allow_fp16
-):  # pylint: disable=unused-argument
+def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16):  # pylint: disable=unused-argument
     per_device_inv_scale = _MultiDeviceReplicator(inv_scale)
     per_device_found_inf = _MultiDeviceReplicator(found_inf)
 
@@ -48,9 +44,7 @@ def _unscale_grads_(
 
                 # -: is there a way to split by device and dtype without appending in the inner loop?
                 to_unscale = to_unscale.to("cpu")
-                per_device_and_dtype_grads[to_unscale.device][to_unscale.dtype].append(
-                    to_unscale
-                )
+                per_device_and_dtype_grads[to_unscale.device][to_unscale.dtype].append(to_unscale)
 
         for _, per_dtype_grads in per_device_and_dtype_grads.items():
             for grads in per_dtype_grads.values():
@@ -94,22 +88,16 @@ def unscale_(self, optimizer):
     optimizer_state = self._per_optimizer_states[id(optimizer)]
 
     if optimizer_state["stage"] is OptState.UNSCALED:  # pylint: disable=no-else-raise
-        raise RuntimeError(
-            "unscale_() has already been called on this optimizer since the last update()."
-        )
+        raise RuntimeError("unscale_() has already been called on this optimizer since the last update().")
     elif optimizer_state["stage"] is OptState.STEPPED:
         raise RuntimeError("unscale_() is being called after step().")
 
     # FP32 division can be imprecise for certain compile options, so we carry out the reciprocal in FP64.
     assert self._scale is not None
-    inv_scale = (
-        self._scale.to("cpu").double().reciprocal().float().to(self._scale.device)
-    )
+    inv_scale = self._scale.to("cpu").double().reciprocal().float().to(self._scale.device)
     found_inf = torch.full((1,), 0.0, dtype=torch.float32, device=self._scale.device)
 
-    optimizer_state["found_inf_per_device"] = self._unscale_grads_(
-        optimizer, inv_scale, found_inf, False
-    )
+    optimizer_state["found_inf_per_device"] = self._unscale_grads_(optimizer, inv_scale, found_inf, False)
     optimizer_state["stage"] = OptState.UNSCALED
 
 

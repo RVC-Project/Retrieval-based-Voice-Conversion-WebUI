@@ -46,8 +46,14 @@ model = model.to(device)
 model = model.half()
 model.eval()
 
-# net_g = SynthesizerTrn256(1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],[[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,[16,16,4,4],183,256,is_half=True)#hifigan#512#256
-# net_g = SynthesizerTrn256(1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],[[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,[16,16,4,4],109,256,is_half=True)#hifigan#512#256
+# net_g = SynthesizerTrn256(
+#     1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],
+#     [[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,
+#     [16,16,4,4],183,256,is_half=True)  # hifigan#512#256
+# net_g = SynthesizerTrn256(
+#     1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],
+#     [[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,
+#     [16,16,4,4],109,256,is_half=True)  # hifigan#512#256
 net_g = SynthesizerTrn256(
     1025,
     32,
@@ -68,11 +74,23 @@ net_g = SynthesizerTrn256(
     256,
     is_half=True,
 )  # hifigan#512#256#no_dropout
-# net_g = SynthesizerTrn256(1025,32,192,192,768,2,3,3,0.1,"1", [3,7,11],[[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,[16,16,4,4],0)#ts3
-# net_g = SynthesizerTrn256(1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],[[1,3,5], [1,3,5], [1,3,5]],[10,10,2],512,[16,16,4],0)#hifigan-ps-sr
+# net_g = SynthesizerTrn256(
+#     1025,32,192,192,768,2,3,3,0.1,"1", [3,7,11],
+#     [[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,
+#     [16,16,4,4],0)  # ts3
+# net_g = SynthesizerTrn256(
+#     1025,32,192,192,768,2,6,3,0.1,"1", [3,7,11],
+#     [[1,3,5], [1,3,5], [1,3,5]],[10,10,2],512,
+#     [16,16,4],0)  # hifigan-ps-sr
 #
-# net_g = SynthesizerTrn(1025, 32, 192, 192, 768, 2, 6, 3, 0.1, "1", [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]], [5,5], 512, [15,15], 0)#ms
-# net_g = SynthesizerTrn(1025, 32, 192, 192, 768, 2, 6, 3, 0.1, "1", [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]], [10,10], 512, [16,16], 0)#idwt2
+# net_g = SynthesizerTrn(
+#     1025, 32, 192, 192, 768, 2, 6, 3, 0.1, "1",
+#     [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
+#     [5,5], 512, [15,15], 0)  # ms
+# net_g = SynthesizerTrn(
+#     1025, 32, 192, 192, 768, 2, 6, 3, 0.1, "1",
+#     [3, 7, 11], [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
+#     [10,10], 512, [16,16], 0)  # idwt2
 
 # weights=torch.load("infer/ft-mi_1k-noD.pt")
 # weights=torch.load("infer/ft-mi-freeze-vocoder-flow-enc_q_1k.pt")
@@ -110,9 +128,7 @@ def get_f0(x, p_len, f0_up_key=0):
     f0bak = f0.copy()
 
     f0_mel = 1127 * np.log(1 + f0 / 700)
-    f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (
-        f0_mel_max - f0_mel_min
-    ) + 1
+    f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (f0_mel_max - f0_mel_min) + 1
     f0_mel[f0_mel <= 1] = 1
     f0_mel[f0_mel > 255] = 255
     # f0_mel[f0_mel > 188] = 188
@@ -159,9 +175,7 @@ for idx, name in enumerate(
     ####索引优化
     npy = feats[0].cpu().numpy().astype("float32")
     D, I = index.search(npy, 1)
-    feats = (
-        torch.from_numpy(big_npy[I.squeeze()].astype("float16")).unsqueeze(0).to(device)
-    )
+    feats = torch.from_numpy(big_npy[I.squeeze()].astype("float16")).unsqueeze(0).to(device)
 
     feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
     if torch.cuda.is_available():
@@ -182,12 +196,7 @@ for idx, name in enumerate(
     sid = torch.LongTensor([0]).to(device)
     pitchf = torch.FloatTensor(pitchf).unsqueeze(0).to(device)
     with torch.no_grad():
-        audio = (
-            net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0]
-            .data.cpu()
-            .float()
-            .numpy()
-        )  # nsf
+        audio = net_g.infer(feats, p_len, pitch, pitchf, sid)[0][0, 0].data.cpu().float().numpy()  # nsf
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     t3 = ttime()

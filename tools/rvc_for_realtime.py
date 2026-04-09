@@ -1,6 +1,5 @@
 from io import BytesIO
 import os
-import pickle
 import sys
 import traceback
 from infer.lib import jit
@@ -17,12 +16,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchcrepe
 
-from infer.lib.infer_pack.models import (
-    SynthesizerTrnMs256NSFsid,
-    SynthesizerTrnMs256NSFsid_nono,
-    SynthesizerTrnMs768NSFsid,
-    SynthesizerTrnMs768NSFsid_nono,
-)
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -61,7 +54,7 @@ class RVC:
         初始化
         """
         try:
-            if config.dml == True:
+            if config.dml:
 
                 def forward_dml(ctx, x, scale):
                     ctx.scale = scale
@@ -91,12 +84,8 @@ class RVC:
             self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
-            self.cache_pitch: torch.Tensor = torch.zeros(
-                1024, device=self.device, dtype=torch.long
-            )
-            self.cache_pitchf = torch.zeros(
-                1024, device=self.device, dtype=torch.float32
-            )
+            self.cache_pitch: torch.Tensor = torch.zeros(1024, device=self.device, dtype=torch.long)
+            self.cache_pitchf = torch.zeros(1024, device=self.device, dtype=torch.float32)
 
             if last_rvc is None:
                 models, _, _ = fairseq.checkpoint_utils.load_model_ensemble_and_task(
@@ -153,9 +142,7 @@ class RVC:
                 self.tgt_sr = cpt["config"][-1]
                 self.if_f0 = cpt.get("f0", 1)
                 self.version = cpt.get("version", "v1")
-                self.net_g = torch.jit.load(
-                    BytesIO(cpt["model"]), map_location=self.device
-                )
+                self.net_g = torch.jit.load(BytesIO(cpt["model"]), map_location=self.device)
                 self.net_g.infer = self.net_g.forward
                 self.net_g.eval().to(self.device)
 
@@ -189,7 +176,7 @@ class RVC:
             if last_rvc is not None and hasattr(last_rvc, "model_fcpe"):
                 self.device_fcpe = last_rvc.device_fcpe
                 self.model_fcpe = last_rvc.model_fcpe
-        except:
+        except Exception:
             printt(traceback.format_exc())
 
     def change_key(self, new_key):
@@ -207,9 +194,7 @@ class RVC:
             f0 = torch.from_numpy(f0)
         f0 = f0.float().to(self.device).squeeze()
         f0_mel = 1127 * torch.log(1 + f0 / 700)
-        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
-            self.f0_mel_max - self.f0_mel_min
-        ) + 1
+        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (self.f0_mel_max - self.f0_mel_min) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
         f0_coarse = torch.round(f0_mel).long()
@@ -264,9 +249,7 @@ class RVC:
             if idx == 0:
                 self.inp_q.put((idx, x[:tail], res_f0, n_cpu, ts))
             else:
-                self.inp_q.put(
-                    (idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts)
-                )
+                self.inp_q.put((idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts))
         while 1:
             res_ts = self.opt_q.get()
             if res_ts == ts:
@@ -279,17 +262,13 @@ class RVC:
                 f0 = f0[2:-3]
             else:
                 f0 = f0[2:]
-            f0bak[part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]] = (
-                f0
-            )
+            f0bak[part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]] = f0
         f0bak = signal.medfilt(f0bak, 3)
         f0bak *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0bak)
 
     def get_f0_crepe(self, x, f0_up_key):
-        if "privateuseone" in str(
-            self.device
-        ):  ###不支持dml，cpu又太慢用不成，拿fcpe顶替
+        if "privateuseone" in str(self.device):  ###不支持dml，cpu又太慢用不成，拿fcpe顶替
             return self.get_f0(x, f0_up_key, 1, "fcpe")
         # printt("using crepe,device:%s"%self.device)
         f0, pd = torchcrepe.predict(
@@ -300,7 +279,8 @@ class RVC:
             self.f0_max,
             "full",
             batch_size=512,
-            # device=self.device if self.device.type!="privateuseone" else "cpu",###crepe不用半精度全部是全精度所以不愁###cpu延迟高到没法用
+            # device=self.device if self.device.type!="privateuseone" else "cpu",
+            # crepe不用半精度全部是全精度所以不愁, cpu延迟高到没法用
             device=self.device,
             return_periodicity=True,
         )
@@ -311,7 +291,7 @@ class RVC:
         return self.get_f0_post(f0)
 
     def get_f0_rmvpe(self, x, f0_up_key):
-        if hasattr(self, "model_rmvpe") == False:
+        if not hasattr(self, "model_rmvpe"):
             from infer.lib.rmvpe import RMVPE
 
             printt("Loading rmvpe model")
@@ -326,7 +306,7 @@ class RVC:
         return self.get_f0_post(f0)
 
     def get_f0_fcpe(self, x, f0_up_key):
-        if hasattr(self, "model_fcpe") == False:
+        if not hasattr(self, "model_fcpe"):
             from torchfcpe import spawn_bundled_infer_model
 
             printt("Loading fcpe model")
@@ -365,9 +345,7 @@ class RVC:
                 "output_layer": 9 if self.version == "v1" else 12,
             }
             logits = self.model.extract_features(**inputs)
-            feats = (
-                self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
-            )
+            feats = self.model.final_proj(logits[0]) if self.version == "v1" else logits[0]
             feats = torch.cat((feats, feats[:, -1:, :]), 1)
         t2 = ttime()
         try:
@@ -377,23 +355,18 @@ class RVC:
                 if (ix >= 0).all():
                     weight = np.square(1 / score)
                     weight /= weight.sum(axis=1, keepdims=True)
-                    npy = np.sum(
-                        self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1
-                    )
+                    npy = np.sum(self.big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
                     if self.config.is_half:
                         npy = npy.astype("float16")
                     feats[0][skip_head // 2 :] = (
-                        torch.from_numpy(npy).unsqueeze(0).to(self.device)
-                        * self.index_rate
+                        torch.from_numpy(npy).unsqueeze(0).to(self.device) * self.index_rate
                         + (1 - self.index_rate) * feats[0][skip_head // 2 :]
                     )
                 else:
-                    printt(
-                        "Invalid index. You MUST use added_xxxx.index but not trained_xxxx.index!"
-                    )
+                    printt("Invalid index. You MUST use added_xxxx.index but not trained_xxxx.index!")
             else:
                 printt("Index search FAILED or disabled")
-        except:
+        except Exception:
             traceback.print_exc()
             printt("Index search FAILED")
         t3 = ttime()
@@ -402,9 +375,7 @@ class RVC:
             f0_extractor_frame = block_frame_16k + 800
             if f0method == "rmvpe":
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
-            pitch, pitchf = self.get_f0(
-                input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method
-            )
+            pitch, pitchf = self.get_f0(input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method)
             shift = block_frame_16k // 160
             self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()
             self.cache_pitchf[:-shift] = self.cache_pitchf[shift:].clone()
@@ -431,9 +402,7 @@ class RVC:
                     return_length,
                 )
             else:
-                infered_audio, _, _ = self.net_g.infer(
-                    feats, p_len, sid, skip_head, return_length
-                )
+                infered_audio, _, _ = self.net_g.infer(feats, p_len, sid, skip_head, return_length)
         t5 = ttime()
         printt(
             "Spent time: fea = %.3fs, index = %.3fs, f0 = %.3fs, model = %.3fs",

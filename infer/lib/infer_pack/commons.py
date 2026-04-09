@@ -1,9 +1,7 @@
 from typing import List, Optional
 import math
 
-import numpy as np
 import torch
-from torch import nn
 from torch.nn import functional as F
 
 
@@ -26,9 +24,7 @@ def get_padding(kernel_size, dilation=1):
 def kl_divergence(m_p, logs_p, m_q, logs_q):
     """KL(P||Q)"""
     kl = (logs_q - logs_p) - 0.5
-    kl += (
-        0.5 * (torch.exp(2.0 * logs_p) + ((m_p - m_q) ** 2)) * torch.exp(-2.0 * logs_q)
-    )
+    kl += 0.5 * (torch.exp(2.0 * logs_p) + ((m_p - m_q) ** 2)) * torch.exp(-2.0 * logs_q)
     return kl
 
 
@@ -74,9 +70,7 @@ def rand_slice_segments(x, x_lengths=None, segment_size=4):
 def get_timing_signal_1d(length, channels, min_timescale=1.0, max_timescale=1.0e4):
     position = torch.arange(length, dtype=torch.float)
     num_timescales = channels // 2
-    log_timescale_increment = math.log(float(max_timescale) / float(min_timescale)) / (
-        num_timescales - 1
-    )
+    log_timescale_increment = math.log(float(max_timescale) / float(min_timescale)) / (num_timescales - 1)
     inv_timescales = min_timescale * torch.exp(
         torch.arange(num_timescales, dtype=torch.float) * -log_timescale_increment
     )
@@ -141,8 +135,6 @@ def generate_path(duration, mask):
     duration: [b, 1, t_x]
     mask: [b, 1, t_y, t_x]
     """
-    device = duration.device
-
     b, _, t_y, t_x = mask.shape
     cum_duration = torch.cumsum(duration, -1)
 

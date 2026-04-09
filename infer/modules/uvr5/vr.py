@@ -41,9 +41,7 @@ class AudioPre:
         self.mp = mp
         self.model = model
 
-    def _path_audio_(
-        self, music_file, ins_root=None, vocal_root=None, format="flac", is_hp3=False
-    ):
+    def _path_audio_(self, music_file, ins_root=None, vocal_root=None, format="flac", is_hp3=False):
         if ins_root is None and vocal_root is None:
             return "No save root."
         name = os.path.basename(music_file)
@@ -51,7 +49,7 @@ class AudioPre:
             os.makedirs(ins_root, exist_ok=True)
         if vocal_root is not None:
             os.makedirs(vocal_root, exist_ok=True)
-        X_wave, y_wave, X_spec_s, y_spec_s = {}, {}, {}, {}
+        X_wave, _y_wave, X_spec_s, _y_spec_s = {}, {}, {}, {}
         bands_n = len(self.mp.param["band"])
         # print(bands_n)
         for d in range(bands_n, 0, -1):
@@ -90,9 +88,7 @@ class AudioPre:
                 input_high_end_h = (bp["n_fft"] // 2 - bp["crop_stop"]) + (
                     self.mp.param["pre_filter_stop"] - self.mp.param["pre_filter_start"]
                 )
-                input_high_end = X_spec_s[d][
-                    :, bp["n_fft"] // 2 - input_high_end_h : bp["n_fft"] // 2, :
-                ]
+                input_high_end = X_spec_s[d][:, bp["n_fft"] // 2 - input_high_end_h : bp["n_fft"] // 2, :]
 
         X_spec_m = spec_utils.combine_spectrograms(X_spec_s, self.mp)
         aggresive_set = float(self.data["agg"] / 100)
@@ -101,9 +97,7 @@ class AudioPre:
             "split_bin": self.mp.param["band"][1]["crop_stop"],
         }
         with torch.no_grad():
-            pred, X_mag, X_phase = inference(
-                X_spec_m, self.device, self.model, aggressiveness, self.data
-            )
+            pred, X_mag, X_phase = inference(X_spec_m, self.device, self.model, aggressiveness, self.data)
         # Postprocess
         if self.data["postprocess"]:
             pred_inv = np.clip(X_mag - pred, 0, np.inf)
@@ -113,16 +107,14 @@ class AudioPre:
 
         if ins_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
-                input_high_end_ = spec_utils.mirroring(
-                    self.data["high_end_process"], y_spec_m, input_high_end, self.mp
-                )
+                input_high_end_ = spec_utils.mirroring(self.data["high_end_process"], y_spec_m, input_high_end, self.mp)
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(
                     y_spec_m, self.mp, input_high_end_h, input_high_end_
                 )
             else:
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(y_spec_m, self.mp)
             logger.info("%s instruments done" % name)
-            if is_hp3 == True:
+            if is_hp3:
                 head = "vocal_"
             else:
                 head = "instrument_"
@@ -136,9 +128,7 @@ class AudioPre:
                     self.mp.param["sr"],
                 )  #
             else:
-                path = os.path.join(
-                    ins_root, head + "{}_{}.wav".format(name, self.data["agg"])
-                )
+                path = os.path.join(ins_root, head + "{}_{}.wav".format(name, self.data["agg"]))
                 sf.write(
                     path,
                     (np.array(wav_instrument) * 32768).astype("int16"),
@@ -146,26 +136,20 @@ class AudioPre:
                 )
                 if os.path.exists(path):
                     opt_format_path = path[:-4] + ".%s" % format
-                    os.system(
-                        'ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path)
-                    )
+                    os.system('ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
         if vocal_root is not None:
-            if is_hp3 == True:
+            if is_hp3:
                 head = "instrument_"
             else:
                 head = "vocal_"
             if self.data["high_end_process"].startswith("mirroring"):
-                input_high_end_ = spec_utils.mirroring(
-                    self.data["high_end_process"], v_spec_m, input_high_end, self.mp
-                )
-                wav_vocals = spec_utils.cmb_spectrogram_to_wave(
-                    v_spec_m, self.mp, input_high_end_h, input_high_end_
-                )
+                input_high_end_ = spec_utils.mirroring(self.data["high_end_process"], v_spec_m, input_high_end, self.mp)
+                wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp, input_high_end_h, input_high_end_)
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             logger.info("%s vocals done" % name)
@@ -179,9 +163,7 @@ class AudioPre:
                     self.mp.param["sr"],
                 )
             else:
-                path = os.path.join(
-                    vocal_root, head + "{}_{}.wav".format(name, self.data["agg"])
-                )
+                path = os.path.join(vocal_root, head + "{}_{}.wav".format(name, self.data["agg"]))
                 sf.write(
                     path,
                     (np.array(wav_vocals) * 32768).astype("int16"),
@@ -189,13 +171,11 @@ class AudioPre:
                 )
                 if os.path.exists(path):
                     opt_format_path = path[:-4] + ".%s" % format
-                    os.system(
-                        'ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path)
-                    )
+                    os.system('ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
 
 
@@ -236,7 +216,7 @@ class AudioPreDeEcho:
             os.makedirs(ins_root, exist_ok=True)
         if vocal_root is not None:
             os.makedirs(vocal_root, exist_ok=True)
-        X_wave, y_wave, X_spec_s, y_spec_s = {}, {}, {}, {}
+        X_wave, _y_wave, X_spec_s, _y_spec_s = {}, {}, {}, {}
         bands_n = len(self.mp.param["band"])
         # print(bands_n)
         for d in range(bands_n, 0, -1):
@@ -275,9 +255,7 @@ class AudioPreDeEcho:
                 input_high_end_h = (bp["n_fft"] // 2 - bp["crop_stop"]) + (
                     self.mp.param["pre_filter_stop"] - self.mp.param["pre_filter_start"]
                 )
-                input_high_end = X_spec_s[d][
-                    :, bp["n_fft"] // 2 - input_high_end_h : bp["n_fft"] // 2, :
-                ]
+                input_high_end = X_spec_s[d][:, bp["n_fft"] // 2 - input_high_end_h : bp["n_fft"] // 2, :]
 
         X_spec_m = spec_utils.combine_spectrograms(X_spec_s, self.mp)
         aggresive_set = float(self.data["agg"] / 100)
@@ -286,9 +264,7 @@ class AudioPreDeEcho:
             "split_bin": self.mp.param["band"][1]["crop_stop"],
         }
         with torch.no_grad():
-            pred, X_mag, X_phase = inference(
-                X_spec_m, self.device, self.model, aggressiveness, self.data
-            )
+            pred, X_mag, X_phase = inference(X_spec_m, self.device, self.model, aggressiveness, self.data)
         # Postprocess
         if self.data["postprocess"]:
             pred_inv = np.clip(X_mag - pred, 0, np.inf)
@@ -298,9 +274,7 @@ class AudioPreDeEcho:
 
         if ins_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
-                input_high_end_ = spec_utils.mirroring(
-                    self.data["high_end_process"], y_spec_m, input_high_end, self.mp
-                )
+                input_high_end_ = spec_utils.mirroring(self.data["high_end_process"], y_spec_m, input_high_end, self.mp)
                 wav_instrument = spec_utils.cmb_spectrogram_to_wave(
                     y_spec_m, self.mp, input_high_end_h, input_high_end_
                 )
@@ -317,9 +291,7 @@ class AudioPreDeEcho:
                     self.mp.param["sr"],
                 )  #
             else:
-                path = os.path.join(
-                    ins_root, "vocal_{}_{}.wav".format(name, self.data["agg"])
-                )
+                path = os.path.join(ins_root, "vocal_{}_{}.wav".format(name, self.data["agg"]))
                 sf.write(
                     path,
                     (np.array(wav_instrument) * 32768).astype("int16"),
@@ -327,22 +299,16 @@ class AudioPreDeEcho:
                 )
                 if os.path.exists(path):
                     opt_format_path = path[:-4] + ".%s" % format
-                    os.system(
-                        'ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path)
-                    )
+                    os.system('ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass
         if vocal_root is not None:
             if self.data["high_end_process"].startswith("mirroring"):
-                input_high_end_ = spec_utils.mirroring(
-                    self.data["high_end_process"], v_spec_m, input_high_end, self.mp
-                )
-                wav_vocals = spec_utils.cmb_spectrogram_to_wave(
-                    v_spec_m, self.mp, input_high_end_h, input_high_end_
-                )
+                input_high_end_ = spec_utils.mirroring(self.data["high_end_process"], v_spec_m, input_high_end, self.mp)
+                wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp, input_high_end_h, input_high_end_)
             else:
                 wav_vocals = spec_utils.cmb_spectrogram_to_wave(v_spec_m, self.mp)
             logger.info("%s vocals done" % name)
@@ -356,9 +322,7 @@ class AudioPreDeEcho:
                     self.mp.param["sr"],
                 )
             else:
-                path = os.path.join(
-                    vocal_root, "instrument_{}_{}.wav".format(name, self.data["agg"])
-                )
+                path = os.path.join(vocal_root, "instrument_{}_{}.wav".format(name, self.data["agg"]))
                 sf.write(
                     path,
                     (np.array(wav_vocals) * 32768).astype("int16"),
@@ -366,11 +330,9 @@ class AudioPreDeEcho:
                 )
                 if os.path.exists(path):
                     opt_format_path = path[:-4] + ".%s" % format
-                    os.system(
-                        'ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path)
-                    )
+                    os.system('ffmpeg -i "%s" -vn "%s" -q:a 2 -y' % (path, opt_format_path))
                     if os.path.exists(opt_format_path):
                         try:
                             os.remove(path)
-                        except:
+                        except Exception:
                             pass

@@ -1,7 +1,6 @@
 import librosa
 import numpy as np
 import onnxruntime
-import soundfile
 
 import logging
 
@@ -39,23 +38,17 @@ def get_f0_predictor(f0_predictor, hop_length, sampling_rate, **kargs):
     if f0_predictor == "pm":
         from lib.infer_pack.modules.F0Predictor.PMF0Predictor import PMF0Predictor
 
-        f0_predictor_object = PMF0Predictor(
-            hop_length=hop_length, sampling_rate=sampling_rate
-        )
+        f0_predictor_object = PMF0Predictor(hop_length=hop_length, sampling_rate=sampling_rate)
     elif f0_predictor == "harvest":
         from lib.infer_pack.modules.F0Predictor.HarvestF0Predictor import (
             HarvestF0Predictor,
         )
 
-        f0_predictor_object = HarvestF0Predictor(
-            hop_length=hop_length, sampling_rate=sampling_rate
-        )
+        f0_predictor_object = HarvestF0Predictor(hop_length=hop_length, sampling_rate=sampling_rate)
     elif f0_predictor == "dio":
         from lib.infer_pack.modules.F0Predictor.DioF0Predictor import DioF0Predictor
 
-        f0_predictor_object = DioF0Predictor(
-            hop_length=hop_length, sampling_rate=sampling_rate
-        )
+        f0_predictor_object = DioF0Predictor(hop_length=hop_length, sampling_rate=sampling_rate)
     else:
         raise Exception("Unknown f0 predictor")
     return f0_predictor_object
@@ -130,9 +123,7 @@ class OnnxRVC:
         pitchf = pitchf * 2 ** (f0_up_key / 12)
         pitch = pitchf.copy()
         f0_mel = 1127 * np.log(1 + pitch / 700)
-        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (
-            f0_mel_max - f0_mel_min
-        ) + 1
+        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (f0_mel_max - f0_mel_min) + 1
         f0_mel[f0_mel <= 1] = 1
         f0_mel[f0_mel > 255] = 255
         pitch = np.rint(f0_mel).astype(np.int64)

@@ -7,11 +7,7 @@ standard_file = "locale/zh_CN.json"
 
 # Find all JSON files in the directory
 dir_path = "locale/"
-languages = [
-    os.path.join(dir_path, f)
-    for f in os.listdir(dir_path)
-    if f.endswith(".json") and f != standard_file
-]
+languages = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith(".json") and f != standard_file]
 
 # Load the standard file
 with open(standard_file, "r", encoding="utf-8") as f:
@@ -37,9 +33,7 @@ for lang_file in languages:
         del lang_data[key]
 
     # Sort the keys of the language file to match the order of the standard file
-    lang_data = OrderedDict(
-        sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0]))
-    )
+    lang_data = OrderedDict(sorted(lang_data.items(), key=lambda x: list(standard_data.keys()).index(x[0])))
 
     # Save the updated language file
     with open(lang_file, "w", encoding="utf-8") as f:

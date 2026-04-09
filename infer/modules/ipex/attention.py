@@ -1,5 +1,4 @@
 import torch
-import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
 
@@ -57,17 +56,13 @@ def torch_bmm(input, mat2, *, out=None):
             start_idx = i * split_slice_size
             end_idx = (i + 1) * split_slice_size
             if do_split_2:
-                for i2 in range(
-                    input_tokens // split_2_slice_size
-                ):  # pylint: disable=invalid-name
+                for i2 in range(input_tokens // split_2_slice_size):  # pylint: disable=invalid-name
                     start_idx_2 = i2 * split_2_slice_size
                     end_idx_2 = (i2 + 1) * split_2_slice_size
-                    hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = (
-                        original_torch_bmm(
-                            input[start_idx:end_idx, start_idx_2:end_idx_2],
-                            mat2[start_idx:end_idx, start_idx_2:end_idx_2],
-                            out=out,
-                        )
+                    hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = original_torch_bmm(
+                        input[start_idx:end_idx, start_idx_2:end_idx_2],
+                        mat2[start_idx:end_idx, start_idx_2:end_idx_2],
+                        out=out,
                     )
             else:
                 hidden_states[start_idx:end_idx] = original_torch_bmm(
@@ -81,9 +76,7 @@ def torch_bmm(input, mat2, *, out=None):
 original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_attention
 
 
-def scaled_dot_product_attention(
-    query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False
-):
+def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False):
     # ARC GPUs can't allocate more than 4GB to a single block, Slice it:
     if len(query.shape) == 3:
         batch_size_attention, query_tokens, shape_four = query.shape
@@ -94,9 +87,7 @@ def scaled_dot_product_attention(
         no_shape_one = False
 
     block_multiply = query.element_size()
-    slice_block_size = (
-        shape_one * query_tokens * shape_four / 1024 / 1024 * block_multiply
-    )
+    slice_block_size = shape_one * query_tokens * shape_four / 1024 / 1024 * block_multiply
     block_size = batch_size_attention * slice_block_size
 
     split_slice_size = batch_size_attention
@@ -113,9 +104,7 @@ def scaled_dot_product_attention(
 
     split_2_slice_size = query_tokens
     if split_slice_size * slice_block_size > 4:
-        slice_block_size2 = (
-            shape_one * split_slice_size * shape_four / 1024 / 1024 * block_multiply
-        )
+        slice_block_size2 = shape_one * split_slice_size * shape_four / 1024 / 1024 * block_multiply
         do_split_2 = True
         # Find something divisible with the batch_size_attention
         while (split_2_slice_size * slice_block_size2) > 4:
@@ -132,25 +121,21 @@ def scaled_dot_product_attention(
             start_idx = i * split_slice_size
             end_idx = (i + 1) * split_slice_size
             if do_split_2:
-                for i2 in range(
-                    query_tokens // split_2_slice_size
-                ):  # pylint: disable=invalid-name
+                for i2 in range(query_tokens // split_2_slice_size):  # pylint: disable=invalid-name
                     start_idx_2 = i2 * split_2_slice_size
                     end_idx_2 = (i2 + 1) * split_2_slice_size
                     if no_shape_one:
-                        hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = (
-                            original_scaled_dot_product_attention(
-                                query[start_idx:end_idx, start_idx_2:end_idx_2],
-                                key[start_idx:end_idx, start_idx_2:end_idx_2],
-                                value[start_idx:end_idx, start_idx_2:end_idx_2],
-                                attn_mask=(
-                                    attn_mask[start_idx:end_idx, start_idx_2:end_idx_2]
-                                    if attn_mask is not None
-                                    else attn_mask
-                                ),
-                                dropout_p=dropout_p,
-                                is_causal=is_causal,
-                            )
+                        hidden_states[start_idx:end_idx, start_idx_2:end_idx_2] = original_scaled_dot_product_attention(
+                            query[start_idx:end_idx, start_idx_2:end_idx_2],
+                            key[start_idx:end_idx, start_idx_2:end_idx_2],
+                            value[start_idx:end_idx, start_idx_2:end_idx_2],
+                            attn_mask=(
+                                attn_mask[start_idx:end_idx, start_idx_2:end_idx_2]
+                                if attn_mask is not None
+                                else attn_mask
+                            ),
+                            dropout_p=dropout_p,
+                            is_causal=is_causal,
                         )
                     else:
                         hidden_states[:, start_idx:end_idx, start_idx_2:end_idx_2] = (
@@ -159,9 +144,7 @@ def scaled_dot_product_attention(
                                 key[:, start_idx:end_idx, start_idx_2:end_idx_2],
                                 value[:, start_idx:end_idx, start_idx_2:end_idx_2],
                                 attn_mask=(
-                                    attn_mask[
-                                        :, start_idx:end_idx, start_idx_2:end_idx_2
-                                    ]
+                                    attn_mask[:, start_idx:end_idx, start_idx_2:end_idx_2]
                                     if attn_mask is not None
                                     else attn_mask
                                 ),
@@ -171,34 +154,22 @@ def scaled_dot_product_attention(
                         )
             else:
                 if no_shape_one:
-                    hidden_states[start_idx:end_idx] = (
-                        original_scaled_dot_product_attention(
-                            query[start_idx:end_idx],
-                            key[start_idx:end_idx],
-                            value[start_idx:end_idx],
-                            attn_mask=(
-                                attn_mask[start_idx:end_idx]
-                                if attn_mask is not None
-                                else attn_mask
-                            ),
-                            dropout_p=dropout_p,
-                            is_causal=is_causal,
-                        )
+                    hidden_states[start_idx:end_idx] = original_scaled_dot_product_attention(
+                        query[start_idx:end_idx],
+                        key[start_idx:end_idx],
+                        value[start_idx:end_idx],
+                        attn_mask=(attn_mask[start_idx:end_idx] if attn_mask is not None else attn_mask),
+                        dropout_p=dropout_p,
+                        is_causal=is_causal,
                     )
                 else:
-                    hidden_states[:, start_idx:end_idx] = (
-                        original_scaled_dot_product_attention(
-                            query[:, start_idx:end_idx],
-                            key[:, start_idx:end_idx],
-                            value[:, start_idx:end_idx],
-                            attn_mask=(
-                                attn_mask[:, start_idx:end_idx]
-                                if attn_mask is not None
-                                else attn_mask
-                            ),
-                            dropout_p=dropout_p,
-                            is_causal=is_causal,
-                        )
+                    hidden_states[:, start_idx:end_idx] = original_scaled_dot_product_attention(
+                        query[:, start_idx:end_idx],
+                        key[:, start_idx:end_idx],
+                        value[:, start_idx:end_idx],
+                        attn_mask=(attn_mask[:, start_idx:end_idx] if attn_mask is not None else attn_mask),
+                        dropout_p=dropout_p,
+                        is_causal=is_causal,
                     )
     else:
         return original_scaled_dot_product_attention(

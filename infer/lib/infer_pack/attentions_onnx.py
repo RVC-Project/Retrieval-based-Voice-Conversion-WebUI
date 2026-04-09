@@ -6,16 +6,14 @@
 #                  Do Not Use All Of Non-Torch Types!                #
 #                                                                    #
 ############################## Warning! ##############################
-import copy
 import math
 from typing import Optional
 
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from infer.lib.infer_pack import commons, modules
+from infer.lib.infer_pack import commons
 from infer.lib.infer_pack.modules import LayerNorm
 
 
@@ -29,7 +27,7 @@ class Encoder(nn.Module):
         kernel_size=1,
         p_dropout=0.0,
         window_size=10,
-        **kwargs
+        **kwargs,
     ):
         super(Encoder, self).__init__()
         self.hidden_channels = hidden_channels
@@ -70,9 +68,7 @@ class Encoder(nn.Module):
     def forward(self, x, x_mask):
         attn_mask = x_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
         x = x * x_mask
-        zippep = zip(
-            self.attn_layers, self.norm_layers_1, self.ffn_layers, self.norm_layers_2
-        )
+        zippep = zip(self.attn_layers, self.norm_layers_1, self.ffn_layers, self.norm_layers_2)
         for attn_layers, norm_layers_1, ffn_layers, norm_layers_2 in zippep:
             y = attn_layers(x, x, attn_mask)
             y = self.drop(y)
@@ -96,7 +92,7 @@ class Decoder(nn.Module):
         p_dropout=0.0,
         proximal_bias=False,
         proximal_init=True,
-        **kwargs
+        **kwargs,
     ):
         super(Decoder, self).__init__()
         self.hidden_channels = hidden_channels
@@ -128,9 +124,7 @@ class Decoder(nn.Module):
             )
             self.norm_layers_0.append(LayerNorm(hidden_channels))
             self.encdec_attn_layers.append(
-                MultiHeadAttention(
-                    hidden_channels, hidden_channels, n_heads, p_dropout=p_dropout
-                )
+                MultiHeadAttention(hidden_channels, hidden_channels, n_heads, p_dropout=p_dropout)
             )
             self.norm_layers_1.append(LayerNorm(hidden_channels))
             self.ffn_layers.append(
@@ -150,9 +144,7 @@ class Decoder(nn.Module):
         x: decoder input
         h: encoder output
         """
-        self_attn_mask = commons.subsequent_mask(x_mask.size(2)).to(
-            device=x.device, dtype=x.dtype
-        )
+        self_attn_mask = commons.subsequent_mask(x_mask.size(2)).to(device=x.device, dtype=x.dtype)
         encdec_attn_mask = h_mask.unsqueeze(2) * x_mask.unsqueeze(-1)
         x = x * x_mask
         for i in range(self.n_layers):
@@ -208,14 +200,8 @@ class MultiHeadAttention(nn.Module):
         if window_size is not None:
             n_heads_rel = 1 if heads_share else n_heads
             rel_stddev = self.k_channels**-0.5
-            self.emb_rel_k = nn.Parameter(
-                torch.randn(n_heads_rel, window_size * 2 + 1, self.k_channels)
-                * rel_stddev
-            )
-            self.emb_rel_v = nn.Parameter(
-                torch.randn(n_heads_rel, window_size * 2 + 1, self.k_channels)
-                * rel_stddev
-            )
+            self.emb_rel_k = nn.Parameter(torch.randn(n_heads_rel, window_size * 2 + 1, self.k_channels) * rel_stddev)
+            self.emb_rel_v = nn.Parameter(torch.randn(n_heads_rel, window_size * 2 + 1, self.k_channels) * rel_stddev)
 
         nn.init.xavier_uniform_(self.conv_q.weight)
         nn.init.xavier_uniform_(self.conv_k.weight)
@@ -225,9 +211,7 @@ class MultiHeadAttention(nn.Module):
                 self.conv_k.weight.copy_(self.conv_q.weight)
                 self.conv_k.bias.copy_(self.conv_q.bias)
 
-    def forward(
-        self, x: torch.Tensor, c: torch.Tensor, attn_mask: Optional[torch.Tensor] = None
-    ):
+    def forward(self, x: torch.Tensor, c: torch.Tensor, attn_mask: Optional[torch.Tensor] = None):
         q = self.conv_q(x)
         k = self.conv_k(c)
         v = self.conv_v(c)
@@ -254,42 +238,26 @@ class MultiHeadAttention(nn.Module):
         scores = torch.matmul(query / math.sqrt(self.k_channels), key.transpose(-2, -1))
         if self.window_size is not None:
             key_relative_embeddings = self._get_relative_embeddings(self.emb_rel_k, t_s)
-            rel_logits = self._matmul_with_relative_keys(
-                query / math.sqrt(self.k_channels), key_relative_embeddings
-            )
+            rel_logits = self._matmul_with_relative_keys(query / math.sqrt(self.k_channels), key_relative_embeddings)
             scores_local = self._relative_position_to_absolute_position(rel_logits)
             scores = scores + scores_local
         if self.proximal_bias:
             assert t_s == t_t, "Proximal bias is only available for self-attention."
-            scores = scores + self._attention_bias_proximal(t_s).to(
-                device=scores.device, dtype=scores.dtype
-            )
+            scores = scores + self._attention_bias_proximal(t_s).to(device=scores.device, dtype=scores.dtype)
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e4)
             if self.block_length is not None:
-                assert (
-                    t_s == t_t
-                ), "Local attention is only available for self-attention."
-                block_mask = (
-                    torch.ones_like(scores)
-                    .triu(-self.block_length)
-                    .tril(self.block_length)
-                )
+                assert t_s == t_t, "Local attention is only available for self-attention."
+                block_mask = torch.ones_like(scores).triu(-self.block_length).tril(self.block_length)
                 scores = scores.masked_fill(block_mask == 0, -1e4)
         p_attn = F.softmax(scores, dim=-1)  # [b, n_h, t_t, t_s]
         p_attn = self.drop(p_attn)
         output = torch.matmul(p_attn, value)
         if self.window_size is not None:
             relative_weights = self._absolute_position_to_relative_position(p_attn)
-            value_relative_embeddings = self._get_relative_embeddings(
-                self.emb_rel_v, t_s
-            )
-            output = output + self._matmul_with_relative_values(
-                relative_weights, value_relative_embeddings
-            )
-        output = (
-            output.transpose(2, 3).contiguous().view(b, d, t_t)
-        )  # [b, n_h, t_t, d_k] -> [b, d, t_t]
+            value_relative_embeddings = self._get_relative_embeddings(self.emb_rel_v, t_s)
+            output = output + self._matmul_with_relative_values(relative_weights, value_relative_embeddings)
+        output = output.transpose(2, 3).contiguous().view(b, d, t_t)  # [b, n_h, t_t, d_k] -> [b, d, t_t]
         return output, p_attn
 
     def _matmul_with_relative_values(self, x, y):
@@ -311,7 +279,6 @@ class MultiHeadAttention(nn.Module):
         return ret
 
     def _get_relative_embeddings(self, relative_embeddings, length):
-        max_relative_position = 2 * self.window_size + 1
         # Pad first before slice to avoid using cond ops.
 
         pad_length = torch.clamp(length - (self.window_size + 1), min=0)
@@ -322,9 +289,7 @@ class MultiHeadAttention(nn.Module):
             # commons.convert_pad_shape([[0, 0], [pad_length, pad_length], [0, 0]]),
             [0, 0, pad_length, pad_length, 0, 0],
         )
-        used_relative_embeddings = padded_relative_embeddings[
-            :, slice_start_position:slice_end_position
-        ]
+        used_relative_embeddings = padded_relative_embeddings[:, slice_start_position:slice_end_position]
         return used_relative_embeddings
 
     def _relative_position_to_absolute_position(self, x):
@@ -348,9 +313,7 @@ class MultiHeadAttention(nn.Module):
         )
 
         # Reshape and slice out the padded elements.
-        x_final = x_flat.view([batch, heads, length + 1, 2 * length - 1])[
-            :, :, :length, length - 1 :
-        ]
+        x_final = x_flat.view([batch, heads, length + 1, 2 * length - 1])[:, :, :length, length - 1 :]
         return x_final
 
     def _absolute_position_to_relative_position(self, x):
@@ -404,7 +367,7 @@ class FFN(nn.Module):
         self.p_dropout = p_dropout
         self.activation = activation
         self.causal = causal
-        self.is_activation = True if activation == "gelu" else False
+        self.is_activation = activation == "gelu"
         # if causal:
         #     self.padding = self._causal_padding
         # else:

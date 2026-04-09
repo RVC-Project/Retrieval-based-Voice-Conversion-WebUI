@@ -77,3 +77,24 @@ torch = [{index = "pytorch-cu126"}]
 torchvision = [{index = "pytorch-cu126"}]
 torchaudio = [{index = "pytorch-cu126"}]
 fairseq = {git = "https://github.com/One-sixth/fairseq.git"}
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E741",  # ambiguous-variable-name: MLコードでは単一文字変数名(l, O, I等)が慣習的に使われる
+    "F403",  # undefined-local-with-import-star: 既存コードでのstar importを許容
+    "F405",  # undefined-local-with-import-star-usage: F403と同様
+    "E402",  # module-import-not-at-top-of-file: sys.path操作や条件付きインポートが多い
+]
+
+[tool.ruff.format]
+quote-style = "double"

@@ -39,26 +39,18 @@ class VC:
 
         to_return_protect0 = gr.update(
             visible=self.if_f0 != 0,
-            value=(
-                to_return_protect[0] if self.if_f0 != 0 and to_return_protect else 0.5
-            ),
+            value=(to_return_protect[0] if self.if_f0 != 0 and to_return_protect else 0.5),
         )
         to_return_protect1 = gr.update(
             visible=self.if_f0 != 0,
-            value=(
-                to_return_protect[1] if self.if_f0 != 0 and to_return_protect else 0.33
-            ),
+            value=(to_return_protect[1] if self.if_f0 != 0 and to_return_protect else 0.33),
         )
 
         if sid == "" or sid == []:
-            if (
-                self.hubert_model is not None
-            ):  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
+            if self.hubert_model is not None:  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
                 logger.info("Clean model cache")
                 del (self.net_g, self.n_spk, self.hubert_model, self.tgt_sr)  # ,cpt
-                self.hubert_model = self.net_g = self.n_spk = self.hubert_model = (
-                    self.tgt_sr
-                ) = None
+                self.hubert_model = self.net_g = self.n_spk = self.hubert_model = self.tgt_sr = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 ###楼下不这么折腾清理不干净
@@ -66,16 +58,12 @@ class VC:
                 self.version = self.cpt.get("version", "v1")
                 if self.version == "v1":
                     if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs256NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
+                        self.net_g = SynthesizerTrnMs256NSFsid(*self.cpt["config"], is_half=self.config.is_half)
                     else:
                         self.net_g = SynthesizerTrnMs256NSFsid_nono(*self.cpt["config"])
                 elif self.version == "v2":
                     if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs768NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
+                        self.net_g = SynthesizerTrnMs768NSFsid(*self.cpt["config"], is_half=self.config.is_half)
                     else:
                         self.net_g = SynthesizerTrnMs768NSFsid_nono(*self.cpt["config"])
                 del self.net_g, self.cpt
@@ -88,7 +76,7 @@ class VC:
                 "",
                 "",
             )
-        person = f'{os.getenv("weight_root")}/{sid}'
+        person = f"{os.getenv('weight_root')}/{sid}"
         logger.info(f"Loading: {person}")
 
         self.cpt = torch.load(person, map_location="cpu", weights_only=False)
@@ -104,9 +92,9 @@ class VC:
             ("v2", 0): SynthesizerTrnMs768NSFsid_nono,
         }
 
-        self.net_g = synthesizer_class.get(
-            (self.version, self.if_f0), SynthesizerTrnMs256NSFsid
-        )(*self.cpt["config"], is_half=self.config.is_half)
+        self.net_g = synthesizer_class.get((self.version, self.if_f0), SynthesizerTrnMs256NSFsid)(
+            *self.cpt["config"], is_half=self.config.is_half
+        )
 
         del self.net_g.enc_q
 
@@ -151,25 +139,17 @@ class VC:
         protect,
     ):
         # デバッグログ: 入力値の型と内容を確認
-        logger.info(
-            f"vc_single called with input_audio_path type: {type(input_audio_path)}, value: {input_audio_path}"
-        )
+        logger.info(f"vc_single called with input_audio_path type: {type(input_audio_path)}, value: {input_audio_path}")
 
         if input_audio_path is None:
             return "You need to upload an audio", None
 
         # gr.Audio が辞書やタプルを返す場合の対応
         if isinstance(input_audio_path, dict):
-            logger.info(
-                f"input_audio_path is dict with keys: {input_audio_path.keys()}"
-            )
-            input_audio_path = input_audio_path.get("name") or input_audio_path.get(
-                "path"
-            )
+            logger.info(f"input_audio_path is dict with keys: {input_audio_path.keys()}")
+            input_audio_path = input_audio_path.get("name") or input_audio_path.get("path")
         elif isinstance(input_audio_path, (list, tuple)):
-            logger.info(
-                f"input_audio_path is list/tuple with length: {len(input_audio_path)}"
-            )
+            logger.info(f"input_audio_path is list/tuple with length: {len(input_audio_path)}")
             input_audio_path = input_audio_path[0] if input_audio_path else None
 
         logger.info(f"After extraction, input_audio_path: {input_audio_path}")
@@ -190,12 +170,7 @@ class VC:
 
             if file_index:
                 file_index = (
-                    file_index.strip(" ")
-                    .strip('"')
-                    .strip("\n")
-                    .strip('"')
-                    .strip(" ")
-                    .replace("trained", "added")
+                    file_index.strip(" ").strip('"').strip("\n").strip('"').strip(" ").replace("trained", "added")
                 )
             elif file_index2:
                 file_index = file_index2
@@ -226,17 +201,12 @@ class VC:
                 tgt_sr = resample_sr
             else:
                 tgt_sr = self.tgt_sr
-            index_info = (
-                "Index:\n%s." % file_index
-                if os.path.exists(file_index)
-                else "Index not used."
-            )
+            index_info = "Index:\n%s." % file_index if os.path.exists(file_index) else "Index not used."
             return (
-                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
-                % (index_info, *times),
+                "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs." % (index_info, *times),
                 (tgt_sr, audio_opt),
             )
-        except:
+        except Exception:
             info = traceback.format_exc()
             logger.warning(info)
             return info, (None, None)
@@ -266,12 +236,10 @@ class VC:
             os.makedirs(opt_root, exist_ok=True)
             try:
                 if dir_path != "":
-                    paths = [
-                        os.path.join(dir_path, name) for name in os.listdir(dir_path)
-                    ]
+                    paths = [os.path.join(dir_path, name) for name in os.listdir(dir_path)]
                 else:
                     paths = [p if isinstance(p, str) else p.name for p in paths]
-            except:
+            except Exception:
                 traceback.print_exc()
                 paths = [p if isinstance(p, str) else p.name for p in paths]
             infos = []
@@ -296,8 +264,7 @@ class VC:
                         tgt_sr, audio_opt = opt
                         if format1 in ["wav", "flac"]:
                             sf.write(
-                                "%s/%s.%s"
-                                % (opt_root, os.path.basename(path), format1),
+                                "%s/%s.%s" % (opt_root, os.path.basename(path), format1),
                                 audio_opt,
                                 tgt_sr,
                             )
@@ -312,10 +279,10 @@ class VC:
                                 wavf.seek(0, 0)
                                 with open(path, "wb") as outf:
                                     wav2(wavf, outf, format1)
-                    except:
+                    except Exception:
                         info += traceback.format_exc()
                 infos.append("%s->%s" % (os.path.basename(path), info))
                 yield "\n".join(infos)
             yield "\n".join(infos)
-        except:
+        except Exception:
             yield traceback.format_exc()

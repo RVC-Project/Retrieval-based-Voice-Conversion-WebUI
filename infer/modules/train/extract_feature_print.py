@@ -56,9 +56,7 @@ model_path = "assets/hubert/hubert_base.pt"
 
 printt("exp_dir: " + exp_dir)
 wavPath = "%s/1_16k_wavs" % exp_dir
-outPath = (
-    "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
-)
+outPath = "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
 os.makedirs(outPath, exist_ok=True)
 
 
@@ -80,7 +78,7 @@ def readwave(wav_path, normalize=False):
 # HuBERT model
 printt("load model(s) from {}".format(model_path))
 # if hubert model is exist
-if os.access(model_path, os.F_OK) == False:
+if not os.access(model_path, os.F_OK):
     printt(
         "Error: Extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main"
         % model_path
@@ -117,18 +115,14 @@ else:
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
                     "source": (
-                        feats.half().to(device)
-                        if is_half and device not in ["mps", "cpu"]
-                        else feats.to(device)
+                        feats.half().to(device) if is_half and device not in ["mps", "cpu"] else feats.to(device)
                     ),
                     "padding_mask": padding_mask.to(device),
                     "output_layer": 9 if version == "v1" else 12,  # layer 9
                 }
                 with torch.no_grad():
                     logits = model.extract_features(**inputs)
-                    feats = (
-                        model.final_proj(logits[0]) if version == "v1" else logits[0]
-                    )
+                    feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
 
                 feats = feats.squeeze(0).float().cpu().numpy()
                 if np.isnan(feats).sum() == 0:
@@ -137,6 +131,6 @@ else:
                     printt("%s-contains nan" % file)
                 if idx % n == 0:
                     printt("now-%s,all-%s,%s,%s" % (len(todo), idx, file, feats.shape))
-        except:
+        except Exception:
             printt(traceback.format_exc())
     printt("all-feature-done")

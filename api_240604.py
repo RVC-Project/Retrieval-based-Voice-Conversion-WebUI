@@ -2,7 +2,6 @@
 import os
 import sys
 import json
-import re
 import time
 import librosa
 import torch
@@ -185,45 +184,19 @@ class AudioAPI:
             self.rvc if self.rvc else None,
         )
         self.gui_config.samplerate = (
-            self.rvc.tgt_sr
-            if self.gui_config.sr_type == "sr_model"
-            else self.get_device_samplerate()
+            self.rvc.tgt_sr if self.gui_config.sr_type == "sr_model" else self.get_device_samplerate()
         )
         self.zc = self.gui_config.samplerate // 100
-        self.block_frame = (
-            int(
-                np.round(
-                    self.gui_config.block_time * self.gui_config.samplerate / self.zc
-                )
-            )
-            * self.zc
-        )
+        self.block_frame = int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc)) * self.zc
         self.block_frame_16k = 160 * self.block_frame // self.zc
         self.crossfade_frame = (
-            int(
-                np.round(
-                    self.gui_config.crossfade_time
-                    * self.gui_config.samplerate
-                    / self.zc
-                )
-            )
-            * self.zc
+            int(np.round(self.gui_config.crossfade_time * self.gui_config.samplerate / self.zc)) * self.zc
         )
         self.sola_buffer_frame = min(self.crossfade_frame, 4 * self.zc)
         self.sola_search_frame = self.zc
-        self.extra_frame = (
-            int(
-                np.round(
-                    self.gui_config.extra_time * self.gui_config.samplerate / self.zc
-                )
-            )
-            * self.zc
-        )
+        self.extra_frame = int(np.round(self.gui_config.extra_time * self.gui_config.samplerate / self.zc)) * self.zc
         self.input_wav = torch.zeros(
-            self.extra_frame
-            + self.crossfade_frame
-            + self.sola_search_frame
-            + self.block_frame,
+            self.extra_frame + self.crossfade_frame + self.sola_search_frame + self.block_frame,
             device=self.config.device,
             dtype=torch.float32,
         )
@@ -234,15 +207,11 @@ class AudioAPI:
             dtype=torch.float32,
         )
         self.rms_buffer = np.zeros(4 * self.zc, dtype="float32")
-        self.sola_buffer = torch.zeros(
-            self.sola_buffer_frame, device=self.config.device, dtype=torch.float32
-        )
+        self.sola_buffer = torch.zeros(self.sola_buffer_frame, device=self.config.device, dtype=torch.float32)
         self.nr_buffer = self.sola_buffer.clone()
         self.output_buffer = self.input_wav.clone()
         self.skip_head = self.extra_frame // self.zc
-        self.return_length = (
-            self.block_frame + self.sola_buffer_frame + self.sola_search_frame
-        ) // self.zc
+        self.return_length = (self.block_frame + self.sola_buffer_frame + self.sola_search_frame) // self.zc
         self.fade_in_window = (
             torch.sin(
                 0.5
@@ -271,9 +240,7 @@ class AudioAPI:
             ).to(self.config.device)
         else:
             self.resampler2 = None
-        self.tg = TorchGate(
-            sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
-        ).to(self.config.device)
+        self.tg = TorchGate(sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9).to(self.config.device)
         thread_vc = threading.Thread(target=self.soundinput)
         thread_vc.start()
 
@@ -293,41 +260,27 @@ class AudioAPI:
                 logger.info("Audio block passed.")
         logger.info("Ending VC")
 
-    def audio_callback(
-        self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
-    ):
+    def audio_callback(self, indata: np.ndarray, outdata: np.ndarray, frames, times, status):
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
         if self.gui_config.threhold > -60:
             indata = np.append(self.rms_buffer, indata)
-            rms = librosa.feature.rms(
-                y=indata, frame_length=4 * self.zc, hop_length=self.zc
-            )[:, 2:]
+            rms = librosa.feature.rms(y=indata, frame_length=4 * self.zc, hop_length=self.zc)[:, 2:]
             self.rms_buffer[:] = indata[-4 * self.zc :]
             indata = indata[2 * self.zc - self.zc // 2 :]
-            db_threhold = (
-                librosa.amplitude_to_db(rms, ref=1.0)[0] < self.gui_config.threhold
-            )
+            db_threhold = librosa.amplitude_to_db(rms, ref=1.0)[0] < self.gui_config.threhold
             for i in range(db_threhold.shape[0]):
                 if db_threhold[i]:
                     indata[i * self.zc : (i + 1) * self.zc] = 0
             indata = indata[self.zc // 2 :]
         self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :].clone()
-        self.input_wav[-indata.shape[0] :] = torch.from_numpy(indata).to(
-            self.config.device
-        )
-        self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
-            self.block_frame_16k :
-        ].clone()
+        self.input_wav[-indata.shape[0] :] = torch.from_numpy(indata).to(self.config.device)
+        self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[self.block_frame_16k :].clone()
         # input noise reduction and resampling
         if self.gui_config.I_noise_reduce:
-            self.input_wav_denoise[: -self.block_frame] = self.input_wav_denoise[
-                self.block_frame :
-            ].clone()
+            self.input_wav_denoise[: -self.block_frame] = self.input_wav_denoise[self.block_frame :].clone()
             input_wav = self.input_wav[-self.sola_buffer_frame - self.block_frame :]
-            input_wav = self.tg(
-                input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
-            ).squeeze(0)
+            input_wav = self.tg(input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)).squeeze(0)
             input_wav[: self.sola_buffer_frame] *= self.fade_in_window
             input_wav[: self.sola_buffer_frame] += self.nr_buffer * self.fade_out_window
             self.input_wav_denoise[-self.block_frame :] = input_wav[: self.block_frame]
@@ -336,9 +289,9 @@ class AudioAPI:
                 self.input_wav_denoise[-self.block_frame - 2 * self.zc :]
             )[160:]
         else:
-            self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = (
-                self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[160:]
-            )
+            self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = self.resampler(
+                self.input_wav[-indata.shape[0] - 2 * self.zc :]
+            )[160:]
         # infer
         if self.function == "vc":
             infer_wav = self.rvc.infer(
@@ -356,13 +309,9 @@ class AudioAPI:
             infer_wav = self.input_wav[self.extra_frame :].clone()
         # output noise reduction
         if self.gui_config.O_noise_reduce and self.function == "vc":
-            self.output_buffer[: -self.block_frame] = self.output_buffer[
-                self.block_frame :
-            ].clone()
+            self.output_buffer[: -self.block_frame] = self.output_buffer[self.block_frame :].clone()
             self.output_buffer[-self.block_frame :] = infer_wav[-self.block_frame :]
-            infer_wav = self.tg(
-                infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)
-            ).squeeze(0)
+            infer_wav = self.tg(infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)).squeeze(0)
         # volume envelop mixing
         if self.gui_config.rms_mix_rate < 1 and self.function == "vc":
             if self.gui_config.I_noise_reduce:
@@ -394,13 +343,9 @@ class AudioAPI:
                 align_corners=True,
             )[0, 0, :-1]
             rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-3)
-            infer_wav *= torch.pow(
-                rms1 / rms2, torch.tensor(1 - self.gui_config.rms_mix_rate)
-            )
+            infer_wav *= torch.pow(rms1 / rms2, torch.tensor(1 - self.gui_config.rms_mix_rate))
         # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
-        conv_input = infer_wav[
-            None, None, : self.sola_buffer_frame + self.sola_search_frame
-        ]
+        conv_input = infer_wav[None, None, : self.sola_buffer_frame + self.sola_search_frame]
         cor_nom = F.conv1d(conv_input, self.sola_buffer[None, None, :])
         cor_den = torch.sqrt(
             F.conv1d(
@@ -418,9 +363,7 @@ class AudioAPI:
         infer_wav = infer_wav[sola_offset:]
         if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
             infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
-            infer_wav[: self.sola_buffer_frame] += (
-                self.sola_buffer * self.fade_out_window
-            )
+            infer_wav[: self.sola_buffer_frame] += self.sola_buffer * self.fade_out_window
         else:
             infer_wav[: self.sola_buffer_frame] = phase_vocoder(
                 self.sola_buffer,
@@ -428,9 +371,7 @@ class AudioAPI:
                 self.fade_out_window,
                 self.fade_in_window,
             )
-        self.sola_buffer[:] = infer_wav[
-            self.block_frame : self.block_frame + self.sola_buffer_frame
-        ]
+        self.sola_buffer[:] = infer_wav[self.block_frame : self.block_frame + self.sola_buffer_frame]
         if sys.platform == "darwin":
             outdata[:] = infer_wav[: self.block_frame].cpu().numpy()[:, np.newaxis]
         else:
@@ -447,25 +388,13 @@ class AudioAPI:
         for hostapi in hostapis:
             for device_idx in hostapi["devices"]:
                 devices[device_idx]["hostapi_name"] = hostapi["name"]
-        input_devices = [
-            f"{d['name']} ({d['hostapi_name']})"
-            for d in devices
-            if d["max_input_channels"] > 0
-        ]
-        output_devices = [
-            f"{d['name']} ({d['hostapi_name']})"
-            for d in devices
-            if d["max_output_channels"] > 0
-        ]
+        input_devices = [f"{d['name']} ({d['hostapi_name']})" for d in devices if d["max_input_channels"] > 0]
+        output_devices = [f"{d['name']} ({d['hostapi_name']})" for d in devices if d["max_output_channels"] > 0]
         input_devices_indices = [
-            d["index"] if "index" in d else d["name"]
-            for d in devices
-            if d["max_input_channels"] > 0
+            d["index"] if "index" in d else d["name"] for d in devices if d["max_input_channels"] > 0
         ]
         output_devices_indices = [
-            d["index"] if "index" in d else d["name"]
-            for d in devices
-            if d["max_output_channels"] > 0
+            d["index"] if "index" in d else d["name"] for d in devices if d["max_output_channels"] > 0
         ]
         return (
             input_devices,
@@ -487,27 +416,21 @@ class AudioAPI:
         logger.debug(f"Selected output device: {output_device}")
 
         if input_device not in input_devices:
-            logger.error(
-                f"Input device '{input_device}' is not in the list of available devices"
-            )
+            logger.error(f"Input device '{input_device}' is not in the list of available devices")
             raise HTTPException(
                 status_code=400,
                 detail=f"Input device '{input_device}' is not available",
             )
 
         if output_device not in output_devices:
-            logger.error(
-                f"Output device '{output_device}' is not in the list of available devices"
-            )
+            logger.error(f"Output device '{output_device}' is not in the list of available devices")
             raise HTTPException(
                 status_code=400,
                 detail=f"Output device '{output_device}' is not available",
             )
 
         sd.default.device[0] = input_device_indices[input_devices.index(input_device)]
-        sd.default.device[1] = output_device_indices[
-            output_devices.index(output_device)
-        ]
+        sd.default.device[1] = output_device_indices[output_devices.index(output_device)]
         logger.info(f"Input device set to {sd.default.device[0]}: {input_device}")
         logger.info(f"Output device set to {sd.default.device[1]}: {output_device}")
 
@@ -562,9 +485,7 @@ def start_conversion():
             return {"message": "Audio conversion started"}
         else:
             logger.warning("Audio conversion already running")
-            raise HTTPException(
-                status_code=400, detail="Audio conversion already running"
-            )
+            raise HTTPException(status_code=400, detail="Audio conversion already running")
     except HTTPException as e:
         logger.error(f"Start conversion error: {e.detail}")
         raise
@@ -602,6 +523,7 @@ if __name__ == "__main__":
     from tools.torchgate import TorchGate
     import tools.rvc_for_realtime as rvc_for_realtime
     from configs.config import Config
+    from gui_v1 import phase_vocoder
 
     audio_api.config = Config()
     audio_api.initialize_queues()

@@ -19,8 +19,6 @@ from random import randint, shuffle
 import torch
 
 try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
         from infer.modules.ipex.gradscaler import gradscaler_init
@@ -95,7 +93,7 @@ class EpochRecorder:
 def main():
     n_gpus = torch.cuda.device_count()
 
-    if torch.cuda.is_available() == False and torch.backends.mps.is_available() == True:
+    if not torch.cuda.is_available() and torch.backends.mps.is_available():
         n_gpus = 1
     if n_gpus < 1:
         # patch to unblock people without gpus. there is probably a better way.
@@ -126,9 +124,7 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
 
-    dist.init_process_group(
-        backend="gloo", init_method="env://", world_size=n_gpus, rank=rank
-    )
+    dist.init_process_group(backend="gloo", init_method="env://", world_size=n_gpus, rank=rank)
     torch.manual_seed(hps.train.seed)
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
@@ -211,14 +207,15 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         )  # D多半加载没事
         if rank == 0:
             logger.info("loaded D")
-        # _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g,load_opt=0)
+        # _, _, _, epoch_str = utils.load_checkpoint(
+        #     utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g, load_opt=0)
         _, _, _, epoch_str = utils.load_checkpoint(
             utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g
         )
         global_step = (epoch_str - 1) * len(train_loader)
         # epoch_str = 1
         # global_step = 0
-    except:  # 如果首次不能加载，加载pretrain
+    except Exception:  # 如果首次不能加载，加载pretrain
         # traceback.print_exc()
         epoch_str = 1
         global_step = 0
@@ -233,9 +230,7 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
                 )  ##测试不加载优化器
             else:
                 logger.info(
-                    net_g.load_state_dict(
-                        torch.load(hps.pretrainG, map_location="cpu", weights_only=False)["model"]
-                    )
+                    net_g.load_state_dict(torch.load(hps.pretrainG, map_location="cpu", weights_only=False)["model"])
                 )  ##测试不加载优化器
         if hps.pretrainD != "":
             if rank == 0:
@@ -248,17 +243,11 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
                 )
             else:
                 logger.info(
-                    net_d.load_state_dict(
-                        torch.load(hps.pretrainD, map_location="cpu", weights_only=False)["model"]
-                    )
+                    net_d.load_state_dict(torch.load(hps.pretrainD, map_location="cpu", weights_only=False)["model"])
                 )
 
-    scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
-        optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
-    )
-    scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
-        optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2
-    )
+    scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
+    scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
 
     scaler = GradScaler(enabled=hps.train.fp16_run)
 
@@ -296,9 +285,7 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         scheduler_d.step()
 
 
-def train_and_evaluate(
-    rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache
-):
+def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache):
     net_g, net_d = nets
     optim_g, optim_d = optims
     train_loader, eval_loader = loaders
@@ -312,7 +299,7 @@ def train_and_evaluate(
     net_d.train()
 
     # Prepare data iterator
-    if hps.if_cache_data_in_gpu == True:
+    if hps.if_cache_data_in_gpu:
         # Use Cache
         data_iterator = cache
         if cache == []:
@@ -413,7 +400,7 @@ def train_and_evaluate(
         else:
             phone, phone_lengths, spec, spec_lengths, wave, wave_lengths, sid = info
         ## Load on CUDA
-        if (hps.if_cache_data_in_gpu == False) and torch.cuda.is_available():
+        if (not hps.if_cache_data_in_gpu) and torch.cuda.is_available():
             phone = phone.cuda(rank, non_blocking=True)
             phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
             if hps.if_f0 == 1:
@@ -451,9 +438,7 @@ def train_and_evaluate(
                 hps.data.mel_fmin,
                 hps.data.mel_fmax,
             )
-            y_mel = commons.slice_segments(
-                mel, ids_slice, hps.train.segment_size // hps.data.hop_length
-            )
+            y_mel = commons.slice_segments(mel, ids_slice, hps.train.segment_size // hps.data.hop_length)
             with autocast("cuda", enabled=False):
                 y_hat_mel = mel_spectrogram_torch(
                     y_hat.float().squeeze(1),
@@ -465,18 +450,14 @@ def train_and_evaluate(
                     hps.data.mel_fmin,
                     hps.data.mel_fmax,
                 )
-            if hps.train.fp16_run == True:
+            if hps.train.fp16_run:
                 y_hat_mel = y_hat_mel.half()
-            wave = commons.slice_segments(
-                wave, ids_slice * hps.data.hop_length, hps.train.segment_size
-            )  # slice
+            wave = commons.slice_segments(wave, ids_slice * hps.data.hop_length, hps.train.segment_size)  # slice
 
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(wave, y_hat.detach())
             with autocast("cuda", enabled=False):
-                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
-                    y_d_hat_r, y_d_hat_g
-                )
+                loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
         optim_d.zero_grad()
         scaler.scale(loss_disc).backward()
         scaler.unscale_(optim_d)
@@ -502,11 +483,7 @@ def train_and_evaluate(
         if rank == 0:
             if global_step % hps.train.log_interval == 0:
                 lr = optim_g.param_groups[0]["lr"]
-                logger.info(
-                    "Train Epoch: {} [{:.0f}%]".format(
-                        epoch, 100.0 * batch_idx / len(train_loader)
-                    )
-                )
+                logger.info("Train Epoch: {} [{:.0f}%]".format(epoch, 100.0 * batch_idx / len(train_loader)))
                 # Amor For Tensorboard display
                 if loss_mel > 75:
                     loss_mel = 75
@@ -515,7 +492,8 @@ def train_and_evaluate(
 
                 logger.info([global_step, lr])
                 logger.info(
-                    f"loss_disc={loss_disc:.3f}, loss_gen={loss_gen:.3f}, loss_fm={loss_fm:.3f},loss_mel={loss_mel:.3f}, loss_kl={loss_kl:.3f}"
+                    f"loss_disc={loss_disc:.3f}, loss_gen={loss_gen:.3f}, "
+                    f"loss_fm={loss_fm:.3f},loss_mel={loss_mel:.3f}, loss_kl={loss_kl:.3f}"
                 )
                 scalar_dict = {
                     "loss/g/total": loss_gen_all,
@@ -532,25 +510,13 @@ def train_and_evaluate(
                     }
                 )
 
-                scalar_dict.update(
-                    {"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)}
-                )
-                scalar_dict.update(
-                    {"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)}
-                )
-                scalar_dict.update(
-                    {"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)}
-                )
+                scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
+                scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
+                scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
                 image_dict = {
-                    "slice/mel_org": utils.plot_spectrogram_to_numpy(
-                        y_mel[0].data.cpu().numpy()
-                    ),
-                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(
-                        y_hat_mel[0].data.cpu().numpy()
-                    ),
-                    "all/mel": utils.plot_spectrogram_to_numpy(
-                        mel[0].data.cpu().numpy()
-                    ),
+                    "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
+                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()),
+                    "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
                 }
                 utils.summarize(
                     writer=writer,
@@ -624,12 +590,7 @@ def train_and_evaluate(
         else:
             ckpt = net_g.state_dict()
         logger.info(
-            "saving final ckpt:%s"
-            % (
-                savee(
-                    ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch, hps.version, hps
-                )
-            )
+            "saving final ckpt:%s" % (savee(ckpt, hps.sample_rate, hps.if_f0, hps.name, epoch, hps.version, hps))
         )
         sleep(1)
         os._exit(2333333)

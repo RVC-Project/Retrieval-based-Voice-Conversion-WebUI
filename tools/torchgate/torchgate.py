@@ -86,14 +86,10 @@ class TorchGate(torch.nn.Module):
             return None
 
         n_grad_freq = (
-            1
-            if self.freq_mask_smooth_hz is None
-            else int(self.freq_mask_smooth_hz / (self.sr / (self.n_fft / 2)))
+            1 if self.freq_mask_smooth_hz is None else int(self.freq_mask_smooth_hz / (self.sr / (self.n_fft / 2)))
         )
         if n_grad_freq < 1:
-            raise ValueError(
-                f"freq_mask_smooth_hz needs to be at least {int((self.sr / (self._n_fft / 2)))} Hz"
-            )
+            raise ValueError(f"freq_mask_smooth_hz needs to be at least {int((self.sr / (self._n_fft / 2)))} Hz")
 
         n_grad_time = (
             1
@@ -101,9 +97,7 @@ class TorchGate(torch.nn.Module):
             else int(self.time_mask_smooth_ms / ((self.hop_length / self.sr) * 1000))
         )
         if n_grad_time < 1:
-            raise ValueError(
-                f"time_mask_smooth_ms needs to be at least {int((self.hop_length / self.sr) * 1000)} ms"
-            )
+            raise ValueError(f"time_mask_smooth_ms needs to be at least {int((self.hop_length / self.sr) * 1000)} ms")
 
         if n_grad_time == 1 and n_grad_freq == 1:
             return None
@@ -125,9 +119,7 @@ class TorchGate(torch.nn.Module):
         return smoothing_filter / smoothing_filter.sum()
 
     @torch.no_grad()
-    def _stationary_mask(
-        self, X_db: torch.Tensor, xn: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
+    def _stationary_mask(self, X_db: torch.Tensor, xn: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Computes a stationary binary mask to filter out noise in a log-magnitude spectrogram.
 
@@ -201,15 +193,11 @@ class TorchGate(torch.nn.Module):
 
         # Compute slowness ratio and apply temperature sigmoid
         slowness_ratio = (X_abs - X_smoothed) / (X_smoothed + 1e-6)
-        sig_mask = temperature_sigmoid(
-            slowness_ratio, self.n_thresh_nonstationary, self.temp_coeff_nonstationary
-        )
+        sig_mask = temperature_sigmoid(slowness_ratio, self.n_thresh_nonstationary, self.temp_coeff_nonstationary)
 
         return sig_mask
 
-    def forward(
-        self, x: torch.Tensor, xn: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, xn: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Apply the proposed algorithm to the input signal.
 

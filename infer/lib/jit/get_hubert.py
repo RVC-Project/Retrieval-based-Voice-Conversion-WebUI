@@ -48,9 +48,7 @@ def extract_features(
         padding_mask = x.new_zeros((x.size(0), x.size(1)), dtype=torch.bool)
         padding_mask[:, -pad_length:] = True
     else:
-        padding_mask, _ = pad_to_multiple(
-            padding_mask, self.required_seq_len_multiple, dim=-1, value=True
-        )
+        padding_mask, _ = pad_to_multiple(padding_mask, self.required_seq_len_multiple, dim=-1, value=True)
     x = F.dropout(x, p=self.dropout, training=self.training)
 
     # B x T x C -> T x B x C
@@ -61,9 +59,7 @@ def extract_features(
     for i, layer in enumerate(self.layers):
         dropout_probability = np.random.random() if self.layerdrop > 0 else 1
         if not self.training or (dropout_probability > self.layerdrop):
-            x, (z, lr) = layer(
-                x, self_attn_padding_mask=padding_mask, need_weights=False
-            )
+            x, (z, lr) = layer(x, self_attn_padding_mask=padding_mask, need_weights=False)
             if i >= min_layer:
                 layer_results.append((x, z, lr))
         if i == tgt_layer:
@@ -132,8 +128,7 @@ def compute_mask_indices(
 
     all_num_mask = int(
         # add a random number for probabilistic rounding
-        mask_prob * all_sz / float(mask_length)
-        + torch.rand([1]).item()
+        mask_prob * all_sz / float(mask_length) + torch.rand([1]).item()
     )
 
     all_num_mask = max(min_masks, all_num_mask)
@@ -192,15 +187,9 @@ def compute_mask_indices(
             min_len = min(lengths)
             if sz - min_len <= num_mask:
                 min_len = sz - num_mask - 1
+            mask_idc = torch.asarray(random.sample([i for i in range(sz - min_len)], num_mask))
             mask_idc = torch.asarray(
-                random.sample([i for i in range(sz - min_len)], num_mask)
-            )
-            mask_idc = torch.asarray(
-                [
-                    mask_idc[j] + offset
-                    for j in range(len(mask_idc))
-                    for offset in range(lengths[j])
-                ]
+                [mask_idc[j] + offset for j in range(len(mask_idc)) for offset in range(lengths[j])]
             )
 
         mask_idcs.append(torch.unique(mask_idc[mask_idc < sz]))
@@ -210,14 +199,10 @@ def compute_mask_indices(
         if isinstance(mask_idc, torch.Tensor):
             mask_idc = torch.asarray(mask_idc, dtype=torch.float)
         if len(mask_idc) > min_len and require_same_masks:
-            mask_idc = torch.asarray(
-                random.sample([i for i in range(mask_idc)], min_len)
-            )
+            mask_idc = torch.asarray(random.sample([i for i in range(mask_idc)], min_len))
         if mask_dropout > 0:
             num_holes = int(round(len(mask_idc) * mask_dropout))
-            mask_idc = torch.asarray(
-                random.sample([i for i in range(mask_idc)], len(mask_idc) - num_holes)
-            )
+            mask_idc = torch.asarray(random.sample([i for i in range(mask_idc)], len(mask_idc) - num_holes))
 
         mask[i, mask_idc.int()] = True
 
@@ -255,17 +240,13 @@ def apply_mask(self, x, padding_mask, target_list):
             no_overlap=self.no_mask_channel_overlap,
             min_space=self.mask_channel_min_space,
         )
-        mask_channel_indices = (
-            mask_channel_indices.to(x.device).unsqueeze(1).expand(-1, T, -1)
-        )
+        mask_channel_indices = mask_channel_indices.to(x.device).unsqueeze(1).expand(-1, T, -1)
         x[mask_channel_indices] = 0
 
     return x, mask_indices
 
 
-def get_hubert_model(
-    model_path="assets/hubert/hubert_base.pt", device=torch.device("cpu")
-):
+def get_hubert_model(model_path="assets/hubert/hubert_base.pt", device=torch.device("cpu")):
     models, _, _ = load_model_ensemble_and_task(
         [model_path],
         suffix="",
@@ -321,17 +302,13 @@ def get_hubert_model(
         ret_conv: bool = False,
         output_layer: Optional[int] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        return hubert_extract_features(
-            hubert_model, source, padding_mask, mask, ret_conv, output_layer
-        )
+        return hubert_extract_features(hubert_model, source, padding_mask, mask, ret_conv, output_layer)
 
     hubert_model.extract_features = _hubert_extract_features
 
     def infer(source, padding_mask, output_layer: torch.Tensor):
         output_layer = output_layer.item()
-        logits = hubert_model.extract_features(
-            source=source, padding_mask=padding_mask, output_layer=output_layer
-        )
+        logits = hubert_model.extract_features(source=source, padding_mask=padding_mask, output_layer=output_layer)
         feats = hubert_model.final_proj(logits[0]) if output_layer == 9 else logits[0]
         return feats
 

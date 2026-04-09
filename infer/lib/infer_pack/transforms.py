@@ -35,7 +35,7 @@ def piecewise_rational_quadratic_transform(
         min_bin_width=min_bin_width,
         min_bin_height=min_bin_height,
         min_derivative=min_derivative,
-        **spline_kwargs
+        **spline_kwargs,
     )
     return outputs, logabsdet
 
@@ -173,8 +173,7 @@ def rational_quadratic_spline(
 
         theta_one_minus_theta = root * (1 - root)
         denominator = input_delta + (
-            (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
-            * theta_one_minus_theta
+            (input_derivatives + input_derivatives_plus_one - 2 * input_delta) * theta_one_minus_theta
         )
         derivative_numerator = input_delta.pow(2) * (
             input_derivatives_plus_one * root.pow(2)
@@ -188,12 +187,9 @@ def rational_quadratic_spline(
         theta = (inputs - input_cumwidths) / input_bin_widths
         theta_one_minus_theta = theta * (1 - theta)
 
-        numerator = input_heights * (
-            input_delta * theta.pow(2) + input_derivatives * theta_one_minus_theta
-        )
+        numerator = input_heights * (input_delta * theta.pow(2) + input_derivatives * theta_one_minus_theta)
         denominator = input_delta + (
-            (input_derivatives + input_derivatives_plus_one - 2 * input_delta)
-            * theta_one_minus_theta
+            (input_derivatives + input_derivatives_plus_one - 2 * input_delta) * theta_one_minus_theta
         )
         outputs = input_cumheights + numerator / denominator
 

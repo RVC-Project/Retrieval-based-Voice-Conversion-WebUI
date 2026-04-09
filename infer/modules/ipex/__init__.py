@@ -111,9 +111,7 @@ def ipex_init():  # pylint: disable=too-many-statements
         torch.cuda.reset_max_memory_cached = torch.xpu.reset_peak_memory_stats
         torch.cuda.reset_max_memory_allocated = torch.xpu.reset_peak_memory_stats
         torch.cuda.memory_stats_as_nested_dict = torch.xpu.memory_stats_as_nested_dict
-        torch.cuda.reset_accumulated_memory_stats = (
-            torch.xpu.reset_accumulated_memory_stats
-        )
+        torch.cuda.reset_accumulated_memory_stats = torch.xpu.reset_accumulated_memory_stats
 
         # RNG:
         torch.cuda.get_rng_state = torch.xpu.get_rng_state
@@ -151,10 +149,7 @@ def ipex_init():  # pylint: disable=too-many-statements
 
         # Fix functions with ipex:
         torch.cuda.mem_get_info = lambda device=None: [
-            (
-                torch.xpu.get_device_properties(device).total_memory
-                - torch.xpu.memory_allocated(device)
-            ),
+            (torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)),
             torch.xpu.get_device_properties(device).total_memory,
         ]
         torch._utils._get_available_device_type = lambda: "xpu"
@@ -173,9 +168,7 @@ def ipex_init():  # pylint: disable=too-many-statements
             torch.cuda.get_device_id_list_per_card = torch.xpu.getDeviceIdListForCard
         else:
             torch.cuda.getDeviceIdListForCard = torch.xpu.get_device_id_list_per_card
-            torch.cuda.get_device_id_list_per_card = (
-                torch.xpu.get_device_id_list_per_card
-            )
+            torch.cuda.get_device_id_list_per_card = torch.xpu.get_device_id_list_per_card
 
         ipex_hijacks()
         attention_init()

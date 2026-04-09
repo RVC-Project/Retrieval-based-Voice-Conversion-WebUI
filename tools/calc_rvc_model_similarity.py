@@ -1,5 +1,7 @@
 # This code references https://huggingface.co/JosephusCheung/ASimilarityCalculatior/blob/main/qwerty.py
-# Fill in the path of the model to be queried and the root directory of the reference models, and this script will return the similarity between the model to be queried and all reference models.
+# Fill in the path of the model to be queried and the root directory of the reference models,
+# and this script will return the similarity between the model to be queried
+# and all reference models.
 import os
 import logging
 
@@ -62,9 +64,7 @@ def main(path, root):
     map_attn_a = {}
     map_rand_input = {}
     for n in range(6):
-        hidden_dim, embed_dim, _ = model_a[
-            f"enc_p.encoder.attn_layers.{n}.conv_v.weight"
-        ].shape
+        hidden_dim, embed_dim, _ = model_a[f"enc_p.encoder.attn_layers.{n}.conv_v.weight"].shape
         rand_input = torch.randn([embed_dim, hidden_dim])
 
         map_attn_a[n] = eval(model_a, n, rand_input)
@@ -84,10 +84,7 @@ def main(path, root):
             sim = torch.mean(torch.cosine_similarity(attn_a, attn_b))
             sims.append(sim)
 
-        logger.info(
-            "Reference:\t%s\t%s\t%s"
-            % (path, model_hash(path), f"{torch.mean(torch.stack(sims)) * 1e2:.2f}%")
-        )
+        logger.info("Reference:\t%s\t%s\t%s" % (path, model_hash(path), f"{torch.mean(torch.stack(sims)) * 1e2:.2f}%"))
 
 
 if __name__ == "__main__":

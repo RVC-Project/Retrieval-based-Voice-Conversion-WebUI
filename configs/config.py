@@ -8,8 +8,6 @@ from multiprocessing import cpu_count
 import torch
 
 try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
 
@@ -80,9 +78,7 @@ class Config:
         parser.add_argument("--port", type=int, default=7865, help="Listen port")
         parser.add_argument("--pycmd", type=str, default=exe, help="Python command")
         parser.add_argument("--colab", action="store_true", help="Launch in colab")
-        parser.add_argument(
-            "--noparallel", action="store_true", help="Disable parallel processing"
-        )
+        parser.add_argument("--noparallel", action="store_true", help="Disable parallel processing")
         parser.add_argument(
             "--noautoopen",
             action="store_true",
@@ -156,13 +152,7 @@ class Config:
                 self.use_fp32_config()
             else:
                 logger.info("Found GPU %s", self.gpu_name)
-            self.gpu_mem = int(
-                torch.cuda.get_device_properties(i_device).total_memory
-                / 1024
-                / 1024
-                / 1024
-                + 0.4
-            )
+            self.gpu_mem = int(torch.cuda.get_device_properties(i_device).total_memory / 1024 / 1024 / 1024 + 0.4)
             if self.gpu_mem <= 4:
                 self.preprocess_per = 3.0
         elif self.has_mps():
@@ -199,25 +189,20 @@ class Config:
             x_max = 32
         if self.dml:
             logger.info("Use DirectML instead")
-            if (
-                os.path.exists(
-                    "runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll"
-                )
-                == False
-            ):
+            if not os.path.exists(r"runtime\Lib\site-packages\onnxruntime\capi\DirectML.dll"):
                 try:
                     os.rename(
-                        "runtime\Lib\site-packages\onnxruntime",
-                        "runtime\Lib\site-packages\onnxruntime-cuda",
+                        r"runtime\Lib\site-packages\onnxruntime",
+                        r"runtime\Lib\site-packages\onnxruntime-cuda",
                     )
-                except:
+                except Exception:
                     pass
                 try:
                     os.rename(
-                        "runtime\Lib\site-packages\onnxruntime-dml",
-                        "runtime\Lib\site-packages\onnxruntime",
+                        r"runtime\Lib\site-packages\onnxruntime-dml",
+                        r"runtime\Lib\site-packages\onnxruntime",
                     )
-                except:
+                except Exception:
                     pass
             # if self.device != "cpu":
             import torch_directml
@@ -227,28 +212,20 @@ class Config:
         else:
             if self.instead:
                 logger.info(f"Use {self.instead} instead")
-            if (
-                os.path.exists(
-                    "runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll"
-                )
-                == False
-            ):
+            if not os.path.exists(r"runtime\Lib\site-packages\onnxruntime\capi\onnxruntime_providers_cuda.dll"):
                 try:
                     os.rename(
-                        "runtime\Lib\site-packages\onnxruntime",
-                        "runtime\Lib\site-packages\onnxruntime-dml",
+                        r"runtime\Lib\site-packages\onnxruntime",
+                        r"runtime\Lib\site-packages\onnxruntime-dml",
                     )
-                except:
+                except Exception:
                     pass
                 try:
                     os.rename(
-                        "runtime\Lib\site-packages\onnxruntime-cuda",
-                        "runtime\Lib\site-packages\onnxruntime",
+                        r"runtime\Lib\site-packages\onnxruntime-cuda",
+                        r"runtime\Lib\site-packages\onnxruntime",
                     )
-                except:
+                except Exception:
                     pass
-        logger.info(
-            "Half-precision floating-point: %s, device: %s"
-            % (self.is_half, self.device)
-        )
+        logger.info("Half-precision floating-point: %s, device: %s" % (self.is_half, self.device))
         return x_pad, x_query, x_center, x_max

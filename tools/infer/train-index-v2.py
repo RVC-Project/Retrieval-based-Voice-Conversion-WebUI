@@ -45,7 +45,7 @@ if big_npy.shape[0] > 2e5:
             .fit(big_npy)
             .cluster_centers_
         )
-    except:
+    except Exception:
         info = traceback.format_exc()
         logger.warning(info)
 
@@ -59,16 +59,12 @@ logger.info("Training...")
 index_ivf = faiss.extract_index_ivf(index)  #
 index_ivf.nprobe = 1
 index.train(big_npy)
-faiss.write_index(
-    index, "tools/infer/trained_IVF%s_Flat_baseline_src_feat_v2.index" % (n_ivf)
-)
+faiss.write_index(index, "tools/infer/trained_IVF%s_Flat_baseline_src_feat_v2.index" % (n_ivf))
 logger.info("Adding...")
 batch_size_add = 8192
 for i in range(0, big_npy.shape[0], batch_size_add):
     index.add(big_npy[i : i + batch_size_add])
-faiss.write_index(
-    index, "tools/infer/added_IVF%s_Flat_mi_baseline_src_feat.index" % (n_ivf)
-)
+faiss.write_index(index, "tools/infer/added_IVF%s_Flat_mi_baseline_src_feat.index" % (n_ivf))
 """
 大小（都是FP32）
 big_src_feature 2.95G

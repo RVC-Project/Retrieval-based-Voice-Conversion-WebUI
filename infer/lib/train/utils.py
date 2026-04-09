@@ -5,7 +5,6 @@ import logging
 import os
 import subprocess
 import sys
-import shutil
 
 import numpy as np
 import torch
@@ -40,7 +39,7 @@ def load_checkpoint_d(checkpoint_path, combd, sbd, optimizer=None, load_opt=1):
                         saved_state_dict[k].shape,
                     )  #
                     raise KeyError
-            except:
+            except Exception:
                 # logger.info(traceback.format_exc())
                 logger.info("%s is not in the checkpoint", k)  # pretrain缺失的
                 new_state_dict[k] = v  # 模型自带的随机值
@@ -118,7 +117,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, load_opt=1):
                     saved_state_dict[k].shape,
                 )  #
                 raise KeyError
-        except:
+        except Exception:
             # logger.info(traceback.format_exc())
             logger.info("%s is not in the checkpoint", k)  # pretrain缺失的
             new_state_dict[k] = v  # 模型自带的随机值
@@ -142,11 +141,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, load_opt=1):
 
 
 def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path):
-    logger.info(
-        "Saving model and optimizer state at epoch {} to {}".format(
-            iteration, checkpoint_path
-        )
-    )
+    logger.info("Saving model and optimizer state at epoch {} to {}".format(iteration, checkpoint_path))
     if hasattr(model, "module"):
         state_dict = model.module.state_dict()
     else:
@@ -163,11 +158,7 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
 
 
 def save_checkpoint_d(combd, sbd, optimizer, learning_rate, iteration, checkpoint_path):
-    logger.info(
-        "Saving model and optimizer state at epoch {} to {}".format(
-            iteration, checkpoint_path
-        )
-    )
+    logger.info("Saving model and optimizer state at epoch {} to {}".format(iteration, checkpoint_path))
     if hasattr(combd, "module"):
         state_dict_combd = combd.module.state_dict()
     else:
@@ -254,9 +245,7 @@ def plot_alignment_to_numpy(alignment, info=None):
     import numpy as np
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    im = ax.imshow(
-        alignment.transpose(), aspect="auto", origin="lower", interpolation="none"
-    )
+    im = ax.imshow(alignment.transpose(), aspect="auto", origin="lower", interpolation="none")
     fig.colorbar(im, ax=ax)
     xlabel = "Decoder timestep"
     if info is not None:
@@ -313,25 +302,13 @@ def get_hparams(init=True):
         required=True,
         help="checkpoint save frequency (epoch)",
     )
-    parser.add_argument(
-        "-te", "--total_epoch", type=int, required=True, help="total_epoch"
-    )
-    parser.add_argument(
-        "-pg", "--pretrainG", type=str, default="", help="Pretrained Generator path"
-    )
-    parser.add_argument(
-        "-pd", "--pretrainD", type=str, default="", help="Pretrained Discriminator path"
-    )
+    parser.add_argument("-te", "--total_epoch", type=int, required=True, help="total_epoch")
+    parser.add_argument("-pg", "--pretrainG", type=str, default="", help="Pretrained Generator path")
+    parser.add_argument("-pd", "--pretrainD", type=str, default="", help="Pretrained Discriminator path")
     parser.add_argument("-g", "--gpus", type=str, default="0", help="split by -")
-    parser.add_argument(
-        "-bs", "--batch_size", type=int, required=True, help="batch size"
-    )
-    parser.add_argument(
-        "-e", "--experiment_dir", type=str, required=True, help="experiment dir"
-    )  # -m
-    parser.add_argument(
-        "-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k"
-    )
+    parser.add_argument("-bs", "--batch_size", type=int, required=True, help="batch size")
+    parser.add_argument("-e", "--experiment_dir", type=str, required=True, help="experiment dir")  # -m
+    parser.add_argument("-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k")
     parser.add_argument(
         "-sw",
         "--save_every_weights",
@@ -339,9 +316,7 @@ def get_hparams(init=True):
         default="0",
         help="save the extracted model in weights directory when saving checkpoints",
     )
-    parser.add_argument(
-        "-v", "--version", type=str, required=True, help="model version"
-    )
+    parser.add_argument("-v", "--version", type=str, required=True, help="model version")
     parser.add_argument(
         "-f0",
         "--if_f0",
@@ -415,9 +390,7 @@ def check_git_hash(model_dir):
     source_dir = os.path.dirname(os.path.realpath(__file__))
     if not os.path.exists(os.path.join(source_dir, ".git")):
         logger.warning(
-            "{} is not a git repository, therefore hash value comparison will be ignored.".format(
-                source_dir
-            )
+            "{} is not a git repository, therefore hash value comparison will be ignored.".format(source_dir)
         )
         return
 
@@ -428,9 +401,7 @@ def check_git_hash(model_dir):
         saved_hash = open(path).read()
         if saved_hash != cur_hash:
             logger.warning(
-                "git hash values are different. {}(saved) != {}(current)".format(
-                    saved_hash[:8], cur_hash[:8]
-                )
+                "git hash values are different. {}(saved) != {}(current)".format(saved_hash[:8], cur_hash[:8])
             )
     else:
         open(path, "w").write(cur_hash)
@@ -454,7 +425,7 @@ def get_logger(model_dir, filename="train.log"):
 class HParams:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            if type(v) == dict:
+            if isinstance(v, dict):
                 v = HParams(**v)
             self[k] = v
 

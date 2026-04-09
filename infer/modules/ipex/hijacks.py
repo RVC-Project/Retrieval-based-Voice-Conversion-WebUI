@@ -1,7 +1,6 @@
 import contextlib
 import importlib
 import torch
-import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long, unnecessary-lambda, no-else-return
 
@@ -77,12 +76,8 @@ def _shutdown_workers(self):
                     w.terminate()
 
 
-class DummyDataParallel(
-    torch.nn.Module
-):  # pylint: disable=missing-class-docstring, unused-argument, too-few-public-methods
-    def __new__(
-        cls, module, device_ids=None, output_device=None, dim=0
-    ):  # pylint: disable=unused-argument
+class DummyDataParallel(torch.nn.Module):  # pylint: disable=missing-class-docstring, unused-argument, too-few-public-methods
+    def __new__(cls, module, device_ids=None, output_device=None, dim=0):  # pylint: disable=unused-argument
         if isinstance(device_ids, list) and len(device_ids) > 1:
             print("IPEX backend doesn't support DataParallel on multiple XPU devices")
         return module.to("xpu")
@@ -107,7 +102,9 @@ def return_xpu(device):
         else (
             f"xpu:{device}"
             if isinstance(device, int)
-            else torch.device("xpu") if isinstance(device, torch.device) else "xpu"
+            else torch.device("xpu")
+            if isinstance(device, torch.device)
+            else "xpu"
         )
     )
 
@@ -132,9 +129,7 @@ original_torch_cat = torch.cat
 
 
 def torch_cat(tensor, *args, **kwargs):
-    if len(tensor) == 3 and (
-        tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype
-    ):
+    if len(tensor) == 3 and (tensor[0].dtype != tensor[1].dtype or tensor[2].dtype != tensor[1].dtype):
         return original_torch_cat(
             [tensor[0].to(tensor[1].dtype), tensor[1], tensor[2].to(tensor[1].dtype)],
             *args,
@@ -186,9 +181,7 @@ original_linalg_solve = torch.linalg.solve
 def linalg_solve(A, B, *args, **kwargs):  # pylint: disable=invalid-name
     if A.device != torch.device("cpu") or B.device != torch.device("cpu"):
         return_device = A.device
-        return original_linalg_solve(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(
-            return_device
-        )
+        return original_linalg_solve(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(return_device)
     else:
         return original_linalg_solve(A, B, *args, **kwargs)
 
@@ -196,91 +189,62 @@ def linalg_solve(A, B, *args, **kwargs):  # pylint: disable=invalid-name
 def ipex_hijacks():
     CondFunc(
         "torch.Tensor.to",
-        lambda orig_func, self, device=None, *args, **kwargs: orig_func(
-            self, return_xpu(device), *args, **kwargs
-        ),
+        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
         lambda orig_func, self, device=None, *args, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.Tensor.cuda",
-        lambda orig_func, self, device=None, *args, **kwargs: orig_func(
-            self, return_xpu(device), *args, **kwargs
-        ),
+        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, return_xpu(device), *args, **kwargs),
         lambda orig_func, self, device=None, *args, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.empty",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.load",
-        lambda orig_func, *args, map_location=None, **kwargs: orig_func(
-            *args, return_xpu(map_location), **kwargs
-        ),
-        lambda orig_func, *args, map_location=None, **kwargs: map_location is None
-        or check_device(map_location),
+        lambda orig_func, *args, map_location=None, **kwargs: orig_func(*args, return_xpu(map_location), **kwargs),
+        lambda orig_func, *args, map_location=None, **kwargs: map_location is None or check_device(map_location),
     )
     CondFunc(
         "torch.randn",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.ones",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.zeros",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.tensor",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
     CondFunc(
         "torch.linspace",
-        lambda orig_func, *args, device=None, **kwargs: orig_func(
-            *args, device=return_xpu(device), **kwargs
-        ),
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=return_xpu(device), **kwargs),
         lambda orig_func, *args, device=None, **kwargs: check_device(device),
     )
 
     CondFunc(
         "torch.Generator",
         lambda orig_func, device=None: torch.xpu.Generator(device),
-        lambda orig_func, device=None: device is not None
-        and device != torch.device("cpu")
-        and device != "cpu",
+        lambda orig_func, device=None: device is not None and device != torch.device("cpu") and device != "cpu",
     )
 
     CondFunc(
         "torch.batch_norm",
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(
             input,
-            (
-                weight
-                if weight is not None
-                else torch.ones(input.size()[1], device=input.device)
-            ),
-            (
-                bias
-                if bias is not None
-                else torch.zeros(input.size()[1], device=input.device)
-            ),
+            (weight if weight is not None else torch.ones(input.size()[1], device=input.device)),
+            (bias if bias is not None else torch.zeros(input.size()[1], device=input.device)),
             *args,
             **kwargs,
         ),
@@ -290,16 +254,8 @@ def ipex_hijacks():
         "torch.instance_norm",
         lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(
             input,
-            (
-                weight
-                if weight is not None
-                else torch.ones(input.size()[1], device=input.device)
-            ),
-            (
-                bias
-                if bias is not None
-                else torch.zeros(input.size()[1], device=input.device)
-            ),
+            (weight if weight is not None else torch.ones(input.size()[1], device=input.device)),
+            (bias if bias is not None else torch.zeros(input.size()[1], device=input.device)),
             *args,
             **kwargs,
         ),
@@ -309,23 +265,17 @@ def ipex_hijacks():
     # Functions with dtype errors:
     CondFunc(
         "torch.nn.modules.GroupNorm.forward",
-        lambda orig_func, self, input: orig_func(
-            self, input.to(self.weight.data.dtype)
-        ),
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype,
     )
     CondFunc(
         "torch.nn.modules.linear.Linear.forward",
-        lambda orig_func, self, input: orig_func(
-            self, input.to(self.weight.data.dtype)
-        ),
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype,
     )
     CondFunc(
         "torch.nn.modules.conv.Conv2d.forward",
-        lambda orig_func, self, input: orig_func(
-            self, input.to(self.weight.data.dtype)
-        ),
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype,
     )
     CondFunc(
@@ -333,9 +283,9 @@ def ipex_hijacks():
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs: orig_func(
             input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs
         ),
-        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs: weight
-        is not None
-        and input.dtype != weight.data.dtype,
+        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs: (
+            weight is not None and input.dtype != weight.data.dtype
+        ),
     )
 
     # Diffusers Float64 (ARC GPUs doesn't support double or Float64):
@@ -354,9 +304,7 @@ def ipex_hijacks():
     )
 
     # Functions that make compile mad with CondFunc:
-    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = (
-        _shutdown_workers
-    )
+    torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = _shutdown_workers
     torch.nn.DataParallel = DummyDataParallel
     torch.autocast = ipex_autocast
     torch.cat = torch_cat

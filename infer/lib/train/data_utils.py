@@ -98,11 +98,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
-            raise ValueError(
-                "{} SR doesn't match target {} SR".format(
-                    sampling_rate, self.sampling_rate
-                )
-            )
+            raise ValueError("{} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
         audio_norm = audio
         #        audio_norm = audio / self.max_wav_value
         #        audio_norm = audio / np.abs(audio).max()
@@ -112,7 +108,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
         if os.path.exists(spec_filename):
             try:
                 spec = torch.load(spec_filename, weights_only=True)
-            except:
+            except Exception:
                 logger.warning("%s %s", spec_filename, traceback.format_exc())
                 spec = spectrogram_torch(
                     audio_norm,
@@ -157,9 +153,7 @@ class TextAudioCollateMultiNSFsid:
         batch: [text_normalized, spec_normalized, wav_normalized]
         """
         # Right zero-pad all one-hot text sequences to max input length
-        _, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([x[0].size(1) for x in batch]), dim=0, descending=True
-        )
+        _, ids_sorted_decreasing = torch.sort(torch.LongTensor([x[0].size(1) for x in batch]), dim=0, descending=True)
 
         max_spec_len = max([x[0].size(1) for x in batch])
         max_wave_len = max([x[1].size(1) for x in batch])
@@ -172,9 +166,7 @@ class TextAudioCollateMultiNSFsid:
 
         max_phone_len = max([x[2].size(0) for x in batch])
         phone_lengths = torch.LongTensor(len(batch))
-        phone_padded = torch.FloatTensor(
-            len(batch), max_phone_len, batch[0][2].shape[1]
-        )  # (spec, wav, phone, pitch)
+        phone_padded = torch.FloatTensor(len(batch), max_phone_len, batch[0][2].shape[1])  # (spec, wav, phone, pitch)
         pitch_padded = torch.LongTensor(len(batch), max_phone_len)
         pitchf_padded = torch.FloatTensor(len(batch), max_phone_len)
         phone_padded.zero_()
@@ -290,11 +282,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
-            raise ValueError(
-                "{} SR doesn't match target {} SR".format(
-                    sampling_rate, self.sampling_rate
-                )
-            )
+            raise ValueError("{} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
         audio_norm = audio
         #        audio_norm = audio / self.max_wav_value
         #        audio_norm = audio / np.abs(audio).max()
@@ -304,7 +292,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         if os.path.exists(spec_filename):
             try:
                 spec = torch.load(spec_filename, weights_only=True)
-            except:
+            except Exception:
                 logger.warning("%s %s", spec_filename, traceback.format_exc())
                 spec = spectrogram_torch(
                     audio_norm,
@@ -349,9 +337,7 @@ class TextAudioCollate:
         batch: [text_normalized, spec_normalized, wav_normalized]
         """
         # Right zero-pad all one-hot text sequences to max input length
-        _, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([x[0].size(1) for x in batch]), dim=0, descending=True
-        )
+        _, ids_sorted_decreasing = torch.sort(torch.LongTensor([x[0].size(1) for x in batch]), dim=0, descending=True)
 
         max_spec_len = max([x[0].size(1) for x in batch])
         max_wave_len = max([x[1].size(1) for x in batch])
@@ -364,9 +350,7 @@ class TextAudioCollate:
 
         max_phone_len = max([x[2].size(0) for x in batch])
         phone_lengths = torch.LongTensor(len(batch))
-        phone_padded = torch.FloatTensor(
-            len(batch), max_phone_len, batch[0][2].shape[1]
-        )
+        phone_padded = torch.FloatTensor(len(batch), max_phone_len, batch[0][2].shape[1])
         phone_padded.zero_()
         sid = torch.LongTensor(len(batch))
 
@@ -402,7 +386,8 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
     """
     Maintain similar input lengths in a batch.
     Length groups are specified by boundaries.
-    Ex) boundaries = [b1, b2, b3] -> any batch is included either {x | b1 < length(x) <=b2} or {x | b2 < length(x) <= b3}.
+    Ex) boundaries = [b1, b2, b3] -> any batch is included either
+    {x | b1 < length(x) <=b2} or {x | b2 < length(x) <= b3}.
 
     It removes samples which are not included in the boundaries.
     Ex) boundaries = [b1, b2, b3] -> any x s.t. length(x) <= b1 or length(x) > b3 are discarded.
@@ -443,9 +428,7 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
         for i in range(len(buckets)):
             len_bucket = len(buckets[i])
             total_batch_size = self.num_replicas * self.batch_size
-            rem = (
-                total_batch_size - (len_bucket % total_batch_size)
-            ) % total_batch_size
+            rem = (total_batch_size - (len_bucket % total_batch_size)) % total_batch_size
             num_samples_per_bucket.append(len_bucket + rem)
         return buckets, num_samples_per_bucket
 
@@ -471,23 +454,14 @@ class DistributedBucketSampler(torch.utils.data.distributed.DistributedSampler):
 
             # add extra samples to make it evenly divisible
             rem = num_samples_bucket - len_bucket
-            ids_bucket = (
-                ids_bucket
-                + ids_bucket * (rem // len_bucket)
-                + ids_bucket[: (rem % len_bucket)]
-            )
+            ids_bucket = ids_bucket + ids_bucket * (rem // len_bucket) + ids_bucket[: (rem % len_bucket)]
 
             # subsample
             ids_bucket = ids_bucket[self.rank :: self.num_replicas]
 
             # batching
             for j in range(len(ids_bucket) // self.batch_size):
-                batch = [
-                    bucket[idx]
-                    for idx in ids_bucket[
-                        j * self.batch_size : (j + 1) * self.batch_size
-                    ]
-                ]
+                batch = [bucket[idx] for idx in ids_bucket[j * self.batch_size : (j + 1) * self.batch_size]]
                 batches.append(batch)
 
         if self.shuffle:

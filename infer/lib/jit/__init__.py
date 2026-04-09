@@ -17,17 +17,15 @@ def load_inputs(path, device, is_half=False):
     return parm
 
 
-def benchmark(
-    model, inputs_path, device=torch.device("cpu"), epoch=1000, is_half=False
-):
+def benchmark(model, inputs_path, device=torch.device("cpu"), epoch=1000, is_half=False):
     parm = load_inputs(inputs_path, device, is_half)
     total_ts = 0.0
     bar = tqdm(range(epoch))
     for i in bar:
         start_time = time.perf_counter()
-        o = model(**parm)
+        _o = model(**parm)
         total_ts += time.perf_counter() - start_time
-    print(f"num_epoch: {epoch} | avg time(ms): {(total_ts*1000)/epoch}")
+    print(f"num_epoch: {epoch} | avg time(ms): {(total_ts * 1000) / epoch}")
 
 
 def jit_warm_up(model, inputs_path, device=torch.device("cpu"), epoch=5, is_half=False):
