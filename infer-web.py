@@ -1475,18 +1475,6 @@ with gr.Blocks(title="RVC WebUI") as app:
                 butOnnx = gr.Button(i18n("导出Onnx模型"), variant="primary")
             butOnnx.click(export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx")
 
-        tab_faq = i18n("常见问题解答")
-        with gr.TabItem(tab_faq):
-            try:
-                if tab_faq == "常见问题解答":
-                    with open("docs/cn/faq.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                else:
-                    with open("docs/en/faq_en.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                gr.Markdown(value=info)
-            except Exception:
-                gr.Markdown(traceback.format_exc())
 
     if config.iscolab:
         app.queue(max_size=1022).launch(share=True)
