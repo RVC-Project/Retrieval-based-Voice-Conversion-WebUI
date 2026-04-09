@@ -159,17 +159,25 @@ class VC:
         protect,
     ):
         # デバッグログ: 入力値の型と内容を確認
-        logger.info(f"vc_single called with input_audio_path type: {type(input_audio_path)}, value: {input_audio_path}")
+        logger.info(
+            f"vc_single called with input_audio_path type: {type(input_audio_path)}, value: {input_audio_path}"
+        )
 
         if input_audio_path is None:
             return "You need to upload an audio", None
 
         # gr.Audio が辞書やタプルを返す場合の対応
         if isinstance(input_audio_path, dict):
-            logger.info(f"input_audio_path is dict with keys: {input_audio_path.keys()}")
-            input_audio_path = input_audio_path.get("name") or input_audio_path.get("path")
+            logger.info(
+                f"input_audio_path is dict with keys: {input_audio_path.keys()}"
+            )
+            input_audio_path = input_audio_path.get("name") or input_audio_path.get(
+                "path"
+            )
         elif isinstance(input_audio_path, (list, tuple)):
-            logger.info(f"input_audio_path is list/tuple with length: {len(input_audio_path)}")
+            logger.info(
+                f"input_audio_path is list/tuple with length: {len(input_audio_path)}"
+            )
             input_audio_path = input_audio_path[0] if input_audio_path else None
 
         logger.info(f"After extraction, input_audio_path: {input_audio_path}")

@@ -364,7 +364,7 @@ class MultiHeadAttention(nn.Module):
             x,
             [0, length - 1, 0, 0, 0, 0, 0, 0],
         )
-        x_flat = x.view([batch, heads, length*length + length * (length - 1)])
+        x_flat = x.view([batch, heads, length * length + length * (length - 1)])
         # add 0's in the beginning that will skew the elements after reshape
         x_flat = F.pad(
             x_flat,
