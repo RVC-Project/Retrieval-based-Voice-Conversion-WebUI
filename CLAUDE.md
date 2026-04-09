@@ -17,10 +17,6 @@ uv run python infer-web.py --port 7865 --noautoopen --dml
 
 # リアルタイム変換GUI
 uv run python gui_v1.py
-
-# Windows用バッチファイル
-go-web.bat          # WebUI
-go-realtime-gui.bat # リアルタイム変換
 ```
 
 ## 依存関係インストール
