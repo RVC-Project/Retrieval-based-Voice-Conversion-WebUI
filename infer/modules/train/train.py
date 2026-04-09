@@ -52,18 +52,11 @@ from infer.lib.train.data_utils import (
     TextAudioLoaderMultiNSFsid,
 )
 
-if hps.version == "v1":
-    from infer.lib.infer_pack.models import MultiPeriodDiscriminator
-    from infer.lib.infer_pack.models import SynthesizerTrnMs256NSFsid as RVC_Model_f0
-    from infer.lib.infer_pack.models import (
-        SynthesizerTrnMs256NSFsid_nono as RVC_Model_nof0,
-    )
-else:
-    from infer.lib.infer_pack.models import (
-        SynthesizerTrnMs768NSFsid as RVC_Model_f0,
-        SynthesizerTrnMs768NSFsid_nono as RVC_Model_nof0,
-        MultiPeriodDiscriminatorV2 as MultiPeriodDiscriminator,
-    )
+from infer.lib.infer_pack.models import (
+    SynthesizerTrnMs768NSFsid as RVC_Model_f0,
+    SynthesizerTrnMs768NSFsid_nono as RVC_Model_nof0,
+    MultiPeriodDiscriminatorV2 as MultiPeriodDiscriminator,
+)
 
 from infer.lib.train.losses import (
     discriminator_loss,

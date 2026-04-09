@@ -20,9 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 version_config_list = [
-    "v1/32k.json",
-    "v1/40k.json",
-    "v1/48k.json",
     "v2/48k.json",
     "v2/32k.json",
 ]

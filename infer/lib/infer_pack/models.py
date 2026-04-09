@@ -562,7 +562,7 @@ sr2sr = {
 }
 
 
-class SynthesizerTrnMs256NSFsid(nn.Module):
+class SynthesizerTrnMs768NSFsid(nn.Module):
     def __init__(
         self,
         spec_channels,
@@ -585,7 +585,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         sr,
         **kwargs,
     ):
-        super(SynthesizerTrnMs256NSFsid, self).__init__()
+        super(SynthesizerTrnMs768NSFsid, self).__init__()
         if isinstance(sr, str):
             sr = sr2sr[sr]
         self.spec_channels = spec_channels
@@ -607,7 +607,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
         self.enc_p = TextEncoder(
-            256,
+            768,
             inter_channels,
             hidden_channels,
             filter_channels,
@@ -721,64 +721,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         return o, x_mask, (z, z_p, m_p, logs_p)
 
 
-class SynthesizerTrnMs768NSFsid(SynthesizerTrnMs256NSFsid):
-    def __init__(
-        self,
-        spec_channels,
-        segment_size,
-        inter_channels,
-        hidden_channels,
-        filter_channels,
-        n_heads,
-        n_layers,
-        kernel_size,
-        p_dropout,
-        resblock,
-        resblock_kernel_sizes,
-        resblock_dilation_sizes,
-        upsample_rates,
-        upsample_initial_channel,
-        upsample_kernel_sizes,
-        spk_embed_dim,
-        gin_channels,
-        sr,
-        **kwargs,
-    ):
-        super(SynthesizerTrnMs768NSFsid, self).__init__(
-            spec_channels,
-            segment_size,
-            inter_channels,
-            hidden_channels,
-            filter_channels,
-            n_heads,
-            n_layers,
-            kernel_size,
-            p_dropout,
-            resblock,
-            resblock_kernel_sizes,
-            resblock_dilation_sizes,
-            upsample_rates,
-            upsample_initial_channel,
-            upsample_kernel_sizes,
-            spk_embed_dim,
-            gin_channels,
-            sr,
-            **kwargs,
-        )
-        del self.enc_p
-        self.enc_p = TextEncoder(
-            768,
-            inter_channels,
-            hidden_channels,
-            filter_channels,
-            n_heads,
-            n_layers,
-            kernel_size,
-            float(p_dropout),
-        )
-
-
-class SynthesizerTrnMs256NSFsid_nono(nn.Module):
+class SynthesizerTrnMs768NSFsid_nono(nn.Module):
     def __init__(
         self,
         spec_channels,
@@ -801,7 +744,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         sr=None,
         **kwargs,
     ):
-        super(SynthesizerTrnMs256NSFsid_nono, self).__init__()
+        super(SynthesizerTrnMs768NSFsid_nono, self).__init__()
         self.spec_channels = spec_channels
         self.inter_channels = inter_channels
         self.hidden_channels = hidden_channels
@@ -821,7 +764,7 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
         self.enc_p = TextEncoder(
-            256,
+            768,
             inter_channels,
             hidden_channels,
             filter_channels,
@@ -916,64 +859,6 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
             z = self.flow(z_p, x_mask, g=g, reverse=True)
         o = self.dec(z * x_mask, g=g, n_res=return_length2)
         return o, x_mask, (z, z_p, m_p, logs_p)
-
-
-class SynthesizerTrnMs768NSFsid_nono(SynthesizerTrnMs256NSFsid_nono):
-    def __init__(
-        self,
-        spec_channels,
-        segment_size,
-        inter_channels,
-        hidden_channels,
-        filter_channels,
-        n_heads,
-        n_layers,
-        kernel_size,
-        p_dropout,
-        resblock,
-        resblock_kernel_sizes,
-        resblock_dilation_sizes,
-        upsample_rates,
-        upsample_initial_channel,
-        upsample_kernel_sizes,
-        spk_embed_dim,
-        gin_channels,
-        sr=None,
-        **kwargs,
-    ):
-        super(SynthesizerTrnMs768NSFsid_nono, self).__init__(
-            spec_channels,
-            segment_size,
-            inter_channels,
-            hidden_channels,
-            filter_channels,
-            n_heads,
-            n_layers,
-            kernel_size,
-            p_dropout,
-            resblock,
-            resblock_kernel_sizes,
-            resblock_dilation_sizes,
-            upsample_rates,
-            upsample_initial_channel,
-            upsample_kernel_sizes,
-            spk_embed_dim,
-            gin_channels,
-            sr,
-            **kwargs,
-        )
-        del self.enc_p
-        self.enc_p = TextEncoder(
-            768,
-            inter_channels,
-            hidden_channels,
-            filter_channels,
-            n_heads,
-            n_layers,
-            kernel_size,
-            float(p_dropout),
-            f0=False,
-        )
 
 
 class MultiPeriodDiscriminator(torch.nn.Module):

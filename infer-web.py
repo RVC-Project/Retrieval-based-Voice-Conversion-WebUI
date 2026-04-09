@@ -379,20 +379,14 @@ def get_pretrained_models(path_str, f0_str, sr2):
 
 
 def change_sr2(sr2, if_f0_3, version19):
-    path_str = "" if version19 == "v1" else "_v2"
+    path_str = "_v2"
     f0_str = "f0" if if_f0_3 else ""
     return get_pretrained_models(path_str, f0_str, sr2)
 
 
 def change_version19(sr2, if_f0_3, version19):
-    path_str = "" if version19 == "v1" else "_v2"
-    if sr2 == "32k" and version19 == "v1":
-        sr2 = "40k"
-    to_return_sr2 = (
-        gr.update(choices=["40k", "48k"], value=sr2)
-        if version19 == "v1"
-        else gr.update(choices=["40k", "48k", "32k"], value=sr2)
-    )
+    path_str = "_v2"
+    to_return_sr2 = gr.update(choices=["48k", "32k"], value=sr2)
     f0_str = "f0" if if_f0_3 else ""
     return (
         *get_pretrained_models(path_str, f0_str, sr2),
@@ -401,7 +395,7 @@ def change_version19(sr2, if_f0_3, version19):
 
 
 def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D15
-    path_str = "" if version19 == "v1" else "_v2"
+    path_str = "_v2"
     return (
         gr.update(visible=if_f0_3),
         gr.update(visible=if_f0_3),
@@ -431,7 +425,7 @@ def click_train(
     exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
     gt_wavs_dir = "%s/0_gt_wavs" % (exp_dir)
-    feature_dir = "%s/3_feature256" % (exp_dir) if version19 == "v1" else "%s/3_feature768" % (exp_dir)
+    feature_dir = "%s/3_feature768" % (exp_dir)
     if if_f0_3:
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
@@ -473,7 +467,7 @@ def click_train(
                     spk_id5,
                 )
             )
-    fea_dim = 256 if version19 == "v1" else 768
+    fea_dim = 768
     if if_f0_3:
         for _ in range(2):
             opt.append(
@@ -498,10 +492,7 @@ def click_train(
         logger.info("No pretrained Generator")
     if pretrained_D15 == "":
         logger.info("No pretrained Discriminator")
-    if version19 == "v1" or sr2 == "40k":
-        config_path = "v1/%s.json" % sr2
-    else:
-        config_path = "v2/%s.json" % sr2
+    config_path = "v2/%s.json" % sr2
     config_save_path = os.path.join(exp_dir, "config.json")
     if not pathlib.Path(config_save_path).exists():
         with open(config_save_path, "w", encoding="utf-8") as f:
@@ -565,7 +556,7 @@ def train_index(exp_dir1, version19):
     # exp_dir = "%s/logs/%s" % (now_dir, exp_dir1)
     exp_dir = "logs/%s" % (exp_dir1)
     os.makedirs(exp_dir, exist_ok=True)
-    feature_dir = "%s/3_feature256" % (exp_dir) if version19 == "v1" else "%s/3_feature768" % (exp_dir)
+    feature_dir = "%s/3_feature768" % (exp_dir)
     if not os.path.exists(feature_dir):
         return "请先进行特征提取!"
     listdir_res = list(os.listdir(feature_dir))
@@ -605,7 +596,7 @@ def train_index(exp_dir1, version19):
     n_ivf = min(int(16 * np.sqrt(big_npy.shape[0])), big_npy.shape[0] // 39)
     infos.append("%s,%s" % (big_npy.shape, n_ivf))
     yield "\n".join(infos)
-    index = faiss.index_factory(256 if version19 == "v1" else 768, "IVF%s,Flat" % n_ivf)
+    index = faiss.index_factory(768, "IVF%s,Flat" % n_ivf)
     # index = faiss.index_factory(256if version19=="v1"else 768, "IVF%s,PQ128x4fs,RFlat"%n_ivf)
     infos.append("training")
     yield "\n".join(infos)
@@ -719,7 +710,7 @@ def change_info_(ckpt_path):
         with open(ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r") as f:
             info = eval(f.read().strip("\n").split("\n")[0].split("\t")[-1])
             sr, f0 = info["sample_rate"], info["if_f0"]
-            version = "v2" if ("version" in info and info["version"] == "v2") else "v1"
+            version = info.get("version", "v2")
             return sr, str(f0), version
     except Exception:
         traceback.print_exc()
@@ -1095,8 +1086,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                 exp_dir1 = gr.Textbox(label=i18n("输入实验名"), value="mi-test")
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
-                    choices=["40k", "48k"],
-                    value="40k",
+                    choices=["48k", "32k"],
+                    value="48k",
                     interactive=True,
                 )
                 if_f0_3 = gr.Radio(
@@ -1107,10 +1098,10 @@ with gr.Blocks(title="RVC WebUI") as app:
                 )
                 version19 = gr.Radio(
                     label=i18n("版本"),
-                    choices=["v1", "v2"],
+                    choices=["v2"],
                     value="v2",
-                    interactive=True,
-                    visible=True,
+                    interactive=False,
+                    visible=False,
                 )
                 np7 = gr.Slider(
                     minimum=0,
@@ -1366,9 +1357,10 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
                     version_2 = gr.Radio(
                         label=i18n("模型版本型号"),
-                        choices=["v1", "v2"],
-                        value="v1",
-                        interactive=True,
+                        choices=["v2"],
+                        value="v2",
+                        interactive=False,
+                        visible=False,
                     )
                 with gr.Row():
                     but6 = gr.Button(i18n("融合"), variant="primary")
@@ -1433,8 +1425,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                     save_name = gr.Textbox(label=i18n("保存名"), value="", interactive=True)
                     sr__ = gr.Radio(
                         label=i18n("目标采样率"),
-                        choices=["32k", "40k", "48k"],
-                        value="40k",
+                        choices=["32k", "48k"],
+                        value="48k",
                         interactive=True,
                     )
                     if_f0__ = gr.Radio(
@@ -1445,9 +1437,10 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
                     version_1 = gr.Radio(
                         label=i18n("模型版本型号"),
-                        choices=["v1", "v2"],
+                        choices=["v2"],
                         value="v2",
-                        interactive=True,
+                        interactive=False,
+                        visible=False,
                     )
                     info___ = gr.Textbox(
                         label=i18n("要置入的模型信息"),

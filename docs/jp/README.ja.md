@@ -126,7 +126,7 @@ uv run python infer-web.py --port 7865 --noautoopen
 ### リアルタイム音声変換
 
 ```bash
-uv run python gui_v1.py
+uv run python tools/rvc_for_realtime.py
 ```
 
 ### CLI推論

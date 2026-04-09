@@ -523,7 +523,7 @@ if __name__ == "__main__":
     from tools.torchgate import TorchGate
     import tools.rvc_for_realtime as rvc_for_realtime
     from configs.config import Config
-    from gui_v1 import phase_vocoder
+    from infer.lib.audio import phase_vocoder
 
     audio_api.config = Config()
     audio_api.initialize_queues()

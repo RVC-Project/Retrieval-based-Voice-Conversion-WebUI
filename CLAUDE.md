@@ -16,7 +16,7 @@ uv run python infer-web.py
 uv run python infer-web.py --port 7865 --noautoopen --dml
 
 # リアルタイム変換GUI
-uv run python gui_v1.py
+uv run python tools/rvc_for_realtime.py
 ```
 
 ## 依存関係インストール
@@ -52,18 +52,17 @@ uv run python tools/infer_cli.py \
   - `extract/` - F0特徴量抽出
 - `modules/uvr5/` - Ultimate Vocal Remover（ボーカル分離）
 - `lib/infer_pack/` - 推論用モデル定義
-  - `models.py` - SynthesizerTrnMs256NSFsid (v1), SynthesizerTrnMs768NSFsid (v2)
+  - `models.py` - SynthesizerTrnMs768NSFsid, SynthesizerTrnMs768NSFsid_nono
 - `lib/rmvpe.py` - RMVPE F0抽出アルゴリズム
 
 ### 設定 (`configs/`)
 
 - `config.py` - デバイス自動検出、精度設定（fp16/fp32）
-- `v1/`, `v2/` - モデルバージョン別の設定JSON
+- `v2/` - モデル設定JSON (32k, 48k)
 
 ### エントリーポイント
 
 - `infer-web.py` - Gradio WebUI（トレーニング・推論・モデル管理）
-- `gui_v1.py` - リアルタイム音声変換GUI
 - `api_240604.py` - FastAPI REST API
 
 ### 必要なアセット
@@ -81,10 +80,11 @@ index_root = logs                 # インデックス保存先
 rmvpe_root = assets/rmvpe         # RMVPEモデル
 ```
 
-## モデルバージョン
+## モデル仕様
 
-- **v1**: 256次元HuBERT特徴量 (32k/40k/48kHz)
-- **v2**: 768次元HuBERT特徴量、改良版ディスクリミネータ (32k/48kHz)
+- 768次元HuBERT特徴量 (32k/48kHz)
+- HuBERT出力層: layer 12
+- 改良版ディスクリミネータ (MultiPeriodDiscriminatorV2)
 
 ## F0抽出メソッド
 
