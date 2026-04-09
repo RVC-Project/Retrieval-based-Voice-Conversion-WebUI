@@ -284,7 +284,7 @@ def load_filepaths_and_text(filename, split="|"):
     except UnicodeDecodeError:
         with open(filename) as f:
             filepaths_and_text = [line.strip().split(split) for line in f]
-    
+
     return filepaths_and_text
 
 

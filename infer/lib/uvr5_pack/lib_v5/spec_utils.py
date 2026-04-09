@@ -234,7 +234,7 @@ def cache_or_load(mix_path, inst_path, mp):
                     sr=bp["sr"],
                     mono=False,
                     dtype=np.float32,
-                    res_type=bp["res_type"]
+                    res_type=bp["res_type"],
                 )
                 y_wave[d], _ = librosa.load(
                     inst_path,
@@ -423,7 +423,9 @@ def cmb_spectrogram_to_wave(spec_m, mp, extra_bins_h=None, extra_bins=None):
                     ),
                 )
                 # wave = librosa.core.resample(wave2, bp['sr'], sr, res_type="sinc_fastest")
-                wave = librosa.resample(wave2, orig_sr=bp["sr"], target_sr=sr, res_type="scipy")
+                wave = librosa.resample(
+                    wave2, orig_sr=bp["sr"], target_sr=sr, res_type="scipy"
+                )
 
     return wave.T
 

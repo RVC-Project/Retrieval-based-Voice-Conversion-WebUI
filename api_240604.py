@@ -1,4 +1,4 @@
-#api for 240604 release version by Xiaokai
+# api for 240604 release version by Xiaokai
 import os
 import sys
 import json
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Define FastAPI app
 app = FastAPI()
 
+
 class GUIConfig:
     def __init__(self) -> None:
         self.pth_path: str = ""
@@ -46,6 +47,7 @@ class GUIConfig:
         self.sg_input_device: str = ""
         self.sg_output_device: str = ""
 
+
 class ConfigData(BaseModel):
     pth_path: str
     index_path: str
@@ -65,6 +67,7 @@ class ConfigData(BaseModel):
     use_pv: bool = False
     f0method: str = "fcpe"
 
+
 class Harvest(Process):
     def __init__(self, inp_q, opt_q):
         super(Harvest, self).__init__()
@@ -74,6 +77,7 @@ class Harvest(Process):
     def run(self):
         import numpy as np
         import pyworld
+
         while True:
             idx, x, res_f0, n_cpu, ts = self.inp_q.get()
             f0, t = pyworld.harvest(
@@ -86,6 +90,7 @@ class Harvest(Process):
             res_f0[idx] = f0
             if len(res_f0.keys()) >= n_cpu:
                 self.opt_q.put(ts)
+
 
 class AudioAPI:
     def __init__(self) -> None:
@@ -110,7 +115,7 @@ class AudioAPI:
     def load(self):
         input_devices, output_devices, _, _ = self.get_devices()
         try:
-            with open("configs/config.json", "r", encoding='utf-8') as j:
+            with open("configs/config.json", "r", encoding="utf-8") as j:
                 data = json.load(j)
                 if data["sg_input_device"] not in input_devices:
                     data["sg_input_device"] = input_devices[sd.default.device[0]]
@@ -118,7 +123,7 @@ class AudioAPI:
                     data["sg_output_device"] = output_devices[sd.default.device[1]]
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
-            with open("configs/config.json", "w", encoding='utf-8') as j:
+            with open("configs/config.json", "w", encoding="utf-8") as j:
                 data = {
                     "pth_path": "",
                     "index_path": "",
@@ -188,9 +193,7 @@ class AudioAPI:
         self.block_frame = (
             int(
                 np.round(
-                    self.gui_config.block_time
-                    * self.gui_config.samplerate
-                    / self.zc
+                    self.gui_config.block_time * self.gui_config.samplerate / self.zc
                 )
             )
             * self.zc
@@ -211,9 +214,7 @@ class AudioAPI:
         self.extra_frame = (
             int(
                 np.round(
-                    self.gui_config.extra_time
-                    * self.gui_config.samplerate
-                    / self.zc
+                    self.gui_config.extra_time * self.gui_config.samplerate / self.zc
                 )
             )
             * self.zc
@@ -292,12 +293,16 @@ class AudioAPI:
                 logger.info("Audio block passed.")
         logger.info("Ending VC")
 
-    def audio_callback(self, indata: np.ndarray, outdata: np.ndarray, frames, times, status):
+    def audio_callback(
+        self, indata: np.ndarray, outdata: np.ndarray, frames, times, status
+    ):
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
         if self.gui_config.threhold > -60:
             indata = np.append(self.rms_buffer, indata)
-            rms = librosa.feature.rms(y=indata, frame_length=4 * self.zc, hop_length=self.zc)[:, 2:]
+            rms = librosa.feature.rms(
+                y=indata, frame_length=4 * self.zc, hop_length=self.zc
+            )[:, 2:]
             self.rms_buffer[:] = indata[-4 * self.zc :]
             indata = indata[2 * self.zc - self.zc // 2 :]
             db_threhold = (
@@ -308,13 +313,21 @@ class AudioAPI:
                     indata[i * self.zc : (i + 1) * self.zc] = 0
             indata = indata[self.zc // 2 :]
         self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :].clone()
-        self.input_wav[-indata.shape[0] :] = torch.from_numpy(indata).to(self.config.device)
-        self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[self.block_frame_16k :].clone()
+        self.input_wav[-indata.shape[0] :] = torch.from_numpy(indata).to(
+            self.config.device
+        )
+        self.input_wav_res[: -self.block_frame_16k] = self.input_wav_res[
+            self.block_frame_16k :
+        ].clone()
         # input noise reduction and resampling
         if self.gui_config.I_noise_reduce:
-            self.input_wav_denoise[: -self.block_frame] = self.input_wav_denoise[self.block_frame :].clone()
+            self.input_wav_denoise[: -self.block_frame] = self.input_wav_denoise[
+                self.block_frame :
+            ].clone()
             input_wav = self.input_wav[-self.sola_buffer_frame - self.block_frame :]
-            input_wav = self.tg(input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)).squeeze(0)
+            input_wav = self.tg(
+                input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
+            ).squeeze(0)
             input_wav[: self.sola_buffer_frame] *= self.fade_in_window
             input_wav[: self.sola_buffer_frame] += self.nr_buffer * self.fade_out_window
             self.input_wav_denoise[-self.block_frame :] = input_wav[: self.block_frame]
@@ -343,9 +356,13 @@ class AudioAPI:
             infer_wav = self.input_wav[self.extra_frame :].clone()
         # output noise reduction
         if self.gui_config.O_noise_reduce and self.function == "vc":
-            self.output_buffer[: -self.block_frame] = self.output_buffer[self.block_frame :].clone()
+            self.output_buffer[: -self.block_frame] = self.output_buffer[
+                self.block_frame :
+            ].clone()
             self.output_buffer[-self.block_frame :] = infer_wav[-self.block_frame :]
-            infer_wav = self.tg(infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)).squeeze(0)
+            infer_wav = self.tg(
+                infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)
+            ).squeeze(0)
         # volume envelop mixing
         if self.gui_config.rms_mix_rate < 1 and self.function == "vc":
             if self.gui_config.I_noise_reduce:
@@ -381,7 +398,9 @@ class AudioAPI:
                 rms1 / rms2, torch.tensor(1 - self.gui_config.rms_mix_rate)
             )
         # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
-        conv_input = infer_wav[None, None, : self.sola_buffer_frame + self.sola_search_frame]
+        conv_input = infer_wav[
+            None, None, : self.sola_buffer_frame + self.sola_search_frame
+        ]
         cor_nom = F.conv1d(conv_input, self.sola_buffer[None, None, :])
         cor_den = torch.sqrt(
             F.conv1d(
@@ -399,7 +418,9 @@ class AudioAPI:
         infer_wav = infer_wav[sola_offset:]
         if "privateuseone" in str(self.config.device) or not self.gui_config.use_pv:
             infer_wav[: self.sola_buffer_frame] *= self.fade_in_window
-            infer_wav[: self.sola_buffer_frame] += self.sola_buffer * self.fade_out_window
+            infer_wav[: self.sola_buffer_frame] += (
+                self.sola_buffer * self.fade_out_window
+            )
         else:
             infer_wav[: self.sola_buffer_frame] = phase_vocoder(
                 self.sola_buffer,
@@ -466,19 +487,33 @@ class AudioAPI:
         logger.debug(f"Selected output device: {output_device}")
 
         if input_device not in input_devices:
-            logger.error(f"Input device '{input_device}' is not in the list of available devices")
-            raise HTTPException(status_code=400, detail=f"Input device '{input_device}' is not available")
-        
+            logger.error(
+                f"Input device '{input_device}' is not in the list of available devices"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Input device '{input_device}' is not available",
+            )
+
         if output_device not in output_devices:
-            logger.error(f"Output device '{output_device}' is not in the list of available devices")
-            raise HTTPException(status_code=400, detail=f"Output device '{output_device}' is not available")
+            logger.error(
+                f"Output device '{output_device}' is not in the list of available devices"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Output device '{output_device}' is not available",
+            )
 
         sd.default.device[0] = input_device_indices[input_devices.index(input_device)]
-        sd.default.device[1] = output_device_indices[output_devices.index(output_device)]
+        sd.default.device[1] = output_device_indices[
+            output_devices.index(output_device)
+        ]
         logger.info(f"Input device set to {sd.default.device[0]}: {input_device}")
         logger.info(f"Output device set to {sd.default.device[1]}: {output_device}")
 
+
 audio_api = AudioAPI()
+
 
 @app.get("/inputDevices", response_model=list)
 def get_input_devices():
@@ -489,6 +524,7 @@ def get_input_devices():
         logger.error(f"Failed to get input devices: {e}")
         raise HTTPException(status_code=500, detail="Failed to get input devices")
 
+
 @app.get("/outputDevices", response_model=list)
 def get_output_devices():
     try:
@@ -498,6 +534,7 @@ def get_output_devices():
         logger.error(f"Failed to get output devices: {e}")
         raise HTTPException(status_code=500, detail="Failed to get output devices")
 
+
 @app.post("/config")
 def configure_audio(config_data: ConfigData):
     try:
@@ -505,7 +542,7 @@ def configure_audio(config_data: ConfigData):
         if audio_api.set_values(config_data):
             settings = config_data.dict()
             settings["use_jit"] = False
-            with open("configs/config.json", "w", encoding='utf-8') as j:
+            with open("configs/config.json", "w", encoding="utf-8") as j:
                 json.dump(settings, j, ensure_ascii=False)
             logger.info("Configuration set successfully")
             return {"message": "Configuration set successfully"}
@@ -516,6 +553,7 @@ def configure_audio(config_data: ConfigData):
         logger.error(f"Configuration failed: {e}")
         raise HTTPException(status_code=400, detail=f"Configuration failed: {e}")
 
+
 @app.post("/start")
 def start_conversion():
     try:
@@ -524,13 +562,16 @@ def start_conversion():
             return {"message": "Audio conversion started"}
         else:
             logger.warning("Audio conversion already running")
-            raise HTTPException(status_code=400, detail="Audio conversion already running")
+            raise HTTPException(
+                status_code=400, detail="Audio conversion already running"
+            )
     except HTTPException as e:
         logger.error(f"Start conversion error: {e.detail}")
         raise
     except Exception as e:
         logger.error(f"Failed to start conversion: {e}")
         raise HTTPException(status_code=500, detail="Failed to start conversion: {e}")
+
 
 @app.post("/stop")
 def stop_conversion():
@@ -550,6 +591,7 @@ def stop_conversion():
         logger.error(f"Failed to stop conversion: {e}")
         raise HTTPException(status_code=500, detail="Failed to stop conversion: {e}")
 
+
 if __name__ == "__main__":
     if sys.platform == "win32":
         freeze_support()
@@ -560,6 +602,7 @@ if __name__ == "__main__":
     from tools.torchgate import TorchGate
     import tools.rvc_for_realtime as rvc_for_realtime
     from configs.config import Config
+
     audio_api.config = Config()
     audio_api.initialize_queues()
     uvicorn.run(app, host="0.0.0.0", port=6242)
