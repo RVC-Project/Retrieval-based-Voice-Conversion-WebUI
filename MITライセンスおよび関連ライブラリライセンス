@@ -1,0 +1,45 @@
+本ソフトウェアおよびその関連コードはMITライセンスのもとでオープンソースとして公開されています。作者はソフトウェアに対していかなる制御力も持たず、ソフトウェアの使用者、およびソフトウェアによって出力された音声を配布する者は、すべて自己責任で行うものとします。
+この条項に同意できない場合、本ソフトウェアパッケージ内のいかなるコードおよびファイルも使用または引用することはできません。
+
+ここに、本ソフトウェアおよび関連ドキュメントファイル（以下「ソフトウェア」）のコピーを取得するすべての人に対し、ソフトウェアの使用、複製、変更、統合、出版、配布、再ライセンス、および／または販売する権利を無償で付与します。また、ソフトウェアが提供される人に対してソフトウェアを使用する権利を付与します。ただし、以下の条件を満たす必要があります：
+上記の著作権表示および本許諾表示は、ソフトウェアのすべてのコピーまたは実質的な部分に含めなければなりません。
+ソフトウェアは「現状のまま」提供され、商品性、特定目的への適合性、および非侵害の保証を含むがこれに限定されない、明示または暗示のいかなる保証もありません。いかなる場合においても、作者または著作権保有者は、契約訴訟、不法行為訴訟、またはその他の訴訟を問わず、ソフトウェアまたはソフトウェアの使用もしくはその他の取引に起因する、またはそれに関連するいかなる請求、損害賠償、またはその他の責任についても責任を負いません。
+
+
+The LICENCEs for related libraries are as follows.
+関連ライブラリのライセンスは以下の通りです：
+
+ContentVec
+https://github.com/auspicious3000/contentvec/blob/main/LICENSE
+MIT License
+
+VITS
+https://github.com/jaywalnut310/vits/blob/main/LICENSE
+MIT License
+
+HIFIGAN
+https://github.com/jik876/hifi-gan/blob/master/LICENSE
+MIT License
+
+gradio
+https://github.com/gradio-app/gradio/blob/main/LICENSE
+Apache License 2.0
+
+ffmpeg
+https://github.com/FFmpeg/FFmpeg/blob/master/COPYING.LGPLv3
+https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2021-02-28-12-32/ffmpeg-n4.3.2-160-gfbb9368226-win64-lgpl-4.3.zip
+LPGLv3 License
+MIT License
+
+ultimatevocalremovergui
+https://github.com/Anjok07/ultimatevocalremovergui/blob/master/LICENSE
+https://github.com/yang123qwe/vocal_separation_by_uvr5
+MIT License
+
+audio-slicer
+https://github.com/openvpi/audio-slicer/blob/main/LICENSE
+MIT License
+
+PySimpleGUI
+https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt
+LPGLv3 License

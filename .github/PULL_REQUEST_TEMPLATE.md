@@ -1,26 +1,26 @@
-# Pull request checklist
+# プルリクエストチェックリスト
 
-- [ ] The PR has a proper title. Use [Semantic Commit Messages](https://seesparkbox.com/foundry/semantic_commit_messages). (No more branch-name title please)
-- [ ] Make sure this is ready to be merged into the relevant branch. Please don't create a PR and let it hang for a few days.
-- [ ] Ensure you can run the codes you submitted succesfully. These submissions will be prioritized for review:
+- [ ] PRに適切なタイトルが付けられている。[セマンティックコミットメッセージ](https://seesparkbox.com/foundry/semantic_commit_messages)を使用してください。（ブランチ名をそのままタイトルにしないでください）
+- [ ] 対象ブランチにマージできる状態であることを確認してください。PRを作成したまま数日間放置しないでください。
+- [ ] 提出したコードが正常に動作することを確認してください。以下の内容を含む提出が優先的にレビューされます：
 
-    Introduce improvements in program execution speed;
+    プログラムの実行速度の改善
 
-    Introduce improvements in synthesis quality;
+    合成品質の改善
 
-    Fix existing bugs reported by user feedback (or you met);
+    ユーザーからの報告（または自身が遭遇した）既存バグの修正
 
-    Introduce more convenient user operations.
+    より便利なユーザー操作の導入
 
-# PR type
+# PRの種類
 
-- Bug fix / new feature / synthesis quality improvement / program execution speed improvement
+- バグ修正 / 新機能 / 合成品質の改善 / プログラム実行速度の改善
 
-# Description
+# 説明
 
-- Describe what this pull request is for.
-- What will it affect.
+- このプルリクエストの目的を記述してください。
+- 影響範囲を記述してください。
 
-# Screenshot
+# スクリーンショット
 
-- Please include a screenshot if applicable
+- 該当する場合はスクリーンショットを添付してください

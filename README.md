@@ -48,7 +48,7 @@ VITSに基づく使いやすい音声変換（Voice Changer）フレームワー
 - 少量のデータセットからでも比較的良い結果を取得可能（10分以上のノイズの少ない音声を推奨）
 - モデル融合で音声を混合可能（ckpt processingタブのckpt mergeを使用）
 - 使いやすいWebUI
-- UVR5 Modelで人声とBGMを素早く分離
+- UVR5 ModelでボーカルとBGMを素早く分離
 - 最先端の[人間の声のピッチ抽出アルゴリズム InterSpeech2023-RMVPE](#参照プロジェクト)を使用
 - AMD/Intel GPU対応
 
