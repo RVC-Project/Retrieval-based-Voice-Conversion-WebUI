@@ -42,6 +42,8 @@ M4: 高度な最適化 (Week 9+, オプション)
 
 ## M0: 評価基盤構築
 
+> **チケット**: [M0_evaluation_infrastructure.md](tickets/M0_evaluation_infrastructure.md)
+
 **期間**: Week 1（3人日）
 **GPU要件**: RTX 3060+（Whisper推論用）
 **既存モデル互換性**: 影響なし
@@ -67,6 +69,8 @@ openai-whisper, jiwer, jaconv, fastdtw
 ---
 
 ## M1: 即効性改善（既存モデル互換維持）
+
+> **チケット**: [M1_immediate_improvements.md](tickets/M1_immediate_improvements.md)
 
 **期間**: Week 1-2（10人日）※M0と並列実行
 **GPU要件**: RTX 3060 12GB（既存環境で実施可能）
@@ -119,6 +123,8 @@ auraloss>=0.4.0
 ---
 
 ## M2: SSL置換 + 日本語歌声事前学習
+
+> **チケット**: [M2A_ssl_model_integration.md](tickets/M2A_ssl_model_integration.md) | [M2B_pretrain_japanese_singing.md](tickets/M2B_pretrain_japanese_singing.md)
 
 **期間**: Week 3-5（18.5人日 + GPU 14-30h）
 **GPU要件**: RTX 4090 24GB（事前学習）、Cloud GPU（必要時）
@@ -180,6 +186,8 @@ auraloss>=0.4.0
 
 ## M3: 損失関数 + ボコーダ改善
 
+> **チケット**: [M3A_loss_function_improvements.md](tickets/M3A_loss_function_improvements.md) | [M3B_vocoder_improvements.md](tickets/M3B_vocoder_improvements.md)
+
 **期間**: Week 6-8（11人日 + GPU 数日）
 **GPU要件**: RTX 4090 24GB / Cloud GPU（SnakeBeta導入時に事前学習再実行）
 **既存モデル互換性**: Phase 3-Aは維持、Phase 3-Bは事前学習再実行必要
@@ -218,6 +226,8 @@ auraloss>=0.4.0
 ---
 
 ## M4: 高度な最適化（オプション）
+
+> **チケット**: [M4_advanced_optimization.md](tickets/M4_advanced_optimization.md)
 
 **期間**: Week 9+（数ヶ月単位）
 **GPU要件**: A100 40GB+推奨
@@ -408,6 +418,21 @@ Week 6-8: M3
 ---
 
 ## 関連ドキュメント
+
+### チケット（実装詳細）
+
+| チケット | 内容 |
+|---------|------|
+| [tickets/README.md](tickets/README.md) | **チケット一覧・進捗サマリー** |
+| [tickets/M0_evaluation_infrastructure.md](tickets/M0_evaluation_infrastructure.md) | M0: 評価基盤構築 |
+| [tickets/M1_immediate_improvements.md](tickets/M1_immediate_improvements.md) | M1: 即効性改善 |
+| [tickets/M2A_ssl_model_integration.md](tickets/M2A_ssl_model_integration.md) | M2-A: SSLモデル統合 |
+| [tickets/M2B_pretrain_japanese_singing.md](tickets/M2B_pretrain_japanese_singing.md) | M2-B: 日本語歌声事前学習 |
+| [tickets/M3A_loss_function_improvements.md](tickets/M3A_loss_function_improvements.md) | M3-A: 損失関数改善 |
+| [tickets/M3B_vocoder_improvements.md](tickets/M3B_vocoder_improvements.md) | M3-B: ボコーダ改善 |
+| [tickets/M4_advanced_optimization.md](tickets/M4_advanced_optimization.md) | M4: 高度な最適化 |
+
+### 調査・提案書
 
 | ドキュメント | 内容 |
 |-------------|------|
