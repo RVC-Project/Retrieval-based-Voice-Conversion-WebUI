@@ -188,13 +188,15 @@ auraloss>=0.4.0
 
 | # | タスク | 工数 | 互換性 |
 |---|--------|------|--------|
-| 3-1 | Multi-Resolution STFT損失追加 | 0.5日 | 維持 |
+| 3-1 | Multi-Resolution STFT損失（検証・チューニング） | 0.5日 | 維持 |
 | 3-2 | KLサイクリカルアニーリング | 0.5日 | 維持 |
 | 3-3 | EMA（alpha=0.999） | 1日 | 維持 |
 | 3-4 | CosineAnnealingWarmRestarts + Warmup | 1日 | 維持 |
 | 3-5 | DWTビブラート保存 | 1日 | 維持 |
 
-追加パッケージ: `auraloss>=0.4.0`, `PyWavelets>=1.4.0`
+> **注意**: タスク3-1のMRSTFT損失の実装自体はM1（タスク1-8）で完了済み。M3-Aでは係数チューニングのみ。`auraloss>=0.4.0` もM1で追加済み。
+
+追加パッケージ: `PyWavelets>=1.4.0`
 
 ### Phase 3-B: ボコーダ改善（Week 7-8, 7人日）
 
