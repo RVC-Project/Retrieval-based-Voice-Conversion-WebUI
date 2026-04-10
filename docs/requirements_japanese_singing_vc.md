@@ -22,6 +22,15 @@
 | 出力次元 | 768次元 (layer 12) | 最終層は英語タスクに最適化されており、日本語では中間層の方が汎用的な音響特徴を保持する可能性がある |
 | 入力 | 16kHz 話し声 | 歌声の広い周波数帯域・ピッチ変動に対応していない |
 
+### 2.1.1 利用可能な日本語SSLモデル（2025年最新調査）
+
+| モデル | 学習データ | 出力次元 | ライセンス |
+|--------|-----------|---------|-----------|
+| imprt/kushinada-hubert-base | 日本語TV放送 62,215h | 768 | Apache 2.0 |
+| reazon-research/japanese-wav2vec2-base | ReazonSpeech v2.0 35,000h+ | 768 | Apache 2.0 |
+| rinna/japanese-hubert-base | ReazonSpeech v1 19,000h | 768 | Apache 2.0 |
+| Spin V2 | ContentVec微調整 | 768 | - |
+
 ### 2.2 ピッチ処理の限界
 
 | 項目 | 現状 | 問題 |
@@ -52,9 +61,12 @@
 #### FR-1: 日本語対応特徴量抽出器の導入
 - **概要**: HuBERT baseの代替として、日本語音声で学習された自己教師あり学習モデルを導入する
 - **候補モデル**:
+  - **imprt/kushinada-hubert-base（最有力候補）**: 日本語TV放送62,215hで学習。768次元出力でRVCと互換性が高く、大規模日本語データによる高品質な音響表現。Apache 2.0
   - **ContentVec (日本語fine-tuned)**: RVCとの互換性が高い。768次元出力を維持できる
+  - **Spin V2**: ContentVecベースの微調整モデル。768次元。話者不変表現に優れる
+  - **reazon-research/japanese-wav2vec2-base**: ReazonSpeech v2.0 35,000h+で学習。768次元。Apache 2.0
+  - **rinna/japanese-hubert-base**: 日本語に特化。ReazonSpeech v1 19,000hで学習。768次元。Apache 2.0
   - **WavLM Large (多言語)**: 日本語を含む多言語データで学習済み。1024次元
-  - **rinna/japanese-hubert-base**: 日本語に特化。768次元
   - **XLS-R (wav2vec 2.0 多言語)**: 128言語対応。1024次元
 - **要件**:
   - 出力次元が変わる場合、TextEncoder入力層の次元を合わせる修正が必要
@@ -133,7 +145,7 @@
                                                                     ↓
                                                               768次元特徴量
 ```
-※SSL = Self-Supervised Learning モデル
+※SSL = Self-Supervised Learning モデル（最有力候補: imprt/kushinada-hubert-base, 日本語TV放送62,215hで学習済み）
 
 **主な変更箇所**:
 - `infer/lib/jit/get_hubert.py`: モデルローダーを抽象化し、複数バックエンド対応
@@ -202,7 +214,7 @@
 
 | 優先度 | 項目 | 根拠 |
 |--------|------|------|
-| **P0** | FR-1: 日本語SSL導入 | 最大のボトルネック。HuBERT英語の言語バイアスが全体品質に波及 |
+| **P0** | FR-1: 日本語SSL導入（最有力: kushinada-hubert-base） | 最大のボトルネック。HuBERT英語の言語バイアスが全体品質に波及。kushinada-hubert-baseは62,215hの日本語データで学習済みかつ768次元でRVC互換 |
 | **P1** | FR-4: 歌声前処理 | データ品質は全学習結果に影響。早期に整備すべき |
 | **P1** | FR-2: ピッチ拡張 | 歌声品質に直結。実装コストも比較的低い |
 | **P2** | FR-3: セグメント長拡張 | 品質向上に貢献するがVRAM制約との調整が必要 |

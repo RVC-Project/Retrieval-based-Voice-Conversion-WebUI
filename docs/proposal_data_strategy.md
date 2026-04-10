@@ -153,6 +153,15 @@ if random.random() < 0.5:
 
 既に `rinna/japanese-hubert-base` が ReazonSpeech 19,000時間で学習済みのため、HuBERT自体の再学習は不要。RVCの Generator/Discriminator を日本語話し声データで事前学習する。
 
+> **2025年3月更新**: 産総研 `imprt/kushinada-hubert-base`（62,215h日本語、Apache 2.0）が新たに公開された。rinnaの3.3倍のデータ量で学習されており、事前学習の基盤モデルとして最有力候補。詳細は `docs/research_ssl_models_update.md` を参照。
+>
+> HuBERT基盤モデルの選択肢:
+> | モデル | 学習データ量 | ライセンス | 備考 |
+> |--------|------------|-----------|------|
+> | `rinna/japanese-hubert-base` | 19,000h (ReazonSpeech) | Apache 2.0 | 現行デフォルト |
+> | **`imprt/kushinada-hubert-base`** | **62,215h** | Apache 2.0 | **最有力候補。rinnaの3.3倍のデータ量** |
+> | `reazon-research/japanese-wav2vec2-base` | 35,000h+ (ReazonSpeech v2.0) | Apache 2.0 | wav2vec2系。HuBERTとはアーキテクチャが異なるが代替候補 |
+
 ```
 データ: JVS (100話者、30時間) + MoeSpeech (473キャラ、623時間)
 目的: 日本語音素空間の広域カバー + 多話者の声質バリエーション学習
@@ -238,6 +247,7 @@ weights /= weights.sum()
 | データセット | 規模 | 話者数 | SR | ライセンス | 用途 | Stage | アカペラ |
 |-------------|------|--------|-----|-----------|------|-------|---------|
 | **ReazonSpeech** | 35,000h | 多数 | - | 研究可 | HuBERT事前学習（rinnaが実施済み） | (済) | - |
+| **ReazonSpeech v2.0** | 35,000h+ | 多数 | - | Apache 2.0 | `reazon-research/japanese-wav2vec2-base` の学習元。wav2vec2系の代替SSL基盤 | (済) | - |
 | **JVS** | 30h | 100名 | 24kHz | 商用可 | マルチスピーカー話し声事前学習 | Stage 1 | - |
 | **MoeSpeech** | 623h | 473キャラ | - | 研究可 | 声質多様性の事前学習 | Stage 1 | - |
 | **JVS-MuSiC** | - | 100名 | 24kHz | 商用可 | マルチスピーカー歌声事前学習 | Stage 2 | Yes |
@@ -416,6 +426,7 @@ nadare氏の既存チェックポイントを利用する場合:
     ↑ 日本語HuBERT提案と相乗効果（転移学習部分）
     │
     ├── 日本語HuBERT導入 → Stage 2-3の特徴量抽出精度が向上。HuBERT変更後にデータ再抽出が必要
+    │     └── 候補: `imprt/kushinada-hubert-base`(62,215h), `rinna/japanese-hubert-base`(19,000h), `reazon-research/japanese-wav2vec2-base`(35,000h+)
     ├── 損失関数改善 → Stage 2-3の学習効率が向上。独立して適用可能
     ├── ボコーダ改善 → 独立。データ戦略とは直交する改善
     └── F0処理改善 → ピッチシフト拡張データのF0抽出精度に影響
