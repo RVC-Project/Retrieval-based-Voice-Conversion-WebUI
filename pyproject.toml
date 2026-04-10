@@ -52,6 +52,12 @@ dependencies = [
     "uvicorn>=0.34.0",
     "httpx>=0.27.0",
 
+    # 評価
+    "openai-whisper>=20240930",
+    "jiwer>=3.0.0",
+    "jaconv>=0.3.4",
+    "fastdtw>=0.3.4",
+
     # ユーティリティ
     "matplotlib>=3.7.0",
     "Pillow>=10.0.0",
@@ -98,3 +104,8 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
