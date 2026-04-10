@@ -84,7 +84,7 @@ openai-whisper, jiwer, jaconv, fastdtw
 | 1-4 | Dropout(0.1) + Weight Decay(0.01) | 0.5日 | `configs/v2/*.json`, `train.py` | 維持 |
 | 1-5 | segment_size拡張（17280→34560） | 0.5日 | `configs/v2/*.json` | 維持 |
 | 1-6 | 歌唱向け前処理パラメータ | 1日 | `preprocess.py` | 維持 |
-| 1-7 | mel_fmin変更（0→40Hz） | 0.5日 | `configs/v2/*.json` | 維持 |
+| ~~1-7~~ | ~~mel_fmin変更（0→40Hz）~~ | - | - | **M3-Bに延期**（既存事前学習モデルと非互換のため） |
 | 1-8 | Multi-Resolution STFT損失追加 | 1日 | `losses.py`, `train.py` | 維持 |
 | 1-9 | **歌声プリセット（WebUI）** | 1日 | `infer-web.py`, 新規`f0_presets.py` | 維持 |
 | 1-10 | bfloat16移行 | 0.5日 | `configs/v2/*.json` | 維持 |
@@ -132,7 +132,7 @@ auraloss>=0.4.0
 | 2-2 | HuggingFace transformers ラッパー | 1日 | 新規モジュール |
 | 2-3 | 推論パイプライン対応（output_layer設定化） | 1日 | `pipeline.py`, `rtrvc.py` |
 | 2-4 | 学習パイプライン対応 | 1日 | `extract_feature_print.py` |
-| 2-5 | モデル定義のssl_dimパラメータ化 | 0.5日 | `models.py` |
+| 2-5 | モデル定義のssl_dimパラメータ化 | **2日** | `models.py`（768ハードコードの解消+互換性ロジック） |
 | 2-6 | kushinada vs ContentVec 検証 | 0.5日 | - |
 | 2-6b | **WebUI SSLモデル選択UI** | 1日 | `infer-web.py` |
 | 2-6c | **Weighted Sum of Layers導入** | 2日 | `pipeline.py`, `models.py` |
@@ -152,7 +152,7 @@ auraloss>=0.4.0
 |---|--------|------|---------|
 | 2-7 | データセット準備（JVS-MuSiC 24k→48kリサンプル等） | 2日 | ※24k→48kは高域欠損に注意 |
 | 2-7b | **データ拡張スクリプト（ピッチシフト±4半音）** | 1.5日 | 新規スクリプト |
-| 2-8 | 多話者filelist生成スクリプト | 0.5日 | - |
+| 2-8 | 多話者filelist生成スクリプト | **1.5日** | spk_embed_dim変更含む。タスク2-4完了が前提 |
 | 2-9 | Stage 1: JVS-MuSiC 100話者事前学習 | 1日 | ~4h (RTX 3090) |
 | 2-10 | Stage 2: 歌声DB適応（PJS+NIT+きりたん+GTSinger） | 1日 | ~10h (RTX 3090) |
 | 2-11 | ContentVec版 + kushinada版の2バリアント作成 | 1.5日 | ~14h |
@@ -201,7 +201,7 @@ auraloss>=0.4.0
 
 | # | タスク | 工数 | 互換性 |
 |---|--------|------|--------|
-| 3-6 | SnakeBeta活性化関数導入 | 2日 | **事前学習再実行** |
+| 3-6 | SnakeBeta活性化関数導入 | **3-4日** | **事前学習再実行**。mel_fmin=40Hzもここで適用 |
 | 3-7 | アンチエイリアスフィルタ追加 | 2日 | **事前学習再実行** |
 | 3-8 | MRD/CQTディスクリミネータ追加 | 2日 | 学習時のみ |
 | 3-9 | 事前学習再実行（kushinada + SnakeBeta） | 1日 | GPU 14-30h |
@@ -318,17 +318,45 @@ Week 6-8: M3
 
 ## リスク管理
 
+> **レビュー反映**: 実現可能性・リスク・網羅性レビューの指摘を統合。致命的リスク5件を追加。
+
+### 致命的リスク
+
 | リスク | 影響度 | 発生確率 | 対策 |
 |--------|--------|---------|------|
-| kushinadaが歌声で効果不足 | 高 | 中 | rinna(実績あり)+nadareチェックポイントにフォールバック |
-| 事前学習のVRAM不足 | 中 | 低 | batch_size削減、gradient checkpointing、クラウドGPU |
-| 既存モデル互換性の破壊 | 高 | 中 | M1は互換維持必須。M2以降は互換モード(ssl_model設定)で対応 |
-| データセットライセンス制約 | 中 | 中 | 商用パス(NIT+PJS+JVS)と研究パス(+きりたん+GTSinger)を分離 |
-| 学習データ量の不足（10分） | 高 | 中 | データ拡張で70-100分相当に拡大。カリキュラム学習で効率化 |
-| 過学習 | 中 | 高 | Dropout(0.1)+WD(0.01)+EMA+SpecAugment+Early Stopping |
-| Whisper CERの歌声信頼性 | 中 | 高 | ベースライン（原音CER）を必ず計測し相対値で評価。歌声ASRの限界を把握 |
-| JVS-MuSiC 24→48kHz高域欠損 | 中 | 確実 | Phase 2のネイティブ48kHzデータで補完。Stage 1は音素学習が主目的 |
-| リアルタイムレイテンシ劣化 | 中 | 低 | Go/No-Go判定にレイテンシ計測を追加（200ms閾値） |
+| **kushinadaが歌声で効果不足**（TV放送話声で学習、歌声ドメインミスマッチ） | 致命的 | **高** | M1期間中にkushinadaの歌声予備実験を実施。Spin V2も比較候補に追加。最悪はMERT（歌声MOS最高3.72）を検討 |
+| **CC BY-SAの汚染効果**（PJS使用でモデル全体にSA条項が波及） | 致命的 | 確実 | 商用パス: JVS-MuSiC+NIT-SONG070のみ（PJS除外）。研究パス: 全データ。**2系統の事前学習を分離** |
+| **ロールバック計画の欠如** | 致命的 | N/A | 各MS開始前にgitタグ。config変更は`48k_singing.json`として新規作成（既存config変更禁止）。事前学習モデルは命名規則で分離 |
+| **mel_fmin変更の互換性問題** | 高 | 確実 | mel_fmin変更は既存事前学習モデルと非互換。**M1では変更せず、M3-B事前学習再実行時にまとめて適用** |
+| **fairseq依存の非互換** | 致命的 | 中 | PyTorch 2.10との互換性を事前検証。M2でtransformers移行を最優先 |
+
+### 高リスク
+
+| リスク | 影響度 | 発生確率 | 対策 |
+|--------|--------|---------|------|
+| segment_size倍増でRTX 3060 OOM | 高 | 高 | batch_size=2に削減を前提。gradient checkpointing実装を検討 |
+| JVS-MuSiC 24→48kHz高域欠損 | 高 | **確実** | Stage 1ではmel_fmax=12kHzに制限。または32kHz configで事前学習 |
+| Whisper CERの歌声信頼性不足 | 高 | 高 | M0で原音CERをベースライン測定。開発者3名の簡易MOSを併用 |
+| 多話者filelist生成の隠れた複雑性 | 中 | 高 | 工数0.5日→1.5日に修正。タスク2-4完了を前提条件化 |
+| spk_embed_dim変更の互換性 | 高 | 確実 | 事前学習用configを別ファイル(`48k_pretrain.json`)で管理 |
+
+### 中リスク
+
+| リスク | 影響度 | 発生確率 | 対策 |
+|--------|--------|---------|------|
+| 事前学習のVRAM不足 | 中 | 低 | batch_size削減、クラウドGPU（コスト$150-250） |
+| 学習データ量の不足（10分） | 高 | 中 | データ拡張で70-100分相当に拡大 |
+| 過学習 | 中 | 高 | Dropout(0.1)+WD(0.01)+EMA+SpecAugment |
+| リアルタイムレイテンシ劣化 | 中 | 低 | Go/No-Go判定にレイテンシ計測追加（200ms閾値） |
+| Windows環境での分散学習問題 | 中 | 高 | WSL2の利用を検討。単一GPU学習を優先 |
+
+### ロールバック手順
+
+| マイルストーン | ロールバック方法 |
+|-------------|----------------|
+| M1 | gitタグ `pre-m1` にrevert。既存configは変更しないため安全 |
+| M2 | `feature/ssl-abstraction` ブランチで作業。mainは安定版維持 |
+| M3-B | M2チェックポイントに戻す。SnakeBeta前のコードはgitタグで保存 |
 
 ---
 
