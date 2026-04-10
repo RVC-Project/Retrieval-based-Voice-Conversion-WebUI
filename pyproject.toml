@@ -57,6 +57,7 @@ dependencies = [
     "jiwer>=3.0.0",
     "jaconv>=0.3.4",
     "fastdtw>=0.3.4",
+    "auraloss>=0.4.0",
 
     # ユーティリティ
     "matplotlib>=3.7.0",

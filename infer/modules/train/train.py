@@ -59,6 +59,7 @@ from infer.lib.infer_pack.models import (
 )
 
 from infer.lib.train.losses import (
+    MultiResolutionSTFTLoss,
     discriminator_loss,
     feature_loss,
     generator_loss,
@@ -176,12 +177,14 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps,
+        weight_decay=getattr(hps.train, "weight_decay", 0.01),
     )
     optim_d = torch.optim.AdamW(
         net_d.parameters(),
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps,
+        weight_decay=getattr(hps.train, "weight_decay", 0.01),
     )
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
@@ -193,6 +196,10 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     else:
         net_g = DDP(net_g)
         net_d = DDP(net_d)
+
+    mrstft_loss = MultiResolutionSTFTLoss()
+    if torch.cuda.is_available():
+        mrstft_loss = mrstft_loss.cuda(rank)
 
     try:  # 如果能加载自动resume
         _, _, _, epoch_str = utils.load_checkpoint(
@@ -242,7 +249,9 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
 
-    scaler = GradScaler(enabled=hps.train.fp16_run)
+    use_bf16 = getattr(hps.train, "bf16_run", False) and torch.cuda.is_bf16_supported()
+    amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
+    scaler = GradScaler(enabled=hps.train.fp16_run and not use_bf16)
 
     cache = []
     for epoch in range(epoch_str, hps.train.epochs + 1):
@@ -259,6 +268,8 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
                 logger,
                 [writer, writer_eval],
                 cache,
+                mrstft_loss,
+                amp_dtype,
             )
         else:
             train_and_evaluate(
@@ -273,12 +284,16 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
                 None,
                 None,
                 cache,
+                mrstft_loss,
+                amp_dtype,
             )
         scheduler_g.step()
         scheduler_d.step()
 
 
-def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache):
+def train_and_evaluate(
+    rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers, cache, mrstft_loss, amp_dtype
+):
     net_g, net_d = nets
     optim_g, optim_d = optims
     train_loader, eval_loader = loaders
@@ -406,7 +421,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
             # wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
 
         # Calculate
-        with autocast("cuda", enabled=hps.train.fp16_run):
+        with autocast("cuda", enabled=hps.train.fp16_run, dtype=amp_dtype):
             if hps.if_f0 == 1:
                 (
                     y_hat,
@@ -457,7 +472,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        with autocast("cuda", enabled=hps.train.fp16_run):
+        with autocast("cuda", enabled=hps.train.fp16_run, dtype=amp_dtype):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(wave, y_hat)
             with autocast("cuda", enabled=False):
@@ -465,7 +480,8 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                 loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
                 loss_fm = feature_loss(fmap_r, fmap_g)
                 loss_gen, losses_gen = generator_loss(y_d_hat_g)
-                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl
+                loss_mrstft = mrstft_loss(y_hat, wave) * getattr(hps.train, "c_mrstft", 2.5)
+                loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl + loss_mrstft
         optim_g.zero_grad()
         scaler.scale(loss_gen_all).backward()
         scaler.unscale_(optim_g)
@@ -486,7 +502,8 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                 logger.info([global_step, lr])
                 logger.info(
                     f"loss_disc={loss_disc:.3f}, loss_gen={loss_gen:.3f}, "
-                    f"loss_fm={loss_fm:.3f},loss_mel={loss_mel:.3f}, loss_kl={loss_kl:.3f}"
+                    f"loss_fm={loss_fm:.3f}, loss_mel={loss_mel:.3f}, loss_kl={loss_kl:.3f}, "
+                    f"loss_mrstft={loss_mrstft:.3f}"
                 )
                 scalar_dict = {
                     "loss/g/total": loss_gen_all,
@@ -500,6 +517,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                         "loss/g/fm": loss_fm,
                         "loss/g/mel": loss_mel,
                         "loss/g/kl": loss_kl,
+                        "loss/g/mrstft": loss_mrstft,
                     }
                 )
 

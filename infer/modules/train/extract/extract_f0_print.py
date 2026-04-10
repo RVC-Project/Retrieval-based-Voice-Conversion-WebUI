@@ -3,6 +3,7 @@ import sys
 import traceback
 
 import parselmouth
+import torch
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -36,8 +37,8 @@ class FeatureInput(object):
         self.hop = hop_size
 
         self.f0_bin = 256
-        self.f0_max = 1100.0
-        self.f0_min = 50.0
+        self.f0_max = 1400.0
+        self.f0_min = 65.0
         self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
 
@@ -86,6 +87,20 @@ class FeatureInput(object):
                 print("Loading rmvpe model")
                 self.model_rmvpe = RMVPE("assets/rmvpe/rmvpe.pt", is_half=False, device="cpu")
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
+        elif f0_method == "fcpe":
+            if not hasattr(self, "model_fcpe"):
+                from torchfcpe import spawn_bundled_infer_model
+
+                print("Loading FCPE model")
+                self.model_fcpe = spawn_bundled_infer_model(device="cpu")
+            audio_tensor = torch.from_numpy(x).float().unsqueeze(0).unsqueeze(-1)
+            f0 = self.model_fcpe.infer(
+                audio_tensor,
+                sr=self.fs,
+                decoder_mode="local_argmax",
+                threshold=0.006,
+            )
+            f0 = f0.squeeze().cpu().numpy()
         return f0
 
     def coarse_f0(self, f0):

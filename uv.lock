@@ -138,6 +138,19 @@ wheels = [
 ]
 
 [[package]]
+name = "auraloss"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "torch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/55/2a3bbafa3e947b972c81f852c6c31cc359a21848908f2aabd35b34b532e9/auraloss-0.4.0.tar.gz", hash = "sha256:86eb3bce81aaf579d9e2df59b0cae7ab8de793902c344af72f255d53c3d5c954", size = 17640, upload-time = "2023-04-21T09:21:46.686Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/ab/8df927d3f0951cf67ca5973d89b35bcbda1777a4c78bf90a853d02d91285/auraloss-0.4.0-py3-none-any.whl", hash = "sha256:7ca1cfff0d04db9c1269038a1c527fc38bc4756dd33bfff115889a3461d97d37", size = 16743, upload-time = "2023-04-21T09:21:44.905Z" },
+]
+
+[[package]]
 name = "av"
 version = "17.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2582,6 +2595,7 @@ name = "rvc-beta"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "auraloss" },
     { name = "av" },
     { name = "cython" },
     { name = "einops" },
@@ -2634,6 +2648,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "auraloss", specifier = ">=0.4.0" },
     { name = "av", specifier = ">=12.3.0" },
     { name = "cython", specifier = ">=3.0.11" },
     { name = "einops", specifier = ">=0.6.0" },

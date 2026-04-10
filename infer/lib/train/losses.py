@@ -56,3 +56,27 @@ def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):
     kl = torch.sum(kl * z_mask)
     l = kl / torch.sum(z_mask)
     return l
+
+
+import torch.nn as nn
+import auraloss.freq
+
+
+class MultiResolutionSTFTLoss(nn.Module):
+    """auralossベースのMulti-Resolution STFT損失"""
+
+    def __init__(
+        self,
+        fft_sizes=(1024, 2048, 512),
+        hop_sizes=(120, 240, 50),
+        win_lengths=(600, 1200, 240),
+    ):
+        super().__init__()
+        self.mrstft = auraloss.freq.MultiResolutionSTFTLoss(
+            fft_sizes=list(fft_sizes),
+            hop_sizes=list(hop_sizes),
+            win_lengths=list(win_lengths),
+        )
+
+    def forward(self, y_hat, y):
+        return self.mrstft(y_hat, y)

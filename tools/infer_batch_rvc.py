@@ -27,7 +27,7 @@ def arg_parse() -> tuple:
     parser.add_argument("--index_rate", type=float, default=0.66, help="index rate")
     parser.add_argument("--device", type=str, help="device")
     parser.add_argument("--is_half", type=bool, help="use half -> True")
-    parser.add_argument("--filter_radius", type=int, default=3, help="filter radius")
+    parser.add_argument("--filter_radius", type=int, default=1, help="filter radius")
     parser.add_argument("--resample_sr", type=int, default=0, help="resample sr")
     parser.add_argument("--rms_mix_rate", type=float, default=1, help="rms mix rate")
     parser.add_argument("--protect", type=float, default=0.33, help="protect")

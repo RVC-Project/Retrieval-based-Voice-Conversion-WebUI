@@ -54,7 +54,7 @@ class Config:
             self.dml,
         ) = self.arg_parse()
         self.instead = ""
-        self.preprocess_per = 3.7
+        self.preprocess_per = 5.0
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
     @staticmethod

@@ -21,7 +21,7 @@ from scipy import signal
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 
-bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
+bh, ah = signal.butter(N=5, Wn=40, btype="high", fs=16000)
 
 input_audio_path2wav = {}
 
@@ -84,8 +84,8 @@ class Pipeline(object):
     ):
         global input_audio_path2wav
         time_step = self.window / self.sr * 1000
-        f0_min = 50
-        f0_max = 1100
+        f0_min = 65
+        f0_max = 1400
         f0_mel_min = 1127 * np.log(1 + f0_min / 700)
         f0_mel_max = 1127 * np.log(1 + f0_max / 700)
         if f0_method == "pm":
@@ -144,6 +144,21 @@ class Pipeline(object):
                 del self.model_rmvpe.model
                 del self.model_rmvpe
                 logger.info("Cleaning ortruntime memory")
+
+        elif f0_method == "fcpe":
+            if not hasattr(self, "model_fcpe"):
+                from torchfcpe import spawn_bundled_infer_model
+
+                logger.info("Loading FCPE model")
+                self.model_fcpe = spawn_bundled_infer_model(device=self.device)
+            audio_tensor = torch.from_numpy(x).float().unsqueeze(0).unsqueeze(-1).to(self.device)
+            f0 = self.model_fcpe.infer(
+                audio_tensor,
+                sr=self.sr,
+                decoder_mode="local_argmax",
+                threshold=0.006,
+            )
+            f0 = f0.squeeze().cpu().numpy()
 
         f0 *= pow(2, f0_up_key / 12)
         # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))

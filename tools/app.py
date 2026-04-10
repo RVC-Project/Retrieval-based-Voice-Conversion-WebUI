@@ -65,7 +65,7 @@ with app:
             vc_transform0 = gr.Number(label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"), value=0)
             f0method0 = gr.Radio(
                 label=i18n("选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU"),
-                choices=["pm", "harvest", "crepe", "rmvpe"],
+                choices=["pm", "harvest", "crepe", "rmvpe", "fcpe"],
                 value="pm",
                 interactive=True,
             )
@@ -73,7 +73,7 @@ with app:
                 minimum=0,
                 maximum=7,
                 label=i18n(">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"),
-                value=3,
+                value=1,
                 step=1,
                 interactive=True,
             )

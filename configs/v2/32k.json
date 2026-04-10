@@ -9,11 +9,14 @@
     "batch_size": 4,
     "fp16_run": true,
     "lr_decay": 0.999875,
-    "segment_size": 12800,
+    "segment_size": 25600,
     "init_lr_ratio": 1,
     "warmup_epochs": 0,
     "c_mel": 45,
-    "c_kl": 1.0
+    "c_kl": 1.0,
+    "weight_decay": 0.01,
+    "c_mrstft": 2.5,
+    "bf16_run": true
   },
   "data": {
     "max_wav_value": 32768.0,
@@ -32,7 +35,7 @@
     "n_heads": 2,
     "n_layers": 6,
     "kernel_size": 3,
-    "p_dropout": 0,
+    "p_dropout": 0.1,
     "resblock": "1",
     "resblock_kernel_sizes": [3,7,11],
     "resblock_dilation_sizes": [[1,3,5], [1,3,5], [1,3,5]],

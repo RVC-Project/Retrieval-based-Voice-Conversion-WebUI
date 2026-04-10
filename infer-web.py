@@ -7,6 +7,7 @@ sys.path.append(now_dir)
 load_dotenv()
 from infer.modules.vc.modules import VC
 from infer.modules.uvr5.modules import uvr
+from infer.lib.f0_presets import get_preset_names, get_preset
 from infer.lib.train.process_ckpt import (
     change_info,
     extract_small_model,
@@ -774,14 +775,20 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 choices=sorted(index_paths),
                                 interactive=True,
                             )
+                            preset_dropdown = gr.Dropdown(
+                                label="歌声プリセット",
+                                choices=get_preset_names(),
+                                value="カスタム",
+                                interactive=True,
+                            )
                             f0method0 = gr.Radio(
                                 label=i18n(
                                     "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
                                 ),
                                 choices=(
-                                    ["pm", "harvest", "crepe", "rmvpe"]
+                                    ["pm", "harvest", "crepe", "rmvpe", "fcpe"]
                                     if not config.dml
-                                    else ["pm", "harvest", "rmvpe"]
+                                    else ["pm", "harvest", "rmvpe", "fcpe"]
                                 ),
                                 value="rmvpe",
                                 interactive=True,
@@ -819,7 +826,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 label=i18n(
                                     ">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"
                                 ),
-                                value=3,
+                                value=1,
                                 step=1,
                                 interactive=True,
                             )
@@ -846,6 +853,18 @@ with gr.Blocks(title="RVC WebUI") as app:
                             #     value="E:\\codes\py39\\vits_vc_gpu_train\\logs\\mi-test-1key\\total_fea.npy",
                             #     interactive=True,
                             # )
+
+                            def apply_preset(preset_name):
+                                p = get_preset(preset_name)
+                                if p["f0_method"] is None:
+                                    return gr.update(), gr.update()
+                                return gr.update(value=p["f0_method"]), gr.update(value=p["filter_radius"])
+
+                            preset_dropdown.change(
+                                fn=apply_preset,
+                                inputs=[preset_dropdown],
+                                outputs=[f0method0, filter_radius0],
+                            )
                 with gr.Group():
                     with gr.Column():
                         but0 = gr.Button(i18n("转换"), variant="primary")
@@ -901,7 +920,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 "选择音高提取算法,输入歌声可用pm提速,harvest低音好但巨慢无比,crepe效果好但吃GPU,rmvpe效果最好且微吃GPU"
                             ),
                             choices=(
-                                ["pm", "harvest", "crepe", "rmvpe"] if not config.dml else ["pm", "harvest", "rmvpe"]
+                                ["pm", "harvest", "crepe", "rmvpe", "fcpe"]
+                                if not config.dml
+                                else ["pm", "harvest", "rmvpe", "fcpe"]
                             ),
                             value="rmvpe",
                             interactive=True,
@@ -957,7 +978,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             label=i18n(
                                 ">=3则使用对harvest音高识别的结果使用中值滤波，数值为滤波半径，使用可以削弱哑音"
                             ),
-                            value=3,
+                            value=1,
                             step=1,
                             interactive=True,
                         )
@@ -1155,7 +1176,7 @@ with gr.Blocks(title="RVC WebUI") as app:
                             label=i18n(
                                 "选择音高提取算法:输入歌声可用pm提速,高质量语音但CPU差可用dio提速,harvest质量更好但慢,rmvpe效果最好且微吃CPU/GPU"
                             ),
-                            choices=["pm", "harvest", "dio", "rmvpe", "rmvpe_gpu"],
+                            choices=["pm", "harvest", "dio", "rmvpe", "rmvpe_gpu", "fcpe"],
                             value="rmvpe_gpu",
                             interactive=True,
                         )
