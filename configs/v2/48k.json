@@ -15,7 +15,7 @@
     "c_mel": 45,
     "c_kl": 1.0,
     "weight_decay": 0.01,
-    "c_mrstft": 2.5,
+    "c_mrstft": 5.0,
     "bf16_run": true
   },
   "data": {

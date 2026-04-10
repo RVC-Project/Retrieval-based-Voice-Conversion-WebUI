@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 
 # Whisper transcription parameters tuned for singing voice
 WHISPER_SINGING_PARAMS = {
-    "beam_size": 5,
+    "beam_size": 1,
     "best_of": 5,
     "temperature": 0,
     "condition_on_previous_text": False,
-    "no_speech_threshold": 0.3,
-    "compression_ratio_threshold": 2.8,
+    "no_speech_threshold": 0.5,
+    "compression_ratio_threshold": 3.5,
 }
 
 
@@ -28,8 +28,10 @@ def normalize_japanese(text: str) -> str:
     text = jaconv.z2h(text, kana=False, digit=True, ascii=True)
     # Katakana to hiragana for unified comparison
     text = jaconv.kata2hira(text)
+    # Remove long vowel mark
+    text = text.replace("\u30fc", "")
     # Remove punctuation and symbols
-    text = re.sub(r"[、。！？\s\.,!?\-\(\)（）「」『』\[\]【】]", "", text)
+    text = re.sub(r"[、。！？\s\.,!?\-\(\)（）「」『』\[\]【】…·♪]", "", text)
     # Remove any remaining whitespace
     text = text.strip()
 
@@ -70,7 +72,7 @@ def compute_whisper_cer(
     ref_path: str,
     conv_path: str,
     ref_text: str | None = None,
-    model_name: str = "medium",
+    model_name: str = "large-v3",
     language: str = "ja",
     device: str = "cuda",
 ) -> dict:
@@ -117,8 +119,8 @@ def compute_whisper_cer(
 
     # Compute CER
     if not ref_text_normalized:
-        logger.warning("参照テキストが空のためCER計算不能。value=0.0を返します")
-        cer_value = 0.0
+        logger.warning("参照テキストが空のためCER計算不能")
+        cer_value = 0.0 if not conv_text_normalized else 1.0
     else:
         cer_value = jiwer.cer(ref_text_normalized, conv_text_normalized)
 
@@ -132,6 +134,12 @@ def compute_whisper_cer(
         else:
             ref_audio_cer = 0.0
 
+    # delta_cer: degradation from reference audio
+    if ref_text is not None and ref_audio_cer is not None:
+        delta_cer = cer_value - ref_audio_cer
+    else:
+        delta_cer = cer_value
+
     return {
         "value": cer_value,
         "unit": "ratio",
@@ -140,5 +148,6 @@ def compute_whisper_cer(
             "conv_text": conv_text_normalized,
             "ref_source": ref_source,
             "ref_audio_cer": ref_audio_cer,
+            "delta_cer": delta_cer,
         },
     }

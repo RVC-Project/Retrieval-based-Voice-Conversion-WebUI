@@ -9,13 +9,15 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-# Allow imports from this directory
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from metrics.f0_accuracy import compute_f0_rmse
-from metrics.mcd import compute_mcd
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from tools.eval.metrics.f0_accuracy import compute_f0_rmse
+from tools.eval.metrics.mcd import compute_mcd
 
 try:
-    from metrics.whisper_cer import compute_whisper_cer
+    from tools.eval.metrics.whisper_cer import compute_whisper_cer
 
     HAS_WHISPER = True
 except ImportError:
@@ -49,7 +51,7 @@ def _judge(value: float, threshold: dict) -> str:
 def _worst_status(statuses: list[str]) -> str:
     """Return the worst status among a list of PASS/WARN/FAIL."""
     order = {"PASS": 0, "WARN": 1, "FAIL": 2}
-    worst = max(statuses, key=lambda s: order.get(s, 0))
+    worst = max(statuses, key=lambda s: order[s])
     return worst
 
 
@@ -90,7 +92,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--metrics", default="all",
         help="Comma-separated metrics to compute. Choices: all, mcd, f0, cer (default: all)",
     )
-    parser.add_argument("--whisper-model", default="medium", help="Whisper model size (default: medium)")
+    parser.add_argument("--whisper-model", default="large-v3", help="Whisper model size (default: large-v3)")
     parser.add_argument("--whisper-lang", default="ja", help="Whisper language (default: ja)")
     parser.add_argument("--ref-text", default=None, help="Reference text for CER computation")
     parser.add_argument(
@@ -154,7 +156,6 @@ def main(argv: list[str] | None = None) -> None:
 
     sr = mel_params["sampling_rate"]
     hop = mel_params["hop_length"]
-    n_mels = mel_params["n_mel_channels"]
     fmin = mel_params["mel_fmin"]
     fmax = mel_params["mel_fmax"]
 
@@ -166,7 +167,7 @@ def main(argv: list[str] | None = None) -> None:
         logger.info("Computing MCD...")
         result = compute_mcd(
             ref_path=args.ref, conv_path=args.conv,
-            sr=sr, n_mels=n_mels, fmin=fmin, fmax=fmax, hop_length=hop,
+            sr=sr, fmin=fmin, fmax=fmax, hop_length=hop,
         )
         status = _judge(result["value"], THRESHOLDS["mcd"])
         statuses.append(status)

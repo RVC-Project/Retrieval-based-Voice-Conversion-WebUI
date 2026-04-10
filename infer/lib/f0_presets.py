@@ -20,14 +20,14 @@ PRESETS = {
         "f0_method": "rmvpe",
         "filter_radius": 0,
         "f0_min": 65,
-        "f0_max": 1100,
+        "f0_max": 900,  # 1100→900: 演歌の音域に適正化
     },
     "アニソン": {
         "description": "アニソン向け。広音域、高速F0追従",
         "f0_method": "fcpe",
         "filter_radius": 1,
         "f0_min": 80,
-        "f0_max": 1400,
+        "f0_max": 1200,  # 1400→1200: ハーモニクス誤検出リスク低減
     },
     "話し声": {
         "description": "話し声向け。従来互換パラメータ",

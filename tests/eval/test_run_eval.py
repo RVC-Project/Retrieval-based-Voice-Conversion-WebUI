@@ -3,11 +3,9 @@
 import io
 import json
 import os
-import sys
-import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from contextlib import redirect_stdout
+
+import pytest
 
 from tools.eval.run_eval import _judge, _worst_status, THRESHOLDS
 
@@ -74,37 +72,52 @@ class TestFullPipeline:
 
 
 class TestJudge:
-    def test_mcd_pass(self):
-        assert _judge(5.0, THRESHOLDS["mcd"]) == "PASS"
-
-    def test_mcd_warn(self):
-        assert _judge(7.0, THRESHOLDS["mcd"]) == "WARN"
-
-    def test_mcd_fail(self):
-        assert _judge(9.0, THRESHOLDS["mcd"]) == "FAIL"
-
-    def test_f0_pass(self):
-        assert _judge(15.0, THRESHOLDS["f0_rmse"]) == "PASS"
-
-    def test_f0_warn(self):
-        assert _judge(30.0, THRESHOLDS["f0_rmse"]) == "WARN"
-
-    def test_f0_fail(self):
-        assert _judge(60.0, THRESHOLDS["f0_rmse"]) == "FAIL"
+    @pytest.mark.parametrize("value,metric,expected", [
+        # MCD boundaries
+        (5.0, "mcd", "PASS"),
+        (6.0, "mcd", "PASS"),    # 境界: <= pass
+        (6.01, "mcd", "WARN"),
+        (7.0, "mcd", "WARN"),
+        (7.99, "mcd", "WARN"),
+        (8.0, "mcd", "FAIL"),    # 境界: >= fail
+        (9.0, "mcd", "FAIL"),
+        # F0 RMSE boundaries
+        (15.0, "f0_rmse", "PASS"),
+        (20.0, "f0_rmse", "PASS"),   # 境界
+        (20.01, "f0_rmse", "WARN"),
+        (30.0, "f0_rmse", "WARN"),
+        (50.0, "f0_rmse", "FAIL"),   # 境界
+        (60.0, "f0_rmse", "FAIL"),
+        # Whisper CER boundaries
+        (0.05, "whisper_cer", "PASS"),
+        (0.10, "whisper_cer", "PASS"),  # 境界
+        (0.15, "whisper_cer", "WARN"),
+        (0.20, "whisper_cer", "FAIL"),  # 境界
+        (0.30, "whisper_cer", "FAIL"),
+        # Edge cases
+        (0.0, "mcd", "PASS"),
+        (float("inf"), "mcd", "FAIL"),
+    ])
+    def test_judge(self, value, metric, expected):
+        assert _judge(value, THRESHOLDS[metric]) == expected
 
 
 class TestWorstStatus:
-    def test_pass_warn(self):
-        assert _worst_status(["PASS", "WARN"]) == "WARN"
+    @pytest.mark.parametrize("statuses,expected", [
+        (["PASS"], "PASS"),
+        (["PASS", "WARN"], "WARN"),
+        (["PASS", "FAIL"], "FAIL"),
+        (["WARN", "FAIL"], "FAIL"),
+        (["PASS", "PASS", "PASS"], "PASS"),
+        (["FAIL", "FAIL"], "FAIL"),
+    ])
+    def test_worst_status(self, statuses, expected):
+        assert _worst_status(statuses) == expected
 
-    def test_pass_fail(self):
-        assert _worst_status(["PASS", "FAIL"]) == "FAIL"
-
-    def test_all_pass(self):
-        assert _worst_status(["PASS", "PASS", "PASS"]) == "PASS"
-
-    def test_warn_fail(self):
-        assert _worst_status(["WARN", "FAIL"]) == "FAIL"
+    def test_invalid_status_raises(self):
+        """不正なステータス文字列はKeyErrorを送出"""
+        with pytest.raises(KeyError):
+            _worst_status(["PASS", "INVALID"])
 
 
 # ---------------------------------------------------------------------------

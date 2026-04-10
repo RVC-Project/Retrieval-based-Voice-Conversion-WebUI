@@ -184,7 +184,7 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         hps.train.learning_rate,
         betas=hps.train.betas,
         eps=hps.train.eps,
-        weight_decay=getattr(hps.train, "weight_decay", 0.01),
+        weight_decay=0,  # Discriminatorにweight decayは不要（学習能力を維持するため）
     )
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
@@ -249,6 +249,9 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
     scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str - 2)
 
+    # Mixed precision設定:
+    # - fp16_run: autocast有効化の全体スイッチ
+    # - bf16_run: True かつGPU対応の場合、dtypeをfp16→bf16に切替（GradScaler無効化）
     use_bf16 = getattr(hps.train, "bf16_run", False) and torch.cuda.is_bf16_supported()
     amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
     scaler = GradScaler(enabled=hps.train.fp16_run and not use_bf16)
@@ -459,7 +462,7 @@ def train_and_evaluate(
                     hps.data.mel_fmax,
                 )
             if hps.train.fp16_run:
-                y_hat_mel = y_hat_mel.half()
+                y_hat_mel = y_hat_mel.to(amp_dtype)  # bf16/fp16に応じた正しい型に変換
             wave = commons.slice_segments(wave, ids_slice * hps.data.hop_length, hps.train.segment_size)  # slice
 
             # Discriminator

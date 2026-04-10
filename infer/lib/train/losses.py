@@ -68,8 +68,8 @@ class MultiResolutionSTFTLoss(nn.Module):
     def __init__(
         self,
         fft_sizes=(1024, 2048, 512),
-        hop_sizes=(120, 240, 50),
-        win_lengths=(600, 1200, 240),
+        hop_sizes=(256, 512, 128),
+        win_lengths=(1024, 2048, 512),
     ):
         super().__init__()
         self.mrstft = auraloss.freq.MultiResolutionSTFTLoss(

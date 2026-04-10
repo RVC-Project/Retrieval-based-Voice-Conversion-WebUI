@@ -107,6 +107,8 @@ ignore = [
 quote-style = "double"
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests requiring GPU (deselect with '-m \"not gpu\"')",
 ]

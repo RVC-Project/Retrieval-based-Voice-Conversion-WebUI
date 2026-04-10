@@ -8,7 +8,6 @@ import warnings
 import librosa
 import numpy as np
 import pyworld as pw
-import soundfile as sf
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 
@@ -16,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 # Project root for importing RMVPE
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from tools.eval.audio_utils import load_audio
 
 
 def _extract_f0_rmvpe(audio: np.ndarray, sr: int, device: str = "cpu") -> np.ndarray | None:
@@ -45,8 +48,11 @@ def _extract_f0_rmvpe(audio: np.ndarray, sr: int, device: str = "cpu") -> np.nda
         rmvpe = RMVPE(model_path, is_half=is_half, device=device)
         f0 = rmvpe.infer_from_audio(audio_16k, thred=0.03)
         return f0.astype(np.float64)
+    except RuntimeError as exc:
+        logger.warning("RMVPE inference failed: %s", exc)
+        return None
     except Exception as exc:
-        logger.warning("RMVPE extraction failed: %s", exc)
+        logger.warning("RMVPE extraction failed unexpectedly: %s", exc)
         return None
 
 
@@ -73,22 +79,8 @@ def compute_f0_rmse(
     Extracts F0, aligns with fastdtw, computes cent-scale RMSE on
     mutually voiced frames. Also reports VUV error rate.
     """
-    ref_audio, ref_sr = sf.read(ref_path, dtype="float32")
-    conv_audio, conv_sr = sf.read(conv_path, dtype="float32")
-
-    # Stereo to mono
-    if ref_audio.ndim > 1:
-        ref_audio = librosa.to_mono(ref_audio.T)
-    if conv_audio.ndim > 1:
-        conv_audio = librosa.to_mono(conv_audio.T)
-
-    # Resample to target sr
-    if ref_sr != sr:
-        logger.debug("Resampling reference from %d to %d Hz", ref_sr, sr)
-        ref_audio = librosa.resample(ref_audio, orig_sr=ref_sr, target_sr=sr)
-    if conv_sr != sr:
-        logger.debug("Resampling converted from %d to %d Hz", conv_sr, sr)
-        conv_audio = librosa.resample(conv_audio, orig_sr=conv_sr, target_sr=sr)
+    ref_audio = load_audio(ref_path, target_sr=sr)
+    conv_audio = load_audio(conv_path, target_sr=sr)
 
     # F0 extraction
     f0_ref = None
@@ -111,7 +103,7 @@ def compute_f0_rmse(
     logger.debug("F0 lengths: ref=%d, conv=%d", len(f0_ref), len(f0_conv))
 
     # DTW alignment on F0 sequences
-    _, path = fastdtw(f0_ref.reshape(-1, 1), f0_conv.reshape(-1, 1), radius=1, dist=euclidean)
+    _, path = fastdtw(f0_ref.reshape(-1, 1), f0_conv.reshape(-1, 1), radius=20, dist=euclidean)
     path = np.array(path)
 
     f0_ref_aligned = f0_ref[path[:, 0]]

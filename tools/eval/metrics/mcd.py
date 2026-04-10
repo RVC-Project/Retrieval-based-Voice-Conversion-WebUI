@@ -2,12 +2,19 @@
 
 import logging
 import math
+import os
+import sys
 
 import librosa
 import numpy as np
-import soundfile as sf
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from tools.eval.audio_utils import load_audio
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +23,7 @@ def compute_mcd(
     ref_path: str,
     conv_path: str,
     sr: int = 48000,
-    n_mels: int = 128,
+    n_mels: int = 40,
     n_mfcc: int = 13,
     fmin: float = 0.0,
     fmax: float | None = None,
@@ -27,22 +34,8 @@ def compute_mcd(
     Uses MFCC coefficients 1-12 (excluding 0th) with fastdtw alignment.
     Returns MCD in dB.
     """
-    ref_audio, ref_sr = sf.read(ref_path, dtype="float32")
-    conv_audio, conv_sr = sf.read(conv_path, dtype="float32")
-
-    # Stereo to mono
-    if ref_audio.ndim > 1:
-        ref_audio = librosa.to_mono(ref_audio.T)
-    if conv_audio.ndim > 1:
-        conv_audio = librosa.to_mono(conv_audio.T)
-
-    # Resample to target sr
-    if ref_sr != sr:
-        logger.debug("Resampling reference from %d to %d Hz", ref_sr, sr)
-        ref_audio = librosa.resample(ref_audio, orig_sr=ref_sr, target_sr=sr)
-    if conv_sr != sr:
-        logger.debug("Resampling converted from %d to %d Hz", conv_sr, sr)
-        conv_audio = librosa.resample(conv_audio, orig_sr=conv_sr, target_sr=sr)
+    ref_audio = load_audio(ref_path, target_sr=sr)
+    conv_audio = load_audio(conv_path, target_sr=sr)
 
     # Extract MFCC (use coefficients 1 through n_mfcc-1, excluding 0th)
     mfcc_ref = librosa.feature.mfcc(
@@ -65,7 +58,7 @@ def compute_mcd(
     logger.debug("MFCC shapes: ref=%s, conv=%s", mfcc_ref.shape, mfcc_conv.shape)
 
     # DTW alignment
-    _, path = fastdtw(mfcc_ref, mfcc_conv, radius=1, dist=euclidean)
+    _, path = fastdtw(mfcc_ref, mfcc_conv, radius=20, dist=euclidean)
     path = np.array(path)
 
     ref_aligned = mfcc_ref[path[:, 0]]

@@ -1,9 +1,5 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-
 import numpy as np
+import pytest
 import soundfile as sf
 
 from tools.eval.metrics.mcd import compute_mcd
@@ -55,4 +51,21 @@ def test_mcd_stereo_mono(sine_wav, tmp_path):
 
     conv = sine_wav(freq=440, duration=2.0, sr=48000, filename="mono_conv.wav")
     result = compute_mcd(stereo_path, conv)
+    assert result["value"] >= 0
+
+
+def test_mcd_symmetry(sine_wav):
+    """MCD(a, b) == MCD(b, a) — 対称性"""
+    ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="sym_ref.wav")
+    conv = sine_wav(freq=880, duration=2.0, sr=48000, filename="sym_conv.wav")
+    result_ab = compute_mcd(ref, conv)
+    result_ba = compute_mcd(conv, ref)
+    assert result_ab["value"] == pytest.approx(result_ba["value"], rel=1e-3)
+
+
+def test_mcd_non_negative(sine_wav):
+    """MCD >= 0 — 非負性"""
+    ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="nn_ref.wav")
+    conv = sine_wav(freq=660, duration=2.0, sr=48000, filename="nn_conv.wav")
+    result = compute_mcd(ref, conv)
     assert result["value"] >= 0

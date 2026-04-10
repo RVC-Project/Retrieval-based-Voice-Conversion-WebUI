@@ -1,11 +1,7 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-
 import math
 
 import numpy as np
+import pytest
 import soundfile as sf
 
 from tools.eval.metrics.f0_accuracy import compute_f0_rmse
@@ -14,14 +10,14 @@ from tools.eval.metrics.f0_accuracy import compute_f0_rmse
 def test_f0_identical(harmonic_wav):
     wav = harmonic_wav(freq=220, duration=2.0, sr=48000, filename="identical.wav")
     result = compute_f0_rmse(wav, wav, f0_method="harvest")
-    assert result["value"] < 1.0
+    assert result["value"] == pytest.approx(0.0, abs=1.0)
 
 
 def test_f0_pitch_shifted(harmonic_wav):
     ref = harmonic_wav(freq=220, duration=2.0, sr=48000, filename="ref_220.wav")
     conv = harmonic_wav(freq=440, duration=2.0, sr=48000, filename="conv_440.wav")
     result = compute_f0_rmse(ref, conv, f0_method="harvest")
-    assert 1000 <= result["value"] <= 1400
+    assert 1100 <= result["value"] <= 1300
 
 
 def test_f0_silent_audio(tmp_path):

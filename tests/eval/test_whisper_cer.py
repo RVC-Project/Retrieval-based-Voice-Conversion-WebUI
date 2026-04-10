@@ -1,11 +1,7 @@
 """Tests for Whisper CER metric — normalization, CER calculation, and Whisper integration."""
 
-import os
-import sys
-
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from tools.eval.metrics.whisper_cer import normalize_japanese
 
 
@@ -26,6 +22,10 @@ class TestNormalizeJapanese:
 
     def test_normalize_combined(self):
         assert normalize_japanese("アイウ１２３、。！") == "あいう123"
+
+    def test_normalize_chooon(self):
+        """長音記号の除去"""
+        assert normalize_japanese("あーいーうー") == "あいう"
 
     def test_normalize_empty_string(self):
         assert normalize_japanese("") == ""
