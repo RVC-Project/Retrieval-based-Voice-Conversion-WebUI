@@ -181,7 +181,7 @@ if random.random() < 0.5:
 #### Stage 2: 日本語歌声データでの二次学習
 
 ```
-データ: JVS-MuSiC (100名) + NIT-SONG070 (1名, 1.2h) + PJS (1名)
+データ: JVS-MuSiC (100名) + NIT-SONG070 (1名, 1.2h)
       + 東北きりたん (57min) + GTSinger日本語 (~8h)
 目的: 話し声から歌声へのドメイン適応
 ```
@@ -251,7 +251,7 @@ weights /= weights.sum()
 | **JVS** | 30h | 100名 | 24kHz | 商用可 | マルチスピーカー話し声事前学習 | Stage 1 | - |
 | **MoeSpeech** | 623h | 473キャラ | - | 研究可 | 声質多様性の事前学習 | Stage 1 | - |
 | **JVS-MuSiC** | - | 100名 | 24kHz | 商用可 | マルチスピーカー歌声事前学習 | Stage 2 | Yes |
-| **PJS** | - | 1名 | 48kHz | CC BY-SA 4.0 | 音素バランス歌声学習 | Stage 2 | Yes |
+| ~~PJS~~ | - | - | - | ~~CC BY-SA 4.0~~ | **除外（SA汚染リスク）** | - | - |
 | **NIT-SONG070** | 1.2h | 1名F | 48kHz | CC BY 3.0 | 高品質歌声事前学習 | Stage 2 | Yes |
 | **東北きりたん** | 57min | 1名F | 48kHz | 研究のみ | J-POP歌声適応 | Stage 2 | Yes |
 | **東北イタコ** | ~1h | 1名F | 48kHz | 研究のみ | J-POP歌声適応 | Stage 2 | Yes |
@@ -278,7 +278,7 @@ weights /= weights.sum()
 
 #### パターンB: 商用利用可
 
-Stage 2を `NIT-SONG070 (CC BY 3.0)` + `PJS (CC BY-SA 4.0)` + `JVS-MuSiC（商用可）` に限定。約2-3時間のアカペラ歌声。CC BY-SA 4.0の条件（同一条件での共有）に注意。
+Stage 2を `NIT-SONG070 (CC BY 3.0)` + `JVS-MuSiC（商用可）` に限定。約4-5時間のアカペラ歌声。すべて商用利用可能なライセンス。
 
 ---
 
