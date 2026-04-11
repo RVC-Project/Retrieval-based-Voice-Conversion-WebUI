@@ -6,9 +6,23 @@
 - **工数見積もり**: 10人日
 - **GPU要件**: RTX 4070 Ti Super 16GB（開発・検証）、RTX 4090 24GB（本格学習）
 - **前提タスク**: なし（M0と独立して実行可能）
-- **ステータス**: 未着手
+- **ステータス**: 実装完了（評価実行除く）
 - **関連マイルストーン**: [milestones.md](../milestones.md) > M1セクション
 - **追加パッケージ**: `auraloss>=0.4.0`（pyproject.toml に追記）
+
+### 実装結果サマリー（レビュー修正含む）
+
+| 項目 | 当初仕様 | 実装結果 |
+|------|---------|---------|
+| Discriminator weight_decay | 0.01（G/D同一） | **G=0.01, D=0**（レビューで修正。Dに正則化不要） |
+| c_mrstft | 2.5 | **5.0**（レビューで引き上げ） |
+| MRSTFT hop_sizes | (120, 240, 50) | **(256, 512, 128)**（レビューで修正） |
+| MRSTFT win_lengths | (600, 1200, 240) | **(1024, 2048, 512)**（レビューで修正） |
+| 演歌 f0_max | 1100 | **900**（レビューで修正） |
+| アニソン f0_max | 1400 | **1200**（レビューで修正） |
+| segment_size (32k) | 12800→25600 | **25600**（実装通り） |
+| p_dropout | 0.1 | **0.1**（実装通り） |
+| y_hat_mel amp_dtype | 未考慮 | **バグ修正済み**（y_hat_mel.to(amp_dtype)） |
 
 ---
 
@@ -42,17 +56,17 @@
 
 ### サブタスク一覧
 
-- [ ] **1-1**: FCPE統合（メインパイプライン）
-- [ ] **1-2**: F0レンジ拡張（65-1400Hz）
-- [ ] **1-3**: filter_radius デフォルト変更（3→1）
-- [ ] **1-4**: Dropout(0.1) + Weight Decay(0.01)
-- [ ] **1-5**: segment_size拡張（17280→34560 / 12800→25600）
-- [ ] **1-6**: 歌唱向け前処理パラメータ
+- [x] **1-1**: FCPE統合（メインパイプライン） --- 実装完了（pipeline.py, extract_f0_print.py）
+- [x] **1-2**: F0レンジ拡張（65-1400Hz） --- 実装完了
+- [x] **1-3**: filter_radius デフォルト変更（3→1） --- 実装完了
+- [x] **1-4**: Dropout(0.1) + Weight Decay(Generator=0.01, Discriminator=0) --- 実装完了（レビューでDiscriminator weight_decay=0に修正）
+- [x] **1-5**: segment_size拡張（48k: 34560, 32k: 25600） --- 実装完了
+- [x] **1-6**: 歌唱向け前処理パラメータ --- 実装完了
 - [ ] ~~**1-7**: mel_fmin変更（0→40Hz）~~ --- **M3-Bに延期**（互換性リスク）
-- [ ] **1-8**: Multi-Resolution STFT損失追加
-- [ ] **1-9**: 歌声プリセット（WebUI）
-- [ ] **1-10**: bfloat16移行
-- [ ] **1-11**: 評価実行 + ベースライン比較
+- [x] **1-8**: Multi-Resolution STFT損失追加 --- 実装完了（c_mrstft=5.0, fft_sizes=(1024,2048,512), hop_sizes=(256,512,128), win_lengths=(1024,2048,512)）
+- [x] **1-9**: 歌声プリセット（WebUI） --- 実装完了（f0_presets.py: J-POP, 演歌(f0_max=900), アニソン(f0_max=1200,fcpe), 話し声）
+- [x] **1-10**: bfloat16/fp16混合精度対応 --- 実装完了（train.py）
+- [ ] **1-11**: 評価実行 + ベースライン比較 --- 未実施（実際の音声データが必要）
 
 ---
 
@@ -202,7 +216,7 @@ parser.add_argument("--filter_radius", type=int, default=1, help="filter radius"
 
 ---
 
-### 1-4: Dropout(0.1) + Weight Decay(0.01)
+### 1-4: Dropout(0.1) + Weight Decay(Generator=0.01, Discriminator=0)
 **工数**: 0.5日 | **変更ファイル**: `configs/v2/48k.json`, `configs/v2/32k.json`, `infer/modules/train/train.py`
 
 #### 背景
@@ -238,7 +252,7 @@ optim_d = torch.optim.AdamW(
     eps=hps.train.eps,
 )
 
-# 変更後
+# 変更後（レビュー修正: Discriminator weight_decay=0）
 optim_g = torch.optim.AdamW(
     net_g.parameters(),
     hps.train.learning_rate,
@@ -251,7 +265,7 @@ optim_d = torch.optim.AdamW(
     hps.train.learning_rate,
     betas=hps.train.betas,
     eps=hps.train.eps,
-    weight_decay=getattr(hps.train, 'weight_decay', 0.01),
+    weight_decay=0,  # Discriminatorにはweight decayを適用しない
 )
 ```
 
@@ -442,9 +456,10 @@ class MultiResolutionSTFTLoss(nn.Module):
     def __init__(
         self,
         fft_sizes=(1024, 2048, 512),
-        hop_sizes=(120, 240, 50),
-        win_lengths=(600, 1200, 240),
+        hop_sizes=(256, 512, 128),
+        win_lengths=(1024, 2048, 512),
     ):
+        # レビュー修正: hop_sizes, win_lengthsを実装に合わせて更新
         super().__init__()
         self.mrstft = auraloss.freq.MultiResolutionSTFTLoss(
             fft_sizes=list(fft_sizes),
@@ -491,18 +506,18 @@ if torch.cuda.is_available():
 loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl
 
 # 変更後
-loss_mrstft = mrstft_loss(y_hat, wave) * getattr(hps.train, 'c_mrstft', 2.5)
+loss_mrstft = mrstft_loss(y_hat, wave) * getattr(hps.train, 'c_mrstft', 5.0)
 loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl + loss_mrstft
 ```
 
 **`configs/v2/48k.json`, `configs/v2/32k.json` -- train セクションに追加**
 ```json
-"c_mrstft": 2.5
+"c_mrstft": 5.0
 ```
 
 #### 注意点
 - `auraloss` はPyTorchのみに依存し、追加のバイナリ依存はない
-- MR-STFT損失の重み `c_mrstft=2.5` は初期値。`c_mel=45` と比較して控えめに設定し、既存の学習バランスを崩さない
+- MR-STFT損失の重み `c_mrstft=5.0`（レビューで2.5から5.0に引き上げ）。学習効果の強化のため
 - `getattr` フォールバックにより、旧JSONファイルでも動作する
 - TensorBoardのログに `loss/g/mrstft` を追加して監視可能にすること
 
@@ -541,14 +556,14 @@ PRESETS = {
         "f0_method": "rmvpe",
         "filter_radius": 0,
         "f0_min": 65,
-        "f0_max": 1100,
+        "f0_max": 900,    # レビューで1100→900に修正
     },
     "アニソン": {
         "description": "アニソン向け。広音域、高速F0追従",
         "f0_method": "fcpe",
         "filter_radius": 1,
         "f0_min": 80,
-        "f0_max": 1400,
+        "f0_max": 1200,   # レビューで1400→1200に修正
     },
     "話し声": {
         "description": "話し声向け。従来互換パラメータ",
@@ -720,12 +735,12 @@ scaler = GradScaler(enabled=hps.train.fp16_run and not use_bf16)
 - `decoder_mode`: `"local_argmax"`（推奨）、`"argmax"`（高精度・低速）
 - `threshold`: voicing判定閾値。デフォルト`0.006`
 
-#### Multi-Resolution STFT損失の解像度設定
+#### Multi-Resolution STFT損失の解像度設定（レビュー修正後）
 | 解像度 | FFT size | Hop size | Window length | 特性 |
 |--------|----------|----------|---------------|------|
-| 広帯域 | 512 | 50 | 240 | 高時間分解能（過渡応答） |
-| 中帯域 | 1024 | 120 | 600 | バランス型 |
-| 狭帯域 | 2048 | 240 | 1200 | 高周波分解能（定常音） |
+| 広帯域 | 512 | 128 | 512 | 高時間分解能（過渡応答） |
+| 中帯域 | 1024 | 256 | 1024 | バランス型 |
+| 狭帯域 | 2048 | 512 | 2048 | 高周波分解能（定常音） |
 
 #### bfloat16 vs float16
 
@@ -873,7 +888,7 @@ Week 2:
 - **検出方法**: 学習開始直後（最初の数ステップ）でOOMが発生する
 
 #### 懸念2: MR-STFT損失の重みバランス
-- **リスク**: 中（c_mrstft=2.5が適切でない可能性）
+- **リスク**: 中（レビューでc_mrstft=2.5→5.0に引き上げ済み）
 - **対策**: TensorBoardで各損失項のスケールを監視。loss_mrstftが他の損失項と桁違いの場合は重み調整
 - **検出方法**: 学習初期のTensorBoardログで確認
 

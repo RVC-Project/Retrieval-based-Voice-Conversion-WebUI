@@ -39,6 +39,18 @@ uv run python tools/infer_cli.py \
   --f0method rmvpe
 ```
 
+## 評価CLI
+
+```bash
+uv run python tools/eval/run_eval.py \
+  --ref reference.wav --conv converted.wav \
+  --metrics all \
+  --whisper-model large-v3 \
+  --device cuda
+```
+
+メトリクス: MCD (dB), F0 RMSE (cents), Whisper CER (ratio)
+
 ## アーキテクチャ
 
 ### コアモジュール (`infer/`)
@@ -57,7 +69,7 @@ uv run python tools/infer_cli.py \
 
 ### 設定 (`configs/`)
 
-- `config.py` - デバイス自動検出、精度設定（fp16/fp32）
+- `config.py` - デバイス自動検出、精度設定（bf16/fp16/fp32）
 - `v2/` - モデル設定JSON (32k, 48k)
 
 ### エントリーポイント
@@ -85,13 +97,21 @@ rmvpe_root = assets/rmvpe         # RMVPEモデル
 - 768次元HuBERT特徴量 (32k/48kHz)
 - HuBERT出力層: layer 12
 - 改良版ディスクリミネータ (MultiPeriodDiscriminatorV2)
+- MRSTFT損失 (c_mrstft=5.0)、p_dropout=0.1、AdamW (weight_decay=0.01)
+- bf16混合精度対応、segment_size: 48k=34560, 32k=25600
 
 ## F0抽出メソッド
 
 - `rmvpe` - 推奨。高品質かつ高速
+- `fcpe` - torchfcpe。広音域・高速F0追従。アニソン向け
 - `harvest` - PyWorld。安定だが低速
 - `crepe` - ニューラルネット。GPU推奨
 - `pm` - Parselmouth。最軽量
+
+## 歌声プリセット
+
+WebUIから選択可能。`infer/lib/f0_presets.py` で定義。
+J-POP / 演歌 / アニソン / 話し声 / カスタム
 
 ## コントリビューションルール
 

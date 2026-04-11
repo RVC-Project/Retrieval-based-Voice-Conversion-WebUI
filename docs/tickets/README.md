@@ -7,8 +7,8 @@
 
 | チケット | フェーズ | 工数 | ステータス | GPU |
 |---------|---------|------|-----------|-----|
-| [M0: 評価基盤構築](M0_evaluation_infrastructure.md) | Week 1 | 3人日 | 未着手 | 4070 Ti Super |
-| [M1: 即効性改善](M1_immediate_improvements.md) | Week 1-2 | 10人日 | 未着手 | 4070 Ti Super |
+| [M0: 評価基盤構築](M0_evaluation_infrastructure.md) | Week 1 | 3人日 | 実装完了（ベースライン測定除く） | 4070 Ti Super |
+| [M1: 即効性改善](M1_immediate_improvements.md) | Week 1-2 | 10人日 | 実装完了（評価実行除く） | 4070 Ti Super |
 | [M2-A: SSLモデル統合](M2A_ssl_model_integration.md) | Week 3 | 10.5人日 | 未着手 | 4070 Ti Super |
 | [M2-B: 日本語歌声事前学習](M2B_pretrain_japanese_singing.md) | Week 4-5 | 8人日+GPU | 未着手 | 4090 / Cloud |
 | [M3-A: 損失関数改善](M3A_loss_function_improvements.md) | Week 6 | 4人日 | 未着手 | 4070 Ti Super |
@@ -54,7 +54,8 @@ Week 9+:  M4（オプション）
 ## レビュー履歴
 
 全チケットはエージェントチーム（作成エージェント+レビューエージェント）で作成・検証済み。
-レビューで発見された主要な修正:
+
+### チケット作成時のレビュー修正:
 
 - **M1**: `configs/config.py` の `preprocess_per` 変更漏れを追加（致命的）
 - **M2-A**: 工数を8→10.5人日に修正、milestones.mdも同期更新
@@ -62,3 +63,8 @@ Week 9+:  M4（オプション）
 - **M3-A**: DWT周波数帯域の重み付けロジック修正、EMA保存パス3箇所の完全化
 - **M3-B**: CQTDiscriminatorインターフェース修正、mel_processing.pyキャッシュバグ発見
 - **M4**: F0量子化ビン256のハードコード箇所を推論4ファイルで追加発見
+
+### 実装後のレビュー修正（M0/M1）:
+
+- **M0**: DTW radius 1→20、MCD n_mels 128→40、Whisper large-v3デフォルト化、日本語正規化拡充、テスト71件に拡充
+- **M1**: Discriminator weight_decay=0、c_mrstft 2.5→5.0、MRSTFT win_lengths修正、演歌f0_max=900、アニソンf0_max=1200、y_hat_mel.to(amp_dtype)バグ修正

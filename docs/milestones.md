@@ -27,8 +27,8 @@
 ## マイルストーン一覧
 
 ```
-M0+M1: 評価基盤 + 即効性改善 (Week 1-2, 並列実行)
-  ↓ ← Go/No-Go判定①
+M0+M1: 評価基盤 + 即効性改善 (Week 1-2, 並列実行) ← 実装完了（ベースライン測定・評価実行除く）
+  ↓ ← Go/No-Go判定①（ベースライン測定後に実施）
 M2: SSL置換+事前学習 (Week 3-5)
   ↓ ← Go/No-Go判定②
 M3: 損失関数+ボコーダ改善 (Week 6-8)
@@ -37,12 +37,14 @@ M4: 高度な最適化 (Week 9+, オプション)
 ```
 
 > **レビュー反映**: M0とM1は依存関係がなく並列実行可能。M1の設定変更は評価スクリプト完成前でも安全に適用できるため、Week 1-2で同時進行する。
+> **実装状況**: M0（0-1~0-3）とM1（1-1~1-10）の実装が完了。ベースライン測定（0-4）と評価実行（1-11）は実際の音声データが必要なため未実施。
 
 ---
 
 ## M0: 評価基盤構築
 
 > **チケット**: [M0_evaluation_infrastructure.md](tickets/M0_evaluation_infrastructure.md)
+> **ステータス**: 実装完了（ベースライン測定除く）
 
 **期間**: Week 1（3人日）
 **GPU要件**: RTX 3060+（Whisper推論用）
@@ -50,27 +52,32 @@ M4: 高度な最適化 (Week 9+, オプション)
 
 ### 成果物
 
-| # | タスク | 工数 | 成果物 |
-|---|--------|------|--------|
-| 0-1 | 評価スクリプト基盤作成 | 1日 | `tools/eval/run_eval.py`（CLI） |
-| 0-2 | MCD + F0 RMSE 自動計測 | 0.5日 | `tools/eval/metrics/mcd.py`, `f0_accuracy.py` |
-| 0-3 | Whisper CER パイプライン | 1日 | `tools/eval/metrics/whisper_cer.py`（日本語正規化込み） |
-| 0-4 | ベースライン測定 | 0.5日 | 現行ContentVecモデルの各指標値を記録 |
+| # | タスク | 工数 | 成果物 | 状態 |
+|---|--------|------|--------|------|
+| 0-1 | 評価スクリプト基盤作成 | 1日 | `tools/eval/run_eval.py`（CLI）, `tools/eval/audio_utils.py` | 完了 |
+| 0-2 | MCD + F0 RMSE 自動計測 | 0.5日 | `tools/eval/metrics/mcd.py`(n_mels=40, radius=20), `f0_accuracy.py`(RMVPE→harvest fallback, radius=20) | 完了 |
+| 0-3 | Whisper CER パイプライン | 1日 | `tools/eval/metrics/whisper_cer.py`（large-v3デフォルト, delta_CER対応, 日本語正規化拡充） | 完了 |
+| 0-4 | ベースライン測定 | 0.5日 | 現行ContentVecモデルの各指標値を記録 | 未実施 |
 
 ### 追加パッケージ
 ```
 openai-whisper, jiwer, jaconv, fastdtw
 ```
 
+### テスト
+- `tests/eval/` に71テスト（test_losses.py, test_f0_presets.py 含む）
+- PASS/WARN/FAIL 閾値: MCD 6.0/8.0 dB, F0 20/50 cents, CER 0.10/0.20
+
 ### 完了基準
-- `uv run python tools/eval/run_eval.py --ref ref.wav --conv conv.wav` でJSON出力
-- 現行モデルのベースライン値（MCD, F0 RMSE, CER）が記録済み
+- [x] `uv run python tools/eval/run_eval.py --ref ref.wav --conv conv.wav` でJSON出力
+- [ ] 現行モデルのベースライン値（MCD, F0 RMSE, CER）が記録済み（実際の音声データが必要）
 
 ---
 
 ## M1: 即効性改善（既存モデル互換維持）
 
 > **チケット**: [M1_immediate_improvements.md](tickets/M1_immediate_improvements.md)
+> **ステータス**: 実装完了（評価実行除く）
 
 **期間**: Week 1-2（10人日）※M0と並列実行
 **GPU要件**: RTX 3060 12GB（既存環境で実施可能）
@@ -80,29 +87,29 @@ openai-whisper, jiwer, jaconv, fastdtw
 
 ### 成果物
 
-| # | タスク | 工数 | 変更ファイル | 互換性 |
-|---|--------|------|-------------|--------|
-| 1-1 | FCPE統合（メインパイプライン） | 1日 | `pipeline.py` | 維持 |
-| 1-2 | F0レンジ拡張（65-1400Hz） | 0.5日 | `pipeline.py`, `extract_f0_print.py` | 維持 |
-| 1-3 | filter_radius デフォルト変更（3→1） | 0.5日 | `infer-web.py`, `infer_cli.py` | 維持 |
-| 1-4 | Dropout(0.1) + Weight Decay(0.01) | 0.5日 | `configs/v2/*.json`, `train.py` | 維持 |
-| 1-5 | segment_size拡張（17280→34560） | 0.5日 | `configs/v2/*.json` | 維持 |
-| 1-6 | 歌唱向け前処理パラメータ | 1日 | `preprocess.py` | 維持 |
-| ~~1-7~~ | ~~mel_fmin変更（0→40Hz）~~ | - | - | **M3-Bに延期**（既存事前学習モデルと非互換のため） |
-| 1-8 | Multi-Resolution STFT損失追加 | 1日 | `losses.py`, `train.py` | 維持 |
-| 1-9 | **歌声プリセット（WebUI）** | 1日 | `infer-web.py`, 新規`f0_presets.py` | 維持 |
-| 1-10 | bfloat16移行 | 0.5日 | `configs/v2/*.json` | 維持 |
-| 1-11 | 評価実行 + ベースライン比較 | 1日 | - | - |
+| # | タスク | 工数 | 変更ファイル | 互換性 | 状態 |
+|---|--------|------|-------------|--------|------|
+| 1-1 | FCPE統合（メインパイプライン） | 1日 | `pipeline.py`, `extract_f0_print.py` | 維持 | 完了 |
+| 1-2 | F0レンジ拡張（65-1400Hz） | 0.5日 | `pipeline.py`, `extract_f0_print.py` | 維持 | 完了 |
+| 1-3 | filter_radius デフォルト変更（3→1） | 0.5日 | `infer-web.py`, `infer_cli.py` | 維持 | 完了 |
+| 1-4 | Dropout(0.1) + Weight Decay(G=0.01, D=0) | 0.5日 | `configs/v2/*.json`, `train.py` | 維持 | 完了 |
+| 1-5 | segment_size拡張（48k:34560, 32k:25600） | 0.5日 | `configs/v2/*.json` | 維持 | 完了 |
+| 1-6 | 歌唱向け前処理パラメータ | 1日 | `preprocess.py` | 維持 | 完了 |
+| ~~1-7~~ | ~~mel_fmin変更（0→40Hz）~~ | - | - | **M3-Bに延期** | - |
+| 1-8 | MRSTFT損失追加（c_mrstft=5.0） | 1日 | `losses.py`, `train.py` | 維持 | 完了 |
+| 1-9 | 歌声プリセット（WebUI） | 1日 | `infer-web.py`, `f0_presets.py` | 維持 | 完了 |
+| 1-10 | bf16/fp16混合精度対応 | 0.5日 | `train.py` | 維持 | 完了 |
+| 1-11 | 評価実行 + ベースライン比較 | 1日 | - | - | 未実施 |
 
 > **レビュー反映**: データ拡張スクリプト(旧1-8)はM2-Bに移動。ターゲット話者FT時に使うものであり、M1段階では効果測定不可。代わりにMRSTFT損失・歌声プリセット・bfloat16をM1に追加。
 
-### 歌声プリセット（タスク1-9）
+### 歌声プリセット（タスク1-9） --- 実装完了
 
 WebUIに「歌声モード」ドロップダウンを追加し、ワンクリックで最適パラメータを適用:
 ```
 J-POP:   rmvpe, filter_radius=1, f0_min=65, f0_max=1100
-演歌:     rmvpe, filter_radius=0, f0_min=65, f0_max=1100（こぶし保存）
-アニソン: fcpe, filter_radius=1, f0_min=80, f0_max=1400（広音域）
+演歌:     rmvpe, filter_radius=0, f0_min=65, f0_max=900（こぶし保存、レビューで1100→900に修正）
+アニソン: fcpe, filter_radius=1, f0_min=80, f0_max=1200（広音域、レビューで1400→1200に修正）
 話し声:   rmvpe, filter_radius=3, f0_min=50, f0_max=800（従来互換）
 ```
 
@@ -202,7 +209,7 @@ auraloss>=0.4.0
 | 3-4 | CosineAnnealingWarmRestarts + Warmup | 1日 | 維持 |
 | 3-5 | DWTビブラート保存 | 1日 | 維持 |
 
-> **注意**: タスク3-1のMRSTFT損失の実装自体はM1（タスク1-8）で完了済み。M3-Aでは係数チューニングのみ。`auraloss>=0.4.0` もM1で追加済み。
+> **注意**: タスク3-1のMRSTFT損失の実装自体はM1（タスク1-8）で完了済み（c_mrstft=5.0, fft_sizes=(1024,2048,512), hop_sizes=(256,512,128), win_lengths=(1024,2048,512)）。M3-Aでは係数チューニングのみ。`auraloss>=0.4.0` もM1で追加済み。
 
 追加パッケージ: `PyWavelets>=1.4.0`
 
@@ -251,19 +258,19 @@ auraloss>=0.4.0
 ## 依存関係マップ（レビュー反映版）
 
 ```
-Week 1-2: M0+M1 並列実行
+Week 1-2: M0+M1 並列実行 [実装完了]
  ┌── M0 [評価基盤] ──────────────────┐
- │    ├── 評価スクリプト              │
- │    └── ベースライン測定            │
+ │    ├── 評価スクリプト [完了]        │
+ │    └── ベースライン測定 [未実施]     │
  │                                  │
  └── M1 [即効性改善] ───────────────┤  ← 並列実行可能
-      ├── FCPE統合                  │
-      ├── F0レンジ拡張               │
-      ├── Dropout/WD/bfloat16       │
-      ├── segment_size拡張          │
-      ├── 歌唱前処理                 │
-      ├── MRSTFT損失（M3から前倒し）  │
-      └── 歌声プリセット（WebUI）     │
+      ├── FCPE統合 [完了]            │
+      ├── F0レンジ拡張 [完了]         │
+      ├── Dropout/WD/bfloat16 [完了] │
+      ├── segment_size拡張 [完了]    │
+      ├── 歌唱前処理 [完了]           │
+      ├── MRSTFT損失（M3から前倒し）[完了] │
+      └── 歌声プリセット（WebUI）[完了]   │
                                     │
 Week 3-5: M2                        │
  M2 [SSL置換+事前学習] ←────────────┘

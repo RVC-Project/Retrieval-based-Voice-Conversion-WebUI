@@ -3,6 +3,8 @@
 > 対象: RVC WebUI (Retrieval-based Voice Conversion)
 > 作成日: 2026-04-10
 > 目的: 日本語歌声変換品質の向上
+>
+> **ステータス**: 本提案はM3-B（ボコーダ改善）として未実装。M1でMRSTFT Loss（c_mrstft=5.0, fft=(1024,2048,512), hop=(256,512,128), win=(1024,2048,512)）が損失関数として実装済みだが、本提案のアーキテクチャ変更（SnakeBeta, アンチエイリアス, BigVGAN, Vocos, HiFTNet等）およびmel_fmin変更（M3-A）はいずれも未着手。
 
 ---
 
@@ -28,7 +30,7 @@
 | NSFソース | `SourceModuleHnNSF` (SineGen, harmonic_num=0) | `infer/lib/infer_pack/models.py` L368-420 |
 | Discriminator | `MultiPeriodDiscriminatorV2` (periods=[2,3,5,7,11,17,23,37] + DiscriminatorS) | `infer/lib/infer_pack/models.py` L892-917 |
 | アンチエイリアス | なし | - |
-| 損失関数 | L1 mel loss + feature matching + GAN loss + KL loss | `infer/lib/train/losses.py` |
+| 損失関数 | L1 mel loss + feature matching + GAN loss + KL loss + **MRSTFT loss** ✅M1追加 | `infer/lib/train/losses.py` |
 
 ### 1.2 現行アーキテクチャの問題点
 

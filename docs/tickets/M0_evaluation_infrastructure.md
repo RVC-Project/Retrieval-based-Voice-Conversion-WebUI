@@ -6,8 +6,19 @@
 - **工数見積もり**: 3人日
 - **GPU要件**: RTX 4070 Ti Super 16GB（Whisper推論用）
 - **前提タスク**: なし
-- **ステータス**: 未着手
+- **ステータス**: 実装完了（ベースライン測定除く）
 - **関連マイルストーン**: [milestones.md](../milestones.md) > M0セクション
+
+### 実装結果サマリー
+
+| 項目 | 当初仕様 | 実装結果（レビュー修正含む） |
+|------|---------|--------------------------|
+| MCD n_mels | 128 | **40**（MCD標準に合わせて修正） |
+| DTW radius | 1 | **20**（歌声テンポずれ対応） |
+| Whisperデフォルト | medium | **large-v3**（歌声転写精度向上） |
+| テスト数 | 32件 | **71件**（test_losses.py, test_f0_presets.py 追加） |
+| 追加ファイル | - | `tools/eval/audio_utils.py`（音声読み込み共通ユーティリティ） |
+| delta_CER | 未定義 | **対応済み**（conv_cer - ref_audio_cerの差分評価） |
 
 ---
 
@@ -37,26 +48,27 @@
 
 ### サブタスク一覧
 
-- [ ] **0-1: 評価スクリプト基盤作成**（1日）
+- [x] **0-1: 評価スクリプト基盤作成**（1日） --- 実装完了
   - CLI エントリーポイント `tools/eval/run_eval.py` の実装
-  - argparse によるインターフェース設計
+  - argparse によるインターフェース設計（--ref, --conv, --metrics, --whisper-model, --config等）
   - 各メトリクスモジュールの呼び出しとJSON集約
   - PASS/WARN/FAIL 判定ロジック
   - ログ出力（`--verbose` オプション）
+  - 音声読み込み共通ユーティリティ `tools/eval/audio_utils.py` を追加
   
-- [ ] **0-2: MCD + F0 RMSE 自動計測**（0.5日）
-  - `tools/eval/metrics/mcd.py` - Mel Cepstral Distortion計算
-  - `tools/eval/metrics/f0_accuracy.py` - F0 RMSE計算（cent単位）
-  - DTWによる時間軸アラインメント
+- [x] **0-2: MCD + F0 RMSE 自動計測**（0.5日） --- 実装完了
+  - `tools/eval/metrics/mcd.py` - MCD-DTW (n_mels=40, radius=20)
+  - `tools/eval/metrics/f0_accuracy.py` - F0 RMSE in cents (RMVPE→harvest fallback, radius=20)
+  - DTWによる時間軸アラインメント（radius=20に拡大、レビューで修正）
   - 無声区間のハンドリング
 
-- [ ] **0-3: Whisper CERパイプライン**（1日）
-  - `tools/eval/metrics/whisper_cer.py` - Whisper転写 + CER計算
-  - 日本語テキスト正規化（全角/半角、カタカナ/ひらがな統一等）
+- [x] **0-3: Whisper CERパイプライン**（1日） --- 実装完了
+  - `tools/eval/metrics/whisper_cer.py` - Whisper CER (large-v3デフォルト, delta_CER対応)
+  - 日本語テキスト正規化（全角/半角、カタカナ/ひらがな統一等、正規化拡充済み）
   - 歌声向けWhisperパラメータ調整
   - 原音CERの同時計測機能
 
-- [ ] **0-4: ベースライン測定**（0.5日）
+- [ ] **0-4: ベースライン測定**（0.5日） --- 未実施（実際の音声データが必要）
   - 現行ContentVecモデルで変換した音声サンプルの各指標値を記録
   - 結果を `tools/eval/baselines/` にJSON保存
   - 原音のWhisper CERも同時記録（Whisper信頼性のベースライン）
@@ -69,6 +81,7 @@
 tools/eval/
   __init__.py              # パッケージ初期化
   run_eval.py              # CLI エントリーポイント（メイン）
+  audio_utils.py           # 音声読み込み共通ユーティリティ（実装時に追加）
   metrics/
     __init__.py            # メトリクスパッケージ初期化
     mcd.py                 # Mel Cepstral Distortion
@@ -76,7 +89,7 @@ tools/eval/
     whisper_cer.py         # Whisper CER（日本語正規化込み）
   baselines/
     README.md              # ベースライン記録の説明（任意）
-    baseline_contentvc.json # ContentVecモデルのベースライン値
+    baseline_contentvc.json # ContentVecモデルのベースライン値（0-4で作成予定）
 ```
 
 #### 変更対象（既存ファイル）
@@ -115,7 +128,7 @@ usage: run_eval.py [-h] --ref REF --conv CONV
   --ref REF             参照音声（原音）のパス（WAV形式）
   --conv CONV           変換音声のパス（WAV形式）
   --metrics METRICS     計測する指標（カンマ区切り）。デフォルト: all
-  --whisper-model MODEL Whisperモデルサイズ。デフォルト: medium
+  --whisper-model MODEL Whisperモデルサイズ。デフォルト: large-v3
   --whisper-lang LANG   Whisper言語指定。デフォルト: ja
   --ref-text TEXT       参照テキスト（CER計算用）。省略時はWhisperで参照音声を転写
   --config CONFIG       モデル設定ファイルのパス（MCD等のmelパラメータ取得用）。デフォルト: configs/v2/48k.json
@@ -166,7 +179,7 @@ usage: run_eval.py [-h] --ref REF --conv CONV
   },
   "overall_status": "WARN",
   "config": {
-    "whisper_model": "medium",
+    "whisper_model": "large-v3",
     "whisper_lang": "ja",
     "f0_method": "rmvpe",
     "sample_rate": 48000,
@@ -182,7 +195,7 @@ usage: run_eval.py [-h] --ref REF --conv CONV
 **アルゴリズム**: Mel Cepstral Distortion（MCD-DTW）
 
 ```python
-def compute_mcd(ref_path: str, conv_path: str, sr: int = 48000, n_mels: int = 128,
+def compute_mcd(ref_path: str, conv_path: str, sr: int = 48000, n_mels: int = 40,
                 n_mfcc: int = 13, fmin: float = 0.0, fmax: float | None = None,
                 hop_length: int = 480) -> dict:
     """
@@ -198,10 +211,10 @@ def compute_mcd(ref_path: str, conv_path: str, sr: int = 48000, n_mels: int = 12
     """
 ```
 
-- **MFCC抽出パラメータ**: 既存の `configs/v2/48k.json` と整合させる（`sr=48000`, `hop_length=480`, `n_mel_channels=128`, `mel_fmin=0.0`）
+- **MFCC抽出パラメータ**: `n_mels=40`（レビューで128から40に修正。MCD計算にはモデル学習用のmel設定ではなく、MCD標準のn_mels=40が適切）
 - **MCD公式**: `MCD [dB] = (10 * sqrt(2) / ln(10)) * mean(sqrt(sum((mfcc_ref_i - mfcc_conv_i)^2)))`
 - **MFCC次元**: 0次（パワー）を除く1-12次元。13次以降はノイズが多く不安定
-- **DTWアラインメント**: `fastdtw` ライブラリ（radius=1 でコスト削減）。歌声は原音と変換音声でテンポが一致するためradiusを小さくできる
+- **DTWアラインメント**: `fastdtw` ライブラリ（radius=20）。レビューでradius=1から20に拡大。歌声のテンポずれに対するロバスト性を確保
 - **リサンプル**: 参照と変換の `sr` が異なる場合、`librosa.resample` で統一
 
 #### 2.4 F0 RMSE 計算仕様 (`metrics/f0_accuracy.py`)
@@ -228,11 +241,11 @@ def compute_f0_rmse(ref_path: str, conv_path: str, sr: int = 48000,
     """
 ```
 
-- **F0抽出**: 既存の `infer/lib/rmvpe.py` の `RMVPE` クラスを再利用する。`pipeline.py` と同じ `rmvpe.pt` モデルを使用
+- **F0抽出**: 既存の `infer/lib/rmvpe.py` の `RMVPE` クラスを再利用する。`pipeline.py` と同じ `rmvpe.pt` モデルを使用。RMVPEが利用できない場合は `pyworld.harvest` にフォールバック（実装済み）
 - **cent変換**: `cent = 1200 * log2(f0_conv / f0_ref)`。人間の音高知覚に対応する対数スケール
 - **無声区間の扱い**: F0=0 のフレームは無声と判定。RMSE計算では両方が有声のフレームのみを使用
 - **VUV Error Rate**: `(有声を無声と誤判定 + 無声を有声と誤判定) / 全フレーム数`
-- **DTWアラインメント**: MCD と同じ `fastdtw` を使用。F0シーケンスに対してアラインメントを実行
+- **DTWアラインメント**: `fastdtw` を使用（radius=20）。レビューでradius=1から20に拡大
 
 #### 2.5 Whisper CER 計算仕様 (`metrics/whisper_cer.py`)
 
@@ -241,7 +254,7 @@ def compute_f0_rmse(ref_path: str, conv_path: str, sr: int = 48000,
 ```python
 def compute_whisper_cer(ref_path: str, conv_path: str,
                         ref_text: str | None = None,
-                        model_name: str = "medium",
+                        model_name: str = "large-v3",
                         language: str = "ja",
                         device: str = "cuda") -> dict:
     """
@@ -262,7 +275,7 @@ def compute_whisper_cer(ref_path: str, conv_path: str,
     """
 ```
 
-- **Whisperモデル**: デフォルトは `medium`（769M params）。RTX 4070 Ti Super 16GBで十分動作する。`large-v3` も選択可能だが推論時間が長い
+- **Whisperモデル**: デフォルトは `large-v3`（レビューでmediumからlarge-v3に変更。歌声転写精度の向上のため）。RTX 4070 Ti Super 16GBで動作確認済み
 - **言語指定**: `language="ja"` を明示的に指定し、言語検出のオーバーヘッドと誤検出を回避
 - **日本語正規化パイプライン**:
   1. `jaconv.z2h(text, kana=False, digit=True, ascii=True)` - 全角英数字を半角に
@@ -428,7 +441,7 @@ def compute_<metric_name>(ref_path: str, conv_path: str, **kwargs) -> dict:
 
 ### ユニットテスト
 
-テストファイル: `tests/eval/` ディレクトリに配置する。
+テストファイル: `tests/eval/` ディレクトリに配置。実装完了時点で **71テスト** が存在（当初32件から拡充。`test_losses.py`, `test_f0_presets.py` も追加）。
 
 #### MCD テスト (`tests/eval/test_mcd.py`)
 
@@ -513,10 +526,10 @@ E2Eテストはベースライン測定 (0-4) を兼ねる:
 
 **問題**: RVC変換では音声の長さが厳密に保存されるため、DTWは高い精度で動作するはず。ただし、無音区間のトリミング差異があると誤ったアラインメントになる可能性がある。
 
-**対策**:
+**対策**（実装済み）:
 - DTW前に先頭・末尾の無音をトリムする前処理を追加
 - DTWのコスト行列を可視化する `--verbose` オプションで問題を検出可能にする
-- radius=1 で計算コストを抑えつつ、問題がある場合はradiusを増やせるようにする
+- レビューでradius=1→20に拡大。歌声のテンポずれに対するロバスト性を確保
 
 #### 懸念3: MCD の mel パラメータ整合性
 
@@ -530,8 +543,8 @@ E2Eテストはベースライン測定 (0-4) を兼ねる:
 
 **問題**: F0 RMSE計算で `infer/lib/rmvpe.py` を再利用するが、`assets/rmvpe/rmvpe.pt` モデルファイルが必要。CI環境やモデルファイルがない環境ではF0計算が失敗する。
 
-**対策**:
-- RMVPE が見つからない場合は `pyworld.harvest` にフォールバックする
+**対策**（実装済み）:
+- RMVPE が見つからない場合は `pyworld.harvest` にフォールバックする（実装済み）
 - テストでは合成サイン波を使い、RMVPEなしでも基本テストが通るようにする
 
 #### 懸念5: openai-whisper のバージョン互換性
