@@ -42,14 +42,26 @@ uv run python tools/infer_cli.py \
 ## 評価CLI
 
 ```bash
+# 基本評価（MCD + F0 RMSE）
+uv run python tools/eval/run_eval.py \
+  --ref reference.wav --conv converted.wav \
+  --metrics mcd,f0 --device cuda
+
+# 全メトリクス（MCD + F0 + CER + Latency）
 uv run python tools/eval/run_eval.py \
   --ref reference.wav --conv converted.wav \
   --metrics all \
+  --model assets/weights/MODEL.pth \
   --whisper-model large-v3 \
   --device cuda
+
+# ベースライン比較
+uv run python tools/eval/baseline_compare.py \
+  --before eval_output/baseline_before.json \
+  --after eval_output/baseline_after.json
 ```
 
-メトリクス: MCD (dB), F0 RMSE (cents), Whisper CER (ratio)
+メトリクス: MCD (dB), F0 RMSE (cents), Whisper CER (ratio), Latency (ms/RTF)
 
 ## アーキテクチャ
 
