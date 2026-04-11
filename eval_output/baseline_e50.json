@@ -1,0 +1,47 @@
+{
+  "version": "0.1.0",
+  "timestamp": "2026-04-11T05:48:42.870459+00:00",
+  "files": {
+    "reference": "C:\\Users\\yuta\\Desktop\\AIHUB\\はるなさん歌声\\CatLoving_Vox.wav",
+    "converted": "C:\\Users\\yuta\\Desktop\\AIHUB\\Retrieval-based-Voice-Conversion-WebUI\\eval_output\\CatLoving_conv_e50.wav"
+  },
+  "metrics": {
+    "mcd": {
+      "value": 30.782093048095703,
+      "unit": "dB",
+      "details": {
+        "frames_aligned": 11520
+      },
+      "status": "FAIL",
+      "thresholds": {
+        "pass": 6.0,
+        "fail": 8.0,
+        "unit": "dB",
+        "lower_is_better": true
+      }
+    },
+    "f0_rmse": {
+      "value": 38.91811744321764,
+      "unit": "cents",
+      "details": {
+        "voiced_frame_ratio": 0.6442380985378698,
+        "vuv_error_rate": 0.0024946296167971727,
+        "frames_total": 14431
+      },
+      "status": "WARN",
+      "thresholds": {
+        "pass": 20.0,
+        "fail": 50.0,
+        "unit": "cents",
+        "lower_is_better": true
+      }
+    }
+  },
+  "overall_status": "FAIL",
+  "config": {
+    "whisper_model": "large-v3",
+    "whisper_lang": "ja",
+    "sample_rate": 48000,
+    "config_file": "configs/v2/48k.json"
+  }
+}

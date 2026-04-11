@@ -27,8 +27,8 @@
 ## マイルストーン一覧
 
 ```
-M0+M1: 評価基盤 + 即効性改善 (Week 1-2, 並列実行) ← 実装完了（ベースライン測定・評価実行除く）
-  ↓ ← Go/No-Go判定①（ベースライン測定後に実施）
+M0+M1: 評価基盤 + 即効性改善 (Week 1-2, 並列実行) ← 完了（実装+評価実施済み）
+  ↓ ← Go/No-Go判定① → 条件付きGo（2026-04-11実施）
 M2: SSL置換+事前学習 (Week 3-5)
   ↓ ← Go/No-Go判定②
 M3: 損失関数+ボコーダ改善 (Week 6-8)
@@ -37,7 +37,7 @@ M4: 高度な最適化 (Week 9+, オプション)
 ```
 
 > **レビュー反映**: M0とM1は依存関係がなく並列実行可能。M1の設定変更は評価スクリプト完成前でも安全に適用できるため、Week 1-2で同時進行する。
-> **実装状況**: M0（0-1~0-3）とM1（1-1~1-10）の実装が完了。ベースライン測定（0-4）と評価実行（1-11）は実際の音声データが必要なため未実施。
+> **評価結果（2026-04-11）**: はるなさん歌声データ（6曲/20.7分）でRVCモデルを学習（200ep, bs=8, bf16）し評価を実施。MCD=29.97dB(FAIL), F0 RMSE=41.46cents(WARN), Whisper CER=34.5%(FAIL)。50ep→200epで改善なし（学習は早期に収束）。英語HuBERTの日本語歌声への限界が主因。詳細: [evaluation_report_m0_m1.md](evaluation_report_m0_m1.md)
 
 ---
 
@@ -57,7 +57,7 @@ M4: 高度な最適化 (Week 9+, オプション)
 | 0-1 | 評価スクリプト基盤作成 | 1日 | `tools/eval/run_eval.py`（CLI）, `tools/eval/audio_utils.py` | 完了 |
 | 0-2 | MCD + F0 RMSE 自動計測 | 0.5日 | `tools/eval/metrics/mcd.py`(n_mels=40, radius=20), `f0_accuracy.py`(RMVPE→harvest fallback, radius=20) | 完了 |
 | 0-3 | Whisper CER パイプライン | 1日 | `tools/eval/metrics/whisper_cer.py`（large-v3デフォルト, delta_CER対応, 日本語正規化拡充） | 完了 |
-| 0-4 | ベースライン測定 | 0.5日 | 現行ContentVecモデルの各指標値を記録 | 未実施 |
+| 0-4 | ベースライン測定 | 0.5日 | MCD=29.97dB, F0 RMSE=41.46cents, CER=34.5% (200ep, はるなさん歌声6曲) | 完了 |
 
 ### 追加パッケージ
 ```
@@ -70,6 +70,7 @@ openai-whisper, jiwer, jaconv, fastdtw
 
 ### 完了基準
 - [x] `uv run python tools/eval/run_eval.py --ref ref.wav --conv conv.wav` でJSON出力
+- [x] 現行モデルのベースライン値（MCD, F0 RMSE, CER）が記録済み → `eval_output/baseline_e200.json`
 - [ ] 現行モデルのベースライン値（MCD, F0 RMSE, CER）が記録済み（実際の音声データが必要）
 
 ---
@@ -99,7 +100,7 @@ openai-whisper, jiwer, jaconv, fastdtw
 | 1-8 | MRSTFT損失追加（c_mrstft=5.0） | 1日 | `losses.py`, `train.py` | 維持 | 完了 |
 | 1-9 | 歌声プリセット（WebUI） | 1日 | `infer-web.py`, `f0_presets.py` | 維持 | 完了 |
 | 1-10 | bf16/fp16混合精度対応 | 0.5日 | `train.py` | 維持 | 完了 |
-| 1-11 | 評価実行 + ベースライン比較 | 1日 | - | - | 未実施 |
+| 1-11 | 評価実行 + ベースライン比較 | 1日 | [evaluation_report_m0_m1.md](evaluation_report_m0_m1.md) | - | 完了 |
 
 > **レビュー反映**: データ拡張スクリプト(旧1-8)はM2-Bに移動。ターゲット話者FT時に使うものであり、M1段階では効果測定不可。代わりにMRSTFT損失・歌声プリセット・bfloat16をM1に追加。
 
@@ -118,14 +119,17 @@ J-POP:   rmvpe, filter_radius=1, f0_min=65, f0_max=1100
 auraloss>=0.4.0
 ```
 
-### Go/No-Go判定① (Week 2終了時)
+### Go/No-Go判定① (Week 2終了時) → **条件付きGo（2026-04-11実施）**
 
-| 基準 | Go | No-Go対応 |
-|------|-----|----------|
-| MCD改善 | 5%以上改善 | パラメータ再調整、segment_size/filter_radius検証 |
-| F0 RMSE改善 | 10%以上改善 | FCPEパラメータ、f0_min/f0_max微調整 |
-| リアルタイムレイテンシ | 200ms以下を維持 | segment_size調整 |
-| 既存モデル互換 | 完全維持 | - |
+| 基準 | Go条件 | 結果 | 判定 |
+|------|--------|------|------|
+| MCD改善 | 5%以上改善 | M1前ベースライン未取得のため比較不可 | 判定不能 |
+| F0 RMSE改善 | 10%以上改善 | 同上 | 判定不能 |
+| リアルタイムレイテンシ | 200ms以下を維持 | 未測定 | 未実施 |
+| 既存モデル互換 | 完全維持 | pretrained_v2互換維持 | **Go** |
+
+> **判定理由**: M1コード実装・評価基盤・学習パイプラインの動作確認が完了。品質限界は英語HuBERTに起因しM2で解決すべき課題。M2（日本語SSL置換）への進行を推奨。
+> **詳細レポート**: [evaluation_report_m0_m1.md](evaluation_report_m0_m1.md)
 
 ---
 

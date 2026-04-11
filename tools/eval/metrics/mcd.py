@@ -8,6 +8,7 @@ import sys
 import librosa
 import numpy as np
 from fastdtw import fastdtw
+from scipy.fftpack import dct
 from scipy.spatial.distance import euclidean
 
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -37,15 +38,17 @@ def compute_mcd(
     ref_audio = load_audio(ref_path, target_sr=sr)
     conv_audio = load_audio(conv_path, target_sr=sr)
 
-    # Extract MFCC (use coefficients 1 through n_mfcc-1, excluding 0th)
-    mfcc_ref = librosa.feature.mfcc(
-        y=ref_audio, sr=sr, n_mfcc=n_mfcc, n_mels=n_mels,
-        fmin=fmin, fmax=fmax, hop_length=hop_length,
-    )
-    mfcc_conv = librosa.feature.mfcc(
-        y=conv_audio, sr=sr, n_mfcc=n_mfcc, n_mels=n_mels,
-        fmin=fmin, fmax=fmax, hop_length=hop_length,
-    )
+    def _mel_cepstrum(y):
+        """Compute mel cepstral coefficients from natural-log mel spectrogram."""
+        S = librosa.feature.melspectrogram(
+            y=y, sr=sr, n_mels=n_mels, fmin=fmin, fmax=fmax, hop_length=hop_length,
+        )
+        log_S = np.log(np.maximum(S, 1e-10))  # natural log (not dB)
+        mc = dct(log_S, axis=0, type=2, norm="ortho")[:n_mfcc]
+        return mc
+
+    mfcc_ref = _mel_cepstrum(ref_audio)
+    mfcc_conv = _mel_cepstrum(conv_audio)
 
     # Remove 0th coefficient -> shape (n_mfcc-1, T)
     mfcc_ref = mfcc_ref[1:]

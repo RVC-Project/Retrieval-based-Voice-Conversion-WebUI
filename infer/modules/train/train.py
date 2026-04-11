@@ -95,18 +95,23 @@ def main():
         n_gpus = 1
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(randint(20000, 55555))
-    children = []
     logger = utils.get_logger(hps.model_dir)
-    for i in range(n_gpus):
-        subproc = mp.Process(
-            target=run,
-            args=(i, n_gpus, hps, logger),
-        )
-        children.append(subproc)
-        subproc.start()
 
-    for i in range(n_gpus):
-        children[i].join()
+    if n_gpus == 1 and os.name == "nt":
+        # Windows単一GPU: glooバックエンドが動作しないためインプロセスで実行
+        run(0, n_gpus, hps, logger)
+    else:
+        children = []
+        for i in range(n_gpus):
+            subproc = mp.Process(
+                target=run,
+                args=(i, n_gpus, hps, logger),
+            )
+            children.append(subproc)
+            subproc.start()
+
+        for i in range(n_gpus):
+            children[i].join()
 
 
 def run(rank, n_gpus, hps, logger: logging.Logger):
@@ -118,7 +123,9 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
 
-    dist.init_process_group(backend="gloo", init_method="env://", world_size=n_gpus, rank=rank)
+    _skip_dist = n_gpus == 1 and os.name == "nt"
+    if not _skip_dist:
+        dist.init_process_group(backend="gloo", init_method="env://", world_size=n_gpus, rank=rank)
     torch.manual_seed(hps.train.seed)
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
@@ -188,7 +195,9 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     )
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
-    if hasattr(torch, "xpu") and torch.xpu.is_available():
+    if _skip_dist:
+        pass  # Windows単一GPU: DDPなしで直接実行
+    elif hasattr(torch, "xpu") and torch.xpu.is_available():
         pass
     elif torch.cuda.is_available():
         net_g = DDP(net_g, device_ids=[rank])
@@ -528,9 +537,9 @@ def train_and_evaluate(
                 scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
                 scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
                 image_dict = {
-                    "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
-                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()),
-                    "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
+                    "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().float().numpy()),
+                    "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().float().numpy()),
+                    "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().float().numpy()),
                 }
                 utils.summarize(
                     writer=writer,

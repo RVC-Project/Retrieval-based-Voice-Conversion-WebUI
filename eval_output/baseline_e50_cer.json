@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "timestamp": "2026-04-11T05:52:25.571503+00:00",
+  "files": {
+    "reference": "C:\\Users\\yuta\\Desktop\\AIHUB\\はるなさん歌声\\CatLoving_Vox.wav",
+    "converted": "C:\\Users\\yuta\\Desktop\\AIHUB\\Retrieval-based-Voice-Conversion-WebUI\\eval_output\\CatLoving_conv_e50.wav"
+  },
+  "metrics": {
+    "whisper_cer": {
+      "value": 0.3378684807256236,
+      "unit": "ratio",
+      "details": {
+        "ref_text": "ご視聴ありがとうございました食は青めにもったいないたいのだってわかんなくなるえめまたたび主にご褒美もう嫌になったって離されないように今日だってちゃんと代償の傷くらいにゃんっていい子にするから愛してEverybodytodayisalovelydayGetitgetitThisismycotasipAnyanyanytimeisfinewithmeGivemegivemeLovememydarlingだりん会いたいお間違いなんてみんなは言う取り憑かれているってならこの胸でうずく締め付けるような切なさは何なの選ぶ言葉と惑う指先男性な横顔あらら無垢機嫌もしかして今日は優しく撫でてくれるのかな君のそれが耐えられるの紹介で私だけなんだよねあからさまに頃を飛ばそうにもう嫌だって離れられないよねそうだよね感情は徐々に歌を少々にもう愛もさえのように転がせばいい柑橘の匂いだってしのぐのだもう噛んだって叱られるだけだし今日だってちゃんとお膝でおとなしくにゃんってお好きなように完全とったして",
+        "conv_text": "痛いことは嫌いですが君の手のしらは嫌いじゃない言葉は雨玉みたいに甘く広がって心満たすあ全然わかってない永遠に言う通り完全にふぇあじゃないあなんではちってないまたまたあの子みたいに可愛くならなくちゃ愛情はそうめに食はほうめにもったいないたいのだってわかんなくなる恋愛またたび主にご褒美もう嫌だったって話されないように今日だってちょっと代償もけずくらいなんていい子にするから愛してEverybodytodayisalovelydayGetitgetitthisismycourtesyAnyanyanytimeisfamousmeGivemegivemelovememydarling会いたいお間違いなんてみんなは言う取り憑かれているってならこの胸でうずく締め付けるような切なさは何なの選ぶ言葉と惑う指先男性の横顔あらら無垢気でもしかして今日は優しくなれてくれるのかな君のそれが耐えられるの正体で私だけなんだよねあからさまに頃を灯そうにもう嫌だって離れられないよねそうだよね感情は徐々に歌をは少々に脳内も冴えるように転がせばいい柑橘の匂いだってしのぐのだもう噛んだって叱られるだけだし今日だってちゃんとお膝でおとなしくにゃんってお好きなように完全と歌して",
+        "ref_source": "whisper",
+        "ref_audio_cer": null,
+        "delta_cer": 0.3378684807256236
+      },
+      "status": "FAIL",
+      "thresholds": {
+        "pass": 0.1,
+        "fail": 0.2,
+        "unit": "ratio",
+        "lower_is_better": true
+      }
+    }
+  },
+  "overall_status": "FAIL",
+  "config": {
+    "whisper_model": "large-v3",
+    "whisper_lang": "ja",
+    "sample_rate": 48000,
+    "config_file": "configs/v2/48k.json"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "version": "0.1.0",
+  "timestamp": "2026-04-11T07:22:11.971659+00:00",
+  "files": {
+    "reference": "C:\\Users\\yuta\\Desktop\\AIHUB\\はるなさん歌声\\CatLoving_Vox.wav",
+    "converted": "C:\\Users\\yuta\\Desktop\\AIHUB\\Retrieval-based-Voice-Conversion-WebUI\\eval_output\\CatLoving_conv_e200.wav"
+  },
+  "metrics": {
+    "mcd": {
+      "value": 29.971078872680664,
+      "unit": "dB",
+      "details": {
+        "frames_aligned": 11526
+      },
+      "status": "FAIL",
+      "thresholds": {
+        "pass": 6.0,
+        "fail": 8.0,
+        "unit": "dB",
+        "lower_is_better": true
+      }
+    },
+    "f0_rmse": {
+      "value": 41.458416987862165,
+      "unit": "cents",
+      "details": {
+        "voiced_frame_ratio": 0.6365787459113369,
+        "vuv_error_rate": 0.0027837706173011343,
+        "frames_total": 14369
+      },
+      "status": "WARN",
+      "thresholds": {
+        "pass": 20.0,
+        "fail": 50.0,
+        "unit": "cents",
+        "lower_is_better": true
+      }
+    },
+    "whisper_cer": {
+      "value": 0.34467120181405897,
+      "unit": "ratio",
+      "details": {
+        "ref_text": "ご視聴ありがとうございました食は青めにもったいないたいのだってわかんなくなるえめまたたび主にご褒美もう嫌になったって離されないように今日だってちゃんと代償の傷くらいにゃんっていい子にするから愛してEverybodytodayisalovelydayGetitgetitThisismycotasipAnyanyanytimeisfinewithmeGivemegivemeLovememydarlingだりん会いたいお間違いなんてみんなは言う取り憑かれているってならこの胸でうずく締め付けるような切なさは何なの選ぶ言葉と惑う指先男性な横顔あらら無垢機嫌もしかして今日は優しく撫でてくれるのかな君のそれが耐えられるの紹介で私だけなんだよねあからさまに頃を飛ばそうにもう嫌だって離れられないよねそうだよね感情は徐々に歌を少々にもう愛もさえのように転がせばいい柑橘の匂いだってしのぐのだもう噛んだって叱られるだけだし今日だってちゃんとお膝でおとなしくにゃんってお好きなように完全とったして",
+        "conv_text": "痛いことは嫌いですが君の手のひらは嫌いじゃない言葉は雨玉みたいに甘く広がって心満たすあ全然わかってない永遠に言う通り完全にふぇあじゃないあなんではちってないまたまたあの子みたいに可愛くならなくちゃ愛情はそうめに主婚は褒めにもったいないたいのだってわかんなくなる縁目またたび主にご褒美もう嫌だったって話されないように今日だってちょっと代償もけずくらいやんていい子にするから愛してEverybodytodayisalovelydayGetitgetitthisismyclassicAnyanyanytimeiswhenit'smeGivemegivemelovememydarling会いたいお間違いなんてみんなは言う取り憑かれているってならこの胸で疼く締め付けるような切なさは何なの選ぶ言葉と惑う指先男性な横顔あらら無効期限もしかして今日は優しく撫でてくれるのかな君のそれが耐えられるの正体で私だけなんだよねあからさまに頃を灯そうにもう嫌だって離れられないよねそうだよね感情は徐々に歌をは少々にもう愛もされるように転がせばいい柑橘の匂いだってしのぶのだもう噛んだって叱られるだけだし今日だってちゃんとお膝でおとなしく娘を好きなように完全と歌して",
+        "ref_source": "whisper",
+        "ref_audio_cer": null,
+        "delta_cer": 0.34467120181405897
+      },
+      "status": "FAIL",
+      "thresholds": {
+        "pass": 0.1,
+        "fail": 0.2,
+        "unit": "ratio",
+        "lower_is_better": true
+      }
+    }
+  },
+  "overall_status": "FAIL",
+  "config": {
+    "whisper_model": "large-v3",
+    "whisper_lang": "ja",
+    "sample_rate": 48000,
+    "config_file": "configs/v2/48k.json"
+  }
+}

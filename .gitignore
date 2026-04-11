@@ -27,5 +27,8 @@ rmvpe.pt
 ffmpeg.*
 ffprobe.*
 
+# Evaluation outputs (keep JSON, ignore large audio files)
+eval_output/*.wav
+
 # Claude Code
 .claude/
