@@ -69,3 +69,46 @@ def test_mcd_non_negative(sine_wav):
     conv = sine_wav(freq=660, duration=2.0, sr=48000, filename="nn_conv.wav")
     result = compute_mcd(ref, conv)
     assert result["value"] >= 0
+
+
+class TestMCDScale:
+    """dBスケール修正に関連するテスト"""
+
+    def test_mcd_value_range(self, sine_wav):
+        """MCD値が妥当な範囲内にあることを確認（dBスケール）"""
+        ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="range_ref.wav")
+        conv = sine_wav(freq=880, duration=2.0, sr=48000, filename="range_conv.wav")
+        result = compute_mcd(ref, conv)
+        # dBスケールMCDは正の有限値であること
+        assert 0 < result["value"] < 500
+
+    def test_mcd_returns_db_unit(self, sine_wav):
+        """unitフィールドが'dB'であることを確認"""
+        wav = sine_wav(freq=440, duration=2.0, sr=48000, filename="unit_test.wav")
+        result = compute_mcd(wav, wav)
+        assert result["unit"] == "dB"
+
+    def test_mcd_frames_aligned_positive(self, sine_wav):
+        """DTWアラインされたフレーム数が正であることを確認"""
+        ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="frames_ref.wav")
+        conv = sine_wav(freq=880, duration=2.0, sr=48000, filename="frames_conv.wav")
+        result = compute_mcd(ref, conv)
+        assert result["details"]["frames_aligned"] > 0
+
+    def test_mcd_custom_params(self, sine_wav):
+        """カスタムパラメータ（n_mels, n_mfcc）で計算できることを確認"""
+        ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="custom_ref.wav")
+        conv = sine_wav(freq=880, duration=2.0, sr=48000, filename="custom_conv.wav")
+        result_default = compute_mcd(ref, conv)
+        result_custom = compute_mcd(ref, conv, n_mels=80, n_mfcc=20)
+        # 異なるパラメータでも正の値を返す
+        assert result_custom["value"] > 0
+        # パラメータが異なれば値も変わる
+        assert result_default["value"] != pytest.approx(result_custom["value"], rel=0.01)
+
+    def test_mcd_different_lengths(self, sine_wav):
+        """異なる長さの音声でもDTWで対応できることを確認"""
+        ref = sine_wav(freq=440, duration=2.0, sr=48000, filename="long_ref.wav")
+        conv = sine_wav(freq=440, duration=1.5, sr=48000, filename="short_conv.wav")
+        result = compute_mcd(ref, conv)
+        assert result["value"] >= 0

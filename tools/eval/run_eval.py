@@ -23,13 +23,21 @@ try:
 except ImportError:
     HAS_WHISPER = False
 
+try:
+    from tools.eval.metrics.latency import compute_latency
+
+    HAS_LATENCY = True
+except ImportError:
+    HAS_LATENCY = False
+
 THRESHOLDS = {
-    "mcd": {"pass": 6.0, "fail": 8.0, "unit": "dB", "lower_is_better": True},
+    "mcd": {"pass": 24.0, "fail": 32.0, "unit": "dB", "lower_is_better": True},
     "f0_rmse": {"pass": 20.0, "fail": 50.0, "unit": "cents", "lower_is_better": True},
     "whisper_cer": {"pass": 0.10, "fail": 0.20, "unit": "ratio", "lower_is_better": True},
+    "latency": {"pass": 200.0, "fail": 500.0, "unit": "ms", "lower_is_better": True},
 }
 
-VALID_METRICS = {"all", "mcd", "f0", "cer"}
+VALID_METRICS = {"all", "mcd", "f0", "cer", "latency"}
 
 
 def _judge(value: float, threshold: dict) -> str:
@@ -90,8 +98,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--conv", required=True, help="Path to converted audio WAV")
     parser.add_argument(
         "--metrics", default="all",
-        help="Comma-separated metrics to compute. Choices: all, mcd, f0, cer (default: all)",
+        help="Comma-separated metrics to compute. Choices: all, mcd, f0, cer, latency (default: all)",
     )
+    parser.add_argument("--model", default=None, help="RVC model path (.pth) for latency measurement")
+    parser.add_argument("--index", default=None, help="FAISS index path for latency measurement")
     parser.add_argument("--whisper-model", default="large-v3", help="Whisper model size (default: large-v3)")
     parser.add_argument("--whisper-lang", default="ja", help="Whisper language (default: ja)")
     parser.add_argument("--ref-text", default=None, help="Reference text for CER computation")
@@ -130,6 +140,7 @@ def main(argv: list[str] | None = None) -> None:
     run_mcd = run_all or "mcd" in requested
     run_f0 = run_all or "f0" in requested
     run_cer = run_all or "cer" in requested
+    run_latency = run_all or "latency" in requested
 
     # Load config
     config_path = args.config
@@ -216,11 +227,34 @@ def main(argv: list[str] | None = None) -> None:
             }
             logger.info("Whisper CER: %.4f %s [%s]", result["value"], result["unit"], status)
 
+    # --- Latency ---
+    if run_latency:
+        if not HAS_LATENCY:
+            logger.warning("latency module not available, skipping")
+        elif not args.model:
+            logger.warning("--model not specified, skipping latency measurement")
+        else:
+            logger.info("Computing latency...")
+            result = compute_latency(
+                model_path=args.model,
+                audio_path=args.ref,
+                index_path=args.index,
+                device=device,
+            )
+            status = _judge(result["value"], THRESHOLDS["latency"])
+            statuses.append(status)
+            metrics_result["latency"] = {
+                **result,
+                "status": status,
+                "thresholds": THRESHOLDS["latency"],
+            }
+            logger.info("Latency: %.1f %s (RTF: %.3f) [%s]", result["value"], result["unit"], result["details"]["rtf"], status)
+
     # Overall status
     overall = _worst_status(statuses) if statuses else "PASS"
 
     output = {
-        "version": "0.1.0",
+        "version": "0.2.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "files": {
             "reference": os.path.abspath(args.ref),

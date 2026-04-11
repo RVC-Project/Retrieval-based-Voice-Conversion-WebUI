@@ -34,17 +34,26 @@ def compute_mcd(
 
     Uses MFCC coefficients 1-12 (excluding 0th) with fastdtw alignment.
     Returns MCD in dB.
+
+    Note: The mel spectrogram is converted to dB scale via ``librosa.power_to_db``
+    (with ``ref=1.0`` for absolute dB) before DCT.  This is mathematically
+    equivalent to the natural-log approach with the ``10*sqrt(2)/ln(10)``
+    coefficient, because ``power_to_db(S) = 10*log10(S) = (10/ln10)*ln(S)``,
+    so the dB-domain MCD with ``coeff=sqrt(2)`` cancels out to the same value
+    as the ln-domain MCD with ``coeff=10*sqrt(2)/ln(10)``.  The dB-scale
+    formulation is preferred here because most VC literature reports MCD using
+    librosa's dB-scale MFCCs, making results directly comparable.
     """
     ref_audio = load_audio(ref_path, target_sr=sr)
     conv_audio = load_audio(conv_path, target_sr=sr)
 
     def _mel_cepstrum(y):
-        """Compute mel cepstral coefficients from natural-log mel spectrogram."""
+        """Compute mel cepstral coefficients from dB-scale mel spectrogram."""
         S = librosa.feature.melspectrogram(
             y=y, sr=sr, n_mels=n_mels, fmin=fmin, fmax=fmax, hop_length=hop_length,
         )
-        log_S = np.log(np.maximum(S, 1e-10))  # natural log (not dB)
-        mc = dct(log_S, axis=0, type=2, norm="ortho")[:n_mfcc]
+        S_db = librosa.power_to_db(S, ref=1.0)
+        mc = dct(S_db, axis=0, type=2, norm="ortho")[:n_mfcc]
         return mc
 
     mfcc_ref = _mel_cepstrum(ref_audio)
@@ -70,10 +79,11 @@ def compute_mcd(
     frames_aligned = len(path)
     logger.debug("DTW aligned frames: %d", frames_aligned)
 
-    # MCD = (10 * sqrt(2) / ln(10)) * mean(||mfcc_ref - mfcc_conv||_2)
+    # MCD = sqrt(2) * mean(||mfcc_ref - mfcc_conv||_2)
+    # (input is already in dB scale, so no additional dB conversion needed)
     diff = ref_aligned - conv_aligned
     frame_dists = np.sqrt(np.sum(diff**2, axis=1))
-    coeff = 10.0 * math.sqrt(2.0) / math.log(10.0)
+    coeff = math.sqrt(2.0)
     mcd_value = float(coeff * np.mean(frame_dists))
 
     return {

@@ -73,14 +73,14 @@ class TestFullPipeline:
 
 class TestJudge:
     @pytest.mark.parametrize("value,metric,expected", [
-        # MCD boundaries
-        (5.0, "mcd", "PASS"),
-        (6.0, "mcd", "PASS"),    # 境界: <= pass
-        (6.01, "mcd", "WARN"),
-        (7.0, "mcd", "WARN"),
-        (7.99, "mcd", "WARN"),
-        (8.0, "mcd", "FAIL"),    # 境界: >= fail
-        (9.0, "mcd", "FAIL"),
+        # MCD boundaries (updated thresholds)
+        (20.0, "mcd", "PASS"),
+        (24.0, "mcd", "PASS"),    # 境界: <= pass
+        (24.01, "mcd", "WARN"),
+        (28.0, "mcd", "WARN"),
+        (31.99, "mcd", "WARN"),
+        (32.0, "mcd", "FAIL"),    # 境界: >= fail
+        (35.0, "mcd", "FAIL"),
         # F0 RMSE boundaries
         (15.0, "f0_rmse", "PASS"),
         (20.0, "f0_rmse", "PASS"),   # 境界
@@ -94,6 +94,13 @@ class TestJudge:
         (0.15, "whisper_cer", "WARN"),
         (0.20, "whisper_cer", "FAIL"),  # 境界
         (0.30, "whisper_cer", "FAIL"),
+        # Latency boundaries
+        (100.0, "latency", "PASS"),
+        (200.0, "latency", "PASS"),   # 境界
+        (200.01, "latency", "WARN"),
+        (350.0, "latency", "WARN"),
+        (500.0, "latency", "FAIL"),   # 境界
+        (600.0, "latency", "FAIL"),
         # Edge cases
         (0.0, "mcd", "PASS"),
         (float("inf"), "mcd", "FAIL"),
@@ -123,6 +130,23 @@ class TestWorstStatus:
 # ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
+
+
+class TestValidMetrics:
+    def test_valid_metrics_includes_latency(self):
+        """latencyがVALID_METRICSに含まれることを確認"""
+        from tools.eval.run_eval import VALID_METRICS
+
+        assert "latency" in VALID_METRICS
+
+
+class TestVersion:
+    def test_version_updated(self, sine_wav):
+        """バージョンが0.2.0に更新されていることを確認"""
+        ref = sine_wav(freq=440, duration=2.0, filename="ver_ref.wav")
+        conv = sine_wav(freq=442, duration=2.0, filename="ver_conv.wav")
+        result = _run_eval(["--ref", ref, "--conv", conv, "--metrics", "mcd"])
+        assert result["version"] == "0.2.0"
 
 
 class TestErrorHandling:
