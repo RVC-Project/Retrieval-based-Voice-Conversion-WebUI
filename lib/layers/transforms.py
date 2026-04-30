@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -15,30 +13,36 @@ def piecewise_rational_quadratic_transform(
     unnormalized_heights: torch.Tensor,
     unnormalized_derivatives: torch.Tensor,
     inverse: bool = False,
-    tails: Optional[str] = None,
+    tails: str | None = None,
     tail_bound: float = 1.0,
     min_bin_width=DEFAULT_MIN_BIN_WIDTH,
     min_bin_height=DEFAULT_MIN_BIN_HEIGHT,
     min_derivative=DEFAULT_MIN_DERIVATIVE,
 ):
     if tails is None:
-        spline_fn = rational_quadratic_spline
-        spline_kwargs = {}
+        outputs, logabsdet = rational_quadratic_spline(
+            inputs=inputs,
+            unnormalized_widths=unnormalized_widths,
+            unnormalized_heights=unnormalized_heights,
+            unnormalized_derivatives=unnormalized_derivatives,
+            inverse=inverse,
+            min_bin_width=min_bin_width,
+            min_bin_height=min_bin_height,
+            min_derivative=min_derivative,
+        )
     else:
-        spline_fn = unconstrained_rational_quadratic_spline
-        spline_kwargs = {"tails": tails, "tail_bound": tail_bound}
-
-    outputs, logabsdet = spline_fn(
-        inputs=inputs,
-        unnormalized_widths=unnormalized_widths,
-        unnormalized_heights=unnormalized_heights,
-        unnormalized_derivatives=unnormalized_derivatives,
-        inverse=inverse,
-        min_bin_width=min_bin_width,
-        min_bin_height=min_bin_height,
-        min_derivative=min_derivative,
-        **spline_kwargs,
-    )
+        outputs, logabsdet = unconstrained_rational_quadratic_spline(
+            inputs=inputs,
+            unnormalized_widths=unnormalized_widths,
+            unnormalized_heights=unnormalized_heights,
+            unnormalized_derivatives=unnormalized_derivatives,
+            inverse=inverse,
+            tails=tails,
+            tail_bound=tail_bound,
+            min_bin_width=min_bin_width,
+            min_bin_height=min_bin_height,
+            min_derivative=min_derivative,
+        )
     return outputs, logabsdet
 
 
