@@ -83,8 +83,8 @@ if torch.cuda.is_available() or ngpu != 0:
                 "6000",
             ]
         ):
-            # A10#A100#V100#A40#P40#M40#K80#A4500
-            if_gpu_ok = True  # 至少有一张能用的N卡
+            # At least one usable NVIDIA GPU
+            if_gpu_ok = True
             gpu_infos.append("%s\t%s" % (i, gpu_name))
             mem.append(
                 int(

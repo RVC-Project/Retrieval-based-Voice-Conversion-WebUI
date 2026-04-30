@@ -9,7 +9,7 @@ import torch
 
 @jit(nopython=True)
 def post_process(
-    tf0: int,  # 每秒f0点数
+    tf0: int,  # number of f0 points per second
     f0: np.ndarray,
     f0_up_key: int,
     manual_x_pad: int,
@@ -41,7 +41,7 @@ def post_process(
     return f0_coarse, f0  # 1-0
 
 
-class Generator(object):
+class Generator:
     def __init__(
         self,
         rmvpe_root: Path,
