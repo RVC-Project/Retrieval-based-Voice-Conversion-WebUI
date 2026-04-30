@@ -3,11 +3,14 @@ from io import BytesIO
 from collections import OrderedDict
 from pathlib import Path
 import os
-from typing import Literal
+from typing import Literal, cast
 
 import torch
 
 from lib.types import FileLike
+
+type JitMode = Literal["trace", "script"]
+type JitCheckpoint = OrderedDict[str, bytes | bool | str]
 
 
 def load_pickle(path: Path) -> dict:
@@ -33,9 +36,9 @@ def load_inputs(path: FileLike, device: str, is_half=False):  # type: ignore
 
 def export_jit_model(
     model: torch.nn.Module,
-    mode: Literal["trace", "script"] = "trace",
-    inputs: dict = None,
-    device=torch.device("cpu"),
+    mode: JitMode = "trace",
+    inputs: dict[str, torch.Tensor] | None = None,
+    device: str | torch.device = torch.device("cpu"),
     is_half: bool = False,
 ) -> dict:
     model = model.half() if is_half else model.float()
@@ -43,15 +46,16 @@ def export_jit_model(
     if mode == "trace":
         assert inputs is not None
         model_jit = torch.jit.trace(model, example_kwarg_inputs=inputs)
-    elif mode == "script":
+    else:
         model_jit = torch.jit.script(model)
+    model_jit = cast(torch.jit.ScriptModule, model_jit)
     model_jit.to(device)
     model_jit = model_jit.half() if is_half else model_jit.float()
     buffer = BytesIO()
     # model_jit=model_jit.cpu()
     torch.jit.save(model_jit, buffer)
     del model_jit
-    cpt = OrderedDict()
+    cpt: JitCheckpoint = OrderedDict()
     cpt["model"] = buffer.getvalue()
     cpt["is_half"] = is_half
     return cpt

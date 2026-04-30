@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+from pathlib import Path
 from typing import Literal, Protocol, cast
 
 import numpy as np
@@ -29,20 +30,23 @@ class OnnxModel(Protocol):
 
 
 def rmvpe_jit_export(
-    model_path: str,
+    model_path: str | Path,
     mode: Literal["script", "trace"] = "script",
-    inputs_path: str | None = None,
-    save_path: str | None = None,
+    inputs_path: str | Path | None = None,
+    save_path: str | Path | None = None,
     device: str = "cpu",
     is_half: bool = False,
 ):
+    model_path = Path(model_path)
     if not save_path:
-        save_path = model_path.rstrip(".pth")
-        save_path += ".half.jit" if is_half else ".jit"
+        stem = model_path.with_suffix("")
+        save_path = stem.with_suffix(".half.jit" if is_half else ".jit")
+    else:
+        save_path = Path(save_path)
     if "cuda" in str(device) and ":" not in str(device):
         device = "cuda:0"
 
-    model = get_rmvpe(model_path, device, is_half)
+    model = get_rmvpe(str(model_path), device, is_half)
     inputs: dict[str, torch.Tensor] = {}
     if mode == "trace":
         if inputs_path is None:
@@ -100,7 +104,7 @@ class RMVPE(F0Predictor):
         else:
 
             def rmvpe_jit_model():
-                ckpt = get_jit_model(model_path, is_half, self.device, rmvpe_jit_export)
+                ckpt = get_jit_model(Path(model_path), is_half, self.device, rmvpe_jit_export)
                 model = torch.jit.load(BytesIO(ckpt["model"]), map_location=self.device)
                 model = model.to(self.device)
                 return model

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pathlib import Path
 from typing import Literal
 
 import torch
@@ -16,6 +17,8 @@ def get_synthesizer(cpt: OrderedDict, device=torch.device("cpu")):
         encoder_dim = 256
     elif version == "v2":
         encoder_dim = 768
+    else:
+        raise ValueError(f"Unsupported synthesizer version: {version}")
     net_g = SynthesizerTrnMsNSFsid(
         *cpt["config"],
         encoder_dim=encoder_dim,
@@ -37,26 +40,31 @@ def load_synthesizer(pth_path: FileLike, device=torch.device("cpu")):  # type: i
 
 
 def synthesizer_jit_export(
-    model_path: str,
+    model_path: str | Path,
     mode: Literal["script", "trace"] = "script",
-    inputs_path: str = None,
-    save_path: str = None,
-    device=torch.device("cpu"),
-    is_half=False,
+    inputs_path: str | Path | None = None,
+    save_path: str | Path | None = None,
+    device: str | torch.device = torch.device("cpu"),
+    is_half: bool = False,
 ):
+    model_path = Path(model_path)
     if not save_path:
-        save_path = model_path.rstrip(".pth")
-        save_path += ".half.jit" if is_half else ".jit"
+        stem = model_path.with_suffix("")
+        save_path = stem.with_suffix(".half.jit" if is_half else ".jit")
+    else:
+        save_path = Path(save_path)
     if "cuda" in str(device) and ":" not in str(device):
         device = torch.device("cuda:0")
-    from rvc.synthesizer import load_synthesizer
 
     model, cpt = load_synthesizer(model_path, device)
     assert isinstance(cpt, dict)
     model.forward = model.infer
-    inputs = None
+    inputs: dict[str, torch.Tensor] | None = None
+    device_str = str(device)
     if mode == "trace":
-        inputs = load_inputs(inputs_path, device, is_half)
+        if inputs_path is None:
+            raise ValueError("inputs_path is required when mode is 'trace'")
+        inputs = load_inputs(inputs_path, device_str, is_half)
     ckpt = export_jit_model(model, mode, inputs, device, is_half)
     cpt.pop("weight")
     cpt["model"] = ckpt["model"]
