@@ -3,22 +3,62 @@ import sys
 import traceback
 from pathlib import Path
 
+from tap import Tap
+
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 
-device = sys.argv[1]
-n_part = int(sys.argv[2])
-i_part = int(sys.argv[3])
+
+class ExtractFeatureCpuArgs(Tap):
+    device: str
+    n_part: int
+    i_part: int
+    exp_dir: Path
+    version: str
+    is_half: bool
+
+    def configure(self) -> None:
+        self.add_argument("device")
+        self.add_argument("n_part")
+        self.add_argument("i_part")
+        self.add_argument("exp_dir")
+        self.add_argument("version")
+        self.add_argument("is_half")
+
+
+class ExtractFeatureGpuArgs(Tap):
+    device: str
+    n_part: int
+    i_part: int
+    i_gpu: str
+    exp_dir: Path
+    version: str
+    is_half: bool
+
+    def configure(self) -> None:
+        self.add_argument("device")
+        self.add_argument("n_part")
+        self.add_argument("i_part")
+        self.add_argument("i_gpu")
+        self.add_argument("exp_dir")
+        self.add_argument("version")
+        self.add_argument("is_half")
+
+
 if len(sys.argv) == 7:
-    exp_dir = Path(sys.argv[4])
-    version = sys.argv[5]
-    is_half = sys.argv[6].lower() == "true"
+    parsed_args = ExtractFeatureCpuArgs().parse_args()
+elif len(sys.argv) == 8:
+    parsed_args = ExtractFeatureGpuArgs().parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(parsed_args.i_gpu)
 else:
-    i_gpu = sys.argv[4]
-    exp_dir = Path(sys.argv[5])
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
-    version = sys.argv[6]
-    is_half = sys.argv[7].lower() == "true"
+    raise ValueError(
+        "Expected positional arguments: device n_part i_part [i_gpu] exp_dir version is_half"
+    )
+n_part = parsed_args.n_part
+i_part = parsed_args.i_part
+exp_dir = parsed_args.exp_dir
+version = parsed_args.version
+is_half = parsed_args.is_half
 import fairseq
 import numpy as np
 import soundfile as sf

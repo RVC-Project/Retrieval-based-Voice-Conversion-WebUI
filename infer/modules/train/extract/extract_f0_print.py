@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol, cast
 
 import parselmouth
+from tap import Tap
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -17,7 +18,20 @@ from infer.lib.audio import load_audio
 
 from multiprocessing import Process
 
-exp_dir = Path(sys.argv[1])
+
+class ExtractF0Args(Tap):
+    exp_dir: Path
+    n_p: int
+    f0method: str
+
+    def configure(self) -> None:
+        self.add_argument("exp_dir")
+        self.add_argument("n_p")
+        self.add_argument("f0method")
+
+
+args = ExtractF0Args().parse_args()
+exp_dir = args.exp_dir
 f = open(exp_dir / "extract_f0_feature.log", "a+")
 
 
@@ -54,8 +68,8 @@ def printt(strr):
     f.flush()
 
 
-n_p = int(sys.argv[2])
-f0method = sys.argv[3]
+n_p = args.n_p
+f0method = args.f0method
 
 
 class FeatureInput:

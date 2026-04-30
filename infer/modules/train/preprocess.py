@@ -5,16 +5,10 @@ from pathlib import Path
 from typing import List, Tuple, cast
 
 from scipy import signal
+from tap import Tap
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-print(*sys.argv[1:])
-inp_root = sys.argv[1]
-sr = int(sys.argv[2])
-n_p = int(sys.argv[3])
-exp_dir = Path(sys.argv[4])
-noparallel = sys.argv[5] == "True"
-per = float(sys.argv[6])
 import os
 import traceback
 
@@ -25,6 +19,33 @@ from scipy.io import wavfile
 
 from infer.lib.audio import load_audio
 from infer.lib.slicer2 import Slicer
+
+
+class PreprocessArgs(Tap):
+    inp_root: str
+    sr: int
+    n_p: int
+    exp_dir: Path
+    noparallel: bool
+    per: float
+
+    def configure(self) -> None:
+        self.add_argument("inp_root")
+        self.add_argument("sr")
+        self.add_argument("n_p")
+        self.add_argument("exp_dir")
+        self.add_argument("noparallel")
+        self.add_argument("per")
+
+
+args = PreprocessArgs().parse_args()
+print(*sys.argv[1:])
+inp_root = args.inp_root
+sr = args.sr
+n_p = args.n_p
+exp_dir = args.exp_dir
+noparallel = args.noparallel
+per = args.per
 
 f = open(exp_dir / "preprocess.log", "a+")
 

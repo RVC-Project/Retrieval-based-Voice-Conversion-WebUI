@@ -1,4 +1,3 @@
-import argparse
 import os
 import sys
 import json
@@ -8,6 +7,7 @@ from functools import wraps
 from typing import TypeVar, TypedDict, cast
 
 import torch
+from tap import Tap
 
 import logging
 
@@ -31,6 +31,19 @@ class TrainConfig(TypedDict, total=False):
 
 class VersionConfig(TypedDict, total=False):
     train: TrainConfig
+
+
+class ConfigArgs(Tap):
+    # Listen port.
+    port: int = 7865
+    # Python command used for subprocess workers.
+    pycmd: str = sys.executable or "python"
+    # Launch in colab.
+    colab: bool = False
+    # Disable parallel processing.
+    noparallel: bool = False
+    # Do not open in browser automatically.
+    noautoopen: bool = False
 
 
 _singleton_instances: dict[type[object], object] = {}
@@ -111,26 +124,12 @@ class Config:
 
     @staticmethod
     def arg_parse() -> tuple[str, int, bool, bool, bool]:
-        exe = sys.executable or "python"
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--port", type=int, default=7865, help="Listen port")
-        parser.add_argument("--pycmd", type=str, default=exe, help="Python command")
-        parser.add_argument("--colab", action="store_true", help="Launch in colab")
-        parser.add_argument(
-            "--noparallel", action="store_true", help="Disable parallel processing"
-        )
-        parser.add_argument(
-            "--noautoopen",
-            action="store_true",
-            help="Do not open in browser automatically",
-        )
-        cmd_opts = parser.parse_args()
-
-        cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
+        cmd_opts = ConfigArgs().parse_args()
+        port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
 
         return (
             cmd_opts.pycmd,
-            cmd_opts.port,
+            port,
             cmd_opts.colab,
             cmd_opts.noparallel,
             cmd_opts.noautoopen,

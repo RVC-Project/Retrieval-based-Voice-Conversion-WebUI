@@ -198,52 +198,31 @@ class Slicer:
 
 def main():
     import os.path
-    from argparse import ArgumentParser
 
     import librosa
     import soundfile
+    from tap import Tap
 
-    parser = ArgumentParser()
-    parser.add_argument("audio", type=str, help="The audio to be sliced")
-    parser.add_argument(
-        "--out", type=str, help="Output directory of the sliced audio clips"
-    )
-    parser.add_argument(
-        "--db_thresh",
-        type=float,
-        required=False,
-        default=-40,
-        help="The dB threshold for silence detection",
-    )
-    parser.add_argument(
-        "--min_length",
-        type=int,
-        required=False,
-        default=5000,
-        help="The minimum milliseconds required for each sliced audio clip",
-    )
-    parser.add_argument(
-        "--min_interval",
-        type=int,
-        required=False,
-        default=300,
-        help="The minimum milliseconds for a silence part to be sliced",
-    )
-    parser.add_argument(
-        "--hop_size",
-        type=int,
-        required=False,
-        default=10,
-        help="Frame length in milliseconds",
-    )
-    parser.add_argument(
-        "--max_sil_kept",
-        type=int,
-        required=False,
-        default=500,
-        help="The maximum silence length kept around the sliced clip, presented in milliseconds",
-    )
-    args = parser.parse_args()
+    class SlicerArgs(Tap):
+        # The audio to be sliced.
+        audio: str
+        # Output directory of the sliced audio clips.
+        out: str | None = None
+        # The dB threshold for silence detection.
+        db_thresh: float = -40
+        # The minimum milliseconds required for each sliced audio clip.
+        min_length: int = 5000
+        # The minimum milliseconds for a silence part to be sliced.
+        min_interval: int = 300
+        # Frame length in milliseconds.
+        hop_size: int = 10
+        # The maximum silence length kept around the sliced clip.
+        max_sil_kept: int = 500
+
+        def configure(self) -> None:
+            self.add_argument("audio")
+
+    args = SlicerArgs().parse_args()
     out = args.out
     if out is None:
         out = os.path.dirname(os.path.abspath(args.audio))

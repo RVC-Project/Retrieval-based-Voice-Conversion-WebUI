@@ -3,6 +3,7 @@ import sys
 import traceback
 
 import parselmouth
+from tap import Tap
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -13,12 +14,29 @@ import pyworld
 
 from infer.lib.audio import load_audio
 
-n_part = int(sys.argv[1])
-i_part = int(sys.argv[2])
-i_gpu = sys.argv[3]
+
+class ExtractF0RmvpeArgs(Tap):
+    n_part: int
+    i_part: int
+    i_gpu: str
+    exp_dir: str
+    is_half: bool
+
+    def configure(self) -> None:
+        self.add_argument("n_part")
+        self.add_argument("i_part")
+        self.add_argument("i_gpu")
+        self.add_argument("exp_dir")
+        self.add_argument("is_half")
+
+
+args = ExtractF0RmvpeArgs().parse_args()
+n_part = args.n_part
+i_part = args.i_part
+i_gpu = args.i_gpu
 os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
-exp_dir = sys.argv[4]
-is_half = bool(int(sys.argv[5]))
+exp_dir = args.exp_dir
+is_half = args.is_half
 f = open(f"{exp_dir}/extract_f0_feature.log", "a+")
 
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import logging
 import json
 import os
@@ -15,11 +14,56 @@ import numpy as np
 import torch
 from numpy.typing import NDArray
 from scipy.io.wavfile import read
+from tap import Tap
 
 # MATPLOTLIB_FLAG = False
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging
+
+
+class TrainArgs(Tap):
+    # Checkpoint save frequency in epochs.
+    save_every_epoch: int
+    # Total training epochs.
+    total_epoch: int
+    # Pretrained generator path.
+    pretrainG: str = ""
+    # Pretrained discriminator path.
+    pretrainD: str = ""
+    # GPU IDs split by hyphen.
+    gpus: str = "0"
+    # Training batch size.
+    batch_size: int
+    # Experiment directory name under logs.
+    experiment_dir: str
+    # Sample rate, such as 32k, 40k, or 48k.
+    sample_rate: str
+    # Save extracted model weights when saving checkpoints.
+    save_every_weights: str = "0"
+    # Model version.
+    version: str
+    # Whether to use f0 as an input, 1 or 0.
+    if_f0: int
+    # Whether to save only the latest G/D pth files, 1 or 0.
+    if_latest: int
+    # Whether to cache the dataset in GPU memory, 1 or 0.
+    if_cache_data_in_gpu: int
+
+    def configure(self) -> None:
+        self.add_argument("-se", "--save_every_epoch")
+        self.add_argument("-te", "--total_epoch")
+        self.add_argument("-pg", "--pretrainG")
+        self.add_argument("-pd", "--pretrainD")
+        self.add_argument("-g", "--gpus")
+        self.add_argument("-bs", "--batch_size")
+        self.add_argument("-e", "--experiment_dir")
+        self.add_argument("-sr", "--sample_rate")
+        self.add_argument("-sw", "--save_every_weights")
+        self.add_argument("-v", "--version")
+        self.add_argument("-f0", "--if_f0")
+        self.add_argument("-l", "--if_latest")
+        self.add_argument("-c", "--if_cache_data_in_gpu")
 
 
 def load_checkpoint_d(
@@ -278,66 +322,7 @@ def get_hparams(init=True):
         Auto-determine training_files path, change hps.data.training_files in train_nsf_load_pretrain.py    done
       -c is no longer needed
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-se",
-        "--save_every_epoch",
-        type=int,
-        required=True,
-        help="checkpoint save frequency (epoch)",
-    )
-    parser.add_argument(
-        "-te", "--total_epoch", type=int, required=True, help="total_epoch"
-    )
-    parser.add_argument(
-        "-pg", "--pretrainG", type=str, default="", help="Pretrained Generator path"
-    )
-    parser.add_argument(
-        "-pd", "--pretrainD", type=str, default="", help="Pretrained Discriminator path"
-    )
-    parser.add_argument("-g", "--gpus", type=str, default="0", help="split by -")
-    parser.add_argument(
-        "-bs", "--batch_size", type=int, required=True, help="batch size"
-    )
-    parser.add_argument(
-        "-e", "--experiment_dir", type=str, required=True, help="experiment dir"
-    )  # -m
-    parser.add_argument(
-        "-sr", "--sample_rate", type=str, required=True, help="sample rate, 32k/40k/48k"
-    )
-    parser.add_argument(
-        "-sw",
-        "--save_every_weights",
-        type=str,
-        default="0",
-        help="save the extracted model in weights directory when saving checkpoints",
-    )
-    parser.add_argument(
-        "-v", "--version", type=str, required=True, help="model version"
-    )
-    parser.add_argument(
-        "-f0",
-        "--if_f0",
-        type=int,
-        required=True,
-        help="use f0 as one of the inputs of the model, 1 or 0",
-    )
-    parser.add_argument(
-        "-l",
-        "--if_latest",
-        type=int,
-        required=True,
-        help="if only save the latest G/D pth file, 1 or 0",
-    )
-    parser.add_argument(
-        "-c",
-        "--if_cache_data_in_gpu",
-        type=int,
-        required=True,
-        help="if caching the dataset in GPU memory, 1 or 0",
-    )
-
-    args = parser.parse_args()
+    args = TrainArgs().parse_args()
     name = args.experiment_dir
     experiment_dir = Path("./logs") / args.experiment_dir
 
