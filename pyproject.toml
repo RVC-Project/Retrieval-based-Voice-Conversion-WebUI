@@ -27,10 +27,10 @@ dependencies = [
     "sounddevice>=0.5.2",
     "soundfile>=0.12.1",
     "torch==2.7.0",
-    "torchaudio>=2.7.0",
+    "torchaudio==2.7.0",
+    "torchvision==0.22.0",
     "torchcrepe>=0.0.24",
     "torchfcpe>=0.0.4",
-    "torchvision>=0.22.0",
     "tornado>=6.1",
     "tqdm>=4.63.1",
 ]
@@ -42,7 +42,4 @@ fairseq = { git = "https://github.com/yamada-sexta/fairseq.git" }
 project-includes = ["**/*.py*", "**/*.ipynb"]
 
 [dependency-groups]
-dev = [
-    "pyrefly>=0.63.1",
-    "uv>=0.11.8",
-]
+dev = ["pyrefly>=0.63.1", "uv>=0.11.8"]
