@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 from collections.abc import Iterator
 from contextlib import contextmanager
-from importlib import import_module
 from typing import cast
 
 logger = logging.getLogger(__name__)
@@ -24,19 +23,6 @@ from random import randint, shuffle
 
 import torch
 from torch import nn
-
-try:
-    import_module("intel_extension_for_pytorch")
-
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
-        from infer.modules.ipex.gradscaler import gradscaler_init
-
-        gradscaler_init()
-        ipex_init()
-except Exception:
-    pass
-
 
 @contextmanager
 def cuda_autocast(enabled: bool) -> Iterator[None]:
@@ -207,9 +193,7 @@ def run(rank: int, n_gpus: int, hps, logger: logging.Logger):
     )
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
-    if hasattr(torch, "xpu") and torch.xpu.is_available():
-        pass
-    elif torch.cuda.is_available():
+    if torch.cuda.is_available():
         net_g = DDP(net_g, device_ids=[rank])
         net_d = DDP(net_d, device_ids=[rank])
     else:

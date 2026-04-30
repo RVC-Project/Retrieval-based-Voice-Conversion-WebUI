@@ -5,20 +5,10 @@ import json
 import shutil
 from multiprocessing import cpu_count
 from functools import wraps
-from typing import TYPE_CHECKING, TypeVar, TypedDict, cast
+from typing import TypeVar, TypedDict, cast
 
 import torch
 
-if not TYPE_CHECKING:
-    try:
-        import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
-
-        if torch.xpu.is_available():
-            from infer.modules.ipex import ipex_init
-
-            ipex_init()
-    except Exception:  # pylint: disable=broad-exception-caught
-        pass
 import logging
 
 logger = logging.getLogger(__name__)
@@ -166,13 +156,6 @@ class Config:
         except Exception:
             return False
 
-    @staticmethod
-    def has_xpu() -> bool:
-        if hasattr(torch, "xpu") and torch.xpu.is_available():
-            return True
-        else:
-            return False
-
     def use_fp32_config(self):
         for config_file in version_config_list:
             self.json_config[config_file].setdefault("train", {})["fp16_run"] = False
@@ -186,9 +169,6 @@ class Config:
 
     def device_config(self) -> tuple:
         if torch.cuda.is_available():
-            if self.has_xpu():
-                self.device = self.instead = "xpu:0"
-                self.is_half = True
             i_device = int(self.device.split(":")[-1])
             self.gpu_name = torch.cuda.get_device_name(i_device)
             if (
