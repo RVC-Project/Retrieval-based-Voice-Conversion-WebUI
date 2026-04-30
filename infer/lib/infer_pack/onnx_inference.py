@@ -1,11 +1,28 @@
+from collections.abc import Callable
+from importlib.util import module_from_spec, spec_from_file_location
 import librosa
 import numpy as np
 import onnxruntime
 import soundfile
+from pathlib import Path
+from typing import Literal, cast
 
 import logging
 
+from infer.lib.infer_pack.modules import F0Predictor
+
 logger = logging.getLogger(__name__)
+type PredictorFactory = Callable[..., F0Predictor]
+
+
+def load_predictor_factory(module_name: str, class_name: str) -> PredictorFactory:
+    predictor_path = Path(__file__).with_name("modules") / "F0Predictor" / module_name
+    spec = spec_from_file_location(class_name, predictor_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load f0 predictor from {predictor_path}")
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return cast(PredictorFactory, getattr(module, class_name))
 
 
 class ContentVec:
@@ -31,27 +48,32 @@ class ContentVec:
         assert feats.ndim == 1, feats.ndim
         feats = np.expand_dims(np.expand_dims(feats, 0), 0)
         onnx_input = {self.model.get_inputs()[0].name: feats}
-        logits = self.model.run(None, onnx_input)[0]
+        logits = np.asarray(self.model.run(None, onnx_input)[0], dtype=np.float32)
         return logits.transpose(0, 2, 1)
 
 
-def get_f0_predictor(f0_predictor, hop_length, sampling_rate, **kargs):
+def get_f0_predictor(
+    f0_predictor: Literal["pm", "harvest", "dio"],
+    hop_length: int,
+    sampling_rate: int,
+    **kargs,
+) -> F0Predictor:
     if f0_predictor == "pm":
-        from lib.infer_pack.modules.F0Predictor.PMF0Predictor import PMF0Predictor
+        PMF0Predictor = load_predictor_factory("PMF0Predictor.py", "PMF0Predictor")
 
         f0_predictor_object = PMF0Predictor(
             hop_length=hop_length, sampling_rate=sampling_rate
         )
     elif f0_predictor == "harvest":
-        from lib.infer_pack.modules.F0Predictor.HarvestF0Predictor import (
-            HarvestF0Predictor,
+        HarvestF0Predictor = load_predictor_factory(
+            "HarvestF0Predictor.py", "HarvestF0Predictor"
         )
 
         f0_predictor_object = HarvestF0Predictor(
             hop_length=hop_length, sampling_rate=sampling_rate
         )
     elif f0_predictor == "dio":
-        from lib.infer_pack.modules.F0Predictor.DioF0Predictor import DioF0Predictor
+        DioF0Predictor = load_predictor_factory("DioF0Predictor.py", "DioF0Predictor")
 
         f0_predictor_object = DioF0Predictor(
             hop_length=hop_length, sampling_rate=sampling_rate
@@ -93,13 +115,14 @@ class OnnxRVC:
             self.model.get_inputs()[4].name: ds,
             self.model.get_inputs()[5].name: rnd,
         }
-        return (self.model.run(None, onnx_input)[0] * 32767).astype(np.int16)
+        output = np.asarray(self.model.run(None, onnx_input)[0], dtype=np.float32)
+        return (output * 32767).astype(np.int16)
 
     def inference(
         self,
         raw_path,
         sid,
-        f0_method="dio",
+        f0_method: Literal["pm", "harvest", "dio"] = "dio",
         f0_up_key=0,
         pad_time=0.5,
         cr_threshold=0.02,

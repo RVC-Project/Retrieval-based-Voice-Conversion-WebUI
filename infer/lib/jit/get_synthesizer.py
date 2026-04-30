@@ -24,6 +24,8 @@ def get_synthesizer(pth_path, device=torch.device("cpu")):
             net_g = SynthesizerTrnMs768NSFsid(*cpt["config"], is_half=False)
         else:
             net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
+    else:
+        raise ValueError(f"Unsupported synthesizer version: {version}")
     del net_g.enc_q
     # net_g.forward = net_g.infer
     # ckpt = {}

@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 import sys
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 from scipy import signal
 
@@ -19,6 +19,7 @@ import traceback
 
 import librosa
 import numpy as np
+from numpy.typing import NDArray
 from scipy.io import wavfile
 
 from infer.lib.audio import load_audio
@@ -36,8 +37,8 @@ def println(strr):
 class PreProcess:
     slicer: Slicer
     sr: int
-    bh: np.ndarray
-    ah: np.ndarray
+    bh: NDArray[np.floating]
+    ah: NDArray[np.floating]
     per: float
     overlap: float
     tail: float
@@ -57,7 +58,12 @@ class PreProcess:
             max_sil_kept=500,
         )
         self.sr = sr
-        self.bh, self.ah = signal.butter(N=5, Wn=48, btype="high", fs=self.sr)
+        bh, ah = cast(
+            tuple[NDArray[np.floating], NDArray[np.floating]],
+            signal.butter(N=5, Wn=48, btype="highpass", fs=self.sr, output="ba"),
+        )
+        self.bh = np.asarray(bh, dtype=np.float64)
+        self.ah = np.asarray(ah, dtype=np.float64)
         self.per = per
         self.overlap = 0.3
         self.tail = self.per + self.overlap

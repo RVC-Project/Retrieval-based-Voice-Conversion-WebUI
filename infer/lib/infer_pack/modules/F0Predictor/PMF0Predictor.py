@@ -1,19 +1,49 @@
+from importlib import import_module
+from typing import Protocol, cast
+
 import numpy as np
-import parselmouth
 
-from infer.lib.infer_pack.modules import F0Predictor
+from infer.lib.infer_pack.modules import F0Predictor, FloatArray
 
-# from infer.lib.infer_pack.modules.F0Predictor.F0Predictor import F0Predictor
+
+class ParselmouthPitch(Protocol):
+    selected_array: dict[str, FloatArray]
+
+
+class ParselmouthSound(Protocol):
+    def to_pitch_ac(
+        self,
+        *,
+        time_step: float,
+        voicing_threshold: float,
+        pitch_floor: int,
+        pitch_ceiling: int,
+    ) -> ParselmouthPitch: ...
+
+
+class ParselmouthModule(Protocol):
+    def Sound(
+        self, values: FloatArray, sampling_frequency: int
+    ) -> ParselmouthSound: ...
+
+
+parselmouth = cast(ParselmouthModule, import_module("parselmouth"))
 
 
 class PMF0Predictor(F0Predictor):
-    def __init__(self, hop_length=512, f0_min=50, f0_max=1100, sampling_rate=44100):
+    def __init__(
+        self,
+        hop_length: int = 512,
+        f0_min: int = 50,
+        f0_max: int = 1100,
+        sampling_rate: int = 44100,
+    ) -> None:
         self.hop_length = hop_length
         self.f0_min = f0_min
         self.f0_max = f0_max
         self.sampling_rate = sampling_rate
 
-    def interpolate_f0(self, f0):
+    def interpolate_f0(self, f0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """
         对F0进行插值处理
         """
@@ -51,7 +81,7 @@ class PMF0Predictor(F0Predictor):
 
         return ip_data[:, 0], vuv_vector[:, 0]
 
-    def compute_f0(self, wav, p_len=None):
+    def compute_f0(self, wav: FloatArray, p_len: int | None = None) -> FloatArray:
         x = wav
         if p_len is None:
             p_len = x.shape[0] // self.hop_length
@@ -71,11 +101,16 @@ class PMF0Predictor(F0Predictor):
 
         pad_size = (p_len - len(f0) + 1) // 2
         if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-            f0 = np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant")
+            f0 = np.asarray(
+                np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"),
+                dtype=np.float64,
+            )
         f0, uv = self.interpolate_f0(f0)
         return f0
 
-    def compute_f0_uv(self, wav, p_len=None):
+    def compute_f0_uv(
+        self, wav: FloatArray, p_len: int | None = None
+    ) -> tuple[FloatArray, FloatArray]:
         x = wav
         if p_len is None:
             p_len = x.shape[0] // self.hop_length
@@ -95,6 +130,9 @@ class PMF0Predictor(F0Predictor):
 
         pad_size = (p_len - len(f0) + 1) // 2
         if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-            f0 = np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant")
+            f0 = np.asarray(
+                np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"),
+                dtype=np.float64,
+            )
         f0, uv = self.interpolate_f0(f0)
         return f0, uv
