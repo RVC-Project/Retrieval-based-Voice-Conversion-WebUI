@@ -1,9 +1,33 @@
+from typing import Protocol, cast
+
 import numpy as np
 import pyworld
+from numpy.typing import NDArray
 
-from infer.lib.infer_pack.modules import F0Predictor
+from .F0Predictor import F0Predictor
 
-# from infer.lib.infer_pack.modules.F0Predictor import F0Predictor
+
+class PyWorldDio(Protocol):
+    def dio(
+        self,
+        x: NDArray[np.float64],
+        *,
+        fs: int,
+        f0_floor: int,
+        f0_ceil: int,
+        frame_period: float,
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]: ...
+
+    def stonemask(
+        self,
+        x: NDArray[np.float64],
+        f0: NDArray[np.float64],
+        temporal_positions: NDArray[np.float64],
+        fs: int,
+    ) -> NDArray[np.float64]: ...
+
+
+pyworld_dio = cast(PyWorldDio, pyworld)
 
 
 class DioF0Predictor(F0Predictor):
@@ -65,14 +89,14 @@ class DioF0Predictor(F0Predictor):
     def compute_f0(self, wav, p_len=None):
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
-        f0, t = pyworld.dio(
+        f0, t = pyworld_dio.dio(
             wav.astype(np.double),
             fs=self.sampling_rate,
             f0_floor=self.f0_min,
             f0_ceil=self.f0_max,
             frame_period=1000 * self.hop_length / self.sampling_rate,
         )
-        f0 = pyworld.stonemask(wav.astype(np.double), f0, t, self.sampling_rate)
+        f0 = pyworld_dio.stonemask(wav.astype(np.double), f0, t, self.sampling_rate)
         for index, pitch in enumerate(f0):
             f0[index] = round(pitch, 1)
         return self.interpolate_f0(self.resize_f0(f0, p_len))[0]
@@ -80,14 +104,14 @@ class DioF0Predictor(F0Predictor):
     def compute_f0_uv(self, wav, p_len=None):
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
-        f0, t = pyworld.dio(
+        f0, t = pyworld_dio.dio(
             wav.astype(np.double),
             fs=self.sampling_rate,
             f0_floor=self.f0_min,
             f0_ceil=self.f0_max,
             frame_period=1000 * self.hop_length / self.sampling_rate,
         )
-        f0 = pyworld.stonemask(wav.astype(np.double), f0, t, self.sampling_rate)
+        f0 = pyworld_dio.stonemask(wav.astype(np.double), f0, t, self.sampling_rate)
         for index, pitch in enumerate(f0):
             f0[index] = round(pitch, 1)
         return self.interpolate_f0(self.resize_f0(f0, p_len))

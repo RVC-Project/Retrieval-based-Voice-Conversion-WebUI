@@ -9,15 +9,20 @@ from i18n.i18n import I18nAuto
 
 i18n = I18nAuto()
 
+type WeightMap = dict[str, torch.Tensor]
+type CheckpointValue = WeightMap | list[object] | str | int
+type CheckpointDict = OrderedDict[str, CheckpointValue]
+
 
 def savee(ckpt, sr, if_f0, name, epoch, version, hps):
     try:
-        opt = OrderedDict()
-        opt["weight"] = {}
+        weights: WeightMap = {}
         for key in ckpt.keys():
             if "enc_q" in key:
                 continue
-            opt["weight"][key] = ckpt[key].half()
+            weights[key] = ckpt[key].half()
+        opt: CheckpointDict = OrderedDict()
+        opt["weight"] = weights
         opt["config"] = [
             hps.data.filter_length // 2 + 1,
             32,
@@ -66,12 +71,13 @@ def extract_small_model(path, name, sr, if_f0, info, version):
         ckpt = torch.load(path, map_location="cpu", weights_only=False)
         if "model" in ckpt:
             ckpt = ckpt["model"]
-        opt = OrderedDict()
-        opt["weight"] = {}
+        weights: WeightMap = {}
         for key in ckpt.keys():
             if "enc_q" in key:
                 continue
-            opt["weight"][key] = ckpt[key].half()
+            weights[key] = ckpt[key].half()
+        opt: CheckpointDict = OrderedDict()
+        opt["weight"] = weights
         if sr == "40k":
             opt["config"] = [
                 1025,
@@ -208,12 +214,13 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
 
         def extract(ckpt):
             a = ckpt["model"]
-            opt = OrderedDict()
-            opt["weight"] = {}
+            weights: WeightMap = {}
             for key in a.keys():
                 if "enc_q" in key:
                     continue
-                opt["weight"][key] = a[key]
+                weights[key] = a[key]
+            opt: CheckpointDict = OrderedDict()
+            opt["weight"] = weights
             return opt
 
         ckpt1 = torch.load(path1, map_location="cpu", weights_only=False)
@@ -229,20 +236,21 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
             ckpt2 = ckpt2["weight"]
         if sorted(list(ckpt1.keys())) != sorted(list(ckpt2.keys())):
             return "Fail to merge the models. The model architectures are not the same."
-        opt = OrderedDict()
-        opt["weight"] = {}
+        weights: WeightMap = {}
         for key in ckpt1.keys():
             # try:
             if key == "emb_g.weight" and ckpt1[key].shape != ckpt2[key].shape:
                 min_shape0 = min(ckpt1[key].shape[0], ckpt2[key].shape[0])
-                opt["weight"][key] = (
+                weights[key] = (
                     alpha1 * (ckpt1[key][:min_shape0].float())
                     + (1 - alpha1) * (ckpt2[key][:min_shape0].float())
                 ).half()
             else:
-                opt["weight"][key] = (
+                weights[key] = (
                     alpha1 * (ckpt1[key].float()) + (1 - alpha1) * (ckpt2[key].float())
                 ).half()
+        opt: CheckpointDict = OrderedDict()
+        opt["weight"] = weights
         # except:
         #     pdb.set_trace()
         opt["config"] = cfg

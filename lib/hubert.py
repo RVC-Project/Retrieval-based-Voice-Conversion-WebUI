@@ -1,6 +1,6 @@
 import math
 import random
-from typing import Optional, Tuple
+from typing import Literal
 
 from fairseq.checkpoint_utils import load_model_ensemble_and_task
 from fairseq.utils import index_put
@@ -43,6 +43,7 @@ def extract_features(
 
     # pad to the sequence length dimension
     x, pad_length = pad_to_multiple(x, self.required_seq_len_multiple, dim=-2, value=0)
+    assert x is not None
     if pad_length > 0 and padding_mask is None:
         padding_mask = x.new_zeros((x.size(0), x.size(1)), dtype=torch.bool)
         padding_mask[:, -pad_length:] = True
@@ -92,11 +93,11 @@ def extract_features(
 
 
 def compute_mask_indices(
-    shape: Tuple[int, int],
-    padding_mask: Optional[torch.Tensor],
+    shape: tuple[int, int],
+    padding_mask: torch.Tensor | None,
     mask_prob: float,
     mask_length: int,
-    mask_type: str = "static",
+    mask_type: Literal["static", "uniform", "normal"] = "static",
     mask_other: float = 0.0,
     min_masks: int = 0,
     no_overlap: bool = False,
@@ -137,10 +138,10 @@ def compute_mask_indices(
 
     all_num_mask = max(min_masks, all_num_mask)
 
-    mask_idcs = []
+    mask_idcs: list[torch.Tensor] = []
     for i in range(bsz):
         if padding_mask is not None:
-            sz = all_sz - padding_mask[i].long().sum().item()
+            sz = int(all_sz - padding_mask[i].long().sum().item())
             num_mask = int(mask_prob * sz / float(mask_length) + np.random.rand())
             num_mask = max(min_masks, num_mask)
         else:
@@ -148,12 +149,14 @@ def compute_mask_indices(
             num_mask = all_num_mask
 
         if mask_type == "static":
-            lengths = torch.full([num_mask], mask_length)
+            lengths = [mask_length for _ in range(num_mask)]
         elif mask_type == "uniform":
-            lengths = torch.randint(mask_other, mask_length * 2 + 1, size=[num_mask])
+            lengths = torch.randint(
+                int(mask_other), mask_length * 2 + 1, size=[num_mask]
+            ).tolist()
         elif mask_type == "normal":
-            lengths = torch.normal(mask_length, mask_other, size=[num_mask])
-            lengths = [max(1, int(round(x))) for x in lengths]
+            sampled_lengths = torch.normal(mask_length, mask_other, size=[num_mask])
+            lengths = [max(1, int(round(x.item()))) for x in sampled_lengths]
         else:
             raise Exception("unknown mask selection " + mask_type)
 
@@ -161,13 +164,15 @@ def compute_mask_indices(
             lengths[0] = min(mask_length, sz - 1)
 
         if no_overlap:
-            mask_idc = []
+            mask_idc_list: list[int] = []
 
-            def arrange(s, e, length, keep_length):
-                span_start = torch.randint(low=s, high=e - length, size=[1]).item()
-                mask_idc.extend(span_start + i for i in range(length))
+            def arrange(
+                s: int, e: int, length: int, keep_length: int
+            ) -> list[tuple[int, int]]:
+                span_start = int(torch.randint(low=s, high=e - length, size=[1]).item())
+                mask_idc_list.extend(span_start + i for i in range(length))
 
-                new_parts = []
+                new_parts: list[tuple[int, int]] = []
                 if span_start - s - min_space >= keep_length:
                     new_parts.append((s, span_start - min_space + 1))
                 if e - span_start - length - min_space > keep_length:
@@ -183,10 +188,10 @@ def compute_mask_indices(
                 if l_sum == 0:
                     break
                 probs = lens / torch.sum(lens)
-                c = torch.multinomial(probs.float(), len(parts)).item()
+                c = int(torch.multinomial(probs.float(), len(parts)).item())
                 s, e = parts.pop(c)
                 parts.extend(arrange(s, e, length, min_length))
-            mask_idc = torch.asarray(mask_idc)
+            mask_idc = torch.asarray(mask_idc_list)
         else:
             min_len = min(lengths)
             if sz - min_len <= num_mask:
@@ -209,13 +214,15 @@ def compute_mask_indices(
         if isinstance(mask_idc, torch.Tensor):
             mask_idc = torch.asarray(mask_idc, dtype=torch.float)
         if len(mask_idc) > min_len and require_same_masks:
+            keep = random.sample(range(len(mask_idc)), min_len)
             mask_idc = torch.asarray(
-                random.sample([i for i in range(mask_idc)], min_len)
+                [mask_idc[j].item() for j in keep]
             )
         if mask_dropout > 0:
             num_holes = int(round(len(mask_idc) * mask_dropout))
+            keep = random.sample(range(len(mask_idc)), len(mask_idc) - num_holes)
             mask_idc = torch.asarray(
-                random.sample([i for i in range(mask_idc)], len(mask_idc) - num_holes)
+                [mask_idc[j].item() for j in keep]
             )
 
         mask[i, mask_idc.int()] = True
@@ -296,11 +303,11 @@ def get_hubert(model_path="assets/hubert/hubert_base.pt", device=torch.device("c
     def hubert_extract_features(
         self,
         source: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = None,
+        padding_mask: torch.Tensor | None = None,
         mask: bool = False,
         ret_conv: bool = False,
-        output_layer: Optional[int] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        output_layer: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         res = self._forward(
             source,
             padding_mask=padding_mask,
@@ -313,11 +320,11 @@ def get_hubert(model_path="assets/hubert/hubert_base.pt", device=torch.device("c
 
     def _hubert_extract_features(
         source: torch.Tensor,
-        padding_mask: Optional[torch.Tensor] = None,
+        padding_mask: torch.Tensor | None = None,
         mask: bool = False,
         ret_conv: bool = False,
-        output_layer: Optional[int] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        output_layer: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         return hubert_extract_features(
             hubert_model, source, padding_mask, mask, ret_conv, output_layer
         )
@@ -325,11 +332,11 @@ def get_hubert(model_path="assets/hubert/hubert_base.pt", device=torch.device("c
     hubert_model.extract_features = _hubert_extract_features
 
     def infer(source, padding_mask, output_layer: torch.Tensor):
-        output_layer = output_layer.item()
+        output_layer_id = int(output_layer.item())
         logits = hubert_model.extract_features(
-            source=source, padding_mask=padding_mask, output_layer=output_layer
+            source=source, padding_mask=padding_mask, output_layer=output_layer_id
         )
-        feats = hubert_model.final_proj(logits[0]) if output_layer == 9 else logits[0]
+        feats = hubert_model.final_proj(logits[0]) if output_layer_id == 9 else logits[0]
         return feats
 
     hubert_model.infer = infer

@@ -2,6 +2,10 @@ import json
 import os
 import sys
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
+from importlib import import_module
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -18,21 +22,25 @@ n_gpus = len(hps.gpus.split("-"))
 from random import randint, shuffle
 
 import torch
+from torch import nn
 
 try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+    import_module("intel_extension_for_pytorch")
 
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
         from infer.modules.ipex.gradscaler import gradscaler_init
-        from torch.xpu.amp import autocast
 
-        GradScaler = gradscaler_init()
+        gradscaler_init()
         ipex_init()
-    else:
-        from torch.cuda.amp import GradScaler, autocast
 except Exception:
-    from torch.cuda.amp import GradScaler, autocast
+    pass
+
+
+@contextmanager
+def cuda_autocast(enabled: bool) -> Iterator[None]:
+    with torch.amp.autocast("cuda", enabled=enabled):  # type: ignore[bad-context-manager]
+        yield
 
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False
@@ -228,8 +236,9 @@ def run(rank: int, n_gpus: int, hps, logger: logging.Logger):
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainG))
             if hasattr(net_g, "module"):
+                net_g_module = cast(nn.Module, net_g.module)
                 logger.info(
-                    net_g.module.load_state_dict(
+                    net_g_module.load_state_dict(
                         torch.load(
                             hps.pretrainG, map_location="cpu", weights_only=False
                         )["model"]
@@ -247,8 +256,9 @@ def run(rank: int, n_gpus: int, hps, logger: logging.Logger):
             if rank == 0:
                 logger.info("loaded pretrained %s" % (hps.pretrainD))
             if hasattr(net_d, "module"):
+                net_d_module = cast(nn.Module, net_d.module)
                 logger.info(
-                    net_d.module.load_state_dict(
+                    net_d_module.load_state_dict(
                         torch.load(
                             hps.pretrainD, map_location="cpu", weights_only=False
                         )["model"]
@@ -340,6 +350,8 @@ def train_and_evaluate(
             # Make new cache
             for batch_idx, info in enumerate(train_loader):
                 # Unpack
+                pitch: torch.Tensor | None = None
+                pitchf: torch.Tensor | None = None
                 if hps.if_f0 == 1:
                     (
                         phone,
@@ -367,6 +379,8 @@ def train_and_evaluate(
                     phone = phone.cuda(rank, non_blocking=True)
                     phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
                     if hps.if_f0 == 1:
+                        assert pitch is not None
+                        assert pitchf is not None
                         pitch = pitch.cuda(rank, non_blocking=True)
                         pitchf = pitchf.cuda(rank, non_blocking=True)
                     sid = sid.cuda(rank, non_blocking=True)
@@ -376,6 +390,8 @@ def train_and_evaluate(
                     wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
                 # Cache on list
                 if hps.if_f0 == 1:
+                    assert pitch is not None
+                    assert pitchf is not None
                     cache.append(
                         (
                             batch_idx,
@@ -420,6 +436,8 @@ def train_and_evaluate(
         # print(f"BATCH_IDX: {batch_idx}")
         # Data
         ## Unpack
+        pitch: torch.Tensor | None = None
+        pitchf: torch.Tensor | None = None
         if hps.if_f0 == 1:
             (
                 phone,
@@ -439,6 +457,8 @@ def train_and_evaluate(
             phone = phone.cuda(rank, non_blocking=True)
             phone_lengths = phone_lengths.cuda(rank, non_blocking=True)
             if hps.if_f0 == 1:
+                assert pitch is not None
+                assert pitchf is not None
                 pitch = pitch.cuda(rank, non_blocking=True)
                 pitchf = pitchf.cuda(rank, non_blocking=True)
             sid = sid.cuda(rank, non_blocking=True)
@@ -448,8 +468,10 @@ def train_and_evaluate(
             # wave_lengths = wave_lengths.cuda(rank, non_blocking=True)
 
         # Calculate
-        with torch.amp.autocast("cuda", enabled=hps.train.fp16_run):
+        with cuda_autocast(hps.train.fp16_run):
             if hps.if_f0 == 1:
+                assert pitch is not None
+                assert pitchf is not None
                 (
                     y_hat,
                     ids_slice,
@@ -476,7 +498,7 @@ def train_and_evaluate(
             y_mel = commons.slice_segments(
                 mel, ids_slice, hps.train.segment_size // hps.data.hop_length
             )
-            with torch.amp.autocast("cuda", enabled=False):
+            with cuda_autocast(False):
                 y_hat_mel = mel_spectrogram_torch(
                     y_hat.float().squeeze(1),
                     hps.data.filter_length,
@@ -495,7 +517,7 @@ def train_and_evaluate(
 
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(wave, y_hat.detach())
-            with torch.amp.autocast(enabled=False, device_type="cuda"):
+            with cuda_autocast(False):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(
                     y_d_hat_r, y_d_hat_g
                 )
@@ -506,10 +528,10 @@ def train_and_evaluate(
         scaler.step(optim_d)
         schedulers[1].step()
 
-        with torch.amp.autocast(enabled=hps.train.fp16_run, device_type="cuda"):
+        with cuda_autocast(hps.train.fp16_run):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(wave, y_hat)
-            with torch.amp.autocast(enabled=False, device_type="cuda"):
+            with cuda_autocast(False):
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
                 loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
                 loss_fm = feature_loss(fmap_r, fmap_g)

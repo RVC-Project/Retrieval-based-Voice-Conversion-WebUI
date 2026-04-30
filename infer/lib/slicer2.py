@@ -1,12 +1,29 @@
+from typing import Literal
+
 import numpy as np
+from numpy.typing import NDArray
+
+PadMode = Literal[
+    "constant",
+    "edge",
+    "linear_ramp",
+    "maximum",
+    "mean",
+    "median",
+    "minimum",
+    "reflect",
+    "symmetric",
+    "wrap",
+    "empty",
+]
 
 
 # This function is obtained from librosa.
 def get_rms(
-    y,
-    frame_length=2048,
-    hop_length=512,
-    pad_mode="constant",
+    y: NDArray[np.floating],
+    frame_length: int = 2048,
+    hop_length: int = 512,
+    pad_mode: PadMode = "constant",
 ):
     padding = (int(frame_length // 2), int(frame_length // 2))
     y = np.pad(y, padding, mode=pad_mode)
@@ -53,12 +70,12 @@ class Slicer:
             raise ValueError(
                 "The following condition must be satisfied: max_sil_kept >= hop_size"
             )
-        min_interval = sr * min_interval / 1000
+        min_interval_samples = sr * min_interval / 1000
         self.threshold = 10 ** (threshold / 20.0)
         self.hop_size = round(sr * hop_size / 1000)
-        self.win_size = min(round(min_interval), 4 * self.hop_size)
+        self.win_size = min(round(min_interval_samples), 4 * self.hop_size)
         self.min_length = round(sr * min_length / 1000 / self.hop_size)
-        self.min_interval = round(min_interval / self.hop_size)
+        self.min_interval = round(min_interval_samples / self.hop_size)
         self.max_sil_kept = round(sr * max_sil_kept / 1000 / self.hop_size)
 
     def _apply_slice(self, waveform, begin, end):
@@ -232,7 +249,7 @@ def main():
         out = os.path.dirname(os.path.abspath(args.audio))
     audio, sr = librosa.load(args.audio, sr=None, mono=False)
     slicer = Slicer(
-        sr=sr,
+        sr=int(sr),
         threshold=args.db_thresh,
         min_length=args.min_length,
         min_interval=args.min_interval,
