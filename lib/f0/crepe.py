@@ -1,10 +1,8 @@
-from typing import Any, Optional, Union
-
 import numpy as np
 import torch
 import torchcrepe
 
-from .f0 import F0Predictor
+from .f0 import F0Predictor, FilterRadius, FloatArray
 
 
 class CRePE(F0Predictor):
@@ -28,19 +26,18 @@ class CRePE(F0Predictor):
 
     def compute_f0(
         self,
-        wav: np.ndarray,
-        p_len: Optional[int] = None,
-        filter_radius: Optional[Union[int, float]] = None,
-    ):
+        wav: FloatArray,
+        p_len: int | None = None,
+        filter_radius: FilterRadius = None,
+    ) -> FloatArray:
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
-        if not torch.is_tensor(wav):
-            wav = torch.from_numpy(wav)
+        wav_tensor = torch.from_numpy(wav)
         # Pick a batch size that doesn't cause memory errors on your gpu
         batch_size = 512
         # Compute pitch using device 'device'
         f0, pd = torchcrepe.predict(
-            wav.float().to(self.device).unsqueeze(dim=0),
+            wav_tensor.float().to(self.device).unsqueeze(dim=0),
             self.sampling_rate,
             self.hop_length,
             self.f0_min,
