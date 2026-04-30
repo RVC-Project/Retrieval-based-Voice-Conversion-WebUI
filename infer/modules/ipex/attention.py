@@ -1,5 +1,7 @@
 import torch
-import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+import importlib
+
+importlib.import_module("intel_extension_for_pytorch")
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
 
@@ -82,8 +84,15 @@ original_scaled_dot_product_attention = torch.nn.functional.scaled_dot_product_a
 
 
 def scaled_dot_product_attention(
-    query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False
-):
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    attn_mask: torch.Tensor | None = None,
+    dropout_p: float = 0.0,
+    is_causal: bool = False,
+    scale: float | None = None,
+    enable_gqa: bool = False,
+) -> torch.Tensor:
     # ARC GPUs can't allocate more than 4GB to a single block, Slice it:
     if len(query.shape) == 3:
         batch_size_attention, query_tokens, shape_four = query.shape
@@ -150,6 +159,8 @@ def scaled_dot_product_attention(
                                 ),
                                 dropout_p=dropout_p,
                                 is_causal=is_causal,
+                                scale=scale,
+                                enable_gqa=enable_gqa,
                             )
                         )
                     else:
@@ -167,6 +178,8 @@ def scaled_dot_product_attention(
                                 ),
                                 dropout_p=dropout_p,
                                 is_causal=is_causal,
+                                scale=scale,
+                                enable_gqa=enable_gqa,
                             )
                         )
             else:
@@ -183,6 +196,8 @@ def scaled_dot_product_attention(
                             ),
                             dropout_p=dropout_p,
                             is_causal=is_causal,
+                            scale=scale,
+                            enable_gqa=enable_gqa,
                         )
                     )
                 else:
@@ -198,6 +213,8 @@ def scaled_dot_product_attention(
                             ),
                             dropout_p=dropout_p,
                             is_causal=is_causal,
+                            scale=scale,
+                            enable_gqa=enable_gqa,
                         )
                     )
     else:
@@ -208,6 +225,8 @@ def scaled_dot_product_attention(
             attn_mask=attn_mask,
             dropout_p=dropout_p,
             is_causal=is_causal,
+            scale=scale,
+            enable_gqa=enable_gqa,
         )
     return hidden_states
 

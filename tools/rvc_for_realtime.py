@@ -3,12 +3,14 @@ import os
 import pickle
 import sys
 import traceback
+from typing import Protocol, cast
 from infer.lib import jit
 from infer.lib.jit.get_synthesizer import get_synthesizer
 from time import time as ttime
 import fairseq
 import faiss
 import numpy as np
+from numpy.typing import NDArray
 import parselmouth
 import pyworld
 import scipy.signal as signal
@@ -35,6 +37,24 @@ from configs.config import Config
 # config = Config()
 
 mm = M()
+
+
+class PyWorldModule(Protocol):
+    def harvest(
+        self,
+        x: NDArray[np.float64],
+        fs: int,
+        f0_ceil: int,
+        f0_floor: int,
+        frame_period: int,
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]: ...
+
+
+class InferModule(Protocol):
+    def infer(self, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
+
+
+pyworld_api = cast(PyWorldModule, pyworld)
 
 
 def printt(strr, *args):
@@ -76,7 +96,7 @@ class RVC:
             self.inp_q = inp_q
             self.opt_q = opt_q
             # device="cpu"######## Force cpu testing
-            self.device = config.device
+            self.device: str | torch.device = config.device
             self.f0_up_key = key
             self.f0_min = 50
             self.f0_max = 1100
@@ -119,7 +139,7 @@ class RVC:
             else:
                 self.model = last_rvc.model
 
-            self.net_g: nn.Module = None
+            self.net_g: nn.Module | None = None
 
             def set_default_model():
                 self.net_g, cpt = get_synthesizer(self.pth_path, self.device)
@@ -136,6 +156,7 @@ class RVC:
                 jit_pth_path = self.pth_path.rstrip(".pth")
                 jit_pth_path += ".half.jit" if self.is_half else ".jit"
                 reload = False
+                cpt = None
                 if str(self.device) == "cuda":
                     self.device = torch.device("cuda:0")
                 if os.path.exists(jit_pth_path):
@@ -155,6 +176,8 @@ class RVC:
                         is_half=self.is_half,
                     )
 
+                if cpt is None:
+                    raise RuntimeError("JIT checkpoint failed to load")
                 self.tgt_sr = cpt["config"][-1]
                 self.if_f0 = cpt.get("f0", 1)
                 self.version = cpt.get("version", "v1")
@@ -188,6 +211,8 @@ class RVC:
                     set_synthesizer()
                 else:
                     self.net_g = last_rvc.net_g
+            if self.net_g is None:
+                raise RuntimeError("RVC model failed to load")
 
             if last_rvc is not None and hasattr(last_rvc, "model_rmvpe"):
                 self.model_rmvpe = last_rvc.model_rmvpe
@@ -248,7 +273,7 @@ class RVC:
             f0 *= pow(2, f0_up_key / 12)
             return self.get_f0_post(f0)
         if n_cpu == 1:
-            f0, t = pyworld.harvest(
+            f0, t = pyworld_api.harvest(
                 x.astype(np.double),
                 fs=16000,
                 f0_ceil=1100,
@@ -338,7 +363,7 @@ class RVC:
             if "privateuseone" in str(self.device):
                 self.device_fcpe = "cpu"
             else:
-                self.device_fcpe = self.device
+                self.device_fcpe = str(self.device)
             self.model_fcpe = spawn_bundled_infer_model(self.device_fcpe)
         f0 = self.model_fcpe.infer(
             x.to(self.device_fcpe).unsqueeze(0).float(),
@@ -356,7 +381,7 @@ class RVC:
         skip_head,
         return_length,
         f0method,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
         t1 = ttime()
         with torch.no_grad():
             if self.config.is_half:
@@ -403,6 +428,8 @@ class RVC:
             printt("Index search FAILED")
         t3 = ttime()
         p_len = input_wav.shape[0] // 160
+        cache_pitch: torch.Tensor | None = None
+        cache_pitchf: torch.Tensor | None = None
         if self.if_f0 == 1:
             f0_extractor_frame = block_frame_16k + 800
             if f0method == "rmvpe":
@@ -424,9 +451,12 @@ class RVC:
         sid = torch.LongTensor([0]).to(self.device)
         skip_head = torch.LongTensor([skip_head])
         return_length = torch.LongTensor([return_length])
+        net_g = cast(InferModule, self.net_g)
         with torch.no_grad():
             if self.if_f0 == 1:
-                infered_audio, _, _ = self.net_g.infer(
+                if cache_pitch is None or cache_pitchf is None:
+                    raise RuntimeError("Pitch cache was not initialized")
+                infered_audio, _, _ = net_g.infer(
                     feats,
                     p_len,
                     cache_pitch,
@@ -436,7 +466,7 @@ class RVC:
                     return_length,
                 )
             else:
-                infered_audio, _, _ = self.net_g.infer(
+                infered_audio, _, _ = net_g.infer(
                     feats, p_len, sid, skip_head, return_length
                 )
         t5 = ttime()

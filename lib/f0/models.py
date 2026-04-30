@@ -4,7 +4,7 @@ import torch
 def get_rmvpe(
     model_path="assets/rmvpe/rmvpe.pt", device=torch.device("cpu"), is_half=False
 ):
-    from rvc.f0.e2e import E2E
+    from lib.f0.e2e import E2E
 
     model = E2E(4, 1, (2, 2))
     ckpt = torch.load(model_path, map_location=device, weights_only=True)

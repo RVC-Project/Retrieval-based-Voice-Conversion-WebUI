@@ -1,8 +1,10 @@
 import contextlib
 import importlib
+from collections.abc import Callable
+from typing import Protocol, cast
 
 import torch
-import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+ipex = importlib.import_module("intel_extension_for_pytorch")
 
 # pylint: disable=protected-access, missing-function-docstring, line-too-long, unnecessary-lambda, no-else-return
 
@@ -12,12 +14,16 @@ class CondFunc:  # pylint: disable=missing-class-docstring
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, str):
             func_path = orig_func.split(".")
+            resolved_obj = None
+            i = 0
             for i in range(len(func_path) - 1, -1, -1):
                 try:
                     resolved_obj = importlib.import_module(".".join(func_path[:i]))
                     break
                 except ImportError:
                     pass
+            if resolved_obj is None:
+                raise ImportError(f"Could not resolve {orig_func}")
             for attr_name in func_path[i:-1]:
                 resolved_obj = getattr(resolved_obj, attr_name)
             orig_func = getattr(resolved_obj, func_path[-1])
@@ -42,6 +48,17 @@ class CondFunc:  # pylint: disable=missing-class-docstring
 
 
 _utils = torch.utils.data._utils
+
+
+class XpuModule(Protocol):
+    def is_available(self) -> bool: ...
+
+    def Generator(self, device=None) -> torch.Generator: ...
+
+    def has_fp64_dtype(self) -> bool: ...
+
+
+xpu = cast(XpuModule, torch.xpu)
 
 
 def _shutdown_workers(self):
@@ -116,7 +133,7 @@ def return_xpu(device):
 def ipex_no_cuda(orig_func, *args, **kwargs):
     torch.cuda.is_available = lambda: False
     orig_func(*args, **kwargs)
-    torch.cuda.is_available = torch.xpu.is_available
+    torch.cuda.is_available = xpu.is_available
 
 
 original_autocast = torch.autocast
@@ -149,7 +166,7 @@ original_interpolate = torch.nn.functional.interpolate
 
 
 def interpolate(
-    tensor,
+    input,
     size=None,
     scale_factor=None,
     mode="nearest",
@@ -158,10 +175,10 @@ def interpolate(
     antialias=False,
 ):  # pylint: disable=too-many-arguments
     if antialias or align_corners is not None:
-        return_device = tensor.device
-        return_dtype = tensor.dtype
+        return_device = input.device
+        return_dtype = input.dtype
         return original_interpolate(
-            tensor.to("cpu", dtype=torch.float32),
+            input.to("cpu", dtype=torch.float32),
             size=size,
             scale_factor=scale_factor,
             mode=mode,
@@ -171,7 +188,7 @@ def interpolate(
         ).to(return_device, dtype=return_dtype)
     else:
         return original_interpolate(
-            tensor,
+            input,
             size=size,
             scale_factor=scale_factor,
             mode=mode,
@@ -262,7 +279,7 @@ def ipex_hijacks():
 
     CondFunc(
         "torch.Generator",
-        lambda orig_func, device=None: torch.xpu.Generator(device),
+        lambda orig_func, device=None: xpu.Generator(device),
         lambda orig_func, device=None: device is not None
         and device != torch.device("cpu")
         and device != "cpu",
@@ -340,7 +357,7 @@ def ipex_hijacks():
     )
 
     # Diffusers Float64 (ARC GPUs doesn't support double or Float64):
-    if not torch.xpu.has_fp64_dtype():
+    if not xpu.has_fp64_dtype():
         CondFunc(
             "torch.from_numpy",
             lambda orig_func, ndarray: orig_func(ndarray.astype("float32")),
@@ -358,9 +375,9 @@ def ipex_hijacks():
     torch.utils.data.dataloader._MultiProcessingDataLoaderIter._shutdown_workers = (
         _shutdown_workers
     )
-    torch.nn.DataParallel = DummyDataParallel
-    torch.autocast = ipex_autocast
+    torch.nn.DataParallel = cast(type[torch.nn.DataParallel], DummyDataParallel)
+    torch.autocast = cast(type[torch.autocast], ipex_autocast)
     torch.cat = torch_cat
     torch.linalg.solve = linalg_solve
     torch.nn.functional.interpolate = interpolate
-    torch.backends.cuda.sdp_kernel = return_null_context
+    setattr(torch.backends.cuda, "sdp_kernel", return_null_context)

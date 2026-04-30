@@ -36,7 +36,7 @@ from scipy.io import wavfile
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_path = r"E:\codes\py39\vits_vc_gpu_train\assets\hubert\hubert_base.pt"  #
-logger.info("Load model(s) from {}".format(model_path))
+logger.info(f"Load model(s) from {model_path}")
 models, saved_cfg, task = checkpoint_utils.load_model_ensemble_and_task(
     [model_path],
     suffix="",
@@ -66,6 +66,7 @@ net_g = SynthesizerTrn256(
     [16, 16, 4, 4],
     183,
     256,
+    40000,
     is_half=True,
 )  # hifigan#512#256#no_dropout
 # net_g = SynthesizerTrn256(1025,32,192,192,768,2,3,3,0.1,"1", [3,7,11],[[1,3,5], [1,3,5], [1,3,5]],[10,10,2,2],512,[16,16,4,4],0)#ts3
