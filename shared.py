@@ -13,7 +13,6 @@ logging.getLogger("fairseq").setLevel(logging.WARNING)
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
-import fairseq
 import torch
 
 from configs.config import Config
@@ -38,14 +37,6 @@ config: Config = Config()
 vc = VC(config)
 
 
-if config.dml == True:
-
-    def forward_dml(ctx, x, scale):
-        ctx.scale = scale
-        res = x.clone().detach()
-        return res
-
-    fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
 i18n = I18nAuto()
 logger.info(i18n)
 # Get GPU count

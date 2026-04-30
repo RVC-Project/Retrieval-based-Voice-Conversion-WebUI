@@ -83,14 +83,6 @@ class RVC:
         Initialize
         """
         try:
-            if config.dml == True:
-
-                def forward_dml(ctx, x, scale):
-                    ctx.scale = scale
-                    res = x.clone().detach()
-                    return res
-
-                fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
             # global config
             self.config = config
             self.inp_q = inp_q
@@ -188,7 +180,7 @@ class RVC:
                 self.net_g.eval().to(self.device)
 
             def set_synthesizer():
-                if self.use_jit and not config.dml:
+                if self.use_jit:
                     if self.is_half and "cpu" in str(self.device):
                         printt(
                             "Use default Synthesizer model. \
@@ -317,10 +309,6 @@ class RVC:
         return self.get_f0_post(f0bak)
 
     def get_f0_crepe(self, x, f0_up_key):
-        if "privateuseone" in str(
-            self.device
-        ):  ### dml is not supported, and cpu is too slow to use, so use fcpe as a replacement
-            return self.get_f0(x, f0_up_key, 1, "fcpe")
         # printt("using crepe,device:%s"%self.device)
         f0, pd = torchcrepe.predict(
             x.unsqueeze(0).float(),
@@ -330,7 +318,6 @@ class RVC:
             self.f0_max,
             "full",
             batch_size=512,
-            # device=self.device if self.device.type!="privateuseone" else "cpu",### crepe doesn't use half precision, it's all full precision so no worries ### cpu latency is too high to use
             device=self.device,
             return_periodicity=True,
         )
@@ -360,10 +347,7 @@ class RVC:
             from torchfcpe import spawn_bundled_infer_model
 
             printt("Loading fcpe model")
-            if "privateuseone" in str(self.device):
-                self.device_fcpe = "cpu"
-            else:
-                self.device_fcpe = str(self.device)
+            self.device_fcpe = str(self.device)
             self.model_fcpe = spawn_bundled_infer_model(self.device_fcpe)
         f0 = self.model_fcpe.infer(
             x.to(self.device_fcpe).unsqueeze(0).float(),

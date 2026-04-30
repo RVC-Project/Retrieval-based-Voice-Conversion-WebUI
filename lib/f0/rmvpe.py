@@ -80,6 +80,7 @@ class RMVPE(F0Predictor):
         )
 
         self.is_half = is_half
+        self.model: OnnxModel | torch.nn.Module
         cents_mapping = 20 * np.arange(360) + 1997.3794084376191
         self.cents_mapping = np.pad(cents_mapping, (4, 4))  # 368
 
@@ -97,9 +98,12 @@ class RMVPE(F0Predictor):
         if "privateuseone" in str(self.device):
             import onnxruntime as ort
 
-            self.model = ort.InferenceSession(
-                "%s/rmvpe.onnx" % os.environ["rmvpe_root"],
-                providers=["DmlExecutionProvider"],
+            self.model = cast(
+                OnnxModel,
+                ort.InferenceSession(
+                    f"{os.environ['rmvpe_root']}/rmvpe.onnx",
+                    providers=["DmlExecutionProvider"],
+                ),
             )
         else:
 

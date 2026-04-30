@@ -45,17 +45,7 @@ class RVC:
         device: str | torch.device | int = "cpu",
         use_jit: bool = False,
         is_half: bool = False,
-        is_dml: bool = False,
     ) -> None:
-        if is_dml:
-
-            def forward_dml(ctx, x, scale):
-                ctx.scale = scale
-                res = x.clone().detach()
-                return res
-
-            fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
-
         self.device = device
         self.f0_up_key = key
         self.formant_shift = formant
@@ -148,7 +138,6 @@ class RVC:
 
         if (
             self.use_jit
-            and not is_dml
             and not (self.is_half and "cpu" in str(self.device))
         ):
             set_jit_model()

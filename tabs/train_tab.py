@@ -24,7 +24,7 @@ from shared import i18n
 
 ProgressComponent = gr.Progress
 
-F0GPUVisible = shared.config.dml == False
+F0GPUVisible = True
 SampleRate = Literal["32k", "40k", "48k"]
 
 
@@ -270,17 +270,6 @@ def extract_f0_feature(
                     ),
                 ).start()
             else:
-                cmd = (
-                    shared.config.python_cmd
-                    + ' infer/modules/train/extract/extract_f0_rmvpe_dml.py "%s/logs/%s" '
-                    % (
-                        shared.now_dir,
-                        exp_dir,
-                    )
-                )
-                shared.logger.info("Execute: " + cmd)
-                p = Popen(cmd, shell=True, cwd=shared.now_dir)
-                p.wait()
                 done = [True]
         while True:
             with open(

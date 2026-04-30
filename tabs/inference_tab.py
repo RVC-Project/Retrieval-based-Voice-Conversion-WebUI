@@ -30,15 +30,7 @@ def change_choices():
 
 
 def get_pitch_methods() -> List[PitchMethod]:
-    if not hasattr(shared.config, "dml"):
-        # Handle cases where shared.config.dml might not exist
-        return PITCH_METHODS
-
-    return (
-        [method for method in PITCH_METHODS if method != "crepe"]
-        if shared.config.dml
-        else PITCH_METHODS
-    )
+    return PITCH_METHODS
 
 
 def get_model_list() -> List[str]:
