@@ -21,33 +21,41 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 The licenses for related libraries are as follows.
 
 ### ContentVec
+
 - **License:** MIT License
 - **URL:** https://github.com/auspicious3000/contentvec/blob/main/LICENSE
 
 ### VITS
+
 - **License:** MIT License
 - **URL:** https://github.com/jaywalnut310/vits/blob/main/LICENSE
 
 ### HIFIGAN
+
 - **License:** MIT License
 - **URL:** https://github.com/jik876/hifi-gan/blob/master/LICENSE
 
 ### Gradio
+
 - **License:** Apache License 2.0
 - **URL:** https://github.com/gradio-app/gradio/blob/main/LICENSE
 
 ### FFmpeg
+
 - **License:** LGPLv3 License, MIT License
 - **URL:** https://github.com/FFmpeg/FFmpeg/blob/master/COPYING.LGPLv3
 
 ### ultimatevocalremovergui
+
 - **License:** MIT License
 - **URL:** https://github.com/Anjok07/ultimatevocalremovergui/blob/master/LICENSE
 
 ### audio-slicer
+
 - **License:** MIT License
 - **URL:** https://github.com/openvpi/audio-slicer/blob/main/LICENSE
 
 ### PySimpleGUI
+
 - **License:** LGPLv3 License
 - **URL:** https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt
