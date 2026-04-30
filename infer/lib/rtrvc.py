@@ -9,8 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-# from torchaudio.transforms import Resample
+from torchaudio.transforms import Resample
 
 from lib.f0 import Generator
 from lib.synthesizer import load_synthesizer
