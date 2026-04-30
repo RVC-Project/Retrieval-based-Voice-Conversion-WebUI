@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import glob
-import json
 import logging
+import json
 import os
 import subprocess
 import sys
 import shutil
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
@@ -23,9 +23,9 @@ logger = logging
 
 
 def load_checkpoint_d(
-    checkpoint_path: str, combd, sbd, optimizer=None, load_opt: int = 1
+    checkpoint_path: Path, combd, sbd, optimizer=None, load_opt: int = 1
 ):
-    assert os.path.isfile(checkpoint_path)
+    assert checkpoint_path.is_file()
     checkpoint_dict = torch.load(
         checkpoint_path, map_location="cpu", weights_only=False
     )
@@ -106,8 +106,8 @@ def load_checkpoint_d(
 #   logger.info("Loaded checkpoint '{}' (epoch {})" .format(
 #     checkpoint_path, iteration))
 #   return model, optimizer, learning_rate, iteration
-def load_checkpoint(checkpoint_path, model, optimizer=None, load_opt: int = 1):
-    assert os.path.isfile(checkpoint_path)
+def load_checkpoint(checkpoint_path: Path, model, optimizer=None, load_opt: int = 1):
+    assert checkpoint_path.is_file()
     checkpoint_dict = torch.load(
         checkpoint_path, map_location="cpu", weights_only=False
     )
@@ -152,7 +152,7 @@ def load_checkpoint(checkpoint_path, model, optimizer=None, load_opt: int = 1):
     return model, optimizer, learning_rate, iteration
 
 
-def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path):
+def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path: Path):
     logger.info(
         "Saving model and optimizer state at epoch {} to {}".format(
             iteration, checkpoint_path
@@ -174,7 +174,7 @@ def save_checkpoint(model, optimizer, learning_rate, iteration, checkpoint_path)
 
 
 def save_checkpoint_d(
-    combd, sbd, optimizer, learning_rate: float, iteration, checkpoint_path
+    combd, sbd, optimizer, learning_rate: float, iteration, checkpoint_path: Path
 ):
     logger.info(
         "Saving model and optimizer state at epoch {} to {}".format(
@@ -238,20 +238,19 @@ def summarize(
         writer.add_audio(k, v, global_step, audio_sampling_rate)
 
 
-def latest_checkpoint_path(dir_path: str, regex: str = "G_*.pth") -> str:
-    f_list = glob.glob(os.path.join(dir_path, regex))
-    f_list.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
+def latest_checkpoint_path(dir_path: Path, regex: str = "G_*.pth") -> Path:
+    f_list = sorted(dir_path.glob(regex), key=lambda f: int("".join(filter(str.isdigit, f.name))))
     x = f_list[-1]
     logger.debug(x)
     return x
 
 
-def load_wav_to_torch(full_path):
+def load_wav_to_torch(full_path: Path):
     sampling_rate, data = read(full_path)
     return torch.FloatTensor(data.astype(np.float32)), sampling_rate
 
 
-def load_filepaths_and_text(filename, split="|"):
+def load_filepaths_and_text(filename: Path, split="|"):
     try:
         with open(filename, encoding="utf-8") as f:
             filepaths_and_text = [line.strip().split(split) for line in f]
@@ -340,9 +339,9 @@ def get_hparams(init=True):
 
     args = parser.parse_args()
     name = args.experiment_dir
-    experiment_dir = os.path.join("./logs", args.experiment_dir)
+    experiment_dir = Path("./logs") / args.experiment_dir
 
-    config_save_path = os.path.join(experiment_dir, "config.json")
+    config_save_path = experiment_dir / "config.json"
     with open(config_save_path, "r") as f:
         config = json.load(f)
 
@@ -361,12 +360,12 @@ def get_hparams(init=True):
     hparams.if_latest = args.if_latest
     hparams.save_every_weights = args.save_every_weights
     hparams.if_cache_data_in_gpu = args.if_cache_data_in_gpu
-    hparams.data.training_files = "%s/filelist.txt" % experiment_dir
+    hparams.data.training_files = str(experiment_dir / "filelist.txt")
     return hparams
 
 
-def get_hparams_from_dir(model_dir):
-    config_save_path = os.path.join(model_dir, "config.json")
+def get_hparams_from_dir(model_dir: Path):
+    config_save_path = model_dir / "config.json"
     with open(config_save_path, "r") as f:
         data = f.read()
     config = json.loads(data)
@@ -376,7 +375,7 @@ def get_hparams_from_dir(model_dir):
     return hparams
 
 
-def get_hparams_from_file(config_path):
+def get_hparams_from_file(config_path: Path):
     with open(config_path, "r") as f:
         data = f.read()
     config = json.loads(data)
@@ -386,8 +385,8 @@ def get_hparams_from_file(config_path):
 
 
 def check_git_hash(model_dir: str):
-    source_dir = os.path.dirname(os.path.realpath(__file__))
-    if not os.path.exists(os.path.join(source_dir, ".git")):
+    source_dir = Path(os.path.realpath(__file__)).parent
+    if not (source_dir / ".git").exists():
         logger.warning(
             "{} is not a git repository, therefore hash value comparison will be ignored.".format(
                 source_dir
@@ -397,9 +396,9 @@ def check_git_hash(model_dir: str):
 
     cur_hash = subprocess.getoutput("git rev-parse HEAD")
 
-    path = os.path.join(model_dir, "githash")
-    if os.path.exists(path):
-        saved_hash = open(path).read()
+    git_hash_file = Path(model_dir) / "githash"
+    if git_hash_file.exists():
+        saved_hash = git_hash_file.read_text()
         if saved_hash != cur_hash:
             logger.warning(
                 "git hash values are different. {}(saved) != {}(current)".format(
@@ -407,18 +406,19 @@ def check_git_hash(model_dir: str):
                 )
             )
     else:
-        open(path, "w").write(cur_hash)
+        git_hash_file.write_text(cur_hash)
 
 
-def get_logger(model_dir, filename="train.log"):
+def get_logger(model_dir: str, filename: str = "train.log"):
     global logger
     logger = logging.getLogger(os.path.basename(model_dir))
     logger.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter("%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s")
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-    h = logging.FileHandler(os.path.join(model_dir, filename))
+    log_dir = Path(model_dir)
+    if not log_dir.exists():
+        log_dir.mkdir(parents=True, exist_ok=True)
+    h = logging.FileHandler(log_dir / filename)
     h.setLevel(logging.DEBUG)
     h.setFormatter(formatter)
     logger.addHandler(h)

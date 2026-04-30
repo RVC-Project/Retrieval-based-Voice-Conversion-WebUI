@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import logging
+from pathlib import Path
 from collections.abc import Iterator
 from contextlib import contextmanager
 from importlib import import_module
@@ -612,20 +613,21 @@ def train_and_evaluate(
     # /Run steps
 
     if epoch % hps.save_every_epoch == 0 and rank == 0:
+        model_dir = Path(hps.model_dir)
         if hps.if_latest == 0:
             utils.save_checkpoint(
                 net_g,
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "G_{}.pth".format(global_step)),
+                model_dir / "G_{}.pth".format(global_step),
             )
             utils.save_checkpoint(
                 net_d,
                 optim_d,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "D_{}.pth".format(global_step)),
+                model_dir / "D_{}.pth".format(global_step),
             )
         else:
             utils.save_checkpoint(
@@ -633,14 +635,14 @@ def train_and_evaluate(
                 optim_g,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "G_{}.pth".format(2333333)),
+                model_dir / "G_{}.pth".format(2333333),
             )
             utils.save_checkpoint(
                 net_d,
                 optim_d,
                 hps.train.learning_rate,
                 epoch,
-                os.path.join(hps.model_dir, "D_{}.pth".format(2333333)),
+                model_dir / "D_{}.pth".format(2333333),
             )
         if rank == 0 and hps.save_every_weights == "1":
             if hasattr(net_g, "module"):

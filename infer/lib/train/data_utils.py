@@ -1,6 +1,7 @@
 import os
 import traceback
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
         for audiopath, text, pitch, pitchf, dv in self.audiopaths_and_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, text, pitch, pitchf, dv])
-                lengths.append(os.path.getsize(audiopath) // (3 * self.hop_length))
+                lengths.append(Path(audiopath).stat().st_size // (3 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 
@@ -108,12 +109,12 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
         #        audio_norm = audio / np.abs(audio).max()
 
         audio_norm = audio_norm.unsqueeze(0)
-        spec_filename = filename.replace(".wav", ".spec.pt")
-        if os.path.exists(spec_filename):
+        spec_path = Path(filename).with_suffix(".spec.pt")
+        if spec_path.exists():
             try:
-                spec = torch.load(spec_filename, weights_only=False)
+                spec = torch.load(spec_path, weights_only=False)
             except:
-                logger.warning("%s %s", spec_filename, traceback.format_exc())
+                logger.warning("%s %s", spec_path, traceback.format_exc())
                 spec = spectrogram_torch(
                     audio_norm,
                     self.filter_length,
@@ -123,7 +124,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
                     center=False,
                 )
                 spec = torch.squeeze(spec, 0)
-                torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
+                torch.save(spec, spec_path, _use_new_zipfile_serialization=False)
         else:
             spec = spectrogram_torch(
                 audio_norm,
@@ -134,7 +135,7 @@ class TextAudioLoaderMultiNSFsid(torch.utils.data.Dataset):
                 center=False,
             )
             spec = torch.squeeze(spec, 0)
-            torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
+            torch.save(spec, spec_path, _use_new_zipfile_serialization=False)
         return spec, audio_norm
 
     def __getitem__(self, index):
@@ -251,7 +252,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         for audiopath, text, dv in self.audiopaths_and_text:
             if self.min_text_len <= len(text) and len(text) <= self.max_text_len:
                 audiopaths_and_text_new.append([audiopath, text, dv])
-                lengths.append(os.path.getsize(audiopath) // (3 * self.hop_length))
+                lengths.append(Path(audiopath).stat().st_size // (3 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 
@@ -300,12 +301,12 @@ class TextAudioLoader(torch.utils.data.Dataset):
         #        audio_norm = audio / np.abs(audio).max()
 
         audio_norm = audio_norm.unsqueeze(0)
-        spec_filename = filename.replace(".wav", ".spec.pt")
-        if os.path.exists(spec_filename):
+        spec_path = Path(filename).with_suffix(".spec.pt")
+        if spec_path.exists():
             try:
-                spec = torch.load(spec_filename, weights_only=False)
+                spec = torch.load(spec_path, weights_only=False)
             except:
-                logger.warning("%s %s", spec_filename, traceback.format_exc())
+                logger.warning("%s %s", spec_path, traceback.format_exc())
                 spec = spectrogram_torch(
                     audio_norm,
                     self.filter_length,
@@ -315,7 +316,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
                     center=False,
                 )
                 spec = torch.squeeze(spec, 0)
-                torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
+                torch.save(spec, spec_path, _use_new_zipfile_serialization=False)
         else:
             spec = spectrogram_torch(
                 audio_norm,
@@ -326,7 +327,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
                 center=False,
             )
             spec = torch.squeeze(spec, 0)
-            torch.save(spec, spec_filename, _use_new_zipfile_serialization=False)
+            torch.save(spec, spec_path, _use_new_zipfile_serialization=False)
         return spec, audio_norm
 
     def __getitem__(self, index):

@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import sys
+from pathlib import Path
 from typing import List, Tuple, cast
 
 from scipy import signal
@@ -11,7 +12,7 @@ print(*sys.argv[1:])
 inp_root = sys.argv[1]
 sr = int(sys.argv[2])
 n_p = int(sys.argv[3])
-exp_dir = sys.argv[4]
+exp_dir = Path(sys.argv[4])
 noparallel = sys.argv[5] == "True"
 per = float(sys.argv[6])
 import os
@@ -25,7 +26,7 @@ from scipy.io import wavfile
 from infer.lib.audio import load_audio
 from infer.lib.slicer2 import Slicer
 
-f = open("%s/preprocess.log" % exp_dir, "a+")
+f = open(exp_dir / "preprocess.log", "a+")
 
 
 def println(strr):
@@ -44,11 +45,11 @@ class PreProcess:
     tail: float
     max: float
     alpha: float
-    exp_dir: str
-    gt_wavs_dir: str
-    wavs16k_dir: str
+    exp_dir: Path
+    gt_wavs_dir: Path
+    wavs16k_dir: Path
 
-    def __init__(self: "PreProcess", sr: int, exp_dir: str, per=3.7):
+    def __init__(self: "PreProcess", sr: int, exp_dir: Path, per=3.7):
         self.slicer = Slicer(
             sr=sr,
             threshold=-42,
@@ -69,12 +70,12 @@ class PreProcess:
         self.tail = self.per + self.overlap
         self.max = 0.9
         self.alpha = 0.75
-        self.exp_dir = exp_dir
-        self.gt_wavs_dir = "%s/0_gt_wavs" % exp_dir
-        self.wavs16k_dir = "%s/1_16k_wavs" % exp_dir
-        os.makedirs(self.exp_dir, exist_ok=True)
-        os.makedirs(self.gt_wavs_dir, exist_ok=True)
-        os.makedirs(self.wavs16k_dir, exist_ok=True)
+        self.exp_dir: Path = exp_dir
+        self.gt_wavs_dir: Path = exp_dir / "0_gt_wavs"
+        self.wavs16k_dir: Path = exp_dir / "1_16k_wavs"
+        self.exp_dir.mkdir(parents=True, exist_ok=True)
+        self.gt_wavs_dir.mkdir(parents=True, exist_ok=True)
+        self.wavs16k_dir.mkdir(parents=True, exist_ok=True)
 
     def norm_write(
         self: "PreProcess", tmp_audio: np.ndarray, idx0: int, idx1: int
@@ -87,7 +88,7 @@ class PreProcess:
             1 - self.alpha
         ) * tmp_audio
         wavfile.write(
-            "%s/%s_%s.wav" % (self.gt_wavs_dir, idx0, idx1),
+            str(self.gt_wavs_dir / f"{idx0}_{idx1}.wav"),
             self.sr,
             tmp_audio.astype(np.float32),
         )
@@ -95,7 +96,7 @@ class PreProcess:
             tmp_audio, orig_sr=self.sr, target_sr=16000
         )  # , res_type="soxr_vhq"
         wavfile.write(
-            "%s/%s_%s.wav" % (self.wavs16k_dir, idx0, idx1),
+            str(self.wavs16k_dir / f"{idx0}_{idx1}.wav"),
             16000,
             tmp_audio.astype(np.float32),
         )
@@ -132,9 +133,10 @@ class PreProcess:
 
     def pipeline_mp_inp_dir(self: "PreProcess", inp_root: str, n_p: int) -> None:
         try:
+            inp_root_path = Path(inp_root)
             infos = [
-                ("%s/%s" % (inp_root, name), idx)
-                for idx, name in enumerate(sorted(list(os.listdir(inp_root))))
+                (str(inp_root_path / name), idx)
+                for idx, name in enumerate(sorted(inp_root_path.iterdir(), key=lambda p: p.name))
             ]
             if noparallel:
                 for i in range(n_p):
@@ -153,7 +155,7 @@ class PreProcess:
             println("Fail. %s" % traceback.format_exc())
 
 
-def preprocess_trainset(inp_root: str, sr: int, n_p: int, exp_dir: str, per: float):
+def preprocess_trainset(inp_root: str, sr: int, n_p: int, exp_dir: Path, per: float):
     pp = PreProcess(sr, exp_dir, per)
     println("start preprocess")
     pp.pipeline_mp_inp_dir(inp_root, n_p)

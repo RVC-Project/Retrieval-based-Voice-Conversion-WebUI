@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from pathlib import Path
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
@@ -9,12 +10,12 @@ device = sys.argv[1]
 n_part = int(sys.argv[2])
 i_part = int(sys.argv[3])
 if len(sys.argv) == 7:
-    exp_dir = sys.argv[4]
+    exp_dir = Path(sys.argv[4])
     version = sys.argv[5]
     is_half = sys.argv[6].lower() == "true"
 else:
     i_gpu = sys.argv[4]
-    exp_dir = sys.argv[5]
+    exp_dir = Path(sys.argv[5])
     os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
     version = sys.argv[6]
     is_half = sys.argv[7].lower() == "true"
@@ -42,7 +43,7 @@ else:
 
     fairseq.modules.grad_multiply.GradMultiply.forward = forward_dml
 
-f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
+f = open(exp_dir / "extract_f0_feature.log", "a+")
 
 
 def printt(strr):
@@ -54,12 +55,12 @@ def printt(strr):
 printt(" ".join(sys.argv))
 model_path = "assets/hubert/hubert_base.pt"
 
-printt("exp_dir: " + exp_dir)
-wavPath = "%s/1_16k_wavs" % exp_dir
+printt("exp_dir: " + str(exp_dir))
+wavPath = exp_dir / "1_16k_wavs"
 outPath = (
-    "%s/3_feature256" % exp_dir if version == "v1" else "%s/3_feature768" % exp_dir
+    exp_dir / "3_feature256" if version == "v1" else exp_dir / "3_feature768"
 )
-os.makedirs(outPath, exist_ok=True)
+outPath.mkdir(parents=True, exist_ok=True)
 
 
 # wave must be 16k, hop_size=320
@@ -104,7 +105,7 @@ if is_half:
         model = model.half()
 model.eval()
 
-todo = sorted(list(os.listdir(wavPath)))[i_part::n_part]
+todo = sorted(wavPath.iterdir(), key=lambda p: p.name)[i_part::n_part]
 n = max(1, len(todo) // 10)  # 最多打印十条
 if len(todo) == 0:
     printt("no-feature-todo")
@@ -112,11 +113,11 @@ else:
     printt("all-feature-%s" % len(todo))
     for idx, file in enumerate(todo):
         try:
-            if file.endswith(".wav"):
-                wav_path = "%s/%s" % (wavPath, file)
-                out_path = "%s/%s" % (outPath, file.replace("wav", "npy"))
+            if file.suffix == ".wav":
+                wav_path = wavPath / file.name
+                out_path = outPath / file.with_suffix(".npy").name
 
-                if os.path.exists(out_path):
+                if out_path.exists():
                     continue
 
                 feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
@@ -140,9 +141,9 @@ else:
                 if np.isnan(feats).sum() == 0:
                     np.save(out_path, feats, allow_pickle=False)
                 else:
-                    printt("%s-contains nan" % file)
+                    printt("%s-contains nan" % file.name)
                 if idx % n == 0:
-                    printt("now-%s,all-%s,%s,%s" % (len(todo), idx, file, feats.shape))
+                    printt("now-%s,all-%s,%s,%s" % (len(todo), idx, file.name, feats.shape))
         except:
             printt(traceback.format_exc())
     printt("all-feature-done")
