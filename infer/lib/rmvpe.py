@@ -1,6 +1,6 @@
 from io import BytesIO
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Literal, TypeAlias, cast, overload
 import numpy as np
 import torch
 
@@ -8,7 +8,7 @@ from infer.lib import jit
 
 try:
     # Fix "Torch not compiled with CUDA enabled"
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+    import intel_extension_for_pytorch as ipex  # type: ignore[missing-import]  # pylint: disable=import-error, unused-import
 
     if torch.xpu.is_available():
         from infer.modules.ipex import ipex_init
@@ -24,6 +24,8 @@ from scipy.signal import get_window
 import logging
 
 logger = logging.getLogger(__name__)
+HiddenArray: TypeAlias = np.ndarray
+AudioInput: TypeAlias = torch.Tensor | np.ndarray
 
 
 class STFT(torch.nn.Module):
@@ -75,7 +77,17 @@ class STFT(torch.nn.Module):
         self.register_buffer("inverse_basis", inverse_basis.float())
         self.register_buffer("fft_window", fft_window.float())
 
-    def transform(self, input_data, return_phase=False):
+    @overload
+    def transform(
+        self, input_data: torch.Tensor, return_phase: Literal[False] = False
+    ) -> torch.Tensor: ...
+
+    @overload
+    def transform(
+        self, input_data: torch.Tensor, return_phase: Literal[True]
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+
+    def transform(self, input_data: torch.Tensor, return_phase: bool = False):
         """Take input data (audio) to STFT domain.
 
         Arguments:
@@ -95,7 +107,8 @@ class STFT(torch.nn.Module):
         forward_transform = input_data.unfold(
             1, self.filter_length, self.hop_length
         ).permute(0, 2, 1)
-        forward_transform = torch.matmul(self.forward_basis, forward_transform)
+        forward_basis = cast(torch.Tensor, self.forward_basis)
+        forward_transform = torch.matmul(forward_basis, forward_transform)
         cutoff = int((self.filter_length / 2) + 1)
         real_part = forward_transform[:, :cutoff, :]
         imag_part = forward_transform[:, cutoff:, :]
@@ -106,7 +119,7 @@ class STFT(torch.nn.Module):
         else:
             return magnitude
 
-    def inverse(self, magnitude, phase):
+    def inverse(self, magnitude: torch.Tensor, phase: torch.Tensor) -> torch.Tensor:
         """Call the inverse STFT (iSTFT), given magnitude and phase tensors produced
         by the ```transform``` function.
 
@@ -128,12 +141,13 @@ class STFT(torch.nn.Module):
             kernel_size=(1, self.filter_length),
             stride=(1, self.hop_length),
         )
-        inverse_transform = torch.matmul(self.inverse_basis, cat)
+        inverse_basis = cast(torch.Tensor, self.inverse_basis)
+        inverse_transform = torch.matmul(inverse_basis, cat)
         inverse_transform = fold(inverse_transform)[
             :, 0, 0, self.pad_amount : -self.pad_amount
         ]
         window_square_sum = (
-            self.fft_window.pow(2).repeat(cat.size(-1), 1).T.unsqueeze(0)
+            cast(torch.Tensor, self.fft_window).pow(2).repeat(cat.size(-1), 1).T.unsqueeze(0)
         )
         window_square_sum = fold(window_square_sum)[
             :, 0, 0, self.pad_amount : -self.pad_amount
@@ -141,7 +155,7 @@ class STFT(torch.nn.Module):
         inverse_transform /= window_square_sum
         return inverse_transform
 
-    def forward(self, input_data):
+    def forward(self, input_data: torch.Tensor) -> torch.Tensor:
         """Take input data (audio) to STFT domain and then back to audio.
 
         Arguments:
@@ -240,7 +254,7 @@ class Encoder(nn.Module):
         self.out_channel = out_channels
 
     def forward(self, x: torch.Tensor):
-        concat_tensors: List[torch.Tensor] = []
+        concat_tensors: list[torch.Tensor] = []
         x = self.bn(x)
         for i, layer in enumerate(self.layers):
             t, x = layer(x)
@@ -333,7 +347,7 @@ class Decoder(nn.Module):
             )
             in_channels = out_channels
 
-    def forward(self, x: torch.Tensor, concat_tensors: List[torch.Tensor]):
+    def forward(self, x: torch.Tensor, concat_tensors: list[torch.Tensor]):
         for i, layer in enumerate(self.layers):
             x = layer(x, concat_tensors[-1 - i])
         return x
@@ -400,7 +414,7 @@ class E2E(nn.Module):
             )
         else:
             self.fc = nn.Sequential(
-                nn.Linear(3 * nn.N_MELS, nn.N_CLASS), nn.Dropout(0.25), nn.Sigmoid()
+                nn.Linear(3 * 128, 360), nn.Dropout(0.25), nn.Sigmoid()
             )
 
     def forward(self, mel: torch.Tensor):
@@ -469,7 +483,9 @@ class MelSpectrogram(torch.nn.Module):
         self.clamp = clamp
         self.is_half = is_half
 
-    def forward(self, audio, keyshift=0, speed=1, center=True):
+    def forward(
+        self, audio: torch.Tensor, keyshift: float = 0, speed: float = 1, center: bool = True
+    ) -> torch.Tensor:
         factor = 2 ** (keyshift / 12)
         n_fft_new = int(np.round(self.n_fft * factor))
         win_length_new = int(np.round(self.win_length * factor))
@@ -505,7 +521,7 @@ class MelSpectrogram(torch.nn.Module):
             if resize < size:
                 magnitude = F.pad(magnitude, (0, 0, 0, size - resize))
             magnitude = magnitude[:, :size, :] * self.win_length / win_length_new
-        mel_output = torch.matmul(self.mel_basis, magnitude)
+        mel_output = torch.matmul(cast(torch.Tensor, self.mel_basis), magnitude)
         if self.is_half == True:
             try:
                 mel_output = mel_output.half()
