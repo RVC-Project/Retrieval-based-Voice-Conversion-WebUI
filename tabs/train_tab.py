@@ -4,6 +4,7 @@ import os
 import pathlib
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import threading
@@ -48,10 +49,19 @@ def if_done_multi(done_flag, p_objs):
 
 
 def preprocess_dataset(
-    audio_dir: str, exp_dir: str, sr: SampleRate, n_p: int, progress=gr.Progress()
+    audio_dir: str | pathlib.Path,
+    exp_dir: str,
+    sr: SampleRate,
+    n_p: int,
+    progress=gr.Progress(),
 ) -> Generator[str, None, None]:
+    audio_dir_path = pathlib.Path(audio_dir)
+    log_dir = pathlib.Path(shared.now_dir) / "logs" / exp_dir
+    log_path = log_dir / "preprocess.log"
+    preprocess_script = pathlib.Path("infer/modules/train/preprocess.py")
+
     # 1. Validate audio_dir and count files
-    if not os.path.isdir(audio_dir):
+    if not audio_dir_path.is_dir():
         error_msg = (
             f"Error: Audio directory '{audio_dir}' not found or is not a directory."
         )
@@ -62,11 +72,7 @@ def preprocess_dataset(
     actual_file_count = 0
     try:
         # List all entries in the directory and filter for files
-        file_names = [
-            name
-            for name in os.listdir(audio_dir)
-            if os.path.isfile(os.path.join(audio_dir, name))
-        ]
+        file_names = [path.name for path in audio_dir_path.iterdir() if path.is_file()]
         actual_file_count = len(file_names)
         info_msg = f"Found {actual_file_count} files in audio directory: {audio_dir}"
         shared.logger.info(info_msg)
@@ -90,21 +96,20 @@ def preprocess_dataset(
         yield error_msg
         return
     sr_hz = shared.sr_dict[sr]
-    os.makedirs("%s/logs/%s" % (shared.now_dir, exp_dir), exist_ok=True)
-    f = open("%s/logs/%s/preprocess.log" % (shared.now_dir, exp_dir), "w")
-    f.close()
-    cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("")
+    cmd = [
         shared.config.python_cmd,
-        audio_dir,
-        sr_hz,
-        n_p,
-        shared.now_dir,
-        exp_dir,
-        shared.config.noparallel,
-        shared.config.preprocess_per,
-    )
-    shared.logger.info("Execute: " + cmd)
-    p = Popen(cmd, shell=True)
+        str(preprocess_script),
+        str(audio_dir_path),
+        str(sr_hz),
+        str(n_p),
+        str(log_dir),
+        str(shared.config.noparallel),
+        f"{shared.config.preprocess_per:.1f}",
+    ]
+    shared.logger.info("Execute: " + shlex.join(cmd))
+    p = Popen(cmd, cwd=shared.now_dir)
     # Stupid gr, popen read has to finish entirely before reading it all at once; without gr it normally reads and outputs line by line; have to create an extra text stream to read periodically
     done = [False]
     threading.Thread(
@@ -116,18 +121,18 @@ def preprocess_dataset(
     ).start()
 
     while True:
-        with open("%s/logs/%s/preprocess.log" % (shared.now_dir, exp_dir), "r") as f:
+        with log_path.open("r") as f:
             # yield (f.read())
             file_content = f.read()
             count = file_content.count("Success")
             progress(
-                float(count) / actual_file_count,
+                float(count) / max(actual_file_count, 1),
                 desc=f"Processed {count}/{actual_file_count} audio...",
             )
         sleep(0.5)
         if done[0]:
             break
-    with open("%s/logs/%s/preprocess.log" % (shared.now_dir, exp_dir), "r") as f:
+    with log_path.open("r") as f:
         log = f.read()
     shared.logger.info(log)
     yield log
@@ -135,20 +140,20 @@ def preprocess_dataset(
 
 def preprocess_meta(
     experiment_name: str,
-    audio_dir: str,
-    audio_files: list[str] | None,
+    audio_dir: str | pathlib.Path,
+    audio_files: list[str | pathlib.Path] | None,
     sr: SampleRate,
     n_p: int,
     progress=gr.Progress(),
 ):
-    save_dir = f"{audio_dir}/{experiment_name}"
-    os.makedirs(save_dir, exist_ok=True)
+    save_dir = pathlib.Path(audio_dir) / experiment_name
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     if audio_files is not None:
-        for idx, audio_file in enumerate(audio_files):
-            audio_file_name = os.path.basename(audio_file)
-            shutil.copy(audio_file, f"{save_dir}/{audio_file_name}")
-            progress(idx / len(audio_files), "Copying files...")
+        for idx, audio_file in enumerate(audio_files, start=1):
+            audio_file_path = pathlib.Path(audio_file)
+            shutil.copy(audio_file_path, save_dir / audio_file_path.name)
+            progress(idx / max(len(audio_files), 1), "Copying files...")
 
     for update in preprocess_dataset(
         audio_dir=save_dir,

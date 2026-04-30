@@ -1,14 +1,13 @@
 import multiprocessing
-import os
 import sys
 from pathlib import Path
-from typing import List, Literal, Tuple, cast
+from typing import Literal, cast
 
 from scipy import signal
 from tap import Tap
 
-now_dir = os.getcwd()
-sys.path.append(now_dir)
+now_dir = Path.cwd()
+sys.path.append(str(now_dir))
 import traceback
 
 import librosa
@@ -28,7 +27,7 @@ def parse_bool(value: BoolString) -> bool:
 
 class PreprocessArgs(Tap):
     # Input training audio directory.
-    inp_root: str
+    inp_root: Path
     # Target sample rate.
     sr: int
     # Number of preprocessing workers.
@@ -58,12 +57,12 @@ exp_dir = args.exp_dir
 noparallel = parse_bool(args.noparallel)
 per = args.per
 
-f = open(exp_dir / "preprocess.log", "a+")
+f = (exp_dir / "preprocess.log").open("a+")
 
 
 def println(strr):
     print(strr)
-    f.write("%s\n" % strr)
+    f.write(f"{strr}\n")
     f.flush()
 
 
@@ -120,7 +119,7 @@ class PreProcess:
             1 - self.alpha
         ) * tmp_audio
         wavfile.write(
-            str(self.gt_wavs_dir / f"{idx0}_{idx1}.wav"),
+            self.gt_wavs_dir / f"{idx0}_{idx1}.wav",
             self.sr,
             tmp_audio.astype(np.float32),
         )
@@ -128,14 +127,14 @@ class PreProcess:
             tmp_audio, orig_sr=self.sr, target_sr=16000
         )  # , res_type="soxr_vhq"
         wavfile.write(
-            str(self.wavs16k_dir / f"{idx0}_{idx1}.wav"),
+            self.wavs16k_dir / f"{idx0}_{idx1}.wav",
             16000,
             tmp_audio.astype(np.float32),
         )
 
-    def pipeline(self: "PreProcess", path: str, idx0: int):
+    def pipeline(self: "PreProcess", path: Path, idx0: int):
         try:
-            audio = load_audio(path, self.sr)
+            audio = load_audio(str(path), self.sr)
             # zero phased digital filter cause pre-ringing noise...
             # audio = signal.filtfilt(self.bh, self.ah, audio)
             audio = signal.lfilter(self.bh, self.ah, audio)
@@ -155,20 +154,21 @@ class PreProcess:
                         idx1 += 1
                         break
                 self.norm_write(tmp_audio, idx0, idx1)
-            println("%s\t-> Success" % path)
+            println(f"{path}\t-> Success")
         except:
-            println("%s\t-> %s" % (path, traceback.format_exc()))
+            println(f"{path}\t-> {traceback.format_exc()}")
 
-    def pipeline_mp(self: "PreProcess", infos: List[Tuple[str, int]]) -> None:
+    def pipeline_mp(self: "PreProcess", infos: list[tuple[Path, int]]) -> None:
         for path, idx0 in infos:
             self.pipeline(path, idx0)
 
-    def pipeline_mp_inp_dir(self: "PreProcess", inp_root: str, n_p: int) -> None:
+    def pipeline_mp_inp_dir(self: "PreProcess", inp_root: Path, n_p: int) -> None:
         try:
-            inp_root_path = Path(inp_root)
             infos = [
-                (str(inp_root_path / name), idx)
-                for idx, name in enumerate(sorted(inp_root_path.iterdir(), key=lambda p: p.name))
+                (path, idx)
+                for idx, path in enumerate(
+                    sorted(inp_root.iterdir(), key=lambda p: p.name)
+                )
             ]
             if noparallel:
                 for i in range(n_p):
@@ -184,10 +184,10 @@ class PreProcess:
                 for i in range(n_p):
                     ps[i].join()
         except:
-            println("Fail. %s" % traceback.format_exc())
+            println(f"Fail. {traceback.format_exc()}")
 
 
-def preprocess_trainset(inp_root: str, sr: int, n_p: int, exp_dir: Path, per: float):
+def preprocess_trainset(inp_root: Path, sr: int, n_p: int, exp_dir: Path, per: float):
     pp = PreProcess(sr, exp_dir, per)
     println("start preprocess")
     pp.pipeline_mp_inp_dir(inp_root, n_p)
