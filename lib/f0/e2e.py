@@ -1,8 +1,11 @@
-from typing import Tuple
+from typing import Final, cast
 
 import torch.nn as nn
 
 from .deepunet import DeepUnet
+
+N_MELS: Final = cast(int, getattr(nn, "N_MELS", 128))
+N_CLASS: Final = cast(int, getattr(nn, "N_CLASS", 360))
 
 
 class E2E(nn.Module):
@@ -10,7 +13,7 @@ class E2E(nn.Module):
         self,
         n_blocks: int,
         n_gru: int,
-        kernel_size: Tuple[int, int],
+        kernel_size: tuple[int, int],
         en_de_layers=5,
         inter_layers=4,
         in_channels=1,
@@ -36,7 +39,7 @@ class E2E(nn.Module):
             )
         else:
             self.fc = nn.Sequential(
-                nn.Linear(3 * nn.N_MELS, nn.N_CLASS),
+                nn.Linear(3 * N_MELS, N_CLASS),
                 nn.Dropout(0.25),
                 nn.Sigmoid(),
             )

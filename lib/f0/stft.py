@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Literal, overload, cast
 
 import numpy as np
 import torch
@@ -10,11 +10,11 @@ from scipy.signal import get_window
 class STFT(torch.nn.Module):
     def __init__(
         self,
-        filter_length=1024,
-        hop_length=512,
-        win_length: Optional[int] = None,
-        window="hann",
-        use_torch_stft=True,
+        filter_length: int = 1024,
+        hop_length: int = 512,
+        win_length: int | None = None,
+        window: str = "hann",
+        use_torch_stft: bool = True,
     ):
         """
         This module implements an STFT using 1D convolution and 1D transpose convolutions.
@@ -35,8 +35,8 @@ class STFT(torch.nn.Module):
         self.filter_length = filter_length
         self.hop_length = hop_length
         self.pad_amount = int(self.filter_length / 2)
-        self.win_length = win_length
-        self.hann_window = {}
+        self.win_length = filter_length if win_length is None else win_length
+        self.hann_window: dict[str, torch.Tensor] = {}
         self.use_torch_stft = use_torch_stft
 
         if use_torch_stft:
@@ -51,12 +51,10 @@ class STFT(torch.nn.Module):
         forward_basis = torch.FloatTensor(fourier_basis)
         inverse_basis = torch.FloatTensor(np.linalg.pinv(fourier_basis))
 
-        if win_length is None or not win_length:
-            win_length = filter_length
-        assert filter_length >= win_length
+        assert filter_length >= self.win_length
 
         # get window and zero center pad it to filter_length
-        fft_window = get_window(window, win_length, fftbins=True)
+        fft_window = get_window(window, self.win_length, fftbins=True)
         fft_window = pad_center(fft_window, size=filter_length)
         fft_window = torch.from_numpy(fft_window).float()
 
@@ -68,6 +66,18 @@ class STFT(torch.nn.Module):
         self.register_buffer("inverse_basis", inverse_basis.float())
         self.register_buffer("fft_window", fft_window.float())
 
+    @property
+    def forward_basis(self) -> torch.Tensor:
+        return cast(torch.Tensor, self._buffers["forward_basis"])
+
+    @property
+    def inverse_basis(self) -> torch.Tensor:
+        return cast(torch.Tensor, self._buffers["inverse_basis"])
+
+    @property
+    def fft_window(self) -> torch.Tensor:
+        return cast(torch.Tensor, self._buffers["fft_window"])
+
     def __call__(
         self,
         input_data: torch.Tensor,
@@ -77,11 +87,25 @@ class STFT(torch.nn.Module):
     ) -> torch.Tensor:
         return super().__call__(input_data, keyshift, speed, center)
 
+    @overload
     def transform(
         self,
         input_data: torch.Tensor,
-        return_phase=False,
-    ) -> Tuple[Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]]:
+        return_phase: Literal[False] = False,
+    ) -> torch.Tensor: ...
+
+    @overload
+    def transform(
+        self,
+        input_data: torch.Tensor,
+        return_phase: Literal[True],
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+
+    def transform(
+        self,
+        input_data: torch.Tensor,
+        return_phase: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Take input data (audio) to STFT domain.
 
         Arguments:
@@ -163,7 +187,7 @@ class STFT(torch.nn.Module):
         win_length_new = int(np.round(self.win_length * factor))
         hop_length_new = int(np.round(self.hop_length * speed))
         if self.use_torch_stft:
-            keyshift_key = str(keyshift) + "_" + str(input_data.device)
+            keyshift_key = f"{keyshift}_{input_data.device}"
             if keyshift_key not in self.hann_window:
                 self.hann_window[keyshift_key] = torch.hann_window(
                     self.win_length,
@@ -179,16 +203,3 @@ class STFT(torch.nn.Module):
             )
             return torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
         return self.transform(input_data)
-        """Take input data (audio) to STFT domain and then back to audio.
-
-        Arguments:
-            input_data {tensor} -- Tensor of floats, with shape (num_batch, num_samples)
-
-        Returns:
-            reconstruction {tensor} -- Reconstructed audio given magnitude and phase. Of
-                shape (num_batch, num_samples)
-        reconstruction = self.inverse(
-            self.transform(input_data, return_phase=True),
-        )
-        return reconstruction
-        """

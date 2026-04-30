@@ -1,6 +1,6 @@
 from math import log
 from pathlib import Path
-from typing import Optional, Union, Literal, Tuple
+from typing import Literal
 
 from numba import jit
 import numpy as np
@@ -15,16 +15,17 @@ def post_process(
     manual_x_pad: int,
     f0_mel_min: float,
     f0_mel_max: float,
-    manual_f0: Optional[Union[np.ndarray, list]] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    manual_f0: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     f0 = np.multiply(f0, pow(2, f0_up_key / 12))
     # with open("test.txt","w")as f:f.write("\n".join([str(i)for i in f0.tolist()]))
     if manual_f0 is not None:
         delta_t = np.round(
             (manual_f0[:, 0].max() - manual_f0[:, 0].min()) * tf0 + 1
         ).astype("int16")
-        replace_f0 = np.interp(
-            list(range(delta_t)), manual_f0[:, 0] * 100, manual_f0[:, 1]
+        replace_f0 = np.asarray(
+            np.interp(np.arange(delta_t), manual_f0[:, 0] * 100, manual_f0[:, 1]),
+            dtype=np.float64,
         )
         shape = f0[manual_x_pad * tf0 : manual_x_pad * tf0 + len(replace_f0)].shape[0]
         f0[manual_x_pad * tf0 : manual_x_pad * tf0 + len(replace_f0)] = replace_f0[
@@ -47,28 +48,29 @@ class Generator:
         rmvpe_root: Path,
         is_half: bool,
         x_pad: int,
-        device="cpu",
-        window=160,
-        sr=16000,
+        device: str | torch.device | int = "cpu",
+        window: int = 160,
+        sr: int = 16000,
     ):
         self.rmvpe_root = rmvpe_root
         self.is_half = is_half
         self.x_pad = x_pad
-        self.device = device
+        self.device = str(device)
         self.window = window
         self.sr = sr
 
     def calculate(
         self,
         x: np.ndarray,
-        p_len: Optional[int],
+        p_len: int | None,
         f0_up_key: int,
         f0_method: Literal["pm", "dio", "harvest", "crepe", "rmvpe", "fcpe"],
-        filter_radius: Optional[Union[int, float]],
-        manual_f0: Optional[Union[np.ndarray, list]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        filter_radius: int | float | None,
+        manual_f0: np.ndarray | list[list[float]] | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         if torch.is_tensor(x):
             x = x.cpu().numpy()
+        manual_f0_array = None if manual_f0 is None else np.asarray(manual_f0)
         f0_min = 50
         f0_max = 1100
         if f0_method == "pm":
@@ -137,5 +139,5 @@ class Generator:
             self.x_pad,
             1127 * log(1 + f0_min / 700),
             1127 * log(1 + f0_max / 700),
-            manual_f0,
+            manual_f0_array,
         )

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import cast
 
 import torch
 import numpy as np
@@ -15,11 +15,11 @@ class MelSpectrogram(torch.nn.Module):
         sampling_rate: int,
         win_length: int,
         hop_length: int,
-        n_fft: Optional[int] = None,
+        n_fft: int | None = None,
         mel_fmin: int = 0,
-        mel_fmax: int = None,
+        mel_fmax: int | None = None,
         clamp: float = 1e-5,
-        device=torch.device("cpu"),
+        device: torch.device | str = torch.device("cpu"),
     ):
         super().__init__()
         if n_fft is None:
@@ -47,6 +47,10 @@ class MelSpectrogram(torch.nn.Module):
             window="hann",
             use_torch_stft="privateuseone" not in str(device),
         ).to(device)
+
+    @property
+    def mel_basis(self) -> torch.Tensor:
+        return cast(torch.Tensor, self._buffers["mel_basis"])
 
     def forward(
         self,

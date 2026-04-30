@@ -1,5 +1,4 @@
 import math
-from typing import Optional
 
 import torch
 from torch import nn
@@ -13,9 +12,9 @@ class MultiHeadAttention(nn.Module):
         out_channels: int,
         n_heads: int,
         p_dropout: float = 0.0,
-        window_size: Optional[int] = None,
+        window_size: int | None = None,
         heads_share: bool = True,
-        block_length: Optional[int] = None,
+        block_length: int | None = None,
         proximal_bias: bool = False,
         proximal_init: bool = False,
     ):
@@ -58,13 +57,14 @@ class MultiHeadAttention(nn.Module):
         if proximal_init:
             with torch.no_grad():
                 self.conv_k.weight.copy_(self.conv_q.weight)
-                self.conv_k.bias.copy_(self.conv_q.bias)
+                if self.conv_k.bias is not None and self.conv_q.bias is not None:
+                    self.conv_k.bias.copy_(self.conv_q.bias)
 
     def __call__(
         self,
         x: torch.Tensor,
         c: torch.Tensor,
-        attn_mask: Optional[torch.Tensor] = None,
+        attn_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return super().__call__(x, c, attn_mask=attn_mask)
 
@@ -72,7 +72,7 @@ class MultiHeadAttention(nn.Module):
         self,
         x: torch.Tensor,
         c: torch.Tensor,
-        attn_mask: Optional[torch.Tensor] = None,
+        attn_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         q = self.conv_q(x)
         k = self.conv_k(c)
@@ -88,7 +88,7 @@ class MultiHeadAttention(nn.Module):
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
+        mask: torch.Tensor | None = None,
     ):
         # reshape [b, d, t] -> [b, n_h, t, d_k]
         b, d, t_s = key.size()
@@ -159,11 +159,16 @@ class MultiHeadAttention(nn.Module):
         ret = torch.matmul(x, y.unsqueeze(0).transpose(-2, -1))
         return ret
 
-    def _get_relative_embeddings(self, relative_embeddings, length: int):
+    def _get_relative_embeddings(
+        self, relative_embeddings: torch.Tensor, length: int
+    ) -> torch.Tensor:
         # max_relative_position = 2 * self.window_size + 1
         # Pad first before slice to avoid using cond ops.
-        pad_length: int = max(length - (self.window_size + 1), 0)
-        slice_start_position = max((self.window_size + 1) - length, 0)
+        window_size = self.window_size
+        if window_size is None:
+            raise RuntimeError("Relative embeddings require window_size")
+        pad_length: int = max(length - (window_size + 1), 0)
+        slice_start_position = max((window_size + 1) - length, 0)
         slice_end_position = slice_start_position + 2 * length - 1
         if pad_length > 0:
             padded_relative_embeddings = F.pad(
@@ -237,7 +242,7 @@ class FFN(nn.Module):
         filter_channels: int,
         kernel_size: int,
         p_dropout: float = 0.0,
-        activation: Optional[str] = None,
+        activation: str | None = None,
         causal: bool = False,
     ):
         super(FFN, self).__init__()

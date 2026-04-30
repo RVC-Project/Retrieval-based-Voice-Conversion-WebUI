@@ -1,7 +1,7 @@
 from io import BytesIO
 import os
-from typing import Union, Literal, Optional
 from pathlib import Path
+from typing import Literal, Protocol, cast
 
 import fairseq
 import faiss
@@ -15,17 +15,34 @@ from lib.f0 import Generator
 from lib.synthesizer import load_synthesizer
 from lib.types import FileLike
 
+type F0Method = Literal["crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"]
+type F0Pair = tuple[np.ndarray, np.ndarray]
+
+
+class InferModule(Protocol):
+    def infer(
+        self,
+        phone: torch.Tensor,
+        phone_lengths: torch.Tensor,
+        sid: torch.Tensor,
+        pitch: torch.Tensor | None = None,
+        pitchf: torch.Tensor | None = None,
+        skip_head: int | None = None,
+        return_length: int | None = None,
+        return_length2: int | None = None,
+    ) -> torch.Tensor: ...
+
 
 class RVC:
     def __init__(
         self,
-        key: Union[int, float],
-        formant: Union[int, float],
+        key: int | float,
+        formant: int | float,
         pth_path: FileLike,  # type: ignore
         index_path: str,
-        index_rate: Union[int, float],
-        n_cpu: int = os.cpu_count(),
-        device: Union[str, torch.device, int] = "cpu",
+        index_rate: int | float,
+        n_cpu: int | None = None,
+        device: str | torch.device | int = "cpu",
         use_jit: bool = False,
         is_half: bool = False,
         is_dml: bool = False,
@@ -48,7 +65,7 @@ class RVC:
         self.f0_max = 1100
         self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
         self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
-        self.n_cpu = n_cpu
+        self.n_cpu = n_cpu or 1
         self.use_jit = use_jit
         self.is_half = is_half
 
@@ -91,7 +108,7 @@ class RVC:
         hubert_model.eval()
         self.hubert = hubert_model
 
-        self.net_g: Optional[nn.Module] = None
+        self.net_g: nn.Module | None = None
 
         def set_default_model():
             self.net_g, cpt = load_synthesizer(self.pth_path, self.device)
@@ -115,7 +132,12 @@ class RVC:
             from lib.jit import get_jit_model
             from lib.synthesizer import synthesizer_jit_export
 
-            cpt = get_jit_model(self.pth_path, self.is_half, synthesizer_jit_export)
+            if not isinstance(self.pth_path, str | os.PathLike):
+                raise TypeError("JIT model loading requires a filesystem path")
+            model_path = Path(cast(str | os.PathLike[str], self.pth_path))
+            cpt = get_jit_model(
+                model_path, self.is_half, str(self.device), synthesizer_jit_export
+            )
 
             self.tgt_sr = cpt["config"][-1]
             self.if_f0 = cpt.get("f0", 1)
@@ -132,6 +154,9 @@ class RVC:
             set_jit_model()
         else:
             set_default_model()
+
+        if self.net_g is None:
+            raise RuntimeError("RVC model failed to load")
 
     def set_key(self, new_key):
         self.f0_up_key = new_key
@@ -151,9 +176,10 @@ class RVC:
         block_frame_16k: int,
         skip_head: int,
         return_length: int,
-        f0method: Union[tuple, str],
+        f0method: F0Pair | str,
         protect: float = 1.0,
-    ) -> np.ndarray:
+    ) -> torch.Tensor:
+        feats0: torch.Tensor | None = None
         with torch.no_grad():
             if self.is_half:
                 feats = input_wav.half()
@@ -210,15 +236,18 @@ class RVC:
             pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
         elif self.if_f0 == 1:
+            if f0method not in ("crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"):
+                raise ValueError(f"Unsupported f0 method: {f0method}")
+            method = cast(F0Method, f0method)
             f0_extractor_frame = block_frame_16k + 800
-            if f0method == "rmvpe":
+            if method == "rmvpe":
                 f0_extractor_frame = (
                     5120 * ((f0_extractor_frame - 1) // 5120 + 1) - self.window
                 )
             pitch, pitchf = self._get_f0(
                 input_wav[-f0_extractor_frame:],
                 self.f0_up_key - self.formant_shift,
-                method=f0method,
+                method=method,
             )
             shift = block_frame_16k // self.window
             self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()
@@ -232,7 +261,12 @@ class RVC:
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]
-        if protect < 0.5 and pitch is not None and pitchf is not None:
+        if (
+            protect < 0.5
+            and pitch is not None
+            and pitchf is not None
+            and feats0 is not None
+        ):
             feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
                 0, 2, 1
             )
@@ -245,9 +279,10 @@ class RVC:
             feats = feats.to(feats0.dtype)
         p_len = torch.LongTensor([p_len]).to(self.device)
         sid = torch.LongTensor([0]).to(self.device)
+        net_g = cast(InferModule, self.net_g)
         with torch.no_grad():
             infered_audio = (
-                self.net_g.infer(
+                net_g.infer(
                     feats,
                     p_len,
                     sid,
@@ -276,11 +311,13 @@ class RVC:
     def _get_f0(
         self,
         x: torch.Tensor,
-        f0_up_key: Union[int, float],
-        filter_radius: Optional[Union[int, float]] = None,
+        f0_up_key: int | float,
+        filter_radius: int | float | None = None,
         method: Literal["crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"] = "fcpe",
     ):
-        c, f = self.f0_gen.calculate(x, None, f0_up_key, method, filter_radius)
+        c, f = self.f0_gen.calculate(
+            x.cpu().numpy(), None, int(round(f0_up_key)), method, filter_radius
+        )
         if not torch.is_tensor(c):
             c = torch.from_numpy(c)
         if not torch.is_tensor(f):

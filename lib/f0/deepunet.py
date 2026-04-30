@@ -1,5 +1,3 @@
-from typing import List, Tuple, Union
-
 import torch
 import torch.nn as nn
 
@@ -51,7 +49,7 @@ class Encoder(nn.Module):
         in_channels: int,
         in_size: int,
         n_encoders: int,
-        kernel_size: Tuple[int, int],
+        kernel_size: tuple[int, int],
         n_blocks: int,
         out_channels=16,
         momentum=0.01,
@@ -73,11 +71,11 @@ class Encoder(nn.Module):
         self.out_size = in_size
         self.out_channel = out_channels
 
-    def __call__(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
         return super().__call__(x)
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
-        concat_tensors: List[torch.Tensor] = []
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
+        concat_tensors: list[torch.Tensor] = []
         x = self.bn(x)
         for layer in self.layers:
             t, x = layer(x)
@@ -90,7 +88,7 @@ class ResEncoderBlock(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Tuple[int, int],
+        kernel_size: tuple[int, int] | None,
         n_blocks=1,
         momentum=0.01,
     ):
@@ -103,13 +101,13 @@ class ResEncoderBlock(nn.Module):
         for _ in range(n_blocks - 1):
             self.conv.append(ConvBlockRes(out_channels, out_channels, momentum))
 
-        if self.kernel_size is not None:
+        if kernel_size is not None:
             self.pool = nn.AvgPool2d(kernel_size=kernel_size)
 
     def forward(
         self,
         x: torch.Tensor,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         for conv in self.conv:
             x = conv(x)
         if self.kernel_size is not None:
@@ -180,7 +178,7 @@ class Decoder(nn.Module):
             )
             in_channels = out_channels
 
-    def forward(self, x: torch.Tensor, concat_tensors: List[torch.Tensor]):
+    def forward(self, x: torch.Tensor, concat_tensors: list[torch.Tensor]):
         for i, layer in enumerate(self.layers):
             x = layer(x, concat_tensors[-1 - i])
         return x
@@ -189,7 +187,7 @@ class Decoder(nn.Module):
 class DeepUnet(nn.Module):
     def __init__(
         self,
-        kernel_size: Tuple[int, int],
+        kernel_size: tuple[int, int],
         n_blocks: int,
         en_de_layers=5,
         inter_layers=4,

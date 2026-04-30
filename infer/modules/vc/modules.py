@@ -2,7 +2,7 @@ from lib.types import PitchMethod
 import traceback
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 import gradio as gr
 import resampy
 
@@ -63,7 +63,7 @@ class VC:
             ]
         ] = None
         self.pipeline: Optional[Pipeline] = None
-        self.cpt: Optional[Dict[str, Any]] = None
+        self.cpt: dict[str, Any] | None = None
         self.version: str = "UNKNOWN"
         self.if_f0: Optional[int] = None
         self.hubert_model: Optional[HubertModel] = None
@@ -87,7 +87,7 @@ class VC:
                 {"choices": [], "value": "", "__type__": "update"},
             )
         # self.pipeline
-        logger.info("Get sid: " + sid)
+        logger.info(f"Get sid: {sid}")
 
         to_return_protect0 = {
             "visible": self.if_f0 != 0,
@@ -101,30 +101,32 @@ class VC:
             if self.hubert_model is not None:
                 # Considering polling, we need to add a check to see if sid switched from having a model to not having one
                 logger.info("Clean model cache")
-                del (self.net_g, self.n_spk, self.hubert_model, self.tgt_sr)  # ,cpt
                 self.hubert_model = self.net_g = self.n_spk = self.hubert_model = (
                     self.tgt_sr
                 ) = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 # You just have to follow this instruction to clear it.
-                self.if_f0 = self.cpt.get("f0", 1)
-                self.version = self.cpt.get("version", "v1")
-                if self.version == "v1":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs256NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs256NSFsid_nono(*self.cpt["config"])
-                elif self.version == "v2":
-                    if self.if_f0 == 1:
-                        self.net_g = SynthesizerTrnMs768NSFsid(
-                            *self.cpt["config"], is_half=self.config.is_half
-                        )
-                    else:
-                        self.net_g = SynthesizerTrnMs768NSFsid_nono(*self.cpt["config"])
-                del self.net_g, self.cpt
+                cpt = self.cpt
+                if cpt is not None:
+                    self.if_f0 = cpt.get("f0", 1)
+                    self.version = cpt.get("version", "v1")
+                    if self.version == "v1":
+                        if self.if_f0 == 1:
+                            self.net_g = SynthesizerTrnMs256NSFsid(
+                                *cpt["config"], is_half=self.config.is_half
+                            )
+                        else:
+                            self.net_g = SynthesizerTrnMs256NSFsid_nono(*cpt["config"])
+                    elif self.version == "v2":
+                        if self.if_f0 == 1:
+                            self.net_g = SynthesizerTrnMs768NSFsid(
+                                *cpt["config"], is_half=self.config.is_half
+                            )
+                        else:
+                            self.net_g = SynthesizerTrnMs768NSFsid_nono(*cpt["config"])
+                self.net_g = None
+                self.cpt = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
             return (
@@ -175,7 +177,7 @@ class VC:
         self.pipeline = Pipeline(self.tgt_sr, self.config)
         # n_spk = self.cpt["config"][-3]
         index = {"value": get_index_path_from_model(sid), "__type__": "update"}
-        logger.info("Select index: " + index["value"])
+        logger.info(f"Select index: {index['value']}")
         res = (
             (
                 to_return_protect0,
@@ -199,7 +201,7 @@ class VC:
         rms_mix_rate: float,
         protect: float,
         progress: gr.Progress = gr.Progress(),
-    ) -> Tuple[str, Optional[Tuple[int, np.ndarray]]]:
+    ) -> tuple[str, tuple[int, np.ndarray] | None]:
         if self.net_g is None or self.pipeline is None:
             return "Model not loaded. Please select a valid SID.", None
         file_index = None
@@ -224,7 +226,7 @@ class VC:
             audio_max: np.float64 = np.abs(audio).max() / 0.95
             if audio_max > 1:
                 audio /= audio_max
-            times = [0, 0, 0]
+            times = [0.0, 0.0, 0.0]
             if self.hubert_model is None:
                 self.hubert_model = load_hubert(self.config)
             if file_index is None:
@@ -253,8 +255,6 @@ class VC:
             )
             if self.tgt_sr != resample_sr >= 16000:
                 tgt_sr = resample_sr
-            else:
-                tgt_sr = self.tgt_sr
             index_info = (
                 f"Using Index: \n{file_index}"
                 if file_index and Path(file_index).exists()
@@ -271,7 +271,7 @@ class VC:
 
     def vc_realtime(
         self: "VC",
-        sr_and_audio: Optional[Tuple[int, np.ndarray]],
+        sr_and_audio: tuple[int, np.ndarray] | None,
         f0_up_key: int,
         f0_method: PitchMethod,
         file_index: Optional[str],  # Path to .index file from dropdown
@@ -281,7 +281,7 @@ class VC:
         protect: float,
         block_size: int = 5120,  # default chunk size in samples at 16kHz (~320ms)
         crossfade_size: int = 512,  # overlap for smoother transitions
-    ) -> Optional[Tuple[int, np.ndarray]]:
+    ) -> tuple[int, np.ndarray] | None:
         """
         Real-time voice conversion with buffering and pitch caching.
         Reuses vc_single() internally to avoid code duplication.

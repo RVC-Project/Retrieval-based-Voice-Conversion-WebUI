@@ -346,7 +346,7 @@ def get_hparams(init=True):
         config = json.load(f)
 
     hparams = HParams(**config)
-    hparams.model_dir = hparams.experiment_dir = experiment_dir
+    hparams.model_dir = hparams.experiment_dir = str(experiment_dir)
     hparams.save_every_epoch = args.save_every_epoch
     hparams.name = name
     hparams.total_epoch = args.total_epoch
@@ -371,7 +371,7 @@ def get_hparams_from_dir(model_dir: Path):
     config = json.loads(data)
 
     hparams = HParams(**config)
-    hparams.model_dir = model_dir
+    hparams.model_dir = str(model_dir)
     return hparams
 
 
