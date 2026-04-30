@@ -28,6 +28,8 @@ ffmpeg.*
 ffprobe.*
 
 *.pyi
+!onnxsim.pyi
+!parselmouth.pyi
 
 /datasets
 .gradio/flagged/dataset1.csv
