@@ -45,7 +45,7 @@ class MelSpectrogram(torch.nn.Module):
             hop_length=hop_length,
             win_length=win_length,
             window="hann",
-            use_torch_stft="privateuseone" not in str(device),
+            use_torch_stft=True,
         ).to(device)
 
     @property

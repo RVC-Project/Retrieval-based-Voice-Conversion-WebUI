@@ -485,26 +485,16 @@ class MelSpectrogram(torch.nn.Module):
             self.hann_window[keyshift_key] = torch.hann_window(win_length_new).to(
                 audio.device
             )
-        if "privateuseone" in str(audio.device):
-            if not hasattr(self, "stft"):
-                self.stft = STFT(
-                    filter_length=n_fft_new,
-                    hop_length=hop_length_new,
-                    win_length=win_length_new,
-                    window="hann",
-                ).to(audio.device)
-            magnitude = self.stft.transform(audio)
-        else:
-            fft = torch.stft(
-                audio,
-                n_fft=n_fft_new,
-                hop_length=hop_length_new,
-                win_length=win_length_new,
-                window=self.hann_window[keyshift_key],
-                center=center,
-                return_complex=True,
-            )
-            magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
+        fft = torch.stft(
+            audio,
+            n_fft=n_fft_new,
+            hop_length=hop_length_new,
+            win_length=win_length_new,
+            window=self.hann_window[keyshift_key],
+            center=center,
+            return_complex=True,
+        )
+        magnitude = torch.sqrt(fft.real.pow(2) + fft.imag.pow(2))
         if keyshift != 0:
             size = self.n_fft // 2 + 1
             resize = magnitude.size(1)
@@ -542,69 +532,60 @@ class RMVPE:
         self.mel_extractor = MelSpectrogram(
             is_half, 128, 16000, 1024, 160, None, 30, 8000
         ).to(device)
-        if "privateuseone" in str(device):
-            import onnxruntime as ort
+        if str(self.device) == "cuda":
+            self.device = torch.device("cuda:0")
+            device = self.device
 
-            ort_session = ort.InferenceSession(
-                "%s/rmvpe.onnx" % os.environ["rmvpe_root"],
-                providers=["DmlExecutionProvider"],
-            )
-            self.model = ort_session
-        else:
-            if str(self.device) == "cuda":
-                self.device = torch.device("cuda:0")
-                device = self.device
-
-            def get_jit_model() -> torch.jit.ScriptModule:
-                jit_model_path = model_path.rstrip(".pth")
-                jit_model_path += ".half.jit" if is_half else ".jit"
-                reload = False
-                ckpt = None
-                if os.path.exists(jit_model_path):
-                    ckpt = jit.load(jit_model_path)
-                    model_device = ckpt["device"]
-                    if model_device != str(self.device):
-                        reload = True
-                else:
+        def get_jit_model() -> torch.jit.ScriptModule:
+            jit_model_path = model_path.rstrip(".pth")
+            jit_model_path += ".half.jit" if is_half else ".jit"
+            reload = False
+            ckpt = None
+            if os.path.exists(jit_model_path):
+                ckpt = jit.load(jit_model_path)
+                model_device = ckpt["device"]
+                if model_device != str(self.device):
                     reload = True
-
-                if reload:
-                    ckpt = jit.rmvpe_jit_export(
-                        model_path=model_path,
-                        mode="script",
-                        inputs_path=None,  # type: ignore[bad-argument-type]
-                        save_path=jit_model_path,
-                        device=device,
-                        is_half=is_half,
-                    )
-                assert ckpt is not None
-                model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
-                return model
-
-            def get_default_model() -> E2E:
-                model = E2E(4, 1, (2, 2))
-                ckpt = torch.load(model_path, map_location="cpu", weights_only=False)
-                model.load_state_dict(ckpt)
-                model.eval()
-                if is_half:
-                    model = model.half()
-                else:
-                    model = model.float()
-                return model
-
-            if use_jit:
-                if is_half and "cpu" in str(self.device):
-                    logger.warning(
-                        "Use default rmvpe model. \
-                                 Jit is not supported on the CPU for half floating point"
-                    )
-                    self.model = get_default_model()
-                else:
-                    self.model = get_jit_model()
             else:
-                self.model = get_default_model()
+                reload = True
 
-            self.model = cast(nn.Module, self.model).to(device)
+            if reload:
+                ckpt = jit.rmvpe_jit_export(
+                    model_path=model_path,
+                    mode="script",
+                    inputs_path=None,  # type: ignore[bad-argument-type]
+                    save_path=jit_model_path,
+                    device=device,
+                    is_half=is_half,
+                )
+            assert ckpt is not None
+            model = torch.jit.load(BytesIO(ckpt["model"]), map_location=device)
+            return model
+
+        def get_default_model() -> E2E:
+            model = E2E(4, 1, (2, 2))
+            ckpt = torch.load(model_path, map_location="cpu", weights_only=False)
+            model.load_state_dict(ckpt)
+            model.eval()
+            if is_half:
+                model = model.half()
+            else:
+                model = model.float()
+            return model
+
+        if use_jit:
+            if is_half and "cpu" in str(self.device):
+                logger.warning(
+                    "Use default rmvpe model. "
+                    "Jit is not supported on the CPU for half floating point"
+                )
+                self.model = get_default_model()
+            else:
+                self.model = get_jit_model()
+        else:
+            self.model = get_default_model()
+
+        self.model = cast(nn.Module, self.model).to(device)
         cents_mapping = 20 * np.arange(360) + 1997.3794084376191
         self.cents_mapping = np.pad(cents_mapping, (4, 4))  # 368
 
@@ -614,28 +595,15 @@ class RMVPE:
             n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
             if n_pad > 0:
                 mel = F.pad(mel, (0, n_pad), mode="constant")
-            if "privateuseone" in str(self.device):
-                onnx_model = self.model
-                onnx_input_name = onnx_model.get_inputs()[0].name  # type: ignore[attr-defined]
-                onnx_outputs_names = onnx_model.get_outputs()[0].name  # type: ignore[attr-defined]
-                hidden = cast(
-                    np.ndarray,
-                    onnx_model.run(  # type: ignore[attr-defined]
-                    [onnx_outputs_names],
-                    input_feed={onnx_input_name: mel.cpu().numpy()},
-                    )[0],
+            try:
+                mel = mel.half() if self.is_half else mel.float()
+            except Exception:
+                mel = mel.float()
+                print(
+                    "Warning: could not convert mel spectrogram to half — keeping float32."
                 )
-                return hidden[:, :n_frames]
-            else:
-                try:
-                    mel = mel.half() if self.is_half else mel.float()
-                except Exception:
-                    mel = mel.float()
-                    print(
-                        "Warning: could not convert mel spectrogram to half — keeping float32."
-                    )
-                hidden = cast(torch.Tensor, cast(nn.Module, self.model)(mel))
-                return hidden[:, :n_frames]
+            hidden = cast(torch.Tensor, cast(nn.Module, self.model)(mel))
+            return hidden[:, :n_frames]
 
     def decode(self, hidden: np.ndarray, thred: float = 0.03) -> np.ndarray:
         cents_pred = self.to_local_average_cents(hidden, thred=thred)
@@ -644,33 +612,6 @@ class RMVPE:
         # f0 = np.array([10 * (2 ** (cent_pred / 1200)) if cent_pred else 0 for cent_pred in cents_pred])
         return f0
 
-    # def infer_from_audio(self, audio, thred=0.03):
-    #     # torch.cuda.synchronize()
-    #     # t0 = ttime()
-    #     if not torch.is_tensor(audio):
-    #         audio = torch.from_numpy(audio)
-    #     mel = self.mel_extractor(
-    #         audio.float().to(self.device).unsqueeze(0), center=True
-    #     )
-    #     # print(123123123,mel.device.type)
-    #     # torch.cuda.synchronize()
-    #     # t1 = ttime()
-    #     hidden = self.mel2hidden(mel)
-    #     # torch.cuda.synchronize()
-    #     # t2 = ttime()
-    #     # print(234234,hidden.device.type)
-    #     if "privateuseone" not in str(self.device):
-    #         hidden = hidden.squeeze(0).cpu().numpy()
-    #     else:
-    #         hidden = hidden[0]
-    #     if self.is_half == True:
-    #         hidden = hidden.astype("float32")
-
-    #     f0 = self.decode(hidden, thred=thred)
-    #     # torch.cuda.synchronize()
-    #     # t3 = ttime()
-    #     # print("hmvpe:%s\t%s\t%s\t%s"%(t1-t0,t2-t1,t3-t2,t3-t0))
-    #     return f0
     def infer_from_audio(
         self,
         audio: AudioInput,
@@ -706,10 +647,7 @@ class RMVPE:
                 audio.float().to(self.device).unsqueeze(0), center=True
             )
             hidden = self.mel2hidden(mel)
-            if "privateuseone" not in str(self.device):
-                hidden_np = cast(torch.Tensor, hidden).squeeze(0).cpu().numpy()
-            else:
-                hidden_np = cast(np.ndarray, hidden)[0]
+            hidden_np = cast(torch.Tensor, hidden).squeeze(0).cpu().numpy()
             if self.is_half:
                 hidden_np = hidden_np.astype("float32")
             f0 = self.decode(hidden_np, thred=thred)
@@ -830,12 +768,7 @@ class RMVPE:
 
         combined_hidden_final = torch.cat(final_hidden_list, dim=0)
 
-        if "privateuseone" not in str(self.device):
-            combined_hidden_np = combined_hidden_final.cpu().numpy()
-        else:
-            combined_hidden_np = cast(np.ndarray, combined_hidden_final)[
-                0
-            ]  # Assuming onnx returns batch dim
+        combined_hidden_np = combined_hidden_final.cpu().numpy()
         if self.is_half:
             combined_hidden_np = combined_hidden_np.astype("float32")
 

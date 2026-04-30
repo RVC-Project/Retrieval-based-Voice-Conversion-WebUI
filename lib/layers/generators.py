@@ -211,6 +211,4 @@ class SineGenerator(torch.nn.Module):
         # generate uv signal
         uv = torch.ones_like(f0)
         uv = uv * (f0 > self.voiced_threshold)
-        if uv.device.type == "privateuseone":  # for DirectML
-            uv = uv.float()
         return uv

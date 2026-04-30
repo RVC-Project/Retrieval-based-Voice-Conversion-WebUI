@@ -95,28 +95,16 @@ class RMVPE(F0Predictor):
             device=self.device,
         ).to(self.device)
 
-        if "privateuseone" in str(self.device):
-            import onnxruntime as ort
+        def rmvpe_jit_model():
+            ckpt = get_jit_model(Path(model_path), is_half, self.device, rmvpe_jit_export)
+            model = torch.jit.load(BytesIO(ckpt["model"]), map_location=self.device)
+            model = model.to(self.device)
+            return model
 
-            self.model = cast(
-                OnnxModel,
-                ort.InferenceSession(
-                    f"{os.environ['rmvpe_root']}/rmvpe.onnx",
-                    providers=["DmlExecutionProvider"],
-                ),
-            )
+        if use_jit and not (is_half and "cpu" in str(self.device)):
+            self.model = rmvpe_jit_model()
         else:
-
-            def rmvpe_jit_model():
-                ckpt = get_jit_model(Path(model_path), is_half, self.device, rmvpe_jit_export)
-                model = torch.jit.load(BytesIO(ckpt["model"]), map_location=self.device)
-                model = model.to(self.device)
-                return model
-
-            if use_jit and not (is_half and "cpu" in str(self.device)):
-                self.model = rmvpe_jit_model()
-            else:
-                self.model = get_rmvpe(model_path, self.device, is_half)
+            self.model = get_rmvpe(model_path, self.device, is_half)
 
     def compute_f0(
         self,
@@ -168,18 +156,9 @@ class RMVPE(F0Predictor):
             n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
             if n_pad > 0:
                 mel = F.pad(mel, (0, n_pad), mode="constant")
-            if "privateuseone" in str(self.device):
-                onnx_model = cast(OnnxModel, self.model)
-                onnx_input_name = onnx_model.get_inputs()[0].name
-                onnx_outputs_names = onnx_model.get_outputs()[0].name
-                hidden = onnx_model.run(
-                    [onnx_outputs_names],
-                    input_feed={onnx_input_name: mel.cpu().numpy()},
-                )[0]
-            else:
-                mel = mel.half() if self.is_half else mel.float()
-                torch_model = cast(torch.nn.Module, self.model)
-                hidden = torch_model(mel)
+            mel = mel.half() if self.is_half else mel.float()
+            torch_model = cast(torch.nn.Module, self.model)
+            hidden = torch_model(mel)
             return hidden[:, :n_frames]
 
     def _decode(self, hidden, thred=0.03):

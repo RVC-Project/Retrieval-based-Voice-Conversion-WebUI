@@ -14,8 +14,6 @@ class CRePE(F0Predictor):
         sampling_rate=44100,
         device="cpu",
     ):
-        if "privateuseone" in str(device):
-            device = "cpu"
         super().__init__(
             hop_length,
             f0_min,

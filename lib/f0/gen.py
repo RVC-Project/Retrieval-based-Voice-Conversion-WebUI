@@ -114,9 +114,6 @@ class Generator:
                     # use_jit=self.config.use_jit,
                 )
             f0 = self.rmvpe.compute_f0(x, p_len=p_len, filter_radius=0.03)
-            if "privateuseone" in str(self.device):  # clean ortruntime memory
-                del self.rmvpe.model
-                del self.rmvpe
         elif f0_method == "fcpe":
             if not hasattr(self, "fcpe"):
                 from .fcpe import FCPE

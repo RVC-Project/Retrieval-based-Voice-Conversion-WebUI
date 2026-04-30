@@ -16,14 +16,12 @@ class Model:
     def __init__(
         self,
         path: ModelPath,
-        device: Literal["cpu", "cuda", "dml"] = "cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         if device == "cpu":
             providers = ["CPUExecutionProvider"]
         elif device == "cuda":
             providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
-        elif device == "dml":
-            providers = ["DmlExecutionProvider"]
         else:
             raise RuntimeError("Unsportted Device")
         self.model = onnxruntime.InferenceSession(path, providers=providers)
@@ -33,7 +31,7 @@ class ContentVec(Model):
     def __init__(
         self,
         vec_path: ModelPath,
-        device: Literal["cpu", "cuda", "dml"] = "cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         super().__init__(vec_path, device)
 
@@ -57,7 +55,7 @@ class RVC(Model):
         hop_len: int = 512,
         model_sr: int = 40000,
         vec_path: ModelPath = "vec-768-layer-12.onnx",
-        device: Literal["cpu", "cuda", "dml"] = "cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         super().__init__(model_path, device)
         self.vec_model = ContentVec(vec_path, device)
