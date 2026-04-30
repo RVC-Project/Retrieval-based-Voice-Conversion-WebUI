@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import glob
 import json
@@ -6,9 +8,12 @@ import os
 import subprocess
 import sys
 import shutil
+from collections.abc import Mapping
+from typing import Protocol
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 from scipy.io.wavfile import read
 
 # MATPLOTLIB_FLAG = False
@@ -196,15 +201,33 @@ def save_checkpoint_d(
     )
 
 
+class SummaryWriter(Protocol):
+    def add_scalar(self, tag: str, scalar_value: object, global_step: int) -> object: ...
+
+    def add_histogram(self, tag: str, values: object, global_step: int) -> object: ...
+
+    def add_image(
+        self, tag: str, img_tensor: NDArray[np.generic], global_step: int, dataformats: str
+    ) -> object: ...
+
+    def add_audio(
+        self, tag: str, snd_tensor: NDArray[np.generic], global_step: int, sample_rate: int
+    ) -> object: ...
+
+
 def summarize(
-    # writer,
-    global_step,
-    scalars={},
-    histograms={},
-    images={},
-    audios={},
-    audio_sampling_rate=22050,
-):
+    writer: SummaryWriter,
+    global_step: int,
+    scalars: Mapping[str, object] | None = None,
+    histograms: Mapping[str, object] | None = None,
+    images: Mapping[str, NDArray[np.generic]] | None = None,
+    audios: Mapping[str, NDArray[np.generic]] | None = None,
+    audio_sampling_rate: int = 22050,
+) -> None:
+    scalars = scalars or {}
+    histograms = histograms or {}
+    images = images or {}
+    audios = audios or {}
     for k, v in scalars.items():
         writer.add_scalar(k, v, global_step)
     for k, v in histograms.items():
@@ -215,94 +238,12 @@ def summarize(
         writer.add_audio(k, v, global_step, audio_sampling_rate)
 
 
-def latest_checkpoint_path(dir_path: str, regex="G_*.pth"):
+def latest_checkpoint_path(dir_path: str, regex: str = "G_*.pth") -> str:
     f_list = glob.glob(os.path.join(dir_path, regex))
     f_list.sort(key=lambda f: int("".join(filter(str.isdigit, f))))
     x = f_list[-1]
     logger.debug(x)
     return x
-
-
-def plot_spectrogram_to_numpy(spectrogram) -> np.ndarray:
-    # global MATPLOTLIB_FLAG
-    # if not MATPLOTLIB_FLAG:
-    #     import matplotlib
-
-    #     matplotlib.use("Agg")
-    #     MATPLOTLIB_FLAG = True
-    #     mpl_logger = logging.getLogger("matplotlib")
-    #     mpl_logger.setLevel(logging.WARNING)
-    # import matplotlib.pylab as plt
-    # import numpy as np
-
-    # fig, ax = plt.subplots(figsize=(10, 2))
-    # im = ax.imshow(spectrogram, aspect="auto", origin="lower", interpolation="none")
-    # plt.colorbar(im, ax=ax)
-    # plt.xlabel("Frames")
-    # plt.ylabel("Channels")
-    # plt.tight_layout()
-
-    # fig.canvas.draw()
-    # # data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    # # data = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8, sep="")
-    # # data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    # # plt.close()
-    # # return data
-    # # --- Start of the fix ---
-    # # 1. Get the ARGB string from the canvas
-    # s_argb = fig.canvas.tostring_argb()
-
-    # # 2. Convert the ARGB string to a NumPy array
-    # #    np.frombuffer is preferred over the deprecated np.fromstring
-    # img_argb_flat = np.frombuffer(s_argb, dtype=np.uint8)
-
-    # # 3. Get canvas dimensions (height, width)
-    # #    fig.canvas.get_width_height() returns (width, height)
-    # #    [::-1] reverses it to (height, width)
-    # height, width = fig.canvas.get_width_height()[::-1]
-
-    # # 4. Reshape the flat array to (height, width, 4) for ARGB
-    # img_argb = img_argb_flat.reshape(height, width, 4)
-
-    # # 5. Extract the RGB channels from ARGB.
-    # #    ARGB order means channels are Alpha, Red, Green, Blue.
-    # #    We select channels 1, 2, and 3 (Red, Green, Blue).
-    # img_rgb = img_argb[:, :, 1:4]
-    # # --- End of the fix ---
-
-    # plt.close(fig)
-    return img_rgb
-
-
-def plot_alignment_to_numpy(alignment, info=None):
-    # global MATPLOTLIB_FLAG
-    # if not MATPLOTLIB_FLAG:
-    #     import matplotlib
-
-    #     matplotlib.use("Agg")
-    #     MATPLOTLIB_FLAG = True
-    #     mpl_logger = logging.getLogger("matplotlib")
-    #     mpl_logger.setLevel(logging.WARNING)
-    # import matplotlib.pylab as plt
-    import numpy as np
-
-    # fig, ax = plt.subplots(figsize=(6, 4))
-    # im = ax.imshow(
-    #     alignment.transpose(), aspect="auto", origin="lower", interpolation="none"
-    # )
-    # fig.colorbar(im, ax=ax)
-    # xlabel = "Decoder timestep"
-    # if info is not None:
-    #     xlabel += "\n\n" + info
-    # plt.xlabel(xlabel)
-    # plt.ylabel("Encoder timestep")
-    # plt.tight_layout()
-
-    # fig.canvas.draw()
-    # data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    # data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    # plt.close()
-    return data
 
 
 def load_wav_to_torch(full_path):
@@ -485,9 +426,28 @@ def get_logger(model_dir, filename="train.log"):
 
 
 class HParams:
-    def __init__(self, **kwargs):
+    model_dir: str
+    experiment_dir: str
+    save_every_epoch: int
+    name: str
+    total_epoch: int
+    pretrainG: str
+    pretrainD: str
+    version: str
+    gpus: str
+    train: HParams
+    batch_size: int
+    sample_rate: str
+    if_f0: int
+    if_latest: int
+    save_every_weights: str
+    if_cache_data_in_gpu: int
+    data: HParams
+    training_files: str
+
+    def __init__(self, **kwargs: object) -> None:
         for k, v in kwargs.items():
-            if type(v) == dict:
+            if isinstance(v, dict):
                 v = HParams(**v)
             self[k] = v
 
