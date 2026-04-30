@@ -9,14 +9,14 @@ import subprocess
 import threading
 import traceback
 from random import shuffle
+from collections.abc import Generator
 from subprocess import Popen
 from time import sleep
-from typing import Generator, List, Optional, Tuple
+from typing import Literal
 
 import faiss
 import gradio as gr
 import numpy as np
-import pandas as pd
 from sklearn.cluster import MiniBatchKMeans
 
 import shared
@@ -25,6 +25,7 @@ from shared import i18n
 ProgressComponent = gr.Progress
 
 F0GPUVisible = shared.config.dml == False
+SampleRate = Literal["32k", "40k", "48k"]
 
 
 def change_f0_method(f0method8: str):
@@ -35,7 +36,7 @@ def change_f0_method(f0method8: str):
     return {"visible": visible, "__type__": "update"}
 
 
-def if_done(done_flag: List[bool], p: Popen):
+def if_done(done_flag: list[bool], p: Popen):
     p.wait()
     done_flag[0] = True
 
@@ -47,7 +48,7 @@ def if_done_multi(done_flag, p_objs):
 
 
 def preprocess_dataset(
-    audio_dir: str, exp_dir: str, sr: int, n_p: int, progress=gr.Progress()
+    audio_dir: str, exp_dir: str, sr: SampleRate, n_p: int, progress=gr.Progress()
 ) -> Generator[str, None, None]:
     # 1. Validate audio_dir and count files
     if not os.path.isdir(audio_dir):
@@ -88,14 +89,14 @@ def preprocess_dataset(
         shared.logger.error(error_msg)
         yield error_msg
         return
-    sr = shared.sr_dict[sr]
+    sr_hz = shared.sr_dict[sr]
     os.makedirs("%s/logs/%s" % (shared.now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/preprocess.log" % (shared.now_dir, exp_dir), "w")
     f.close()
     cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
         shared.config.python_cmd,
         audio_dir,
-        sr,
+        sr_hz,
         n_p,
         shared.now_dir,
         exp_dir,
@@ -135,8 +136,8 @@ def preprocess_dataset(
 def preprocess_meta(
     experiment_name: str,
     audio_dir: str,
-    audio_files: Optional[List[str]],
-    sr: int,
+    audio_files: list[str] | None,
+    sr: SampleRate,
     n_p: int,
     progress=gr.Progress(),
 ):
@@ -159,9 +160,9 @@ def preprocess_meta(
         yield update
 
 
-def parse_f0_feature_log(content: str) -> Tuple[int, int]:
-    max_now: Optional[int] = 0
-    max_all: Optional[int] = 1
+def parse_f0_feature_log(content: str) -> tuple[int, int]:
+    max_now = 0
+    max_all = 1
     # Regex to capture the numbers after "now-" and "all-"
     # Pattern breakdown:
     # f0ing,       # Literal string "f0ing,"
@@ -180,10 +181,10 @@ def parse_f0_feature_log(content: str) -> Tuple[int, int]:
                 current_now = int(current_now_str)
                 current_all = int(current_all_str)
 
-                if max_now is None or current_now > max_now:
+                if current_now > max_now:
                     max_now = current_now
 
-                if max_all is None or current_all > max_all:
+                if current_all > max_all:
                     max_all = current_all
             except ValueError:
                 print(f"Warning: Could not parse numbers from line: {line}")
@@ -208,7 +209,7 @@ def extract_f0_feature(
         now, all = parse_f0_feature_log(content)
         progress(float(now) / all, desc=f"{now}/{all} Features extracted...")
 
-    gpus: List[str] = gpus.split("-")
+    gpu_ids = gpus.split("-")
     os.makedirs("%s/logs/%s" % (shared.now_dir, exp_dir), exist_ok=True)
     f = open("%s/logs/%s/extract_f0_feature.log" % (shared.now_dir, exp_dir), "w")
     f.close()
@@ -239,10 +240,10 @@ def extract_f0_feature(
             ).start()
         else:
             if gpus_rmvpe != "-":
-                gpus_rmvpe = gpus_rmvpe.split("-")
-                length = len(gpus_rmvpe)
+                gpus_rmvpe_ids = gpus_rmvpe.split("-")
+                length = len(gpus_rmvpe_ids)
                 ps = []
-                for idx, n_g in enumerate(gpus_rmvpe):
+                for idx, n_g in enumerate(gpus_rmvpe_ids):
                     cmd = (
                         '"%s" infer/modules/train/extract/extract_f0_rmvpe.py %s %s %s "%s/logs/%s" %s '
                         % (
@@ -302,9 +303,9 @@ def extract_f0_feature(
     exp_dir=sys.argv[4]
     os.environ["CUDA_VISIBLE_DEVICES"]=str(i_gpu)
     """
-    length = len(gpus)
+    length = len(gpu_ids)
     ps = []
-    for idx, n_g in enumerate(gpus):
+    for idx, n_g in enumerate(gpu_ids):
         cmd = (
             '"%s" infer/modules/train/extract_feature_print.py %s %s %s %s "%s/logs/%s" %s %s'
             % (
@@ -349,7 +350,7 @@ def extract_f0_feature(
     yield log
 
 
-def get_pretrained_models(path_str: str, f0_str: str, sr2: int):
+def get_pretrained_models(path_str: str, f0_str: str, sr2: SampleRate):
     if_pretrained_generator_exist = os.access(
         "assets/pretrained%s/%sG%s.pth" % (path_str, f0_str, sr2), os.F_OK
     )
@@ -384,13 +385,13 @@ def get_pretrained_models(path_str: str, f0_str: str, sr2: int):
     )
 
 
-def change_sr2(sr2: int, if_f0_3, version19):
+def change_sr2(sr2: SampleRate, if_f0_3, version19):
     path_str = "" if version19 == "v1" else "_v2"
     f0_str = "f0" if if_f0_3 else ""
     return get_pretrained_models(path_str, f0_str, sr2)
 
 
-def change_version19(sr2: int, if_f0_3: bool, version19: str):
+def change_version19(sr2: SampleRate, if_f0_3: bool, version19: str):
     path_str = "" if version19 == "v1" else "_v2"
     if sr2 == "32k" and version19 == "v1":
         sr2 = "40k"
@@ -415,7 +416,7 @@ def change_f0(if_f0_3: bool, sr2, version19):  # f0method8,pretrained_G14,pretra
     )
 
 
-def parse_epoch_from_train_log_line(line: str) -> Optional[int]:
+def parse_epoch_from_train_log_line(line: str) -> int | None:
     """
     Parse a single log line and extract the current epoch number if present.
 
@@ -439,12 +440,9 @@ def parse_epoch_from_train_log_line(line: str) -> Optional[int]:
     return None
 
 
-scalar_history = []
-
-
 def click_train(
     exp_dir1: str,
-    sr2: int,
+    sr2: SampleRate,
     if_f0_3,
     spk_id5,
     save_epoch10,
@@ -468,6 +466,8 @@ def click_train(
         if version19 == "v1"
         else "%s/3_feature768" % (exp_dir)
     )
+    f0_dir = ""
+    f0nsf_dir = ""
     if if_f0_3:
         f0_dir = "%s/2a_f0" % (exp_dir)
         f0nsf_dir = "%s/2b-f0nsf" % (exp_dir)
@@ -599,44 +599,23 @@ def click_train(
     current_epoch = 0
     # p = Popen(cmd, shell=True, cwd=shared.now_dir)
     p = Popen(cmd, shell=True, cwd=shared.now_dir, stdout=subprocess.PIPE)
-    scalar_count = 0
+    if p.stdout is None:
+        raise RuntimeError("Training process stdout was not captured")
     while True:
-        line = p.stdout.readline()
-        if not line:
+        line_bytes = p.stdout.readline()
+        if not line_bytes:
             break
         # the real code does filtering here
         # print(f"Line: {line}")
-        line: str = line.decode("utf-8", errors="ignore")
+        line = line_bytes.decode("utf-8", errors="ignore")
         shared.logger.info(f"{line}")
-
-        if line.startswith("SCALAR_DICT: "):
-            try:
-                scalar_dict: dict = json.loads(line.replace("SCALAR_DICT: ", ""))
-                scalar_dict["index"] = scalar_count
-                scalar_count += 1
-
-                # Step 1: Append the dictionary to the history
-                scalar_history.append(scalar_dict)
-
-                # Step 2: Convert the history list to a pandas DataFrame
-                df = pd.DataFrame(scalar_history)
-                # Returning the plot data will update the plot component
-                # The yield statement is necessary to update the Gradio UI in real-time
-                # within a loop.
-                print(f"history: {scalar_history}")
-                yield "", df  # Yielding the empty string updates info3, and plot_data updates the plot
-            except Exception as e:
-                # continue
-                pass
 
         current_epoch = parse_epoch_from_train_log_line(line) or current_epoch
         progress(current_epoch / total_epoch11, desc="Training...")
 
     return_code = p.wait()
     # return f"Training finished with exit code {return_code}. You can view the training log in the console or train.log in the experiment folder."
-    yield "Training finished with exit code {return_code}.", pd.DataFrame(
-        scalar_history
-    )
+    yield f"Training finished with exit code {return_code}."
 
 
 def train_index(exp_dir1: str, version19: str, progress=gr.Progress()):
@@ -1033,11 +1012,6 @@ def create_train_tab():
                 index_btn = gr.Button(i18n("Extra Feature Index"), variant="primary")
                 one_click_btn = gr.Button(i18n("Train Everything"), variant="primary")
 
-                training_plot = gr.LinePlot(
-                    label=i18n("Training Metrics"),
-                    x="index",  # Use the DataFrame's index as the x-axis (epochs)
-                    y=["loss/g/total", "loss/d/total"],
-                )
                 training_info = gr.Textbox(label=i18n("Info"), value="", max_lines=10)
                 train_btn.click(
                     click_train,
@@ -1057,7 +1031,7 @@ def create_train_tab():
                         if_save_every_weights18,
                         model_version,
                     ],
-                    [training_info, training_plot],
+                    training_info,
                     api_name="train_start",
                 )
                 index_btn.click(

@@ -9,6 +9,7 @@
 
 import math
 import logging
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +165,8 @@ class ResidualCouplingBlock(nn.Module):
 
     def remove_weight_norm(self):
         for i in range(self.n_flows):
-            self.flows[i * 2].remove_weight_norm()
+            flow = cast(modules.ResidualCouplingLayer, self.flows[i * 2])
+            flow.remove_weight_norm()
 
 
 class PosteriorEncoder(nn.Module):
@@ -254,7 +256,7 @@ class Generator(torch.nn.Module):
             ):
                 self.resblocks.append(resblock(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)  # type: ignore[unbound-name]
         self.ups.apply(init_weights)
 
         if gin_channels != 0:
@@ -274,6 +276,7 @@ class Generator(torch.nn.Module):
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
+            assert isinstance(xs, torch.Tensor)
             x = xs / self.num_kernels
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -488,7 +491,7 @@ class GeneratorNSF(torch.nn.Module):
             ):
                 self.resblocks.append(resblock(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)  # type: ignore[unbound-name]
         self.ups.apply(init_weights)
 
         if gin_channels != 0:
@@ -514,6 +517,7 @@ class GeneratorNSF(torch.nn.Module):
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
+            assert isinstance(xs, torch.Tensor)
             x = xs / self.num_kernels
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -579,6 +583,7 @@ class SynthesizerTrnMsNSFsidM(nn.Module):
         self.gin_channels = gin_channels
         # self.hop_length = hop_length#
         self.spk_embed_dim = spk_embed_dim
+        self.enc_p: TextEncoder256 | TextEncoder768
         if version == "v1":
             self.enc_p = TextEncoder256(
                 inter_channels,

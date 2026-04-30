@@ -1,6 +1,6 @@
 import math
 import logging
-from typing import Optional
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class TextEncoder(nn.Module):
         phone: torch.Tensor,
         pitch: torch.Tensor,
         lengths: torch.Tensor,
-        skip_head: Optional[torch.Tensor] = None,
+        skip_head: torch.Tensor | None = None,
     ):
         if pitch is None:
             x = self.emb_phone(phone)
@@ -118,7 +118,7 @@ class ResidualCouplingBlock(nn.Module):
         self,
         x: torch.Tensor,
         x_mask: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
         reverse: bool = False,
     ):
         if not reverse:
@@ -131,7 +131,8 @@ class ResidualCouplingBlock(nn.Module):
 
     def remove_weight_norm(self):
         for i in range(self.n_flows):
-            self.flows[i * 2].remove_weight_norm()
+            flow = cast(modules.ResidualCouplingLayer, self.flows[i * 2])
+            flow.remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for i in range(self.n_flows):
@@ -176,7 +177,7 @@ class PosteriorEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(
-        self, x: torch.Tensor, x_lengths: torch.Tensor, g: Optional[torch.Tensor] = None
+        self, x: torch.Tensor, x_lengths: torch.Tensor, g: torch.Tensor | None = None
     ):
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(
             x.dtype
@@ -243,7 +244,7 @@ class Generator(torch.nn.Module):
             ):
                 self.resblocks.append(resblock(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)  # type: ignore[unbound-name]
         self.ups.apply(init_weights)
 
         if gin_channels != 0:
@@ -252,8 +253,8 @@ class Generator(torch.nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
+        n_res: torch.Tensor | None = None,
     ):
         if n_res is not None:
             assert isinstance(n_res, torch.Tensor)
@@ -273,6 +274,7 @@ class Generator(torch.nn.Module):
                     xs = self.resblocks[i * self.num_kernels + j](x)
                 else:
                     xs += self.resblocks[i * self.num_kernels + j](x)
+            assert isinstance(xs, torch.Tensor)
             x = xs / self.num_kernels
         x = F.leaky_relu(x)
         x = self.conv_post(x)
@@ -511,7 +513,7 @@ class GeneratorNSF(torch.nn.Module):
             ):
                 self.resblocks.append(resblock(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)  # type: ignore[unbound-name]
         self.ups.apply(init_weights)
 
         if gin_channels != 0:
@@ -525,8 +527,8 @@ class GeneratorNSF(torch.nn.Module):
         self,
         x,
         f0,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
+        n_res: torch.Tensor | None = None,
     ):
         har_source, noi_source, uv = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
@@ -548,7 +550,7 @@ class GeneratorNSF(torch.nn.Module):
                 x = ups(x)
                 x_source = noise_convs(har_source)
                 x = x + x_source
-                xs: Optional[torch.Tensor] = None
+                xs: torch.Tensor | None = None
                 l = [i * self.num_kernels + j for j in range(self.num_kernels)]
                 for j, resblock in enumerate(self.resblocks):
                     if j in l:
@@ -728,7 +730,7 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         pitchf: torch.Tensor,
         y: torch.Tensor,
         y_lengths: torch.Tensor,
-        ds: Optional[torch.Tensor] = None,
+        ds: torch.Tensor | None = None,
     ):  # 这里ds是id，[bs,1]
         # print(1,pitch.shape)#[bs,t]
         g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
@@ -752,9 +754,9 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         pitch: torch.Tensor,
         nsff0: torch.Tensor,
         sid: torch.Tensor,
-        skip_head: Optional[torch.Tensor] = None,
-        return_length: Optional[torch.Tensor] = None,
-        return_length2: Optional[torch.Tensor] = None,
+        skip_head: torch.Tensor | None = None,
+        return_length: torch.Tensor | None = None,
+        return_length2: torch.Tensor | None = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
@@ -968,9 +970,9 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         phone: torch.Tensor,
         phone_lengths: torch.Tensor,
         sid: torch.Tensor,
-        skip_head: Optional[torch.Tensor] = None,
-        return_length: Optional[torch.Tensor] = None,
-        return_length2: Optional[torch.Tensor] = None,
+        skip_head: torch.Tensor | None = None,
+        return_length: torch.Tensor | None = None,
+        return_length2: torch.Tensor | None = None,
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
