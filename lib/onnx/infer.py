@@ -1,18 +1,22 @@
-import typing
 import os
+from pathlib import Path
+from typing import Literal, cast
+from os import PathLike
 
 import librosa
 import numpy as np
 import onnxruntime
 
-from rvc.f0 import Generator
+from lib.f0 import Generator
+
+type ModelPath = str | bytes | PathLike[str]
 
 
 class Model:
     def __init__(
         self,
-        path: typing.Union[str, bytes, os.PathLike],
-        device: typing.Literal["cpu", "cuda", "dml"] = "cpu",
+        path: ModelPath,
+        device: Literal["cpu", "cuda", "dml"] = "cpu",
     ):
         if device == "cpu":
             providers = ["CPUExecutionProvider"]
@@ -28,46 +32,46 @@ class Model:
 class ContentVec(Model):
     def __init__(
         self,
-        vec_path: typing.Union[str, bytes, os.PathLike],
-        device: typing.Literal["cpu", "cuda", "dml"] = "cpu",
+        vec_path: ModelPath,
+        device: Literal["cpu", "cuda", "dml"] = "cpu",
     ):
         super().__init__(vec_path, device)
 
-    def __call__(self, wav: np.ndarray[typing.Any, np.dtype]):
+    def __call__(self, wav: np.ndarray):
         return self.forward(wav)
 
-    def forward(self, wav: np.ndarray[typing.Any, np.dtype]):
+    def forward(self, wav: np.ndarray) -> np.ndarray:
         if wav.ndim == 2:  # double channels
             wav = wav.mean(-1)
         assert wav.ndim == 1, wav.ndim
         wav = np.expand_dims(np.expand_dims(wav, 0), 0)
         onnx_input = {self.model.get_inputs()[0].name: wav}
-        logits = self.model.run(None, onnx_input)[0]
+        logits = cast(np.ndarray, self.model.run(None, onnx_input)[0])
         return logits.transpose(0, 2, 1)
 
 
 class RVC(Model):
     def __init__(
         self,
-        model_path: typing.Union[str, bytes, os.PathLike],
-        hop_len=512,
-        model_sr=40000,
-        vec_path: typing.Union[str, bytes, os.PathLike] = "vec-768-layer-12.onnx",
-        device: typing.Literal["cpu", "cuda", "dml"] = "cpu",
+        model_path: ModelPath,
+        hop_len: int = 512,
+        model_sr: int = 40000,
+        vec_path: ModelPath = "vec-768-layer-12.onnx",
+        device: Literal["cpu", "cuda", "dml"] = "cpu",
     ):
         super().__init__(model_path, device)
         self.vec_model = ContentVec(vec_path, device)
         self.hop_len = hop_len
-        self.f0_gen = Generator(None, False, 0, window=hop_len, sr=model_sr)
+        self.f0_gen = Generator(Path("assets/rmvpe"), False, 0, window=hop_len, sr=model_sr)
 
     def infer(
         self,
-        wav: np.ndarray[typing.Any, np.dtype],
+        wav: np.ndarray,
         wav_sr: int,
         sid: int = 0,
-        f0_method="dio",
-        f0_up_key=0,
-    ) -> np.ndarray[typing.Any, np.dtype[np.int16]]:
+        f0_method: Literal["pm", "dio", "harvest", "crepe", "rmvpe", "fcpe"] = "dio",
+        f0_up_key: int = 0,
+    ) -> np.ndarray:
         org_length = len(wav)
         if org_length / wav_sr > 50.0:
             raise RuntimeError("wav max length exceeded")
@@ -86,9 +90,9 @@ class RVC(Model):
         ds = np.array([sid]).astype(np.int64)
 
         rnd = np.random.randn(1, 192, hubert_length).astype(np.float32)
-        hubert_length = np.array([hubert_length]).astype(np.int64)
+        hubert_length_array = np.array([hubert_length]).astype(np.int64)
 
-        out_wav = self.forward(hubert, hubert_length, pitch, pitchf, ds, rnd).squeeze()
+        out_wav = self.forward(hubert, hubert_length_array, pitch, pitchf, ds, rnd).squeeze()
 
         out_wav = np.pad(out_wav, (0, 2 * self.hop_len), "constant")
 
@@ -96,13 +100,13 @@ class RVC(Model):
 
     def forward(
         self,
-        hubert: np.ndarray[typing.Any, np.dtype[np.float32]],
-        hubert_length: int,
-        pitch: np.ndarray[typing.Any, np.dtype[np.int64]],
-        pitchf: np.ndarray[typing.Any, np.dtype[np.float32]],
-        ds: np.ndarray[typing.Any, np.dtype[np.int64]],
-        rnd: np.ndarray[typing.Any, np.dtype[np.float32]],
-    ) -> np.ndarray[typing.Any, np.dtype[np.int16]]:
+        hubert: np.ndarray,
+        hubert_length: np.ndarray,
+        pitch: np.ndarray,
+        pitchf: np.ndarray,
+        ds: np.ndarray,
+        rnd: np.ndarray,
+    ) -> np.ndarray:
         onnx_input = {
             self.model.get_inputs()[0].name: hubert,
             self.model.get_inputs()[1].name: hubert_length,
@@ -111,4 +115,5 @@ class RVC(Model):
             self.model.get_inputs()[4].name: ds,
             self.model.get_inputs()[5].name: rnd,
         }
-        return (self.model.run(None, onnx_input)[0] * 32767).astype(np.int16)
+        audio = cast(np.ndarray, self.model.run(None, onnx_input)[0])
+        return (audio * 32767).astype(np.int16)

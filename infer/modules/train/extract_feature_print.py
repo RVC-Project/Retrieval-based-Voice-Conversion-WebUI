@@ -48,14 +48,14 @@ f = open(exp_dir / "extract_f0_feature.log", "a+")
 
 def printt(strr):
     print(strr)
-    f.write("%s\n" % strr)
+    f.write(f"{strr}\n")
     f.flush()
 
 
 printt(" ".join(sys.argv))
 model_path = "assets/hubert/hubert_base.pt"
 
-printt("exp_dir: " + str(exp_dir))
+printt(f"exp_dir: {exp_dir}")
 wavPath = exp_dir / "1_16k_wavs"
 outPath = exp_dir / "3_feature256" if version == "v1" else exp_dir / "3_feature768"
 outPath.mkdir(parents=True, exist_ok=True)
@@ -77,12 +77,11 @@ def readwave(wav_path, normalize=False):
 
 
 # HuBERT model
-printt("load model(s) from {}".format(model_path))
+printt(f"load model(s) from {model_path}")
 # if hubert model is exist
 if os.access(model_path, os.F_OK) == False:
     printt(
-        "Error: Extracting is shut down because %s does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main"
-        % model_path
+        f"Error: Extracting is shut down because {model_path} does not exist, you may download it from https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main"
     )
     exit(0)
 
@@ -97,7 +96,7 @@ with safe_globals([Dictionary]):
     )
 model = models[0]
 model = model.to(device)
-printt("move model to %s" % device)
+printt(f"move model to {device}")
 if is_half:
     if device not in ["mps", "cpu"]:
         model = model.half()
@@ -108,7 +107,10 @@ n = max(1, len(todo) // 10)  # Print up to ten entries
 if len(todo) == 0:
     printt("no-feature-todo")
 else:
-    printt("all-feature-%s" % len(todo))
+    printt(f"all-feature-{len(todo)}")
+    if saved_cfg is None:
+        raise RuntimeError("HuBERT checkpoint did not include a saved config")
+    normalize = saved_cfg.task.normalize
     for idx, file in enumerate(todo):
         try:
             if file.suffix == ".wav":
@@ -118,7 +120,7 @@ else:
                 if out_path.exists():
                     continue
 
-                feats = readwave(wav_path, normalize=saved_cfg.task.normalize)
+                feats = readwave(wav_path, normalize=normalize)
                 padding_mask = torch.BoolTensor(feats.shape).fill_(False)
                 inputs = {
                     "source": (
@@ -139,11 +141,9 @@ else:
                 if np.isnan(feats).sum() == 0:
                     np.save(out_path, feats, allow_pickle=False)
                 else:
-                    printt("%s-contains nan" % file.name)
+                    printt(f"{file.name}-contains nan")
                 if idx % n == 0:
-                    printt(
-                        "now-%s,all-%s,%s,%s" % (len(todo), idx, file.name, feats.shape)
-                    )
+                    printt(f"now-{len(todo)},all-{idx},{file.name},{feats.shape}")
         except:
             printt(traceback.format_exc())
     printt("all-feature-done")

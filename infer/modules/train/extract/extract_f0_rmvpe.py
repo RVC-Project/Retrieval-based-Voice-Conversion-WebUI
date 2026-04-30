@@ -18,13 +18,13 @@ i_part = int(sys.argv[2])
 i_gpu = sys.argv[3]
 os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
 exp_dir = sys.argv[4]
-is_half = sys.argv[5]
-f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
+is_half = bool(int(sys.argv[5]))
+f = open(f"{exp_dir}/extract_f0_feature.log", "a+")
 
 
 def printt(strr):
     print(strr)
-    f.write("%s\n" % strr)
+    f.write(f"{strr}\n")
     f.flush()
 
 
@@ -51,6 +51,8 @@ class FeatureInput:
                     "assets/rmvpe/rmvpe.pt", is_half=is_half, device="cuda"
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
+        else:
+            raise ValueError(f"Unsupported f0 method: {f0_method}")
         return f0
 
     def coarse_f0(self, f0):
@@ -73,12 +75,12 @@ class FeatureInput:
         if len(paths) == 0:
             printt("no-f0-todo")
         else:
-            printt("todo-f0-%s" % len(paths))
+            printt(f"todo-f0-{len(paths)}")
             n = max(len(paths) // 5, 1)  # print at most 5 lines per process
             for idx, (inp_path, opt_path1, opt_path2) in enumerate(paths):
                 try:
                     if idx % n == 0:
-                        printt("f0ing,now-%s,all-%s,-%s" % (idx, len(paths), inp_path))
+                        printt(f"f0ing,now-{idx},all-{len(paths)},-{inp_path}")
                     if (
                         os.path.exists(opt_path1 + ".npy") == True
                         and os.path.exists(opt_path2 + ".npy") == True

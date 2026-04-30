@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from typing import Protocol, cast
 
 import parselmouth
 
@@ -20,9 +21,36 @@ exp_dir = Path(sys.argv[1])
 f = open(exp_dir / "extract_f0_feature.log", "a+")
 
 
+class PyWorldModule(Protocol):
+    def harvest(
+        self,
+        x: np.ndarray,
+        fs: int,
+        f0_ceil: float,
+        f0_floor: float,
+        frame_period: float,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    def dio(
+        self,
+        x: np.ndarray,
+        fs: int,
+        f0_ceil: float,
+        f0_floor: float,
+        frame_period: float,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    def stonemask(
+        self, x: np.ndarray, f0: np.ndarray, t: np.ndarray, fs: int
+    ) -> np.ndarray: ...
+
+
+pyworld_api = cast(PyWorldModule, pyworld)
+
+
 def printt(strr):
     print(strr)
-    f.write("%s\n" % strr)
+    f.write(f"{strr}\n")
     f.flush()
 
 
@@ -64,23 +92,23 @@ class FeatureInput:
                     f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"
                 )
         elif f0_method == "harvest":
-            f0, t = pyworld.harvest(
+            f0, t = pyworld_api.harvest(
                 x.astype(np.double),
                 fs=self.fs,
                 f0_ceil=self.f0_max,
                 f0_floor=self.f0_min,
                 frame_period=1000 * self.hop / self.fs,
             )
-            f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
+            f0 = pyworld_api.stonemask(x.astype(np.double), f0, t, self.fs)
         elif f0_method == "dio":
-            f0, t = pyworld.dio(
+            f0, t = pyworld_api.dio(
                 x.astype(np.double),
                 fs=self.fs,
                 f0_ceil=self.f0_max,
                 f0_floor=self.f0_min,
                 frame_period=1000 * self.hop / self.fs,
             )
-            f0 = pyworld.stonemask(x.astype(np.double), f0, t, self.fs)
+            f0 = pyworld_api.stonemask(x.astype(np.double), f0, t, self.fs)
         elif f0_method == "rmvpe":
             if hasattr(self, "model_rmvpe") == False:
                 from infer.lib.rmvpe import RMVPE
@@ -90,6 +118,8 @@ class FeatureInput:
                     "assets/rmvpe/rmvpe.pt", is_half=False, device="cpu"
                 )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
+        else:
+            raise ValueError(f"Unsupported f0 method: {f0_method}")
         return f0
 
     def coarse_f0(self, f0):
@@ -112,12 +142,12 @@ class FeatureInput:
         if len(paths) == 0:
             printt("no-f0-todo")
         else:
-            printt("todo-f0-%s" % len(paths))
+            printt(f"todo-f0-{len(paths)}")
             n = max(len(paths) // 5, 1)  # print at most 5 lines per process
             for idx, (inp_path, opt_path1, opt_path2) in enumerate(paths):
                 try:
                     if idx % n == 0:
-                        printt("f0ing,now-%s,all-%s,-%s" % (idx, len(paths), inp_path))
+                        printt(f"f0ing,now-{idx},all-{len(paths)},-{inp_path}")
                     if (
                         os.path.exists(opt_path1 + ".npy") == True
                         and os.path.exists(opt_path2 + ".npy") == True

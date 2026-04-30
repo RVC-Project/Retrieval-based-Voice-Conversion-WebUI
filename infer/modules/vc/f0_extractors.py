@@ -4,7 +4,7 @@ import parselmouth
 import torch
 import torchcrepe
 from scipy import signal
-from typing import Optional
+from typing import Protocol, cast
 import warnings
 from functools import lru_cache
 import hashlib
@@ -18,6 +18,24 @@ with warnings.catch_warnings():
         module="pyworld",  # Optional, but adds precision
     )
     import pyworld
+
+
+class PyWorldModule(Protocol):
+    def harvest(
+        self,
+        x: np.ndarray,
+        fs: int,
+        f0_ceil: int,
+        f0_floor: int,
+        frame_period: float,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    def stonemask(
+        self, x: np.ndarray, f0: np.ndarray, t: np.ndarray, fs: int
+    ) -> np.ndarray: ...
+
+
+pyworld_api = cast(PyWorldModule, pyworld)
 
 
 # --- Base Pitch Extractor Class ---
@@ -72,14 +90,14 @@ def cache_harvest_f0_cached(
 ):
     # the actual waveform is stored in a global dict keyed by hash
     audio = _wav_cache[key]
-    f0, t = pyworld.harvest(
+    f0, t = pyworld_api.harvest(
         audio,
         fs=fs,
         f0_ceil=f0max,
         f0_floor=f0min,
         frame_period=frame_period,
     )
-    f0 = pyworld.stonemask(audio, f0, t, fs)
+    f0 = pyworld_api.stonemask(audio, f0, t, fs)
     return f0
 
 
