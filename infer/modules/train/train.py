@@ -23,10 +23,12 @@ from random import randint, shuffle
 import torch
 from torch import nn
 
+
 @contextmanager
 def cuda_autocast(enabled: bool) -> Generator[None, None, None]:
     with torch.amp.autocast("cuda", enabled=enabled):  # type: ignore[bad-context-manager]
         yield
+
 
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False

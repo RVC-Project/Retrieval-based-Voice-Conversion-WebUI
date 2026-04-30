@@ -42,8 +42,12 @@ def rand_gumbel_like(x):
     return g
 
 
-def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4) -> torch.Tensor:
-    ret = torch.zeros(x.size(0), x.size(1), segment_size, device=x.device, dtype=x.dtype)
+def slice_segments(
+    x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
+) -> torch.Tensor:
+    ret = torch.zeros(
+        x.size(0), x.size(1), segment_size, device=x.device, dtype=x.dtype
+    )
     max_start = max(x.size(2) - segment_size, 0)
     for i in range(x.size(0)):
         idx_str = int(ids_str[i].item())
@@ -54,7 +58,9 @@ def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
     return ret
 
 
-def slice_segments2(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4) -> torch.Tensor:
+def slice_segments2(
+    x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4
+) -> torch.Tensor:
     ret = torch.zeros(x.size(0), segment_size, device=x.device, dtype=x.dtype)
     max_start = max(x.size(1) - segment_size, 0)
     for i in range(x.size(0)):
