@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple
+from collections.abc import Sequence
 
 import torch
 from torch import nn
@@ -15,14 +15,16 @@ class Generator(torch.nn.Module):
         self,
         initial_channel: int,
         resblock: str,
-        resblock_kernel_sizes: List[int],
-        resblock_dilation_sizes: List[List[int]],
-        upsample_rates: List[int],
+        resblock_kernel_sizes: Sequence[int],
+        resblock_dilation_sizes: Sequence[Sequence[int]],
+        upsample_rates: Sequence[int],
         upsample_initial_channel: int,
-        upsample_kernel_sizes: List[int],
+        upsample_kernel_sizes: Sequence[int],
         gin_channels: int = 0,
     ):
         super(Generator, self).__init__()
+        if not upsample_rates:
+            raise ValueError("upsample_rates must not be empty")
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
 
@@ -46,12 +48,13 @@ class Generator(torch.nn.Module):
 
         self.resblocks = nn.ModuleList()
         resblock_module = ResBlock1 if resblock == "1" else ResBlock2
+        final_channel = upsample_initial_channel // (2 ** len(self.ups))
         for i in range(len(self.ups)):
             ch = upsample_initial_channel // (2 ** (i + 1))
             for k, d in zip(resblock_kernel_sizes, resblock_dilation_sizes):
                 self.resblocks.append(resblock_module(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(final_channel, 1, 7, 1, padding=3, bias=False)
         self.ups.apply(call_weight_data_normal_if_Conv)
 
         if gin_channels != 0:
@@ -60,16 +63,16 @@ class Generator(torch.nn.Module):
     def __call__(
         self,
         x: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[int] = None,
+        g: torch.Tensor | None = None,
+        n_res: int | None = None,
     ) -> torch.Tensor:
         return super().__call__(x, g=g, n_res=n_res)
 
     def forward(
         self,
         x: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[int] = None,
+        g: torch.Tensor | None = None,
+        n_res: int | None = None,
     ):
         if n_res is not None:
             n = int(n_res)
@@ -180,12 +183,12 @@ class SineGenerator(torch.nn.Module):
 
     def __call__(
         self, f0: torch.Tensor, upp: int
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         return super().__call__(f0, upp)
 
     def forward(
         self, f0: torch.Tensor, upp: int
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """sine_tensor, uv = forward(f0)
         input F0: tensor(batchsize=1, length, dim=1)
                   f0 for unvoiced steps should be 0

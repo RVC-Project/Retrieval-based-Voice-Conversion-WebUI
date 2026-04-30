@@ -1,4 +1,4 @@
-from typing import Optional, List
+from collections.abc import Sequence
 import math
 
 import torch
@@ -65,15 +65,17 @@ class NSFGenerator(torch.nn.Module):
         self,
         initial_channel: int,
         resblock: str,
-        resblock_kernel_sizes: List[int],
-        resblock_dilation_sizes: List[List[int]],
-        upsample_rates: List[int],
+        resblock_kernel_sizes: Sequence[int],
+        resblock_dilation_sizes: Sequence[Sequence[int]],
+        upsample_rates: Sequence[int],
         upsample_initial_channel: int,
-        upsample_kernel_sizes: List[int],
+        upsample_kernel_sizes: Sequence[int],
         gin_channels: int,
         sr: int,
     ):
         super(NSFGenerator, self).__init__()
+        if not upsample_rates:
+            raise ValueError("upsample_rates must not be empty")
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
 
@@ -83,7 +85,7 @@ class NSFGenerator(torch.nn.Module):
         self.conv_pre = Conv1d(
             initial_channel, upsample_initial_channel, 7, 1, padding=3
         )
-        resblock = ResBlock1 if resblock == "1" else ResBlock2
+        resblock_cls = ResBlock1 if resblock == "1" else ResBlock2
 
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
@@ -114,14 +116,15 @@ class NSFGenerator(torch.nn.Module):
                 self.noise_convs.append(Conv1d(1, c_cur, kernel_size=1))
 
         self.resblocks = nn.ModuleList()
+        final_channel = upsample_initial_channel // (2 ** len(self.ups))
         for i in range(len(self.ups)):
             ch: int = upsample_initial_channel // (2 ** (i + 1))
             for j, (k, d) in enumerate(
                 zip(resblock_kernel_sizes, resblock_dilation_sizes)
             ):
-                self.resblocks.append(resblock(ch, k, d))
+                self.resblocks.append(resblock_cls(ch, k, d))
 
-        self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
+        self.conv_post = Conv1d(final_channel, 1, 7, 1, padding=3, bias=False)
         self.ups.apply(call_weight_data_normal_if_Conv)
 
         if gin_channels != 0:
@@ -135,8 +138,8 @@ class NSFGenerator(torch.nn.Module):
         self,
         x: torch.Tensor,
         f0: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[int] = None,
+        g: torch.Tensor | None = None,
+        n_res: int | None = None,
     ) -> torch.Tensor:
         return super().__call__(x, f0, g=g, n_res=n_res)
 
@@ -144,8 +147,8 @@ class NSFGenerator(torch.nn.Module):
         self,
         x: torch.Tensor,
         f0: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
-        n_res: Optional[int] = None,
+        g: torch.Tensor | None = None,
+        n_res: int | None = None,
     ) -> torch.Tensor:
         har_source = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
@@ -170,7 +173,7 @@ class NSFGenerator(torch.nn.Module):
                 x = ups(x)
                 x_source = noise_convs(har_source)
                 x = x + x_source
-                xs: Optional[torch.Tensor] = None
+                xs: torch.Tensor | None = None
                 l = [i * self.num_kernels + j for j in range(self.num_kernels)]
                 for j, resblock in enumerate(self.resblocks):
                     if j in l:

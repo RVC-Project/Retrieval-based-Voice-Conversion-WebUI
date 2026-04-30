@@ -1,4 +1,5 @@
-from typing import Optional, List, Tuple
+from collections.abc import Sequence
+from typing import Protocol, cast
 
 import torch
 from torch import nn
@@ -15,12 +16,16 @@ from .utils import (
 LRELU_SLOPE = 0.1
 
 
+class RemovesWeightNorm(Protocol):
+    def remove_weight_norm(self) -> None: ...
+
+
 class ResBlock1(torch.nn.Module):
     def __init__(
         self,
         channels: int,
         kernel_size: int = 3,
-        dilation: List[int] = (1, 3, 5),
+        dilation: Sequence[int] = (1, 3, 5),
     ):
         super(ResBlock1, self).__init__()
 
@@ -60,14 +65,14 @@ class ResBlock1(torch.nn.Module):
     def __call__(
         self,
         x: torch.Tensor,
-        x_mask: Optional[torch.Tensor] = None,
+        x_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return super().__call__(x, x_mask=x_mask)
 
     def forward(
         self,
         x: torch.Tensor,
-        x_mask: Optional[torch.Tensor] = None,
+        x_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         for c1, c2 in zip(self.convs1, self.convs2):
             xt = F.leaky_relu(x, self.lrelu_slope)
@@ -117,7 +122,7 @@ class ResBlock2(torch.nn.Module):
         self,
         channels: int,
         kernel_size=3,
-        dilation: List[int] = (1, 3),
+        dilation: Sequence[int] = (1, 3),
     ):
         super(ResBlock2, self).__init__()
         self.convs = nn.ModuleList()
@@ -140,14 +145,14 @@ class ResBlock2(torch.nn.Module):
     def __call__(
         self,
         x: torch.Tensor,
-        x_mask: Optional[torch.Tensor] = None,
+        x_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return super().__call__(x, x_mask=x_mask)
 
     def forward(
         self,
         x: torch.Tensor,
-        x_mask: Optional[torch.Tensor] = None,
+        x_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         for c in self.convs:
             xt = F.leaky_relu(x, self.lrelu_slope)
@@ -202,29 +207,30 @@ class ResidualCouplingLayer(nn.Module):
             kernel_size,
             dilation_rate,
             n_layers,
-            p_dropout=float(p_dropout),
+            p_dropout=p_dropout,
             gin_channels=gin_channels,
         )
         self.post = nn.Conv1d(hidden_channels, self.half_channels * (2 - mean_only), 1)
         self.post.weight.data.zero_()
+        assert self.post.bias is not None
         self.post.bias.data.zero_()
 
     def __call__(
         self,
         x: torch.Tensor,
         x_mask: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
         reverse: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         return super().__call__(x, x_mask, g=g, reverse=reverse)
 
     def forward(
         self,
         x: torch.Tensor,
         x_mask: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
         reverse: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         x0, x1 = torch.split(x, [self.half_channels] * 2, 1)
         h = self.pre(x0) * x_mask
         h = self.enc(h, x_mask, g=g)
@@ -270,9 +276,9 @@ class ResidualCouplingBlock(nn.Module):
             self,
             x: torch.Tensor,
             x_mask: torch.Tensor,
-            g: Optional[torch.Tensor] = None,
+            g: torch.Tensor | None = None,
             reverse: bool = False,
-        ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        ) -> tuple[torch.Tensor, torch.Tensor | None]:
             x = torch.flip(x, [1])
             if not reverse:
                 logdet = torch.zeros(x.size(0)).to(dtype=x.dtype, device=x.device)
@@ -318,7 +324,7 @@ class ResidualCouplingBlock(nn.Module):
         self,
         x: torch.Tensor,
         x_mask: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
         reverse: bool = False,
     ) -> torch.Tensor:
         return super().__call__(x, x_mask, g=g, reverse=reverse)
@@ -327,7 +333,7 @@ class ResidualCouplingBlock(nn.Module):
         self,
         x: torch.Tensor,
         x_mask: torch.Tensor,
-        g: Optional[torch.Tensor] = None,
+        g: torch.Tensor | None = None,
         reverse: bool = False,
     ) -> torch.Tensor:
         if not reverse:
@@ -340,7 +346,7 @@ class ResidualCouplingBlock(nn.Module):
 
     def remove_weight_norm(self):
         for i in range(self.n_flows):
-            self.flows[i * 2].remove_weight_norm()
+            cast(RemovesWeightNorm, self.flows[i * 2]).remove_weight_norm()
 
     def __prepare_scriptable__(self):
         for i in range(self.n_flows):
