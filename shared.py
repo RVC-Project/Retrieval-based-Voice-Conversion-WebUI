@@ -10,6 +10,10 @@ load_dotenv()
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("fairseq").setLevel(logging.WARNING)
+# Mute torio's aggressive FFmpeg debug traces
+logging.getLogger("torio").setLevel(logging.ERROR)
+# Mute fairseq's tensorboardX nag
+logging.getLogger("fairseq").setLevel(logging.WARNING)
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 

@@ -9,7 +9,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchaudio.transforms import Resample
+
+# from torchaudio.transforms import Resample
 
 from lib.f0 import Generator
 from lib.synthesizer import load_synthesizer
@@ -136,10 +137,7 @@ class RVC:
             self.net_g.infer = self.net_g.forward
             self.net_g.eval().to(self.device)
 
-        if (
-            self.use_jit
-            and not (self.is_half and "cpu" in str(self.device))
-        ):
+        if self.use_jit and not (self.is_half and "cpu" in str(self.device)):
             set_jit_model()
         else:
             set_default_model()
