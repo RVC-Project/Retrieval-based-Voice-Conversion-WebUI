@@ -1,9 +1,14 @@
 import os
 import sys
 import contextlib
+from typing import TYPE_CHECKING, Literal, no_type_check
 
 import torch
-import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+
+if TYPE_CHECKING:
+    ipex = object()
+else:
+    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
 from .hijacks import ipex_hijacks
 from .attention import attention_init
@@ -11,7 +16,8 @@ from .attention import attention_init
 # pylint: disable=protected-access, missing-function-docstring, line-too-long
 
 
-def ipex_init():  # pylint: disable=too-many-statements
+@no_type_check
+def ipex_init() -> tuple[Literal[True], None] | tuple[Literal[False], Exception]:  # pylint: disable=too-many-statements
     try:
         # Replace cuda with xpu:
         torch.cuda.current_device = torch.xpu.current_device

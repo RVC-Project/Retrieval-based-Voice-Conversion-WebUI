@@ -4,8 +4,8 @@ import json
 from collections import OrderedDict
 
 
-def extract_i18n_strings(node):
-    i18n_strings = []
+def extract_i18n_strings(node: ast.AST) -> list[str]:
+    i18n_strings: list[str] = []
 
     if (
         isinstance(node, ast.Call)
@@ -13,8 +13,8 @@ def extract_i18n_strings(node):
         and node.func.id == "i18n"
     ):
         for arg in node.args:
-            if isinstance(arg, ast.Str):
-                i18n_strings.append(arg.s)
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                i18n_strings.append(arg.value)
 
     for child_node in ast.iter_child_nodes(node):
         i18n_strings.extend(extract_i18n_strings(child_node))
@@ -26,7 +26,7 @@ def extract_i18n_strings(node):
 # for each file, parse the code into an AST
 # for each AST, extract the i18n strings
 
-strings = []
+strings: list[str] = []
 for filename in glob.iglob("**/*.py", recursive=True):
     with open(filename, "r") as f:
         code = f.read()

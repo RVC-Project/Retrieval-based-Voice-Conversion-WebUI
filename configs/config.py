@@ -4,19 +4,21 @@ import sys
 import json
 import shutil
 from multiprocessing import cpu_count
-from typing import Any, Callable, Dict, Optional, Tuple
+from functools import wraps
+from typing import TYPE_CHECKING, TypeVar, TypedDict, cast
 
 import torch
 
-try:
-    import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
+if not TYPE_CHECKING:
+    try:
+        import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
-    if torch.xpu.is_available():
-        from infer.modules.ipex import ipex_init
+        if torch.xpu.is_available():
+            from infer.modules.ipex import ipex_init
 
-        ipex_init()
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
+            ipex_init()
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,22 +32,28 @@ version_config_list: list[str] = [
     "v2/32k.json",
 ]
 
-from functools import wraps
-from typing import Type, TypeVar, Dict
-
 T = TypeVar("T")
 
-_singleton_instances: Dict[Type, object] = {}
+
+class TrainConfig(TypedDict, total=False):
+    fp16_run: bool
 
 
-def singleton_class(cls: Type[T]) -> Type[T]:
+class VersionConfig(TypedDict, total=False):
+    train: TrainConfig
+
+
+_singleton_instances: dict[type[object], object] = {}
+
+
+def singleton_class(cls: type[T]) -> type[T]:
     @wraps(cls)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: object, **kwargs: object) -> T:
         if cls not in _singleton_instances:
             _singleton_instances[cls] = cls(*args, **kwargs)
-        return _singleton_instances[cls]
+        return cast(T, _singleton_instances[cls])
 
-    return wrapper  # Type is preserved
+    return cast(type[T], wrapper)
 
 
 # def singleton_variable(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -64,9 +72,9 @@ class Config:
     is_half: bool
     use_jit: bool
     n_cpu: int
-    gpu_name: Optional[str]
-    json_config: Dict[str, Any]
-    gpu_mem: Optional[int]
+    gpu_name: str | None
+    json_config: dict[str, VersionConfig]
+    gpu_mem: int | None
 
     python_cmd: str
     listen_port: int
@@ -87,9 +95,9 @@ class Config:
         self.is_half: bool = True
         self.use_jit: bool = False
         self.n_cpu: int = 0
-        self.gpu_name: Optional[str] = None
-        self.json_config: Dict[str, Any] = self.load_config_json()
-        self.gpu_mem: Optional[int] = None
+        self.gpu_name: str | None = None
+        self.json_config: dict[str, VersionConfig] = self.load_config_json()
+        self.gpu_mem: int | None = None
         (
             self.python_cmd,
             self.listen_port,
@@ -103,18 +111,18 @@ class Config:
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
 
     @staticmethod
-    def load_config_json() -> dict:
-        d = {}
+    def load_config_json() -> dict[str, VersionConfig]:
+        d: dict[str, VersionConfig] = {}
         for config_file in version_config_list:
             p = f"configs/inuse/{config_file}"
             if not os.path.exists(p):
                 shutil.copy(f"configs/{config_file}", p)
             with open(f"configs/inuse/{config_file}", "r") as f:
-                d[config_file] = json.load(f)
+                d[config_file] = cast(VersionConfig, json.load(f))
         return d
 
     @staticmethod
-    def arg_parse() -> Tuple[str, int, bool, bool, bool, bool]:
+    def arg_parse() -> tuple[str, int, bool, bool, bool, bool]:
         exe = sys.executable or "python"
         parser = argparse.ArgumentParser()
         parser.add_argument("--port", type=int, default=7865, help="Listen port")
@@ -167,7 +175,7 @@ class Config:
 
     def use_fp32_config(self):
         for config_file in version_config_list:
-            self.json_config[config_file]["train"]["fp16_run"] = False
+            self.json_config[config_file].setdefault("train", {})["fp16_run"] = False
             with open(f"configs/inuse/{config_file}", "r") as f:
                 strr = f.read().replace("true", "false")
             with open(f"configs/inuse/{config_file}", "w") as f:
@@ -263,9 +271,10 @@ class Config:
                 except:
                     pass
             # if self.device != "cpu":
-            import torch_directml
+            if not TYPE_CHECKING:
+                import torch_directml
 
-            self.device = torch_directml.device(torch_directml.default_device())
+                self.device = torch_directml.device(torch_directml.default_device())
             self.is_half = False
         else:
             if self.instead:
