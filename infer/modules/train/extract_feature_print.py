@@ -57,9 +57,7 @@ model_path = "assets/hubert/hubert_base.pt"
 
 printt("exp_dir: " + str(exp_dir))
 wavPath = exp_dir / "1_16k_wavs"
-outPath = (
-    exp_dir / "3_feature256" if version == "v1" else exp_dir / "3_feature768"
-)
+outPath = exp_dir / "3_feature256" if version == "v1" else exp_dir / "3_feature768"
 outPath.mkdir(parents=True, exist_ok=True)
 
 
@@ -143,7 +141,9 @@ else:
                 else:
                     printt("%s-contains nan" % file.name)
                 if idx % n == 0:
-                    printt("now-%s,all-%s,%s,%s" % (len(todo), idx, file.name, feats.shape))
+                    printt(
+                        "now-%s,all-%s,%s,%s" % (len(todo), idx, file.name, feats.shape)
+                    )
         except:
             printt(traceback.format_exc())
     printt("all-feature-done")
