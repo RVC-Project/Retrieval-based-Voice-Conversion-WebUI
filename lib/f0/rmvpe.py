@@ -1,36 +1,53 @@
 from io import BytesIO
 import os
-from typing import Any, Optional, Union
+from typing import Protocol, cast
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+from numpy.typing import NDArray
 
-from rvc.jit import load_inputs, get_jit_model, export_jit_model, save_pickle
+from lib.jit.jit import load_inputs, get_jit_model, export_jit_model, save_pickle
 
 from .mel import MelSpectrogram
-from .f0 import F0Predictor
+from .f0 import F0Predictor, FilterRadius, FloatArray
 from .models import get_rmvpe
+
+
+class OnnxInput(Protocol):
+    name: str
+
+
+class OnnxModel(Protocol):
+    def get_inputs(self) -> list[OnnxInput]: ...
+
+    def get_outputs(self) -> list[OnnxInput]: ...
+
+    def run(
+        self, output_names: list[str], input_feed: dict[str, NDArray[np.floating]]
+    ) -> list[FloatArray]: ...
 
 
 def rmvpe_jit_export(
     model_path: str,
     mode: str = "script",
-    inputs_path: str = None,
-    save_path: str = None,
-    device=torch.device("cpu"),
-    is_half=False,
+    inputs_path: str | None = None,
+    save_path: str | None = None,
+    device: str = "cpu",
+    is_half: bool = False,
 ):
     if not save_path:
         save_path = model_path.rstrip(".pth")
         save_path += ".half.jit" if is_half else ".jit"
     if "cuda" in str(device) and ":" not in str(device):
-        device = torch.device("cuda:0")
+        device = "cuda:0"
 
     model = get_rmvpe(model_path, device, is_half)
-    inputs = None
+    inputs: dict[str, torch.Tensor] = {}
     if mode == "trace":
-        inputs = load_inputs(inputs_path, device, is_half)
+        if inputs_path is None:
+            raise ValueError("inputs_path is required when mode is 'trace'")
+        inputs = cast(dict[str, torch.Tensor], load_inputs(inputs_path, device, is_half))
     ckpt = export_jit_model(model, mode, inputs, device, is_half)
     ckpt["device"] = str(device)
     save_pickle(ckpt, save_path)
@@ -95,17 +112,18 @@ class RMVPE(F0Predictor):
 
     def compute_f0(
         self,
-        wav: np.ndarray,
-        p_len: Optional[int] = None,
-        filter_radius: Optional[Union[int, float]] = None,
-    ):
+        wav: FloatArray,
+        p_len: int | None = None,
+        filter_radius: FilterRadius = None,
+    ) -> FloatArray:
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
-        if not torch.is_tensor(wav):
-            wav = torch.from_numpy(wav)
-        mel = self.mel_extractor(wav.float().to(self.device).unsqueeze(0), center=True)
+        wav_tensor = torch.from_numpy(wav)
+        mel = self.mel_extractor(
+            wav_tensor.float().to(self.device).unsqueeze(0), center=True
+        )
         hidden = self._mel2hidden(mel)
-        if "privateuseone" not in str(self.device):
+        if isinstance(hidden, torch.Tensor):
             hidden = hidden.squeeze(0).cpu().numpy()
         else:
             hidden = hidden[0]
@@ -136,22 +154,24 @@ class RMVPE(F0Predictor):
         devided[maxx <= threshold] = 0
         return devided
 
-    def _mel2hidden(self, mel):
+    def _mel2hidden(self, mel: torch.Tensor) -> torch.Tensor | FloatArray:
         with torch.no_grad():
             n_frames = mel.shape[-1]
             n_pad = 32 * ((n_frames - 1) // 32 + 1) - n_frames
             if n_pad > 0:
                 mel = F.pad(mel, (0, n_pad), mode="constant")
             if "privateuseone" in str(self.device):
-                onnx_input_name = self.model.get_inputs()[0].name
-                onnx_outputs_names = self.model.get_outputs()[0].name
-                hidden = self.model.run(
+                onnx_model = cast(OnnxModel, self.model)
+                onnx_input_name = onnx_model.get_inputs()[0].name
+                onnx_outputs_names = onnx_model.get_outputs()[0].name
+                hidden = onnx_model.run(
                     [onnx_outputs_names],
                     input_feed={onnx_input_name: mel.cpu().numpy()},
                 )[0]
             else:
                 mel = mel.half() if self.is_half else mel.float()
-                hidden = self.model(mel)
+                torch_model = cast(torch.nn.Module, self.model)
+                hidden = torch_model(mel)
             return hidden[:, :n_frames]
 
     def _decode(self, hidden, thred=0.03):

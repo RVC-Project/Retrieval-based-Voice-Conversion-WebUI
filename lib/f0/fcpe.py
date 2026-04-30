@@ -1,9 +1,6 @@
-from typing import Optional, Union
-
-import numpy as np
 import torch
 
-from .f0 import F0Predictor
+from .f0 import F0Predictor, FilterRadius, FloatArray
 
 
 class FCPE(F0Predictor):
@@ -31,20 +28,20 @@ class FCPE(F0Predictor):
 
     def compute_f0(
         self,
-        wav: np.ndarray,
-        p_len: Optional[int] = None,
-        filter_radius: Optional[Union[int, float]] = 0.006,
-    ):
+        wav: FloatArray,
+        p_len: int | None = None,
+        filter_radius: FilterRadius = 0.006,
+    ) -> FloatArray:
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
-        if not torch.is_tensor(wav):
-            wav = torch.from_numpy(wav)
+        wav_tensor = torch.from_numpy(wav)
+        threshold = float(filter_radius) if filter_radius is not None else 0.006
         f0 = (
             self.model.infer(
-                wav.float().to(self.device).unsqueeze(0),
+                wav_tensor.float().to(self.device).unsqueeze(0),
                 sr=self.sampling_rate,
                 decoder_mode="local_argmax",
-                threshold=filter_radius,
+                threshold=threshold,
             )
             .squeeze()
             .cpu()

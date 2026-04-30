@@ -1,9 +1,33 @@
-from typing import Optional
+from importlib import import_module
+from typing import Protocol, cast
 
 import numpy as np
-import parselmouth
 
-from .f0 import F0Predictor
+from .f0 import F0Predictor, FilterRadius, FloatArray
+
+
+class ParselmouthPitch(Protocol):
+    selected_array: dict[str, FloatArray]
+
+
+class ParselmouthSound(Protocol):
+    def to_pitch_ac(
+        self,
+        *,
+        time_step: float,
+        voicing_threshold: float,
+        pitch_floor: int,
+        pitch_ceiling: int,
+    ) -> ParselmouthPitch: ...
+
+
+class ParselmouthModule(Protocol):
+    def Sound(
+        self, values: FloatArray, sampling_frequency: int
+    ) -> ParselmouthSound: ...
+
+
+parselmouth = cast(ParselmouthModule, import_module("parselmouth"))
 
 
 class PM(F0Predictor):
@@ -12,10 +36,10 @@ class PM(F0Predictor):
 
     def compute_f0(
         self,
-        wav: np.ndarray,
-        p_len: Optional[int] = None,
-        filter_radius: Optional[int] = None,
-    ):
+        wav: FloatArray,
+        p_len: int | None = None,
+        filter_radius: FilterRadius = None,
+    ) -> FloatArray:
         x = wav
         if p_len is None:
             p_len = x.shape[0] // self.hop_length
@@ -35,5 +59,8 @@ class PM(F0Predictor):
 
         pad_size = (p_len - len(f0) + 1) // 2
         if pad_size > 0 or p_len - len(f0) - pad_size > 0:
-            f0 = np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant")
+            f0 = np.asarray(
+                np.pad(f0, [[pad_size, p_len - len(f0) - pad_size]], mode="constant"),
+                dtype=np.float64,
+            )
         return self._interpolate_f0(f0)[0]
