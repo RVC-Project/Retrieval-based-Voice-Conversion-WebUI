@@ -1,18 +1,22 @@
-from typing import Optional, Union
+from abc import ABC, abstractmethod
 
 import torch
 import numpy as np
+from numpy.typing import NDArray
+
+type FloatArray = NDArray[np.floating]
+type FilterRadius = int | float | None
 
 
-class F0Predictor(object):
+class F0Predictor(ABC):
     def __init__(
         self,
-        hop_length=512,
-        f0_min=50,
-        f0_max=1100,
-        sampling_rate=44100,
-        device: Optional[str] = None,
-    ):
+        hop_length: int = 512,
+        f0_min: int = 50,
+        f0_max: int = 1100,
+        sampling_rate: int = 44100,
+        device: str | None = None,
+    ) -> None:
         self.hop_length = hop_length
         self.f0_min = f0_min
         self.f0_max = f0_max
@@ -21,14 +25,15 @@ class F0Predictor(object):
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.device = device
 
+    @abstractmethod
     def compute_f0(
         self,
-        wav: np.ndarray,
-        p_len: Optional[int] = None,
-        filter_radius: Optional[Union[int, float]] = None,
-    ): ...
+        wav: FloatArray,
+        p_len: int | None = None,
+        filter_radius: FilterRadius = None,
+    ) -> FloatArray: ...
 
-    def _interpolate_f0(self, f0: np.ndarray):
+    def _interpolate_f0(self, f0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """
         对F0进行插值处理
         """
@@ -66,7 +71,7 @@ class F0Predictor(object):
 
         return ip_data[:, 0], vuv_vector[:, 0]
 
-    def _resize_f0(self, x: np.ndarray, target_len: int):
+    def _resize_f0(self, x: FloatArray, target_len: int) -> FloatArray:
         source = np.array(x)
         source[source < 0.001] = np.nan
         target = np.interp(
@@ -74,5 +79,5 @@ class F0Predictor(object):
             np.arange(0, len(source)),
             source,
         )
-        res = np.nan_to_num(target)
+        res = np.asarray(np.nan_to_num(target), dtype=np.float64)
         return res
