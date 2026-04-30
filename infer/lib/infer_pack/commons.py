@@ -42,25 +42,33 @@ def rand_gumbel_like(x):
     return g
 
 
-def slice_segments(x, ids_str, segment_size=4):
-    ret = torch.zeros_like(x[:, :, :segment_size])
+def slice_segments(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4) -> torch.Tensor:
+    ret = torch.zeros(x.size(0), x.size(1), segment_size, device=x.device, dtype=x.dtype)
+    max_start = max(x.size(2) - segment_size, 0)
     for i in range(x.size(0)):
-        idx_str = ids_str[i]
-        idx_end = idx_str + segment_size
-        ret[i] = x[i, :, idx_str:idx_end]
+        idx_str = int(ids_str[i].item())
+        idx_str = max(0, min(idx_str, max_start))
+        idx_end = min(idx_str + segment_size, x.size(2))
+        segment = x[i, :, idx_str:idx_end]
+        ret[i, :, : segment.size(-1)] = segment
     return ret
 
 
-def slice_segments2(x, ids_str, segment_size=4):
-    ret = torch.zeros_like(x[:, :segment_size])
+def slice_segments2(x: torch.Tensor, ids_str: torch.Tensor, segment_size: int = 4) -> torch.Tensor:
+    ret = torch.zeros(x.size(0), segment_size, device=x.device, dtype=x.dtype)
+    max_start = max(x.size(1) - segment_size, 0)
     for i in range(x.size(0)):
-        idx_str = ids_str[i]
-        idx_end = idx_str + segment_size
-        ret[i] = x[i, idx_str:idx_end]
+        idx_str = int(ids_str[i].item())
+        idx_str = max(0, min(idx_str, max_start))
+        idx_end = min(idx_str + segment_size, x.size(1))
+        segment = x[i, idx_str:idx_end]
+        ret[i, : segment.size(-1)] = segment
     return ret
 
 
-def rand_slice_segments(x, x_lengths=None, segment_size=4):
+def rand_slice_segments(
+    x: torch.Tensor, x_lengths: torch.Tensor | int | None = None, segment_size: int = 4
+) -> tuple[torch.Tensor, torch.Tensor]:
     b, d, t = x.size()
     if x_lengths is None:
         x_lengths = t

@@ -3,9 +3,8 @@ import os
 import sys
 import logging
 from pathlib import Path
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import cast
+from typing import Generator, cast
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ import torch
 from torch import nn
 
 @contextmanager
-def cuda_autocast(enabled: bool) -> Iterator[None]:
+def cuda_autocast(enabled: bool) -> Generator[None, None, None]:
     with torch.amp.autocast("cuda", enabled=enabled):  # type: ignore[bad-context-manager]
         yield
 
@@ -510,8 +509,8 @@ def train_and_evaluate(
         scaler.scale(loss_disc).backward()
         scaler.unscale_(optim_d)
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
+        scale_before_step = scaler.get_scale()
         scaler.step(optim_d)
-        schedulers[1].step()
 
         with cuda_autocast(hps.train.fp16_run):
             # Generator
@@ -527,8 +526,11 @@ def train_and_evaluate(
         scaler.unscale_(optim_g)
         grad_norm_g = commons.clip_grad_value_(net_g.parameters(), None)
         scaler.step(optim_g)
-        schedulers[0].step()
         scaler.update()
+
+        if scaler.get_scale() >= scale_before_step:
+            schedulers[1].step()
+            schedulers[0].step()
 
         if rank == 0:
             if global_step % hps.train.log_interval == 0:
