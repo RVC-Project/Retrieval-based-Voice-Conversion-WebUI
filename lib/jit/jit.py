@@ -1,6 +1,7 @@
 import pickle
 from io import BytesIO
 from collections import OrderedDict
+from pathlib import Path
 import os
 
 import torch
@@ -8,12 +9,12 @@ import torch
 from lib.types import FileLike
 
 
-def load_pickle(path: str) -> dict:
+def load_pickle(path: Path) -> dict:
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
-def save_pickle(ckpt: dict, save_path: str):
+def save_pickle(ckpt: dict, save_path: Path):
     with open(save_path, "wb") as f:
         pickle.dump(ckpt, f)
 
@@ -55,12 +56,12 @@ def export_jit_model(
     return cpt
 
 
-def get_jit_model(model_path: str, is_half: bool, device: str, exporter):
-    jit_model_path = model_path.rstrip(".pth")
-    jit_model_path += ".half.jit" if is_half else ".jit"
+def get_jit_model(model_path: Path, is_half: bool, device: str, exporter):
+    stem = model_path.with_suffix("")
+    jit_model_path = stem.with_suffix(".half.jit" if is_half else ".jit")
     ckpt = None
 
-    if os.path.exists(jit_model_path):
+    if jit_model_path.exists():
         ckpt = load_pickle(jit_model_path)
         model_device = ckpt["device"]
         if model_device != str(device):

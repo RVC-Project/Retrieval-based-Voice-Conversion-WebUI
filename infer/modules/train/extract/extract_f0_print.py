@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from pathlib import Path
 
 import parselmouth
 
@@ -15,8 +16,8 @@ from infer.lib.audio import load_audio
 
 from multiprocessing import Process
 
-exp_dir = sys.argv[1]
-f = open("%s/extract_f0_feature.log" % exp_dir, "a+")
+exp_dir = Path(sys.argv[1])
+f = open(exp_dir / "extract_f0_feature.log", "a+")
 
 
 def printt(strr):
@@ -145,19 +146,19 @@ if __name__ == "__main__":
     printt(" ".join(sys.argv))
     featureInput = FeatureInput()
     paths = []
-    inp_root = "%s/1_16k_wavs" % (exp_dir)
-    opt_root1 = "%s/2a_f0" % (exp_dir)
-    opt_root2 = "%s/2b-f0nsf" % (exp_dir)
+    inp_root = exp_dir / "1_16k_wavs"
+    opt_root1 = exp_dir / "2a_f0"
+    opt_root2 = exp_dir / "2b-f0nsf"
 
-    os.makedirs(opt_root1, exist_ok=True)
-    os.makedirs(opt_root2, exist_ok=True)
-    for name in sorted(list(os.listdir(inp_root))):
-        inp_path = "%s/%s" % (inp_root, name)
-        if "spec" in inp_path:
+    opt_root1.mkdir(parents=True, exist_ok=True)
+    opt_root2.mkdir(parents=True, exist_ok=True)
+    for wav_file in sorted(inp_root.iterdir(), key=lambda p: p.name):
+        inp_path = inp_root / wav_file.name
+        if "spec" in inp_path.name:
             continue
-        opt_path1 = "%s/%s" % (opt_root1, name)
-        opt_path2 = "%s/%s" % (opt_root2, name)
-        paths.append([inp_path, opt_path1, opt_path2])
+        opt_path1 = opt_root1 / wav_file.name
+        opt_path2 = opt_root2 / wav_file.name
+        paths.append([str(inp_path), str(opt_path1), str(opt_path2)])
 
     ps = []
     for i in range(n_p):

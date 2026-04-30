@@ -1,10 +1,11 @@
+from pathlib import Path
 import torch
 import onnxsim
 import onnx
 from infer.lib.infer_pack.models_onnx import SynthesizerTrnMsNSFsidM
 
 
-def export_onnx(ModelPath, ExportedPath):
+def export_onnx(ModelPath: Path, ExportedPath: Path):
     cpt = torch.load(ModelPath, map_location="cpu", weights_only=False)
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
     vec_channels = 256 if cpt.get("version", "v1") == "v1" else 768
@@ -50,6 +51,6 @@ def export_onnx(ModelPath, ExportedPath):
         input_names=input_names,
         output_names=output_names,
     )
-    model, _ = onnxsim.simplify(ExportedPath)
-    onnx.save(model, ExportedPath)
+    model, _ = onnxsim.simplify(str(ExportedPath))
+    onnx.save(model, str(ExportedPath))
     return "Finished"

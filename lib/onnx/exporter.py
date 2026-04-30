@@ -1,9 +1,10 @@
+from pathlib import Path
 import torch
 
 from .synthesizer import SynthesizerTrnMsNSFsid
 
 
-def export_onnx(from_cpkt_pth: str, to_onnx_pth: str) -> str:
+def export_onnx(from_cpkt_pth: Path, to_onnx_pth: Path) -> str:
     cpt = torch.load(from_cpkt_pth, map_location="cpu")
     cpt["config"][-3] = cpt["weight"]["emb_g.weight"].shape[0]
     vec_channels = 256 if cpt.get("version", "v1") == "v1" else 768
