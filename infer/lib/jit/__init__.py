@@ -1,12 +1,17 @@
 from io import BytesIO
 import pickle
 import time
+from typing import Literal, TypeAlias, cast
 import torch
 from tqdm import tqdm
 from collections import OrderedDict
 
+DeviceLike: TypeAlias = torch.device | str
+TensorInputs: TypeAlias = dict[str, torch.Tensor]
+JitMode: TypeAlias = Literal["trace", "script"]
 
-def load_inputs(path, device, is_half=False):
+
+def load_inputs(path: str, device: DeviceLike, is_half: bool = False) -> TensorInputs:
     parm = torch.load(path, map_location=torch.device("cpu"), weights_only=False)
     for key in parm.keys():
         parm[key] = parm[key].to(device)
@@ -18,8 +23,12 @@ def load_inputs(path, device, is_half=False):
 
 
 def benchmark(
-    model, inputs_path, device=torch.device("cpu"), epoch=1000, is_half=False
-):
+    model: torch.nn.Module,
+    inputs_path: str,
+    device: DeviceLike = torch.device("cpu"),
+    epoch: int = 1000,
+    is_half: bool = False,
+) -> None:
     parm = load_inputs(inputs_path, device, is_half)
     total_ts = 0.0
     bar = tqdm(range(epoch))
@@ -30,18 +39,24 @@ def benchmark(
     print(f"num_epoch: {epoch} | avg time(ms): {(total_ts*1000)/epoch}")
 
 
-def jit_warm_up(model, inputs_path, device=torch.device("cpu"), epoch=5, is_half=False):
+def jit_warm_up(
+    model: torch.nn.Module,
+    inputs_path: str,
+    device: DeviceLike = torch.device("cpu"),
+    epoch: int = 5,
+    is_half: bool = False,
+) -> None:
     benchmark(model, inputs_path, device, epoch=epoch, is_half=is_half)
 
 
 def to_jit_model(
-    model_path,
+    model_path: str,
     model_type: str,
-    mode: str = "trace",
-    inputs_path: str = None,
-    device=torch.device("cpu"),
-    is_half=False,
-):
+    mode: JitMode = "trace",
+    inputs_path: str | None = None,
+    device: DeviceLike = torch.device("cpu"),
+    is_half: bool = False,
+) -> tuple[torch.nn.Module, torch.jit.ScriptModule]:
     model = None
     if model_type.lower() == "synthesizer":
         from .get_synthesizer import get_synthesizer
@@ -62,11 +77,16 @@ def to_jit_model(
     model = model.eval()
     model = model.half() if is_half else model.float()
     if mode == "trace":
-        assert not inputs_path
+        assert inputs_path is not None
         inputs = load_inputs(inputs_path, device, is_half)
-        model_jit = torch.jit.trace(model, example_kwarg_inputs=inputs)
+        model_jit = cast(
+            torch.jit.ScriptModule,
+            torch.jit.trace(model, example_kwarg_inputs=inputs),
+        )
     elif mode == "script":
-        model_jit = torch.jit.script(model)
+        model_jit = cast(torch.jit.ScriptModule, torch.jit.script(model))
+    else:
+        raise ValueError(f"Unsupported JIT mode: {mode}")
     model_jit.to(device)
     model_jit = model_jit.half() if is_half else model_jit.float()
     # model = model.half() if is_half else model.float()
@@ -75,48 +95,53 @@ def to_jit_model(
 
 def export(
     model: torch.nn.Module,
-    mode: str = "trace",
-    inputs: dict = None,
-    device=torch.device("cpu"),
+    mode: JitMode = "trace",
+    inputs: TensorInputs | None = None,
+    device: DeviceLike = torch.device("cpu"),
     is_half: bool = False,
 ) -> dict:
     model = model.half() if is_half else model.float()
     model.eval()
     if mode == "trace":
         assert inputs is not None
-        model_jit = torch.jit.trace(model, example_kwarg_inputs=inputs)
+        model_jit = cast(
+            torch.jit.ScriptModule,
+            torch.jit.trace(model, example_kwarg_inputs=inputs),
+        )
     elif mode == "script":
-        model_jit = torch.jit.script(model)
+        model_jit = cast(torch.jit.ScriptModule, torch.jit.script(model))
+    else:
+        raise ValueError(f"Unsupported JIT mode: {mode}")
     model_jit.to(device)
     model_jit = model_jit.half() if is_half else model_jit.float()
     buffer = BytesIO()
     # model_jit=model_jit.cpu()
     torch.jit.save(model_jit, buffer)
     del model_jit
-    cpt = OrderedDict()
+    cpt: OrderedDict[str, object] = OrderedDict()
     cpt["model"] = buffer.getvalue()
     cpt["is_half"] = is_half
     return cpt
 
 
-def load(path: str):
+def load(path: str) -> dict:
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
-def save(ckpt: dict, save_path: str):
+def save(ckpt: dict, save_path: str) -> None:
     with open(save_path, "wb") as f:
         pickle.dump(ckpt, f)
 
 
 def rmvpe_jit_export(
     model_path: str,
-    mode: str = "script",
-    inputs_path: str = None,
-    save_path: str = None,
-    device=torch.device("cpu"),
-    is_half=False,
-):
+    mode: JitMode = "script",
+    inputs_path: str | None = None,
+    save_path: str | None = None,
+    device: DeviceLike = torch.device("cpu"),
+    is_half: bool = False,
+) -> dict:
     if not save_path:
         save_path = model_path.rstrip(".pth")
         save_path += ".half.jit" if is_half else ".jit"
@@ -125,8 +150,9 @@ def rmvpe_jit_export(
     from .get_rmvpe import get_rmvpe
 
     model = get_rmvpe(model_path, device)
-    inputs = None
+    inputs: TensorInputs | None = None
     if mode == "trace":
+        assert inputs_path is not None
         inputs = load_inputs(inputs_path, device, is_half)
     ckpt = export(model, mode, inputs, device, is_half)
     ckpt["device"] = str(device)
@@ -136,12 +162,12 @@ def rmvpe_jit_export(
 
 def synthesizer_jit_export(
     model_path: str,
-    mode: str = "script",
-    inputs_path: str = None,
-    save_path: str = None,
-    device=torch.device("cpu"),
-    is_half=False,
-):
+    mode: JitMode = "script",
+    inputs_path: str | None = None,
+    save_path: str | None = None,
+    device: DeviceLike = torch.device("cpu"),
+    is_half: bool = False,
+) -> dict:
     if not save_path:
         save_path = model_path.rstrip(".pth")
         save_path += ".half.jit" if is_half else ".jit"
@@ -152,8 +178,9 @@ def synthesizer_jit_export(
     model, cpt = get_synthesizer(model_path, device)
     assert isinstance(cpt, dict)
     model.forward = model.infer
-    inputs = None
+    inputs: TensorInputs | None = None
     if mode == "trace":
+        assert inputs_path is not None
         inputs = load_inputs(inputs_path, device, is_half)
     ckpt = export(model, mode, inputs, device, is_half)
     cpt.pop("weight")
