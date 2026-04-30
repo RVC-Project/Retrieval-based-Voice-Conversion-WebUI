@@ -35,14 +35,6 @@ dependencies = [
     "tqdm>=4.63.1",
 ]
 
-[project.optional-dependencies]
-gtk = [
-    # List the GTK dependencies here for the extra-dependencies group
-    "pygobject>=3.52.3",
-    "pygobject-stubs>=2.13.0",
-]
-
-
 [tool.uv.sources]
 fairseq = { git = "https://github.com/yamada-sexta/fairseq.git" }
 

@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 import logging
-from typing import List, Optional, Union, TypeAlias
+from typing import Protocol, TypeAlias
 
 from configs.config import Config
 from infer.lib.infer_pack.models import (
@@ -34,6 +34,18 @@ bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)  # type: ignore
 
 from infer.modules.vc.f0_extractors import *
 from lib.types.f0 import PitchMethod, PITCH_METHODS
+
+
+class NamedFile(Protocol):
+    name: str
+
+
+RVCModel: TypeAlias = (
+    SynthesizerTrnMs256NSFsid
+    | SynthesizerTrnMs256NSFsid_nono
+    | SynthesizerTrnMs768NSFsid
+    | SynthesizerTrnMs768NSFsid_nono
+)
 
 
 def change_rms(
@@ -69,7 +81,7 @@ class Pipeline(object):
     f0_min = 50
     f0_max = 1100
 
-    def __init__(self, tgt_sr: int, config: Config) -> "Pipeline":
+    def __init__(self, tgt_sr: int, config: Config) -> None:
         self.x_pad, self.x_query, self.x_center, self.x_max, self.is_half = (
             config.x_pad,
             config.x_query,
@@ -90,14 +102,14 @@ class Pipeline(object):
         self.pitch_extractors: PitchExtractorDict = {}
 
     def get_f0(
-        self: "Pipeline",
+        self,
         x: np.ndarray,
         p_len: int,
         f0_up_key: int,
         f0_method: PitchMethod,
         filter_radius: int = 3,
-        inp_f0: Optional[np.ndarray] = None,
-    ):
+        inp_f0: np.ndarray | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         # Lazy load f0 pitch extractor
         if f0_method not in self.pitch_extractors:
             match f0_method:
@@ -130,8 +142,9 @@ class Pipeline(object):
             delta_t = np.round(
                 (inp_f0[:, 0].max() - inp_f0[:, 0].min()) * tf0 + 1
             ).astype("int16")
-            replace_f0 = np.interp(
-                list(range(delta_t)), inp_f0[:, 0] * 100, inp_f0[:, 1]
+            replace_f0 = np.asarray(
+                np.interp(np.arange(delta_t), inp_f0[:, 0] * 100, inp_f0[:, 1]),
+                dtype=np.float32,
             )
             shape = f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)].shape[0]
             f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)] = replace_f0[
@@ -152,25 +165,20 @@ class Pipeline(object):
         return f0_coarse, f0bak
 
     def vc(
-        self: "Pipeline",
+        self,
         model: FairseqHubertModel,
-        net_g: Union[
-            SynthesizerTrnMs256NSFsid,
-            SynthesizerTrnMs256NSFsid_nono,
-            SynthesizerTrnMs768NSFsid,
-            SynthesizerTrnMs768NSFsid_nono,
-        ],
-        sid: int,
+        net_g: RVCModel,
+        sid: torch.Tensor,
         audio: np.ndarray,
-        pitch: Optional[torch.Tensor],
-        pitchf: Optional[torch.Tensor],
-        times: List[float],
-        index: Optional[faiss.Index],
-        big_npy: Optional[np.ndarray],
+        pitch: torch.Tensor | None,
+        pitchf: torch.Tensor | None,
+        times: list[float],
+        index: faiss.Index | None,
+        big_npy: np.ndarray | None,
         index_rate: float,
         version: str,
         protect: float,
-    ):  # ,file_index,file_big_npy
+    ) -> np.ndarray:  # ,file_index,file_big_npy
         feats = torch.from_numpy(audio)
         if self.is_half:
             try:
@@ -198,6 +206,7 @@ class Pipeline(object):
         with torch.no_grad():
             logits = model.extract_features(**inputs)
             feats = model.final_proj(logits[0]) if version == "v1" else logits[0]
+        feats0: torch.Tensor | None = None
         if protect < 0.5 and pitch is not None and pitchf is not None:
             feats0 = feats.clone()
             #    not isinstance(index, type(None))
@@ -209,7 +218,7 @@ class Pipeline(object):
             if self.is_half:
                 npy = npy.astype("float32")
 
-            score, ix = index.search(npy, k=8)
+            score, ix = index.search(npy, k=8)  # type: ignore[missing-argument]
             weight = np.square(1 / score)
             weight /= weight.sum(axis=1, keepdims=True)
             npy = np.sum(big_npy[ix] * np.expand_dims(weight, axis=2), axis=1)
@@ -223,6 +232,7 @@ class Pipeline(object):
 
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         if protect < 0.5 and pitch is not None and pitchf is not None:
+            assert feats0 is not None
             feats0 = F.interpolate(feats0.permute(0, 2, 1), scale_factor=2).permute(
                 0, 2, 1
             )
@@ -235,6 +245,7 @@ class Pipeline(object):
                 pitchf = pitchf[:, :p_len]
 
         if protect < 0.5 and pitch is not None and pitchf is not None:
+            assert feats0 is not None
             pitchff = pitchf.clone()
             pitchff[pitchf > 0] = 1
             pitchff[pitchf < 1] = protect
@@ -256,18 +267,13 @@ class Pipeline(object):
         return audio1
 
     def pipeline(
-        self: "Pipeline",
+        self,
         model: FairseqHubertModel,
-        net_g: Union[
-            SynthesizerTrnMs256NSFsid,
-            SynthesizerTrnMs256NSFsid_nono,
-            SynthesizerTrnMs768NSFsid,
-            SynthesizerTrnMs768NSFsid_nono,
-        ],
+        net_g: RVCModel,
         sid: int,
         audio: np.ndarray,
         # input_audio_path: str,
-        times: List[int],
+        times: list[float],
         f0_up_key: int,
         f0_method: PitchMethod,
         file_index: str,
@@ -279,7 +285,7 @@ class Pipeline(object):
         rms_mix_rate: float,
         version: str,
         protect: float,
-        f0_file=None,
+        f0_file: NamedFile | None = None,
         progress=gr.Progress(),
     ) -> np.ndarray:
         progress(0.01, desc="Initializing...")  # Initial progress
@@ -292,14 +298,19 @@ class Pipeline(object):
             and index_rate != 0
         ):
             try:
-                index: faiss.Index = faiss.read_index(file_index)
+                loaded_index = faiss.read_index(file_index)
+                index: faiss.Index | None = loaded_index
                 # big_npy = np.load(file_big_npy)
-                big_npy: np.ndarray = index.reconstruct_n(0, index.ntotal)
+                big_npy: np.ndarray | None = loaded_index.reconstruct_n(  # type: ignore[missing-argument]
+                    0, loaded_index.ntotal
+                )
             except:
                 traceback.print_exc()
-                index = big_npy = None
+                index = None
+                big_npy = None
         else:
-            index = big_npy = None
+            index = None
+            big_npy = None
         audio = signal.filtfilt(bh, ah, audio)
         audio_pad = np.pad(audio, (self.window // 2, self.window // 2), mode="reflect")
         opt_ts = []
@@ -317,27 +328,28 @@ class Pipeline(object):
                     )[0][0]
                 )
         s = 0
-        audio_opt: List[np.ndarray] = []
+        audio_segments: list[np.ndarray] = []
         t = None
         t1 = ttime()
         audio_pad = np.pad(audio, (self.t_pad, self.t_pad), mode="reflect")
         p_len = audio_pad.shape[0] // self.window
-        inp_f0 = None
-        if hasattr(f0_file, "name"):
+        inp_f0: np.ndarray | None = None
+        if f0_file is not None:
             try:
                 with open(f0_file.name, "r") as f:
                     lines = f.read().strip("\n").split("\n")
-                inp_f0 = []
+                inp_f0_rows: list[list[float]] = []
                 for line in lines:
-                    inp_f0.append([float(i) for i in line.split(",")])
-                inp_f0 = np.array(inp_f0, dtype="float32")
+                    inp_f0_rows.append([float(i) for i in line.split(",")])
+                inp_f0 = np.array(inp_f0_rows, dtype="float32")
             except:
                 traceback.print_exc()
-        sid = torch.tensor(sid, device=self.device).unsqueeze(0).long()
-        pitch, pitchf = None, None
+        sid_tensor = torch.tensor(sid, device=self.device).unsqueeze(0).long()
+        pitch: torch.Tensor | None = None
+        pitchf: torch.Tensor | None = None
         if if_f0 == 1:
             progress(0.2, desc="Extracting F0...")  # Progress update
-            pitch, pitchf = self.get_f0(
+            pitch_np, pitchf_np = self.get_f0(
                 # input_audio_path,
                 x=audio_pad,
                 p_len=p_len,
@@ -346,12 +358,12 @@ class Pipeline(object):
                 # filter_radius=filter_radius,
                 inp_f0=inp_f0,
             )
-            pitch = pitch[:p_len]
-            pitchf = pitchf[:p_len]
+            pitch_np = pitch_np[:p_len]
+            pitchf_np = pitchf_np[:p_len]
             if "mps" not in str(self.device) or "xpu" not in str(self.device):
-                pitchf = pitchf.astype(np.float32)
-            pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
-            pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
+                pitchf_np = pitchf_np.astype(np.float32)
+            pitch = torch.tensor(pitch_np, device=self.device).unsqueeze(0).long()
+            pitchf = torch.tensor(pitchf_np, device=self.device).unsqueeze(0).float()
         t2 = ttime()
         times[1] += t2 - t1
 
@@ -364,11 +376,13 @@ class Pipeline(object):
             )  # Progress update
             t = t // self.window * self.window
             if if_f0 == 1:
-                audio_opt.append(
+                assert pitch is not None
+                assert pitchf is not None
+                audio_segments.append(
                     self.vc(
                         model,
                         net_g,
-                        sid,
+                        sid_tensor,
                         audio_pad[s : t + self.t_pad2 + self.window],
                         pitch[:, s // self.window : (t + self.t_pad2) // self.window],
                         pitchf[:, s // self.window : (t + self.t_pad2) // self.window],
@@ -381,11 +395,11 @@ class Pipeline(object):
                     )[self.t_pad_tgt : -self.t_pad_tgt]
                 )
             else:
-                audio_opt.append(
+                audio_segments.append(
                     self.vc(
                         model,
                         net_g,
-                        sid,
+                        sid_tensor,
                         audio_pad[s : t + self.t_pad2 + self.window],
                         None,
                         None,
@@ -404,11 +418,13 @@ class Pipeline(object):
         )  # Progress update before last segment
 
         if if_f0 == 1:
-            audio_opt.append(
+            assert pitch is not None
+            assert pitchf is not None
+            audio_segments.append(
                 self.vc(
                     model,
                     net_g,
-                    sid,
+                    sid_tensor,
                     audio_pad[t:],
                     pitch[:, t // self.window :] if t is not None else pitch,
                     pitchf[:, t // self.window :] if t is not None else pitchf,
@@ -421,11 +437,11 @@ class Pipeline(object):
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
         else:
-            audio_opt.append(
+            audio_segments.append(
                 self.vc(
                     model=model,
                     net_g=net_g,
-                    sid=sid,
+                    sid=sid_tensor,
                     audio=audio_pad[t:],
                     pitch=None,
                     pitchf=None,
@@ -437,7 +453,7 @@ class Pipeline(object):
                     protect=protect,
                 )[self.t_pad_tgt : -self.t_pad_tgt]
             )
-        audio_opt = np.concatenate(audio_opt)
+        audio_opt = np.concatenate(audio_segments)
         if rms_mix_rate != 1:
             audio_opt = change_rms(audio, 16000, audio_opt, tgt_sr, rms_mix_rate)
         if tgt_sr != resample_sr >= 16000:
@@ -449,7 +465,7 @@ class Pipeline(object):
         if audio_max > 1:
             max_int16 /= audio_max
         audio_opt = (audio_opt * max_int16).astype(np.int16)
-        del pitch, pitchf, sid
+        del pitch, pitchf, sid_tensor
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         progress(1.0, desc="Conversion complete.")  # Final progress
