@@ -105,7 +105,7 @@ def preprocess_dataset(
     )
     shared.logger.info("Execute: " + cmd)
     p = Popen(cmd, shell=True)
-    # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
+    # Stupid gr, popen read has to finish entirely before reading it all at once; without gr it normally reads and outputs line by line; have to create an extra text stream to read periodically
     done = [False]
     threading.Thread(
         target=if_done,
@@ -229,7 +229,7 @@ def extract_f0_feature(
             p = Popen(
                 cmd, shell=True, cwd=shared.now_dir
             )  # , stdin=PIPE, stdout=PIPE,stderr=PIPE
-            # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
+            # Stupid gr, popen read has to finish entirely before reading it all at once; without gr it normally reads and outputs line by line; have to create an extra text stream to read periodically
             done = [False]
             threading.Thread(
                 target=if_done,
@@ -295,7 +295,7 @@ def extract_f0_feature(
         ) as f:
             log = f.read()
         shared.logger.info(log)
-    # 对不同part分别开多进程
+    # Open multiple processes for different parts
     """
     n_part=int(sys.argv[1])
     i_part=int(sys.argv[2])
@@ -325,7 +325,7 @@ def extract_f0_feature(
             cmd, shell=True, cwd=shared.now_dir
         )  # , shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=now_dir
         ps.append(p)
-    # 煞笔gr, popen read都非得全跑完了再一次性读取, 不用gr就正常读一句输出一句;只能额外弄出一个文本流定时读
+    # Stupid gr, popen read has to finish entirely before reading it all at once; without gr it normally reads and outputs line by line; have to create an extra text stream to read periodically
     done = [False]
     threading.Thread(
         target=if_done_multi,
@@ -534,7 +534,7 @@ def click_train(
     with open("%s/filelist.txt" % exp_dir, "w") as f:
         f.write("\n".join(opt))
     shared.logger.debug("Write filelist done")
-    # 生成config#无需生成config
+    # Generate config# No need to generate config
     # cmd = python_cmd + " train_nsf_sim_cache_sid_load_pretrain.py -e mi-test -sr 40k -f0 1 -bs 4 -g 0 -te 10 -se 5 -pg pretrained/f0G40k.pth -pd pretrained/f0D40k.pth -l 1 -c 0"
     shared.logger.info("Use gpus: %s", str(gpus16))
     if pretrained_G14 == "":
@@ -695,7 +695,7 @@ def train_index(exp_dir1: str, version19: str, progress=gr.Progress()):
         % (exp_dir, n_ivf, index_ivf.nprobe, exp_dir1, version19),
     )
     infos.append(
-        "Successfully built index: added_IVF%s_Flat_nprobe_%s_%s_%s.index"  # Original: "成功构建索引 added_IVF%s_Flat_nprobe_%s_%s_%s.index"
+        "Successfully built index: added_IVF%s_Flat_nprobe_%s_%s_%s.index"  # Original: "Successfully built index added_IVF%s_Flat_nprobe_%s_%s_%s.index"
         % (n_ivf, index_ivf.nprobe, exp_dir1, version19)
     )
     try:
@@ -715,12 +715,12 @@ def train_index(exp_dir1: str, version19: str, progress=gr.Progress()):
         )
         infos.append(
             "Linked index to external directory: %s" % (shared.outside_index_root)
-        )  # Original: "链接索引到外部-%s"
+        )  # Original: "Linked index to external - %s"
     except:
         infos.append(
             "Failed to link index to external directory: %s"
             % (shared.outside_index_root)
-        )  # Original: "链接索引到外部-%s失败"
+        )  # Original: "Failed to link index to external - %s"
     progress(1.0, desc="Indexing complete!")  # Final progress update
     yield "\n".join(infos)
 
@@ -751,11 +751,11 @@ def one_click_training(
         infos.append(strr)
         return "\n".join(infos)
 
-    # step1:处理数据
+    # step1: Process data
     yield get_info_str(shared.i18n("step1: processing data..."))
     [get_info_str(_) for _ in preprocess_dataset(trainset_dir4, exp_dir1, sr2, np7)]
 
-    # step2a:提取音高
+    # step2a: Extract pitch
     yield get_info_str(shared.i18n("step2: extracting feature & pitch"))
     [
         get_info_str(_)
@@ -764,8 +764,8 @@ def one_click_training(
         )
     ]
 
-    # step3a:训练模型
-    yield get_info_str(shared.i18n("step3a:正在训练模型"))
+    # step3a: Train model
+    yield get_info_str(shared.i18n("step3a: Training model"))
     click_train(
         exp_dir1,
         sr2,
@@ -783,12 +783,12 @@ def one_click_training(
         version19,
     )
     yield get_info_str(
-        i18n("训练结束, 您可查看控制台训练日志或实验文件夹下的train.log")
+        i18n("Training finished, you can view the console training log or train.log in the experiment folder")
     )
 
-    # step3b:训练索引
+    # step3b: Train index
     [get_info_str(_) for _ in train_index(exp_dir1, version19)]
-    yield get_info_str(i18n("全流程结束！"))
+    yield get_info_str(i18n("Full process completed!"))
 
 
 def create_train_tab():
@@ -872,7 +872,7 @@ def create_train_tab():
                 with gr.Column():
                     gpus6 = gr.Textbox(
                         label=i18n(
-                            "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"
+                            "Enter card numbers separated by '-', e.g., 0-1-2 to use card 0, card 1, and card 2"
                         ),
                         value=shared.gpus,
                         interactive=True,
@@ -901,7 +901,7 @@ def create_train_tab():
                     )
                     gpus_rmvpe = gr.Textbox(
                         label=i18n(
-                            "rmvpe卡号配置：以-分隔输入使用的不同进程卡号,例如0-0-1使用在卡0上跑2个进程并在卡1上跑1个进程"
+                            "rmvpe card number config: Enter different process card numbers separated by '-', e.g., 0-0-1 uses 2 processes on card 0 and 1 process on card 1"
                         ),
                         value="%s-%s" % (shared.gpus, shared.gpus),
                         interactive=True,
@@ -1003,7 +1003,7 @@ def create_train_tab():
                 )
                 gpus16 = gr.Textbox(
                     label=i18n(
-                        "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2"
+                        "Enter card numbers separated by '-', e.g., 0-1-2 to use card 0, card 1, and card 2"
                     ),
                     value=shared.gpus,
                     interactive=True,

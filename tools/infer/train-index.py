@@ -1,5 +1,5 @@
 """
-格式：直接cid为自带的index位；aid放不下了，通过字典来查，反正就5w个
+Format: direct cid is the built-in index position; aid doesn't fit, check via dictionary, there's only 50k anyway
 """
 
 import os
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 import faiss
 import numpy as np
 
-# ###########如果是原始特征要先写save
+# ########### If it's the original feature, write save first
 inp_root = r"E:\codes\py39\dataset\mi\2-co256"
 npys = []
 for name in sorted(list(os.listdir(inp_root))):
@@ -33,11 +33,11 @@ logger.info("Adding...")
 index.add(big_npy)
 faiss.write_index(index, "infer/added_IVF512_Flat_mi_baseline_src_feat.index")
 """
-大小（都是FP32）
+Size (all are FP32)
 big_src_feature 2.95G
     (3098036, 256)
 big_emb         4.43G
     (6196072, 192)
-big_emb双倍是因为求特征要repeat后再加pitch
+big_emb is double because feature extraction requires repeating before adding pitch
 
 """

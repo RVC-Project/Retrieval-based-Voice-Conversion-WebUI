@@ -38,7 +38,7 @@ def load_checkpoint_d(
         else:
             state_dict = model.state_dict()
         new_state_dict = {}
-        for k, v in state_dict.items():  # 模型需要的shape
+        for k, v in state_dict.items():  # Shape required by the model
             try:
                 new_state_dict[k] = saved_state_dict[k]
                 if saved_state_dict[k].shape != state_dict[k].shape:
@@ -51,8 +51,8 @@ def load_checkpoint_d(
                     raise KeyError
             except:
                 # logger.info(traceback.format_exc())
-                logger.info("%s is not in the checkpoint", k)  # pretrain缺失的
-                new_state_dict[k] = v  # 模型自带的随机值
+                logger.info("%s is not in the checkpoint", k)  # Missing in pretrain
+                new_state_dict[k] = v  # Random values provided by the model
         if hasattr(model, "module"):
             model.module.load_state_dict(new_state_dict, strict=False)
         else:
@@ -68,7 +68,7 @@ def load_checkpoint_d(
     learning_rate = checkpoint_dict["learning_rate"]
     if (
         optimizer is not None and load_opt == 1
-    ):  ###加载不了，如果是空的的话，重新初始化，可能还会影响lr时间表的更新，因此在train文件最外围catch
+    ):  ### If it cannot load, and it's empty, reinitialize it. It might also affect the update of the lr schedule, so catch it in the outermost layer of the train file
         #   try:
         optimizer.load_state_dict(checkpoint_dict["optimizer"])
     #   except:
@@ -118,7 +118,7 @@ def load_checkpoint(checkpoint_path: Path, model, optimizer=None, load_opt: int 
     else:
         state_dict = model.state_dict()
     new_state_dict = {}
-    for k, v in state_dict.items():  # 模型需要的shape
+    for k, v in state_dict.items():  # Shape required by the model
         try:
             new_state_dict[k] = saved_state_dict[k]
             if saved_state_dict[k].shape != state_dict[k].shape:
@@ -131,8 +131,8 @@ def load_checkpoint(checkpoint_path: Path, model, optimizer=None, load_opt: int 
                 raise KeyError
         except:
             # logger.info(traceback.format_exc())
-            logger.info("%s is not in the checkpoint", k)  # pretrain缺失的
-            new_state_dict[k] = v  # 模型自带的随机值
+            logger.info("%s is not in the checkpoint", k)  # Missing in pretrain
+            new_state_dict[k] = v  # Random values provided by the model
     if hasattr(model, "module"):
         model.module.load_state_dict(new_state_dict, strict=False)
     else:
@@ -143,7 +143,7 @@ def load_checkpoint(checkpoint_path: Path, model, optimizer=None, load_opt: int 
     learning_rate = checkpoint_dict["learning_rate"]
     if (
         optimizer is not None and load_opt == 1
-    ):  ###加载不了，如果是空的的话，重新初始化，可能还会影响lr时间表的更新，因此在train文件最外围catch
+    ):  ### If it cannot load, and it's empty, reinitialize it. It might also affect the update of the lr schedule, so catch it in the outermost layer of the train file
         #   try:
         optimizer.load_state_dict(checkpoint_dict["optimizer"])
     #   except:
@@ -264,19 +264,19 @@ def load_filepaths_and_text(filename: Path, split="|"):
 def get_hparams(init=True):
     """
     todo:
-      结尾七人组：
-        保存频率、总epoch                     done
+      The ending group of seven:
+        Save frequency, total epochs                    done
         bs                                    done
         pretrainG、pretrainD                  done
-        卡号：os.en["CUDA_VISIBLE_DEVICES"]   done
+        Card number: os.environ["CUDA_VISIBLE_DEVICES"]   done
         if_latest                             done
-      模型：if_f0                             done
-      采样率：自动选择config                  done
-      是否缓存数据集进GPU:if_cache_data_in_gpu done
+      Model: if_f0                             done
+      Sample rate: Auto-select config                  done
+      Whether to cache dataset into GPU: if_cache_data_in_gpu done
 
       -m:
-        自动决定training_files路径,改掉train_nsf_load_pretrain.py里的hps.data.training_files    done
-      -c不要了
+        Auto-determine training_files path, change hps.data.training_files in train_nsf_load_pretrain.py    done
+      -c is no longer needed
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(

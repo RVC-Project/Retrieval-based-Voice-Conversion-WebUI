@@ -731,9 +731,9 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
         y: torch.Tensor,
         y_lengths: torch.Tensor,
         ds: torch.Tensor | None = None,
-    ):  # 这里ds是id，[bs,1]
+    ):  # Here ds is the id, [bs,1]
         # print(1,pitch.shape)#[bs,t]
-        g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
+        g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]## 1 is t, broadcasted
         m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
@@ -953,8 +953,8 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
         return self
 
     @torch.jit.ignore
-    def forward(self, phone, phone_lengths, y, y_lengths, ds):  # 这里ds是id，[bs,1]
-        g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]##1是t，广播的
+    def forward(self, phone, phone_lengths, y, y_lengths, ds):  # Here ds is the id, [bs,1]
+        g = self.emb_g(ds).unsqueeze(-1)  # [b, 256, 1]## 1 is t, broadcasted
         m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths)
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)

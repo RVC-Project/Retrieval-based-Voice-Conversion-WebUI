@@ -35,7 +35,7 @@ class F0Predictor(ABC):
 
     def _interpolate_f0(self, f0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """
-        对F0进行插值处理
+        Perform interpolation on F0
         """
 
         data = np.reshape(f0, (f0.size, 1))
@@ -66,7 +66,7 @@ class F0Predictor(ABC):
                     for k in range(i, frame_number):
                         ip_data[k] = last_value
             else:
-                ip_data[i] = data[i]  # 这里可能存在一个没有必要的拷贝
+                ip_data[i] = data[i]  # There might be an unnecessary copy here
                 last_value = data[i]
 
         return ip_data[:, 0], vuv_vector[:, 0]

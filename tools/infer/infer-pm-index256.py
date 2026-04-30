@@ -1,6 +1,6 @@
 """
 
-对源特征进行检索
+Search against source features
 """
 
 import os
@@ -127,7 +127,7 @@ big_npy = np.load("infer/big_src_feature_mi.npy")
 ta0 = ta1 = ta2 = 0
 for idx, name in enumerate(
     [
-        "冬之花clip1.wav",
+        "Winter_Flower_clip1.wav",
     ]
 ):  ##
     wav_path = "todo-songs/%s" % name  #
@@ -156,7 +156,7 @@ for idx, name in enumerate(
         logits = model.extract_features(**inputs)
         feats = model.final_proj(logits[0])
 
-    ####索引优化
+    #### Index optimization
     npy = feats[0].cpu().numpy().astype("float32")
     D, I = index.search(npy, 1)
     feats = (
@@ -167,10 +167,10 @@ for idx, name in enumerate(
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     t1 = ttime()
-    # p_len = min(feats.shape[1],10000,pitch.shape[0])#太大了爆显存
+    # p_len = min(feats.shape[1],10000,pitch.shape[0])#Too large will cause OOM
     p_len = min(feats.shape[1], 10000)  #
     pitch, pitchf = get_f0(audio, p_len, f0_up_key)
-    p_len = min(feats.shape[1], 10000, pitch.shape[0])  # 太大了爆显存
+    p_len = min(feats.shape[1], 10000, pitch.shape[0])  # Too large will cause OOM
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     t2 = ttime()
