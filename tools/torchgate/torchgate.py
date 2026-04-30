@@ -1,11 +1,13 @@
 import torch
 from infer.lib.rmvpe import STFT
 from torch.nn.functional import conv1d, conv2d
-from typing import Union, Optional
 from .utils import linspace, temperature_sigmoid, amp_to_db
 
 
 class TorchGate(torch.nn.Module):
+    smoothing_filter: torch.Tensor | None
+    stft: STFT
+
     """
     A PyTorch module that applies a spectral gate to an input signal.
 
@@ -40,11 +42,11 @@ class TorchGate(torch.nn.Module):
         n_movemean_nonstationary: int = 20,
         prop_decrease: float = 1.0,
         n_fft: int = 1024,
-        win_length: bool = None,
-        hop_length: int = None,
-        freq_mask_smooth_hz: float = 500,
-        time_mask_smooth_ms: float = 50,
-    ):
+        win_length: int | None = None,
+        hop_length: int | None = None,
+        freq_mask_smooth_hz: float | None = 500,
+        time_mask_smooth_ms: float | None = 50,
+    ) -> None:
         super().__init__()
 
         # General Params
@@ -72,7 +74,7 @@ class TorchGate(torch.nn.Module):
         self.register_buffer("smoothing_filter", self._generate_mask_smoothing_filter())
 
     @torch.no_grad()
-    def _generate_mask_smoothing_filter(self) -> Union[torch.Tensor, None]:
+    def _generate_mask_smoothing_filter(self) -> torch.Tensor | None:
         """
         A PyTorch module that applies a spectral gate to an input signal using the STFT.
 
@@ -92,7 +94,7 @@ class TorchGate(torch.nn.Module):
         )
         if n_grad_freq < 1:
             raise ValueError(
-                f"freq_mask_smooth_hz needs to be at least {int((self.sr / (self._n_fft / 2)))} Hz"
+                f"freq_mask_smooth_hz needs to be at least {int((self.sr / (self.n_fft / 2)))} Hz"
             )
 
         n_grad_time = (
@@ -126,7 +128,7 @@ class TorchGate(torch.nn.Module):
 
     @torch.no_grad()
     def _stationary_mask(
-        self, X_db: torch.Tensor, xn: Optional[torch.Tensor] = None
+        self, X_db: torch.Tensor, xn: torch.Tensor | None = None
     ) -> torch.Tensor:
         """
         Computes a stationary binary mask to filter out noise in a log-magnitude spectrogram.
@@ -149,6 +151,8 @@ class TorchGate(torch.nn.Module):
                         window="hann",
                     ).to(xn.device)
                 XN = self.stft.transform(xn)
+                if isinstance(XN, tuple):
+                    XN = XN[0]
             else:
                 XN = torch.stft(
                     xn,
@@ -208,7 +212,7 @@ class TorchGate(torch.nn.Module):
         return sig_mask
 
     def forward(
-        self, x: torch.Tensor, xn: Optional[torch.Tensor] = None
+        self, x: torch.Tensor, xn: torch.Tensor | None = None
     ) -> torch.Tensor:
         """
         Apply the proposed algorithm to the input signal.
@@ -223,6 +227,7 @@ class TorchGate(torch.nn.Module):
         """
 
         # Compute short-time Fourier transform (STFT)
+        phase: torch.Tensor | None = None
         if "privateuseone" in str(x.device):
             if not hasattr(self, "stft"):
                 self.stft = STFT(
@@ -266,6 +271,7 @@ class TorchGate(torch.nn.Module):
 
         # Inverse STFT to obtain time-domain signal
         if "privateuseone" in str(Y.device):
+            assert phase is not None
             y = self.stft.inverse(Y, phase)
         else:
             y = torch.istft(

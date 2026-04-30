@@ -1,14 +1,14 @@
-from typing import List, Optional, Tuple, Iterator
+from collections.abc import Iterator, Sequence
 
 import torch
 
 
-def call_weight_data_normal_if_Conv(m: torch.nn.Module):
-    classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
+def call_weight_data_normal_if_Conv(m: torch.nn.Module) -> None:
+    if isinstance(m, torch.nn.modules.conv._ConvNd):
         mean = 0.0
         std = 0.01
-        m.weight.data.normal_(mean, std)
+        with torch.no_grad():
+            m.weight.normal_(mean, std)
 
 
 def get_padding(kernel_size: int, dilation=1) -> int:
@@ -17,14 +17,14 @@ def get_padding(kernel_size: int, dilation=1) -> int:
 
 def slice_on_last_dim(
     x: torch.Tensor,
-    start_indices: List[int],
-    segment_size=4,
+    start_indices: Sequence[int] | torch.Tensor,
+    segment_size: int = 4,
 ) -> torch.Tensor:
     new_shape = [*x.shape]
     new_shape[-1] = segment_size
     ret = torch.empty(new_shape, device=x.device)
     for i in range(x.size(0)):
-        idx_str = start_indices[i]
+        idx_str = int(start_indices[i])
         idx_end = idx_str + segment_size
         ret[i, ..., :] = x[i, ..., idx_str:idx_end]
     return ret
@@ -32,9 +32,9 @@ def slice_on_last_dim(
 
 def rand_slice_segments_on_last_dim(
     x: torch.Tensor,
-    x_lengths: int = None,
-    segment_size=4,
-) -> Tuple[torch.Tensor, List[int]]:
+    x_lengths: int | None = None,
+    segment_size: int = 4,
+) -> tuple[torch.Tensor, torch.Tensor]:
     b, _, t = x.size()
     if x_lengths is None:
         x_lengths = t
@@ -57,8 +57,8 @@ def activate_add_tanh_sigmoid_multiply(
 
 def sequence_mask(
     length: torch.Tensor,
-    max_length: Optional[int] = None,
-) -> torch.BoolTensor:
+    max_length: int | None = None,
+) -> torch.Tensor:
     if max_length is None:
         max_length = int(length.max())
     x = torch.arange(max_length, dtype=length.dtype, device=length.device)
