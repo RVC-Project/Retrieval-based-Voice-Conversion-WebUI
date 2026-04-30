@@ -1,9 +1,11 @@
 import copy
 import math
+from typing import Protocol
 
 import numpy as np
 import scipy
 import torch
+from numpy.typing import NDArray
 from torch import nn
 from torch.nn import AvgPool1d, Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
@@ -14,6 +16,16 @@ from infer.lib.infer_pack.commons import get_padding, init_weights
 from infer.lib.infer_pack.transforms import piecewise_rational_quadratic_transform
 
 LRELU_SLOPE = 0.1
+
+type FloatArray = NDArray[np.floating]
+
+
+class F0Predictor(Protocol):
+    def compute_f0(self, wav: FloatArray, p_len: int | None) -> FloatArray: ...
+
+    def compute_f0_uv(
+        self, wav: FloatArray, p_len: int | None
+    ) -> tuple[FloatArray, FloatArray]: ...
 
 
 class LayerNorm(nn.Module):

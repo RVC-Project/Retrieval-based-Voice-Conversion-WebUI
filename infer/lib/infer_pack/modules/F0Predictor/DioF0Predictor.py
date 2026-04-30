@@ -4,7 +4,7 @@ import numpy as np
 import pyworld
 from numpy.typing import NDArray
 
-from .F0Predictor import F0Predictor
+from infer.lib.infer_pack.modules import F0Predictor, FloatArray
 
 
 class PyWorldDio(Protocol):
@@ -31,13 +31,19 @@ pyworld_dio = cast(PyWorldDio, pyworld)
 
 
 class DioF0Predictor(F0Predictor):
-    def __init__(self, hop_length=512, f0_min=50, f0_max=1100, sampling_rate=44100):
+    def __init__(
+        self,
+        hop_length: int = 512,
+        f0_min: int = 50,
+        f0_max: int = 1100,
+        sampling_rate: int = 44100,
+    ) -> None:
         self.hop_length = hop_length
         self.f0_min = f0_min
         self.f0_max = f0_max
         self.sampling_rate = sampling_rate
 
-    def interpolate_f0(self, f0):
+    def interpolate_f0(self, f0: FloatArray) -> tuple[FloatArray, FloatArray]:
         """
         对F0进行插值处理
         """
@@ -75,7 +81,7 @@ class DioF0Predictor(F0Predictor):
 
         return ip_data[:, 0], vuv_vector[:, 0]
 
-    def resize_f0(self, x, target_len):
+    def resize_f0(self, x: FloatArray, target_len: int) -> FloatArray:
         source = np.array(x)
         source[source < 0.001] = np.nan
         target = np.interp(
@@ -83,10 +89,10 @@ class DioF0Predictor(F0Predictor):
             np.arange(0, len(source)),
             source,
         )
-        res = np.nan_to_num(target)
+        res = np.asarray(np.nan_to_num(target), dtype=np.float64)
         return res
 
-    def compute_f0(self, wav, p_len=None):
+    def compute_f0(self, wav: FloatArray, p_len: int | None = None) -> FloatArray:
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
         f0, t = pyworld_dio.dio(
@@ -101,7 +107,9 @@ class DioF0Predictor(F0Predictor):
             f0[index] = round(pitch, 1)
         return self.interpolate_f0(self.resize_f0(f0, p_len))[0]
 
-    def compute_f0_uv(self, wav, p_len=None):
+    def compute_f0_uv(
+        self, wav: FloatArray, p_len: int | None = None
+    ) -> tuple[FloatArray, FloatArray]:
         if p_len is None:
             p_len = wav.shape[0] // self.hop_length
         f0, t = pyworld_dio.dio(
