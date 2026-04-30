@@ -1,5 +1,5 @@
 import logging
-import os
+from pathlib import Path
 import time
 from typing import List, Optional, Tuple
 import gradio as gr
@@ -16,14 +16,13 @@ def clean():
 
 def change_choices():
     names = []
-    for name in os.listdir(shared.weight_root):
-        if name.endswith(".pth"):
-            names.append(name)
+    for entry in shared.weight_root.iterdir():
+        if entry.suffix == ".pth":
+            names.append(entry.name)
     index_paths = [""]
-    for root, dirs, files in os.walk(shared.index_root, topdown=False):
-        for name in files:
-            if name.endswith(".index") and "trained" not in name:
-                index_paths.append("%s/%s" % (root, name))
+    for index_file in shared.index_root.rglob("*.index"):
+        if "trained" not in index_file.name:
+            index_paths.append(str(index_file))
     return {"choices": sorted(names), "__type__": "update"}, {
         "choices": sorted(index_paths),
         "__type__": "update",

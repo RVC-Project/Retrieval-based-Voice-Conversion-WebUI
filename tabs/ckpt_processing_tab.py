@@ -1,5 +1,6 @@
 import os
 import traceback
+from pathlib import Path
 import gradio as gr
 from shared import i18n
 from infer.lib.train.process_ckpt import (
@@ -12,12 +13,11 @@ from infer.lib.train.process_ckpt import (
 
 #                    ckpt_path2.change(change_info_,[ckpt_path2],[sr__,if_f0__])
 def change_info_(ckpt_path):
-    if not os.path.exists(ckpt_path.replace(os.path.basename(ckpt_path), "train.log")):
+    train_log = Path(ckpt_path).parent / "train.log"
+    if not train_log.exists():
         return {"__type__": "update"}, {"__type__": "update"}, {"__type__": "update"}
     try:
-        with open(
-            ckpt_path.replace(os.path.basename(ckpt_path), "train.log"), "r"
-        ) as f:
+        with open(train_log, "r") as f:
             info = eval(f.read().strip("\n").split("\n")[0].split("\t")[-1])
             sr, f0 = info["sample_rate"], info["if_f0"]
             version = "v2" if ("version" in info and info["version"] == "v2") else "v1"

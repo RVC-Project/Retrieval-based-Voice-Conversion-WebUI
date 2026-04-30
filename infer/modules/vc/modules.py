@@ -1,6 +1,7 @@
 from lib.types import PitchMethod
 import traceback
 import logging
+from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import gradio as gr
 import resampy
@@ -135,7 +136,7 @@ class VC:
                 "",
                 "",
             )
-        person = f"{shared.weight_root}/{sid}"
+        person = shared.weight_root / sid
         logger.info(f"Loading: {person}")
 
         self.cpt = torch.load(person, map_location="cpu", weights_only=False)
@@ -256,7 +257,7 @@ class VC:
                 tgt_sr = self.tgt_sr
             index_info = (
                 f"Using Index: \n{file_index}"
-                if os.path.exists(file_index)
+                if file_index and Path(file_index).exists()
                 else "Index not used."
             )
             return (

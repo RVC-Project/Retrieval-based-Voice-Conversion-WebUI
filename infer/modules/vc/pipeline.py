@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import logging
+from pathlib import Path
 from typing import Protocol, TypeAlias
 
 from configs.config import Config
@@ -294,7 +295,7 @@ class Pipeline:
             file_index != ""
             # and file_big_npy != ""
             # and os.path.exists(file_big_npy) == True
-            and os.path.exists(file_index)
+            and Path(file_index).exists()
             and index_rate != 0
         ):
             try:

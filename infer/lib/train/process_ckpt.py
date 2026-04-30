@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from pathlib import Path
 from collections import OrderedDict
 
 import torch
@@ -47,15 +48,15 @@ def savee(ckpt, sr, if_f0, name, epoch, version, hps):
         opt["sr"] = sr
         opt["f0"] = if_f0
         opt["version"] = version
-        torch.save(opt, "assets/weights/%s.pth" % name)
+        torch.save(opt, Path("assets/weights") / f"{name}.pth")
         return "Success."
     except:
         return traceback.format_exc()
 
 
-def show_info(path):
+def show_info(path: str):
     try:
-        a = torch.load(path, map_location="cpu", weights_only=False)
+        a = torch.load(Path(path), map_location="cpu", weights_only=False)
         return "模型信息:%s\n采样率:%s\n模型是否输入音高引导:%s\n版本:%s" % (
             a.get("info", "None"),
             a.get("sr", "None"),
@@ -66,9 +67,9 @@ def show_info(path):
         return traceback.format_exc()
 
 
-def extract_small_model(path, name, sr, if_f0, info, version):
+def extract_small_model(path: str, name: str, sr, if_f0, info, version):
     try:
-        ckpt = torch.load(path, map_location="cpu", weights_only=False)
+        ckpt = torch.load(Path(path), map_location="cpu", weights_only=False)
         if "model" in ckpt:
             ckpt = ckpt["model"]
         weights: WeightMap = {}
@@ -191,25 +192,25 @@ def extract_small_model(path, name, sr, if_f0, info, version):
         opt["version"] = version
         opt["sr"] = sr
         opt["f0"] = int(if_f0)
-        torch.save(opt, "assets/weights/%s.pth" % name)
+        torch.save(opt, Path("assets/weights") / f"{name}.pth")
         return "Success."
     except:
         return traceback.format_exc()
 
 
-def change_info(path, info, name):
+def change_info(path: str, info, name):
     try:
-        ckpt = torch.load(path, map_location="cpu", weights_only=False)
+        ckpt = torch.load(Path(path), map_location="cpu", weights_only=False)
         ckpt["info"] = info
         if name == "":
-            name = os.path.basename(path)
-        torch.save(ckpt, "assets/weights/%s" % name)
+            name = Path(path).name
+        torch.save(ckpt, Path("assets/weights") / name)
         return "Success."
     except:
         return traceback.format_exc()
 
 
-def merge(path1, path2, alpha1, sr, f0, info, name, version):
+def merge(path1: str, path2: str, alpha1, sr, f0, info, name, version):
     try:
 
         def extract(ckpt):
@@ -223,8 +224,8 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
             opt["weight"] = weights
             return opt
 
-        ckpt1 = torch.load(path1, map_location="cpu", weights_only=False)
-        ckpt2 = torch.load(path2, map_location="cpu", weights_only=False)
+        ckpt1 = torch.load(Path(path1), map_location="cpu", weights_only=False)
+        ckpt2 = torch.load(Path(path2), map_location="cpu", weights_only=False)
         cfg = ckpt1["config"]
         if "model" in ckpt1:
             ckpt1 = extract(ckpt1)
@@ -263,7 +264,7 @@ def merge(path1, path2, alpha1, sr, f0, info, name, version):
         opt["f0"] = 1 if f0 == i18n("Yes") else 0
         opt["version"] = version
         opt["info"] = info
-        torch.save(opt, "assets/weights/%s.pth" % name)
+        torch.save(opt, Path("assets/weights") / f"{name}.pth")
         return "Success."
     except:
         return traceback.format_exc()

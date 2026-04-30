@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import List, Tuple, Union
 
 from fairseq import checkpoint_utils
@@ -10,14 +10,9 @@ import shared
 def get_index_path_from_model(sid: str) -> str:
     return next(
         (
-            f
-            for f in [
-                os.path.join(root, name)
-                for root, _, files in os.walk(shared.index_root, topdown=False)
-                for name in files
-                if name.endswith(".index") and "trained" not in name
-            ]
-            if sid.split(".")[0] in f
+            str(f)
+            for f in shared.index_root.rglob("*.index")
+            if "trained" not in f.name and sid.split(".")[0] in f.name
         ),
         "",
     )
