@@ -854,8 +854,8 @@ class RMVPE:
 
     def to_local_average_cents(self, salience: np.ndarray, thred: float = 0.05) -> np.ndarray:
         # t0 = ttime()
-        center = np.argmax(salience, axis=1)  # 帧长#index
-        salience = np.pad(salience, ((0, 0), (4, 4)))  # 帧长,368
+        center = np.argmax(salience, axis=1)  # Frame length #index
+        salience = np.pad(salience, ((0, 0), (4, 4)))  # Frame length, 368
         # t1 = ttime()
         center += 4
         todo_salience = []
@@ -866,13 +866,13 @@ class RMVPE:
             todo_salience.append(salience[:, starts[idx] : ends[idx]][idx])
             todo_cents_mapping.append(self.cents_mapping[starts[idx] : ends[idx]])
         # t2 = ttime()
-        todo_salience = np.array(todo_salience)  # 帧长，9
-        todo_cents_mapping = np.array(todo_cents_mapping)  # 帧长，9
+        todo_salience = np.array(todo_salience)  # Frame length, 9
+        todo_cents_mapping = np.array(todo_cents_mapping)  # Frame length, 9
         product_sum = np.sum(todo_salience * todo_cents_mapping, 1)
-        weight_sum = np.sum(todo_salience, 1)  # 帧长
-        devided = product_sum / weight_sum  # 帧长
+        weight_sum = np.sum(todo_salience, 1)  # Frame length
+        devided = product_sum / weight_sum  # Frame length
         # t3 = ttime()
-        maxx = np.max(salience, axis=1)  # 帧长
+        maxx = np.max(salience, axis=1)  # Frame length
         devided[maxx <= thred] = 0
         # t4 = ttime()
         # print("decode:%s\t%s\t%s\t%s" % (t1 - t0, t2 - t1, t3 - t2, t4 - t3))
@@ -883,7 +883,7 @@ if __name__ == "__main__":
     import librosa
     import soundfile as sf
 
-    audio, sampling_rate = sf.read(r"C:\Users\liujing04\Desktop\Z\冬之花clip1.wav")
+    audio, sampling_rate = sf.read(r"C:\Users\liujing04\Desktop\Z\Winter_Flower_clip1.wav")
     if len(audio.shape) > 1:
         audio = librosa.to_mono(audio.transpose(1, 0))
     audio_bak = audio.copy()

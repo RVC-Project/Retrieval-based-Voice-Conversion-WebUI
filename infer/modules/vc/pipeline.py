@@ -51,11 +51,11 @@ RVCModel: TypeAlias = (
 
 def change_rms(
     data1: np.ndarray, sr1: int, data2: np.ndarray, sr2: int, rate: float
-):  # 1是输入音频，2是输出音频,rate是2的占比
+):  # 1 is input audio, 2 is output audio, rate is the proportion of 2
     # print(data1.max(),data2.max())
     rms1 = librosa.feature.rms(
         y=data1, frame_length=sr1 // 2 * 2, hop_length=sr1 // 2
-    )  # 每半秒一个点
+    )  # One point every half second
     rms2 = librosa.feature.rms(y=data2, frame_length=sr2 // 2 * 2, hop_length=sr2 // 2)
     rms1 = torch.from_numpy(rms1)
     rms1 = F.interpolate(
@@ -90,15 +90,15 @@ class Pipeline:
             config.x_max,
             config.is_half,
         )
-        # self.sr: int = 16000  # hubert输入采样率
-        # self.window: int = 160  # 每帧点数
+        # self.sr: int = 16000  # hubert input Sample rate
+        # self.window: int = 160  # Points per frame
         PitchExtractorDict: TypeAlias = dict[str, "PitchExtractor"]
-        self.t_pad: int = self.sr * self.x_pad  # 每条前后pad时间
+        self.t_pad: int = self.sr * self.x_pad  # Pad time around each entry
         self.t_pad_tgt: int = tgt_sr * self.x_pad
         self.t_pad2: int = self.t_pad * 2
-        self.t_query: int = self.sr * self.x_query  # 查询切点前后查询时间
-        self.t_center: int = self.sr * self.x_center  # 查询切点位置
-        self.t_max: int = self.sr * self.x_max  # 免查询时长阈值
+        self.t_query: int = self.sr * self.x_query  # Query time around the query point
+        self.t_center: int = self.sr * self.x_center  # Query point position
+        self.t_max: int = self.sr * self.x_max  # Threshold for skipping queries
         self.device: str = config.device
         self.pitch_extractors: PitchExtractorDict = {}
 

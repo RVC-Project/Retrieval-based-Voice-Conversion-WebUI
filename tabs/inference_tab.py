@@ -248,7 +248,7 @@ def create_inference_tab(app: gr.Blocks):
                     minimum=0,
                     maximum=1,
                     label=i18n(
-                        # "输入源音量包络替换输出音量包络融合比例，越靠近1越使用输出包络"
+                        # "Fusion ratio of replacing input source volume envelope with output volume envelope, closer to 1 uses output envelope more"
                         "RMS Mix Rate"
                     ),
                     value=0.25,
@@ -258,7 +258,7 @@ def create_inference_tab(app: gr.Blocks):
                     minimum=0,
                     maximum=0.5,
                     label=i18n(
-                        # "保护清辅音和呼吸声，防止电音撕裂等artifact，拉满0.5不开启，调低加大保护力度但可能降低索引效果"
+                        # "Protect voiceless consonants and breath sounds, preventing artifacts like tearing of electronic music. Maxing out to 0.5 turns it off, lowering it increases protection but might reduce the index effect"
                         "Protect 0 (Reduce Artifact)"
                     ),
                     value=0.33,
@@ -268,7 +268,7 @@ def create_inference_tab(app: gr.Blocks):
                 index_rate1 = gr.Slider(
                     minimum=0,
                     maximum=1,
-                    label=i18n("检索特征占比"),
+                    label=i18n("Search feature ratio"),
                     value=0.75,
                     interactive=True,
                 )

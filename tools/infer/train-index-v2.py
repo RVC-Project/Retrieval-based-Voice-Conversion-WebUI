@@ -1,5 +1,5 @@
 """
-格式：直接cid为自带的index位；aid放不下了，通过字典来查，反正就5w个
+Format: direct cid is the built-in index position; aid doesn't fit, check via dictionary, there's only 50k anyway
 """
 
 import os
@@ -14,7 +14,7 @@ import faiss
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 
-# ###########如果是原始特征要先写save
+# ########### If it's the original feature, write save first
 n_cpu = 0
 if n_cpu == 0:
     n_cpu = cpu_count()
@@ -70,11 +70,11 @@ faiss.write_index(
     index, "tools/infer/added_IVF%s_Flat_mi_baseline_src_feat.index" % (n_ivf)
 )
 """
-大小（都是FP32）
+Size (all are FP32)
 big_src_feature 2.95G
     (3098036, 256)
 big_emb         4.43G
     (6196072, 192)
-big_emb双倍是因为求特征要repeat后再加pitch
+big_emb is double because feature extraction requires repeating before adding pitch
 
 """

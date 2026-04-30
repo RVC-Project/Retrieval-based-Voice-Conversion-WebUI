@@ -135,8 +135,8 @@ class RMVPE(F0Predictor):
         return self._interpolate_f0(self._resize_f0(f0, p_len))[0]
 
     def _to_local_average_cents(self, salience, threshold=0.05):
-        center = np.argmax(salience, axis=1)  # 帧长#index
-        salience = np.pad(salience, ((0, 0), (4, 4)))  # 帧长,368
+        center = np.argmax(salience, axis=1)  # Frame length #index
+        salience = np.pad(salience, ((0, 0), (4, 4)))  # Frame length, 368
         center += 4
         todo_salience = []
         todo_cents_mapping = []
@@ -145,12 +145,12 @@ class RMVPE(F0Predictor):
         for idx in range(salience.shape[0]):
             todo_salience.append(salience[:, starts[idx] : ends[idx]][idx])
             todo_cents_mapping.append(self.cents_mapping[starts[idx] : ends[idx]])
-        todo_salience = np.array(todo_salience)  # 帧长，9
-        todo_cents_mapping = np.array(todo_cents_mapping)  # 帧长，9
+        todo_salience = np.array(todo_salience)  # Frame length, 9
+        todo_cents_mapping = np.array(todo_cents_mapping)  # Frame length, 9
         product_sum = np.sum(todo_salience * todo_cents_mapping, 1)
-        weight_sum = np.sum(todo_salience, 1)  # 帧长
-        devided = product_sum / weight_sum  # 帧长
-        maxx = np.max(salience, axis=1)  # 帧长
+        weight_sum = np.sum(todo_salience, 1)  # Frame length
+        devided = product_sum / weight_sum  # Frame length
+        maxx = np.max(salience, axis=1)  # Frame length
         devided[maxx <= threshold] = 0
         return devided
 

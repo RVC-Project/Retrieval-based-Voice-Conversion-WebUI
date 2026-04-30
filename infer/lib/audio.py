@@ -71,5 +71,5 @@ def clean_path(path_str: str) -> str:
         path_str = path_str.replace("/", "\\")
     path_str = re.sub(
         r"[\u202a\u202b\u202c\u202d\u202e]", "", path_str
-    )  # 移除 Unicode 控制字符
+    )  # Remove Unicode control characters
     return path_str.strip(" ").strip('"').strip("\n").strip('"').strip(" ")

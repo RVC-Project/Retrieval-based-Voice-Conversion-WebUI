@@ -57,7 +57,7 @@ def savee(ckpt, sr, if_f0, name, epoch, version, hps):
 def show_info(path: str):
     try:
         a = torch.load(Path(path), map_location="cpu", weights_only=False)
-        return "模型信息:%s\n采样率:%s\n模型是否输入音高引导:%s\n版本:%s" % (
+        return "Model info:%s\nSample rate:%s\nDoes the model use pitch guidance:%s\nVersion:%s" % (
             a.get("info", "None"),
             a.get("sr", "None"),
             a.get("f0", "None"),
