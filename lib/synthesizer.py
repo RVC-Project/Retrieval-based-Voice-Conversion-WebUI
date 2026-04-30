@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Literal
 
 import torch
 
@@ -37,7 +38,7 @@ def load_synthesizer(pth_path: FileLike, device=torch.device("cpu")):  # type: i
 
 def synthesizer_jit_export(
     model_path: str,
-    mode: str = "script",
+    mode: Literal["script", "trace"] = "script",
     inputs_path: str = None,
     save_path: str = None,
     device=torch.device("cpu"),

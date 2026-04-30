@@ -1,6 +1,6 @@
 from io import BytesIO
 import os
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
 import numpy as np
 import torch
@@ -30,7 +30,7 @@ class OnnxModel(Protocol):
 
 def rmvpe_jit_export(
     model_path: str,
-    mode: str = "script",
+    mode: Literal["script", "trace"] = "script",
     inputs_path: str | None = None,
     save_path: str | None = None,
     device: str = "cpu",
