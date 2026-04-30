@@ -48,3 +48,9 @@ fairseq = { git = "https://github.com/yamada-sexta/fairseq.git" }
 
 [tool.pyrefly]
 project-includes = ["**/*.py*", "**/*.ipynb"]
+
+[dependency-groups]
+dev = [
+    "pyrefly>=0.63.1",
+    "uv>=0.11.8",
+]
