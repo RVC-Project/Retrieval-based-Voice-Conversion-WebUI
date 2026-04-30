@@ -72,7 +72,7 @@ def change_rms(
     return data2
 
 
-class Pipeline(object):
+class Pipeline:
     import shared
 
     sr: int = 16000
