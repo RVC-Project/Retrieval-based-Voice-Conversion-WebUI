@@ -2,20 +2,33 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from typing import Literal
 
 from tap import Tap
 
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
 
+BoolString = Literal["True", "False", "true", "false", "1", "0"]
+
+
+def parse_bool(value: BoolString) -> bool:
+    return value.lower() in {"true", "1"}
+
 
 class ExtractFeatureCpuArgs(Tap):
+    # Requested device.
     device: str
+    # Total number of extraction partitions.
     n_part: int
+    # Partition index handled by this worker.
     i_part: int
+    # Experiment directory.
     exp_dir: Path
+    # Model version.
     version: str
-    is_half: bool
+    # Whether to use half precision.
+    is_half: BoolString
 
     def configure(self) -> None:
         self.add_argument("device")
@@ -27,13 +40,20 @@ class ExtractFeatureCpuArgs(Tap):
 
 
 class ExtractFeatureGpuArgs(Tap):
+    # Requested device.
     device: str
+    # Total number of extraction partitions.
     n_part: int
+    # Partition index handled by this worker.
     i_part: int
+    # GPU ID assigned to this worker.
     i_gpu: str
+    # Experiment directory.
     exp_dir: Path
+    # Model version.
     version: str
-    is_half: bool
+    # Whether to use half precision.
+    is_half: BoolString
 
     def configure(self) -> None:
         self.add_argument("device")
@@ -45,7 +65,9 @@ class ExtractFeatureGpuArgs(Tap):
         self.add_argument("is_half")
 
 
-if len(sys.argv) == 7:
+if any(arg in {"-h", "--help"} for arg in sys.argv[1:]):
+    parsed_args = ExtractFeatureGpuArgs().parse_args()
+elif len(sys.argv) == 7:
     parsed_args = ExtractFeatureCpuArgs().parse_args()
 elif len(sys.argv) == 8:
     parsed_args = ExtractFeatureGpuArgs().parse_args()
@@ -58,7 +80,7 @@ n_part = parsed_args.n_part
 i_part = parsed_args.i_part
 exp_dir = parsed_args.exp_dir
 version = parsed_args.version
-is_half = parsed_args.is_half
+is_half = parse_bool(parsed_args.is_half)
 import fairseq
 import numpy as np
 import soundfile as sf

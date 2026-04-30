@@ -15,14 +15,18 @@ import numpy as np
 import pyworld
 
 from infer.lib.audio import load_audio
+from lib.types.f0 import PitchMethod
 
 from multiprocessing import Process
 
 
 class ExtractF0Args(Tap):
+    # Experiment directory.
     exp_dir: Path
+    # Number of CPU extraction workers.
     n_p: int
-    f0method: str
+    # F0 extraction method.
+    f0method: PitchMethod
 
     def configure(self) -> None:
         self.add_argument("exp_dir")

@@ -2,14 +2,13 @@ import multiprocessing
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple, cast
+from typing import List, Literal, Tuple, cast
 
 from scipy import signal
 from tap import Tap
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-import os
 import traceback
 
 import librosa
@@ -20,13 +19,25 @@ from scipy.io import wavfile
 from infer.lib.audio import load_audio
 from infer.lib.slicer2 import Slicer
 
+BoolString = Literal["True", "False", "true", "false", "1", "0"]
+
+
+def parse_bool(value: BoolString) -> bool:
+    return value.lower() in {"true", "1"}
+
 
 class PreprocessArgs(Tap):
+    # Input training audio directory.
     inp_root: str
+    # Target sample rate.
     sr: int
+    # Number of preprocessing workers.
     n_p: int
+    # Experiment output directory.
     exp_dir: Path
-    noparallel: bool
+    # Run without multiprocessing.
+    noparallel: BoolString
+    # Maximum segment length in seconds.
     per: float
 
     def configure(self) -> None:
@@ -44,7 +55,7 @@ inp_root = args.inp_root
 sr = args.sr
 n_p = args.n_p
 exp_dir = args.exp_dir
-noparallel = args.noparallel
+noparallel = parse_bool(args.noparallel)
 per = args.per
 
 f = open(exp_dir / "preprocess.log", "a+")

@@ -11,9 +11,6 @@ from dotenv import load_dotenv
 from scipy.io import wavfile
 from tap import Tap
 
-from configs.config import Config
-from infer.lib.audio import load_audio
-from infer.modules.vc.modules import VC
 from lib.types.f0 import PitchMethod
 
 
@@ -55,6 +52,10 @@ def arg_parse() -> InferBatchArgs:
 def main() -> None:
     load_dotenv()
     args = arg_parse()
+    from configs.config import Config
+    from infer.lib.audio import load_audio
+    from infer.modules.vc.modules import VC
+
     config = Config()
     config.device = args.device if args.device else config.device
     config.is_half = args.is_half if args.is_half is not None else config.is_half

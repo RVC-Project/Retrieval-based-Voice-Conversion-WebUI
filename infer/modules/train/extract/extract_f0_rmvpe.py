@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from typing import Literal
 
 import parselmouth
 from tap import Tap
@@ -14,13 +15,24 @@ import pyworld
 
 from infer.lib.audio import load_audio
 
+BoolString = Literal["True", "False", "true", "false", "1", "0"]
+
+
+def parse_bool(value: BoolString) -> bool:
+    return value.lower() in {"true", "1"}
+
 
 class ExtractF0RmvpeArgs(Tap):
+    # Total number of extraction partitions.
     n_part: int
+    # Partition index handled by this worker.
     i_part: int
+    # GPU ID assigned to this worker.
     i_gpu: str
+    # Experiment directory.
     exp_dir: str
-    is_half: bool
+    # Whether to use half precision.
+    is_half: BoolString
 
     def configure(self) -> None:
         self.add_argument("n_part")
@@ -36,7 +48,7 @@ i_part = args.i_part
 i_gpu = args.i_gpu
 os.environ["CUDA_VISIBLE_DEVICES"] = str(i_gpu)
 exp_dir = args.exp_dir
-is_half = args.is_half
+is_half = parse_bool(args.is_half)
 f = open(f"{exp_dir}/extract_f0_feature.log", "a+")
 
 
