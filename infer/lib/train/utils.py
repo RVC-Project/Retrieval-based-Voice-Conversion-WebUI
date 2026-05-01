@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 import json
 import os
@@ -371,15 +369,18 @@ def get_hparams_from_file(config_path: Path):
 
 def check_git_hash(model_dir: str):
     source_dir = Path(os.path.realpath(__file__)).parent
-    if not (source_dir / ".git").exists():
-        logger.warning(
-            "{} is not a git repository, therefore hash value comparison will be ignored.".format(
-                source_dir
-            )
-        )
+    git_check = subprocess.run(
+        ["git", "-C", str(source_dir), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+    )
+    if git_check.returncode != 0:
         return
 
-    cur_hash = subprocess.getoutput("git rev-parse HEAD")
+    cur_hash = subprocess.check_output(
+        ["git", "-C", str(source_dir), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
 
     git_hash_file = Path(model_dir) / "githash"
     if git_hash_file.exists():
@@ -420,14 +421,14 @@ class HParams:
     pretrainD: str
     version: str
     gpus: str
-    train: HParams
+    train: "HParams"
     batch_size: int
     sample_rate: str
     if_f0: int
     if_latest: int
     save_every_weights: str
     if_cache_data_in_gpu: int
-    data: HParams
+    data: "HParams"
     training_files: str
 
     def __init__(self, **kwargs: object) -> None:

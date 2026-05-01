@@ -5,11 +5,17 @@ import torch
 from torch import nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn import functional as F
-from torch.nn.utils import remove_weight_norm, weight_norm
+from torch.nn.utils.parametrize import remove_parametrizations
+from torch.nn.utils.parametrizations import weight_norm
 
 from .generators import SineGenerator
 from .residuals import ResBlock1, ResBlock2, LRELU_SLOPE
 from .utils import call_weight_data_normal_if_Conv
+
+
+def remove_weight_norm(module: nn.Module, name: str = "weight") -> nn.Module:
+    remove_parametrizations(module, name, leave_parametrized=True)
+    return module
 
 
 class SourceModuleHnNSF(torch.nn.Module):

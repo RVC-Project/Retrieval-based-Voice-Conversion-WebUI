@@ -8,11 +8,17 @@ from numpy.typing import NDArray
 from torch import nn
 from torch.nn import AvgPool1d, Conv1d, Conv2d, ConvTranspose1d
 from torch.nn import functional as F
-from torch.nn.utils import remove_weight_norm, weight_norm
+from torch.nn.utils.parametrize import remove_parametrizations
+from torch.nn.utils.parametrizations import weight_norm
 
 from infer.lib.infer_pack import commons
 from infer.lib.infer_pack.commons import get_padding, init_weights
 from infer.lib.infer_pack.transforms import piecewise_rational_quadratic_transform
+
+
+def remove_weight_norm(module: nn.Module, name: str = "weight") -> nn.Module:
+    remove_parametrizations(module, name, leave_parametrized=True)
+    return module
 
 LRELU_SLOPE = 0.1
 

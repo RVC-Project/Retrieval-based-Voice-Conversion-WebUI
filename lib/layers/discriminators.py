@@ -4,7 +4,8 @@ import torch
 from torch import nn
 from torch.nn import Conv1d, Conv2d
 from torch.nn import functional as F
-from torch.nn.utils import spectral_norm, weight_norm
+from torch.nn.utils import spectral_norm
+from torch.nn.utils.parametrizations import weight_norm
 
 from .residuals import LRELU_SLOPE
 from .utils import get_padding
