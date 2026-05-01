@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 import traceback
+from pathlib import Path
 from typing import Protocol, cast
 from infer.lib import jit
 from infer.lib.jit.get_synthesizer import get_synthesizer
@@ -10,14 +11,9 @@ from time import time as ttime
 import fairseq
 import faiss
 import numpy as np
-from numpy.typing import NDArray
-import parselmouth
-import pyworld
-import scipy.signal as signal
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchcrepe
 from fairseq.data.dictionary import Dictionary
 from torch.serialization import safe_globals
 
@@ -27,34 +23,18 @@ from infer.lib.infer_pack.models import (
     SynthesizerTrnMs768NSFsid,
     SynthesizerTrnMs768NSFsid_nono,
 )
+from lib.f0 import ALL_PITCH_METHODS, Generator, PitchMethod
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
-from multiprocessing import Manager as M
 
 from configs.config import Config
 
 # config = Config()
 
-mm = M()
-
-
-class PyWorldModule(Protocol):
-    def harvest(
-        self,
-        x: NDArray[np.float64],
-        fs: int,
-        f0_ceil: int,
-        f0_floor: int,
-        frame_period: int,
-    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]: ...
-
 
 class InferModule(Protocol):
     def infer(self, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
-
-
-pyworld_api = cast(PyWorldModule, pyworld)
 
 
 def printt(strr, *args):
@@ -90,10 +70,6 @@ class RVC:
             # device="cpu"######## Force cpu testing
             self.device: str | torch.device = config.device
             self.f0_up_key = key
-            self.f0_min = 50
-            self.f0_max = 1100
-            self.f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
-            self.f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
             self.n_cpu = n_cpu
             self.use_jit = self.config.use_jit
             self.is_half = config.is_half
@@ -110,6 +86,14 @@ class RVC:
             )
             self.cache_pitchf = torch.zeros(
                 1024, device=self.device, dtype=torch.float32
+            )
+            self.f0_gen = Generator(
+                Path("assets/rmvpe"),
+                self.is_half,
+                0,
+                self.device,
+                160,
+                16000,
             )
 
             if last_rvc is None:
@@ -211,6 +195,8 @@ class RVC:
             if last_rvc is not None and hasattr(last_rvc, "model_fcpe"):
                 self.device_fcpe = last_rvc.device_fcpe
                 self.model_fcpe = last_rvc.model_fcpe
+            if last_rvc is not None and hasattr(last_rvc, "f0_gen"):
+                self.f0_gen = last_rvc.f0_gen
         except:
             printt(traceback.format_exc())
 
@@ -224,139 +210,23 @@ class RVC:
             printt("Index search enabled")
         self.index_rate = new_index_rate
 
-    def get_f0_post(self, f0):
-        if not torch.is_tensor(f0):
-            f0 = torch.from_numpy(f0)
-        f0 = f0.float().to(self.device).squeeze()
-        f0_mel = 1127 * torch.log(1 + f0 / 700)
-        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - self.f0_mel_min) * 254 / (
-            self.f0_mel_max - self.f0_mel_min
-        ) + 1
-        f0_mel[f0_mel <= 1] = 1
-        f0_mel[f0_mel > 255] = 255
-        f0_coarse = torch.round(f0_mel).long()
-        return f0_coarse, f0
-
-    def get_f0(self, x, f0_up_key, n_cpu, method="harvest"):
-        n_cpu = int(n_cpu)
-        if method == "crepe":
-            return self.get_f0_crepe(x, f0_up_key)
-        if method == "rmvpe":
-            return self.get_f0_rmvpe(x, f0_up_key)
-        if method == "fcpe":
-            return self.get_f0_fcpe(x, f0_up_key)
-        x = x.cpu().numpy()
-        if method == "pm":
-            p_len = x.shape[0] // 160 + 1
-            f0_min = 65
-            l_pad = int(np.ceil(1.5 / f0_min * 16000))
-            r_pad = l_pad + 1
-            s = parselmouth.Sound(np.pad(x, (l_pad, r_pad)), 16000).to_pitch_ac(
-                time_step=0.01,
-                voicing_threshold=0.6,
-                pitch_floor=f0_min,
-                pitch_ceiling=1100,
-            )
-            assert np.abs(s.t1 - 1.5 / f0_min) < 0.001
-            f0 = s.selected_array["frequency"]
-            if len(f0) < p_len:
-                f0 = np.pad(f0, (0, p_len - len(f0)))
-            f0 = f0[:p_len]
-            f0 *= pow(2, f0_up_key / 12)
-            return self.get_f0_post(f0)
-        if n_cpu == 1:
-            f0, t = pyworld_api.harvest(
-                x.astype(np.double),
-                fs=16000,
-                f0_ceil=1100,
-                f0_floor=50,
-                frame_period=10,
-            )
-            f0 = signal.medfilt(f0, 3)
-            f0 *= pow(2, f0_up_key / 12)
-            return self.get_f0_post(f0)
-        f0bak = np.zeros(x.shape[0] // 160 + 1, dtype=np.float64)
-        length = len(x)
-        part_length = 160 * ((length // 160 - 1) // n_cpu + 1)
-        n_cpu = (length // 160 - 1) // (part_length // 160) + 1
-        ts = ttime()
-        res_f0 = mm.dict()
-        for idx in range(n_cpu):
-            tail = part_length * (idx + 1) + 320
-            if idx == 0:
-                self.inp_q.put((idx, x[:tail], res_f0, n_cpu, ts))
-            else:
-                self.inp_q.put(
-                    (idx, x[part_length * idx - 320 : tail], res_f0, n_cpu, ts)
-                )
-        while 1:
-            res_ts = self.opt_q.get()
-            if res_ts == ts:
-                break
-        f0s = [i[1] for i in sorted(res_f0.items(), key=lambda x: x[0])]
-        for idx, f0 in enumerate(f0s):
-            if idx == 0:
-                f0 = f0[:-3]
-            elif idx != n_cpu - 1:
-                f0 = f0[2:-3]
-            else:
-                f0 = f0[2:]
-            f0bak[part_length * idx // 160 : part_length * idx // 160 + f0.shape[0]] = (
-                f0
-            )
-        f0bak = signal.medfilt(f0bak, 3)
-        f0bak *= pow(2, f0_up_key / 12)
-        return self.get_f0_post(f0bak)
-
-    def get_f0_crepe(self, x, f0_up_key):
-        # printt("using crepe,device:%s"%self.device)
-        f0, pd = torchcrepe.predict(
-            x.unsqueeze(0).float(),
-            16000,
-            160,
-            self.f0_min,
-            self.f0_max,
-            "full",
-            batch_size=512,
-            device=self.device,
-            return_periodicity=True,
+    def _get_f0(
+        self,
+        x: torch.Tensor,
+        f0_up_key: int,
+        method: PitchMethod,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        coarse, fine = self.f0_gen.calculate(
+            x.detach().cpu().numpy(),
+            None,
+            f0_up_key,
+            method,
+            3,
         )
-        pd = torchcrepe.filter.median(pd, 3)
-        f0 = torchcrepe.filter.mean(f0, 3)
-        f0[pd < 0.1] = 0
-        f0 *= pow(2, f0_up_key / 12)
-        return self.get_f0_post(f0)
-
-    def get_f0_rmvpe(self, x, f0_up_key):
-        if hasattr(self, "model_rmvpe") == False:
-            from infer.lib.rmvpe import RMVPE
-
-            printt("Loading rmvpe model")
-            self.model_rmvpe = RMVPE(
-                "assets/rmvpe/rmvpe.pt",
-                is_half=self.is_half,
-                device=self.device,
-                use_jit=self.config.use_jit,
-            )
-        f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
-        f0 *= pow(2, f0_up_key / 12)
-        return self.get_f0_post(f0)
-
-    def get_f0_fcpe(self, x, f0_up_key):
-        if hasattr(self, "model_fcpe") == False:
-            from torchfcpe import spawn_bundled_infer_model
-
-            printt("Loading fcpe model")
-            self.device_fcpe = str(self.device)
-            self.model_fcpe = spawn_bundled_infer_model(self.device_fcpe)
-        f0 = self.model_fcpe.infer(
-            x.to(self.device_fcpe).unsqueeze(0).float(),
-            sr=16000,
-            decoder_mode="local_argmax",
-            threshold=0.006,
+        return (
+            torch.from_numpy(coarse).long().to(self.device),
+            torch.from_numpy(fine).float().to(self.device),
         )
-        f0 *= pow(2, f0_up_key / 12)
-        return self.get_f0_post(f0)
 
     def infer(
         self,
@@ -415,11 +285,16 @@ class RVC:
         cache_pitch: torch.Tensor | None = None
         cache_pitchf: torch.Tensor | None = None
         if self.if_f0 == 1:
+            if f0method not in ALL_PITCH_METHODS:
+                raise ValueError(f"Unsupported f0 method: {f0method}")
+            method = cast(PitchMethod, f0method)
             f0_extractor_frame = block_frame_16k + 800
-            if f0method == "rmvpe":
+            if method == "rmvpe":
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
-            pitch, pitchf = self.get_f0(
-                input_wav[-f0_extractor_frame:], self.f0_up_key, self.n_cpu, f0method
+            pitch, pitchf = self._get_f0(
+                input_wav[-f0_extractor_frame:],
+                self.f0_up_key,
+                method,
             )
             shift = block_frame_16k // 160
             self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()

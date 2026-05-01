@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from scipy.io import wavfile
 from tap import Tap
 
-from lib.types.f0 import PitchMethod
+from lib.f0 import PitchMethod
 
 
 class InferBatchArgs(Tap):

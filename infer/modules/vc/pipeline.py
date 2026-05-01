@@ -28,13 +28,12 @@ import torch
 import torch.nn.functional as F
 from scipy import signal
 
+from lib.f0 import Generator, PitchMethod
+
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)  # type: ignore
-
-from infer.modules.vc.f0_extractors import *
-from lib.types.f0 import PitchMethod, PITCH_METHODS
 
 
 class NamedFile(Protocol):
@@ -90,9 +89,6 @@ class Pipeline:
             config.x_max,
             config.is_half,
         )
-        # self.sr: int = 16000  # hubert input Sample rate
-        # self.window: int = 160  # Points per frame
-        PitchExtractorDict: TypeAlias = dict[str, "PitchExtractor"]
         self.t_pad: int = self.sr * self.x_pad  # Pad time around each entry
         self.t_pad_tgt: int = tgt_sr * self.x_pad
         self.t_pad2: int = self.t_pad * 2
@@ -100,7 +96,14 @@ class Pipeline:
         self.t_center: int = self.sr * self.x_center  # Query point position
         self.t_max: int = self.sr * self.x_max  # Threshold for skipping queries
         self.device: str = config.device
-        self.pitch_extractors: PitchExtractorDict = {}
+        self.f0_gen = Generator(
+            self.shared.rmvpe_root,
+            self.is_half,
+            self.x_pad,
+            self.device,
+            self.window,
+            self.sr,
+        )
 
     def get_f0(
         self,
@@ -111,59 +114,14 @@ class Pipeline:
         filter_radius: int = 3,
         inp_f0: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        # Lazy load f0 pitch extractor
-        if f0_method not in self.pitch_extractors:
-            match f0_method:
-                case "pm":
-                    self.pitch_extractors[f0_method] = PM_PitchExtractor(
-                        self.sr, self.window, self.f0_min, self.f0_max
-                    )
-                case "harvest":
-                    self.pitch_extractors[f0_method] = Harvest_PitchExtractor(
-                        self.sr, self.window, self.f0_min, self.f0_max, filter_radius
-                    )
-                case "crepe":
-                    self.pitch_extractors[f0_method] = Crepe_PitchExtractor(
-                        self.sr, self.window, self.f0_min, self.f0_max, self.device
-                    )
-                case "rmvpe":
-                    self.pitch_extractors[f0_method] = RMVPE_PitchExtractor(
-                        self.sr,
-                        self.window,
-                        self.f0_min,
-                        self.f0_max,
-                        self.device,
-                        self.is_half,
-                    )
-
-        f0 = self.pitch_extractors[f0_method].extract_pitch(x, p_len)
-        f0 *= pow(2, f0_up_key / 12)
-        tf0 = self.sr // self.window
-        if inp_f0 is not None:
-            delta_t = np.round(
-                (inp_f0[:, 0].max() - inp_f0[:, 0].min()) * tf0 + 1
-            ).astype("int16")
-            replace_f0 = np.asarray(
-                np.interp(np.arange(delta_t), inp_f0[:, 0] * 100, inp_f0[:, 1]),
-                dtype=np.float32,
-            )
-            shape = f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)].shape[0]
-            f0[self.x_pad * tf0 : self.x_pad * tf0 + len(replace_f0)] = replace_f0[
-                :shape
-            ]
-
-        f0bak = f0.copy()
-        f0_mel_min = 1127 * np.log(1 + self.f0_min / 700)
-        f0_mel_max = 1127 * np.log(1 + self.f0_max / 700)
-        f0_mel = 1127 * np.log(1 + f0 / 700)
-        f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * 254 / (
-            f0_mel_max - f0_mel_min
-        ) + 1
-        f0_mel[f0_mel <= 1] = 1
-        f0_mel[f0_mel > 255] = 255
-        f0_coarse = np.rint(f0_mel).astype(np.int32)
-
-        return f0_coarse, f0bak
+        return self.f0_gen.calculate(
+            x,
+            p_len,
+            f0_up_key,
+            f0_method,
+            filter_radius,
+            inp_f0,
+        )
 
     def vc(
         self,

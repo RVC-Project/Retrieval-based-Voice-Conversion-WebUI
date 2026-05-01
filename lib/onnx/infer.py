@@ -7,7 +7,7 @@ import librosa
 import numpy as np
 import onnxruntime
 
-from lib.f0 import Generator
+from lib.f0 import Generator, PitchMethod
 
 type ModelPath = str | bytes | PathLike[str]
 
@@ -67,7 +67,7 @@ class RVC(Model):
         wav: np.ndarray,
         wav_sr: int,
         sid: int = 0,
-        f0_method: Literal["pm", "dio", "harvest", "crepe", "rmvpe", "fcpe"] = "dio",
+        f0_method: PitchMethod = "dio",
         f0_up_key: int = 0,
     ) -> np.ndarray:
         org_length = len(wav)

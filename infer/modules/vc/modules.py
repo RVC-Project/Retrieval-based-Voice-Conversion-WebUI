@@ -1,4 +1,4 @@
-from lib.types import PitchMethod
+from lib.f0 import PitchMethod
 import traceback
 import logging
 from pathlib import Path

@@ -1,7 +1,7 @@
 from io import BytesIO
 import os
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Protocol, cast
 
 import fairseq
 import faiss
@@ -11,11 +11,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchaudio.transforms import Resample
 
-from lib.f0 import Generator
+from lib.f0 import ALL_PITCH_METHODS, Generator, PitchMethod
 from lib.synthesizer import load_synthesizer
 from lib.types import FileLike
 
-type F0Method = Literal["crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"]
 type F0Pair = tuple[np.ndarray, np.ndarray]
 
 
@@ -222,9 +221,9 @@ class RVC:
             pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
         elif self.if_f0 == 1:
-            if f0method not in ("crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"):
+            if f0method not in ALL_PITCH_METHODS:
                 raise ValueError(f"Unsupported f0 method: {f0method}")
-            method = cast(F0Method, f0method)
+            method = cast(PitchMethod, f0method)
             f0_extractor_frame = block_frame_16k + 800
             if method == "rmvpe":
                 f0_extractor_frame = (
@@ -299,7 +298,7 @@ class RVC:
         x: torch.Tensor,
         f0_up_key: int | float,
         filter_radius: int | float | None = None,
-        method: Literal["crepe", "rmvpe", "fcpe", "pm", "harvest", "dio"] = "fcpe",
+        method: PitchMethod = "fcpe",
     ):
         c, f = self.f0_gen.calculate(
             x.cpu().numpy(), None, int(round(f0_up_key)), method, filter_radius

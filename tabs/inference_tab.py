@@ -6,7 +6,7 @@ import gradio as gr
 import numpy as np
 
 import shared
-from lib.types.f0 import PITCH_METHODS, PitchMethod
+from lib.f0 import PITCH_METHODS, PitchMethod
 from shared import i18n
 
 

@@ -1,6 +1,5 @@
 import copy
 import math
-from typing import Protocol
 
 import numpy as np
 import scipy
@@ -18,14 +17,6 @@ from infer.lib.infer_pack.transforms import piecewise_rational_quadratic_transfo
 LRELU_SLOPE = 0.1
 
 type FloatArray = NDArray[np.floating]
-
-
-class F0Predictor(Protocol):
-    def compute_f0(self, wav: FloatArray, p_len: int | None) -> FloatArray: ...
-
-    def compute_f0_uv(
-        self, wav: FloatArray, p_len: int | None
-    ) -> tuple[FloatArray, FloatArray]: ...
 
 
 class LayerNorm(nn.Module):
