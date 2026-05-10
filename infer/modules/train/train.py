@@ -18,6 +18,14 @@ from random import randint, shuffle
 
 import torch
 
+# PyTorch 2.6+ defaults weights_only=True which breaks legacy model loading
+_original_torch_load = torch.load
+def _patched_torch_load(*args, **kwargs):
+    if "weights_only" not in kwargs:
+        kwargs["weights_only"] = False
+    return _original_torch_load(*args, **kwargs)
+torch.load = _patched_torch_load
+
 try:
     import intel_extension_for_pytorch as ipex  # pylint: disable=import-error, unused-import
 
@@ -44,6 +52,7 @@ from torch.nn import functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from infer.lib.infer_pack import commons
 from infer.lib.train.data_utils import (
@@ -103,12 +112,15 @@ def main():
         n_gpus = 1
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(randint(20000, 55555))
+    if n_gpus == 1:
+        # Skip subprocess spawn for single-GPU — avoids silent Windows mp crashes
+        run(0, 1, hps)
+        return
     children = []
-    logger = utils.get_logger(hps.model_dir)
     for i in range(n_gpus):
         subproc = mp.Process(
             target=run,
-            args=(i, n_gpus, hps, logger),
+            args=(i, n_gpus, hps),
         )
         children.append(subproc)
         subproc.start()
@@ -117,18 +129,23 @@ def main():
         children[i].join()
 
 
-def run(rank, n_gpus, hps, logger: logging.Logger):
+def run(
+    rank,
+    n_gpus,
+    hps,
+):
     global global_step
     if rank == 0:
-        # logger = utils.get_logger(hps.model_dir)
+        logger = utils.get_logger(hps.model_dir)
         logger.info(hps)
         # utils.check_git_hash(hps.model_dir)
         writer = SummaryWriter(log_dir=hps.model_dir)
         writer_eval = SummaryWriter(log_dir=os.path.join(hps.model_dir, "eval"))
 
-    dist.init_process_group(
-        backend="gloo", init_method="env://", world_size=n_gpus, rank=rank
-    )
+    if n_gpus > 1:
+        dist.init_process_group(
+            backend="gloo", init_method="env://", world_size=n_gpus, rank=rank
+        )
     torch.manual_seed(hps.train.seed)
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
@@ -154,13 +171,11 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
         collate_fn = TextAudioCollate()
     train_loader = DataLoader(
         train_dataset,
-        num_workers=4,
+        num_workers=0,
         shuffle=False,
         pin_memory=True,
         collate_fn=collate_fn,
         batch_sampler=train_sampler,
-        persistent_workers=True,
-        prefetch_factor=8,
     )
     if hps.if_f0 == 1:
         net_g = RVC_Model_f0(
@@ -196,14 +211,15 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     )
     # net_g = DDP(net_g, device_ids=[rank], find_unused_parameters=True)
     # net_d = DDP(net_d, device_ids=[rank], find_unused_parameters=True)
-    if hasattr(torch, "xpu") and torch.xpu.is_available():
-        pass
-    elif torch.cuda.is_available():
-        net_g = DDP(net_g, device_ids=[rank])
-        net_d = DDP(net_d, device_ids=[rank])
-    else:
-        net_g = DDP(net_g)
-        net_d = DDP(net_d)
+    if n_gpus > 1:
+        if hasattr(torch, "xpu") and torch.xpu.is_available():
+            pass
+        elif torch.cuda.is_available():
+            net_g = DDP(net_g, device_ids=[rank])
+            net_d = DDP(net_d, device_ids=[rank])
+        else:
+            net_g = DDP(net_g)
+            net_d = DDP(net_d)
 
     try:  # 如果能加载自动resume
         _, _, _, epoch_str = utils.load_checkpoint(
@@ -263,35 +279,46 @@ def run(rank, n_gpus, hps, logger: logging.Logger):
     scaler = GradScaler(enabled=hps.train.fp16_run)
 
     cache = []
-    for epoch in range(epoch_str, hps.train.epochs + 1):
-        if rank == 0:
-            train_and_evaluate(
-                rank,
-                epoch,
-                hps,
-                [net_g, net_d],
-                [optim_g, optim_d],
-                [scheduler_g, scheduler_d],
-                scaler,
-                [train_loader, None],
-                logger,
-                [writer, writer_eval],
-                cache,
-            )
-        else:
-            train_and_evaluate(
-                rank,
-                epoch,
-                hps,
-                [net_g, net_d],
-                [optim_g, optim_d],
-                [scheduler_g, scheduler_d],
-                scaler,
-                [train_loader, None],
-                None,
-                None,
-                cache,
-            )
+    epoch_bar = tqdm(
+        range(epoch_str, hps.total_epoch + 1),
+        desc="Training",
+        unit="epoch",
+        disable=rank != 0,
+    )
+    for epoch in epoch_bar:
+        try:
+            if rank == 0:
+                train_and_evaluate(
+                    rank,
+                    epoch,
+                    hps,
+                    [net_g, net_d],
+                    [optim_g, optim_d],
+                    [scheduler_g, scheduler_d],
+                    scaler,
+                    [train_loader, None],
+                    logger,
+                    [writer, writer_eval],
+                    cache,
+                )
+            else:
+                train_and_evaluate(
+                    rank,
+                    epoch,
+                    hps,
+                    [net_g, net_d],
+                    [optim_g, optim_d],
+                    [scheduler_g, scheduler_d],
+                    scaler,
+                    [train_loader, None],
+                    None,
+                    None,
+                    cache,
+                )
+        except Exception as e:
+            if rank == 0:
+                logger.error("Training error at epoch %d: %s", epoch, e, exc_info=True)
+            raise
         scheduler_g.step()
         scheduler_d.step()
 
@@ -395,7 +422,15 @@ def train_and_evaluate(
 
     # Run steps
     epoch_recorder = EpochRecorder()
-    for batch_idx, info in data_iterator:
+    if rank == 0:
+        if hps.if_cache_data_in_gpu == True:
+            total_batches = len(cache) if cache else len(train_loader)
+        else:
+            total_batches = len(train_loader)
+        batch_bar = tqdm(data_iterator, total=total_batches, desc=f"Epoch {epoch}", leave=False)
+    else:
+        batch_bar = data_iterator
+    for batch_idx, info in batch_bar:
         # Data
         ## Unpack
         if hps.if_f0 == 1:
@@ -500,6 +535,12 @@ def train_and_evaluate(
         scaler.update()
 
         if rank == 0:
+            batch_bar.set_postfix(
+                disc=f"{loss_disc:.3f}",
+                gen=f"{loss_gen:.3f}",
+                mel=f"{loss_mel:.3f}",
+                kl=f"{loss_kl:.3f}",
+            )
             if global_step % hps.train.log_interval == 0:
                 lr = optim_g.param_groups[0]["lr"]
                 logger.info(

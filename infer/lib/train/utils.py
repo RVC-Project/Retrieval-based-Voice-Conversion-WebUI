@@ -235,8 +235,8 @@ def plot_spectrogram_to_numpy(spectrogram):
     plt.tight_layout()
 
     fig.canvas.draw()
-    data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (4,))[:, :, :3]
     plt.close()
     return data
 
@@ -266,8 +266,8 @@ def plot_alignment_to_numpy(alignment, info=None):
     plt.tight_layout()
 
     fig.canvas.draw()
-    data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (4,))[:, :, :3]
     plt.close()
     return data
 
@@ -278,13 +278,8 @@ def load_wav_to_torch(full_path):
 
 
 def load_filepaths_and_text(filename, split="|"):
-    try:
-        with open(filename, encoding="utf-8") as f:
-            filepaths_and_text = [line.strip().split(split) for line in f]
-    except UnicodeDecodeError:
-        with open(filename) as f:
-            filepaths_and_text = [line.strip().split(split) for line in f]
-    
+    with open(filename, encoding="utf-8") as f:
+        filepaths_and_text = [line.strip().split(split) for line in f]
     return filepaths_and_text
 
 
@@ -317,10 +312,10 @@ def get_hparams(init=True):
         "-te", "--total_epoch", type=int, required=True, help="total_epoch"
     )
     parser.add_argument(
-        "-pg", "--pretrainG", type=str, default="", help="Pretrained Generator path"
+        "-pg", "--pretrainG", type=str, default="", help="Pretrained Discriminator path"
     )
     parser.add_argument(
-        "-pd", "--pretrainD", type=str, default="", help="Pretrained Discriminator path"
+        "-pd", "--pretrainD", type=str, default="", help="Pretrained Generator path"
     )
     parser.add_argument("-g", "--gpus", type=str, default="0", help="split by -")
     parser.add_argument(
