@@ -1,3 +1,4 @@
+import os
 import traceback
 import logging
 
@@ -277,23 +278,24 @@ class VC:
                 if "Success" in info:
                     try:
                         tgt_sr, audio_opt = opt
+                        input_name = os.path.basename(path)
+                        clean_name = os.path.splitext(input_name)[0]
                         if format1 in ["wav", "flac"]:
                             sf.write(
-                                "%s/%s.%s"
-                                % (opt_root, os.path.basename(path), format1),
+                                "%s/%s.%s" % (opt_root, clean_name, format1),
                                 audio_opt,
                                 tgt_sr,
                             )
                         else:
-                            path = "%s/%s.%s" % (
+                            save_path = "%s/%s.%s" % (
                                 opt_root,
-                                os.path.basename(path),
+                                clean_name,
                                 format1,
                             )
                             with BytesIO() as wavf:
                                 sf.write(wavf, audio_opt, tgt_sr, format="wav")
                                 wavf.seek(0, 0)
-                                with open(path, "wb") as outf:
+                                with open(save_path, "wb") as outf:
                                     wav2(wavf, outf, format1)
                     except:
                         info += traceback.format_exc()
