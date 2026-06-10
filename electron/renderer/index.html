@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; connect-src ws://127.0.0.1:*; style-src 'self'" />
+  <title>RVC Realtime Voice Conversion</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="banner" class="banner hidden">
+    <span id="banner_text"></span>
+    <button id="banner_close" title="Dismiss">&times;</button>
+  </div>
+
+  <main>
+    <section class="card">
+      <h2>Model</h2>
+      <div class="row">
+        <label>.pth file</label>
+        <input id="pth_path" type="text" readonly placeholder="Select a voice model (.pth)" />
+        <button id="browse_pth">Browse&hellip;</button>
+      </div>
+      <div class="row">
+        <label>.index file</label>
+        <input id="index_path" type="text" readonly placeholder="Select a feature index (.index)" />
+        <button id="browse_index">Browse&hellip;</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Audio devices</h2>
+      <div class="row">
+        <label>Host API</label>
+        <select id="sg_hostapi"></select>
+        <label class="check"><input id="sg_wasapi_exclusive" type="checkbox" /> Exclusive WASAPI mode</label>
+      </div>
+      <div class="row">
+        <label>Input device</label>
+        <select id="sg_input_device"></select>
+      </div>
+      <div class="row">
+        <label>Output device</label>
+        <select id="sg_output_device"></select>
+      </div>
+      <div class="row">
+        <button id="reload_devices">Reload device list</button>
+        <label class="check"><input type="radio" name="sr_type" id="sr_model" checked /> Use model sample rate</label>
+        <label class="check"><input type="radio" name="sr_type" id="sr_device" /> Use device sample rate</label>
+        <span class="stat">Sample rate: <span id="sr_stream">&ndash;</span></span>
+      </div>
+    </section>
+
+    <div class="columns">
+      <section class="card">
+        <h2>Inference settings</h2>
+        <div class="row slider-row">
+          <label>Response threshold</label>
+          <input type="range" id="threhold" min="-60" max="0" step="1" value="-60" />
+          <span class="val" id="threhold_val">-60</span>
+        </div>
+        <div class="row slider-row">
+          <label>Pitch</label>
+          <input type="range" id="pitch" min="-16" max="16" step="1" value="0" />
+          <span class="val" id="pitch_val">0</span>
+        </div>
+        <div class="row slider-row">
+          <label>Formant (gender factor)</label>
+          <input type="range" id="formant" min="-2" max="2" step="0.05" value="0" />
+          <span class="val" id="formant_val">0.00</span>
+        </div>
+        <div class="row slider-row">
+          <label>Index rate</label>
+          <input type="range" id="index_rate" min="0" max="1" step="0.01" value="0" />
+          <span class="val" id="index_rate_val">0.00</span>
+        </div>
+        <div class="row slider-row">
+          <label>Loudness factor</label>
+          <input type="range" id="rms_mix_rate" min="0" max="1" step="0.01" value="0" />
+          <span class="val" id="rms_mix_rate_val">0.00</span>
+        </div>
+        <div class="row">
+          <label>Pitch algorithm</label>
+          <span class="radio-group">
+            <label class="check"><input type="radio" name="f0method" value="pm" /> pm</label>
+            <label class="check"><input type="radio" name="f0method" value="harvest" /> harvest</label>
+            <label class="check"><input type="radio" name="f0method" value="crepe" /> crepe</label>
+            <label class="check"><input type="radio" name="f0method" value="rmvpe" checked /> rmvpe</label>
+            <label class="check"><input type="radio" name="f0method" value="fcpe" /> fcpe</label>
+          </span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Performance</h2>
+        <div class="row slider-row">
+          <label>Block time (s)</label>
+          <input type="range" id="block_time" min="0.02" max="1.5" step="0.01" value="0.25" />
+          <span class="val" id="block_time_val">0.25</span>
+        </div>
+        <div class="row slider-row">
+          <label>Harvest processes</label>
+          <input type="range" id="n_cpu" min="1" max="8" step="1" value="4" />
+          <span class="val" id="n_cpu_val">4</span>
+        </div>
+        <div class="row slider-row">
+          <label>Crossfade length (s)</label>
+          <input type="range" id="crossfade_length" min="0.01" max="0.15" step="0.01" value="0.05" />
+          <span class="val" id="crossfade_length_val">0.05</span>
+        </div>
+        <div class="row slider-row">
+          <label>Extra inference time (s)</label>
+          <input type="range" id="extra_time" min="0.05" max="5" step="0.01" value="2.5" />
+          <span class="val" id="extra_time_val">2.50</span>
+        </div>
+        <div class="row">
+          <label class="check"><input id="I_noise_reduce" type="checkbox" /> Input noise reduction</label>
+          <label class="check"><input id="O_noise_reduce" type="checkbox" /> Output noise reduction</label>
+          <label class="check"><input id="use_pv" type="checkbox" /> Phase vocoder</label>
+        </div>
+      </section>
+    </div>
+
+    <section class="card control-bar">
+      <button id="start_vc" class="primary">Start conversion</button>
+      <button id="stop_vc" disabled>Stop</button>
+      <span class="radio-group">
+        <label class="check"><input type="radio" name="function" value="im" /> Monitor input</label>
+        <label class="check"><input type="radio" name="function" value="vc" checked /> Convert output</label>
+      </span>
+      <span class="stat">Algorithm latency: <span id="delay_time">0</span> ms</span>
+      <span class="stat">Inference time: <span id="infer_time">0</span> ms</span>
+      <span class="stat" id="conn_status">Starting Python backend&hellip;</span>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "rvc-realtime-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Electron control panel for RVC realtime voice conversion",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

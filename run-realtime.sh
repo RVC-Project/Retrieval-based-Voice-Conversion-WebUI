@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd "$(dirname "$0")"
+
 if [ "$(uname)" = "Darwin" ]; then
   # macOS specific env:
   export PYTORCH_ENABLE_MPS_FALLBACK=1
@@ -52,6 +54,27 @@ else
   fi
 fi
 
-# Run the real-time voice conversion
-echo "Starting real-time voice conversion..."
-python tools/rvc_for_realtime.py
+# sounddevice is only listed in the Windows realtime requirements; ensure it here
+if ! python -c "import sounddevice" 2>/dev/null; then
+  echo "Installing sounddevice..."
+  if ! python -m pip install sounddevice; then
+    echo "Failed to install sounddevice. Try manually: python -m pip install sounddevice"
+    exit 1
+  fi
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm is required for the Electron UI. Install Node.js (https://nodejs.org) first."
+  exit 1
+fi
+
+if [ ! -d "electron/node_modules" ]; then
+  echo "Installing Electron UI dependencies..."
+  if ! npm install --prefix electron; then
+    echo "Failed to install Electron UI dependencies. Check npm and try again."
+    exit 1
+  fi
+fi
+
+echo "Starting the realtime voice conversion UI..."
+exec npm start --prefix electron
