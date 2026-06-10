@@ -8,6 +8,7 @@ tests) drives it through start() / stop() / set_param().
 import os
 import sys
 import time
+import traceback
 
 import librosa
 import numpy as np
@@ -376,6 +377,21 @@ class RealtimeVC:
     # ---- audio processing (verbatim from gui_v1.GUI.audio_callback) ----
 
     def audio_callback(self, indata, outdata, frames, times, status):
+        try:
+            self._audio_callback(indata, outdata, frames, times, status)
+        except Exception:
+            outdata[:] = 0
+            if self.status_callback is not None:
+                self.status_callback(
+                    {
+                        "type": "error",
+                        "message": "Audio processing failed; stream aborted:\n"
+                        + traceback.format_exc(limit=3),
+                    }
+                )
+            raise sd.CallbackAbort
+
+    def _audio_callback(self, indata, outdata, frames, times, status):
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
         if self.cfg.threhold > -60:

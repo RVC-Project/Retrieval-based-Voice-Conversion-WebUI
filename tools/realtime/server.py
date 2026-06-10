@@ -112,7 +112,7 @@ def main():
 
     app = FastAPI()
     clients = set()
-    state = {"loop": None}
+    state = {"loop": None, "lock": None}
 
     def push_status(msg):
         loop = state["loop"]
@@ -131,7 +131,6 @@ def main():
             clients.discard(ws)
 
     engine = RealtimeVC(inp_q, opt_q, status_callback=push_status)
-    engine_lock = asyncio.Lock()
 
     def devices_payload():
         return {
@@ -141,15 +140,24 @@ def main():
         }
 
     async def handle(msg):
+        if state["lock"] is None:
+            # py3.9: asyncio.Lock() binds the loop at construction; create it
+            # inside uvicorn's running loop, not at module/main scope
+            state["lock"] = asyncio.Lock()
         mtype = msg.get("type")
         if mtype == "get_init":
             saved = load_saved_config()
-            if saved["sg_hostapi"] in engine.hostapis:
+            if not engine.flag_vc and saved["sg_hostapi"] in engine.hostapis:
                 engine.update_devices(hostapi_name=saved["sg_hostapi"])
             payload = {"type": "init", "config": saved, "n_cpu_max": n_cpu}
             payload.update(devices_payload())
             return payload
         if mtype == "update_devices":
+            if engine.flag_vc:
+                return {
+                    "type": "error",
+                    "message": "Stop the stream before reloading devices",
+                }
             engine.update_devices(hostapi_name=msg.get("hostapi"))
             payload = {"type": "devices"}
             payload.update(devices_payload())
@@ -157,7 +165,7 @@ def main():
         if mtype == "start":
             data = msg.get("config", {})
             try:
-                async with engine_lock:
+                async with state["lock"]:
                     result = await asyncio.to_thread(engine.start, data)
             except Exception as exc:
                 traceback.print_exc()
@@ -165,7 +173,7 @@ def main():
             save_config(data)
             return {"type": "started", **result}
         if mtype == "stop":
-            async with engine_lock:
+            async with state["lock"]:
                 await asyncio.to_thread(engine.stop)
             return {"type": "stopped"}
         if mtype == "set_param":
