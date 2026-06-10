@@ -40,6 +40,7 @@ const COLD_CONTROLS = [
 
 let ws = null;
 let running = false;
+let awaitingStart = false;
 
 function setStatus(text) {
   $("conn_status").textContent = text;
@@ -144,6 +145,10 @@ function handleMessage(msg) {
       fillSelect($("sg_output_device"), msg.output_devices, msg.config.sg_output_device);
       $("n_cpu").max = msg.n_cpu_max;
       applyConfig(msg.config);
+      if (parseFloat($("n_cpu").value) > msg.n_cpu_max) {
+        $("n_cpu").value = msg.n_cpu_max;
+        sliderLabel("n_cpu", 0);
+      }
       setStatus("Ready");
       break;
     case "devices":
@@ -152,12 +157,14 @@ function handleMessage(msg) {
       fillSelect($("sg_output_device"), msg.output_devices, null);
       break;
     case "started":
+      awaitingStart = false;
       setRunning(true);
       $("sr_stream").textContent = msg.samplerate;
       $("delay_time").textContent = msg.delay_ms;
       setStatus("Converting");
       break;
     case "stopped":
+      awaitingStart = false;
       setRunning(false);
       setStatus("Ready");
       break;
@@ -171,6 +178,11 @@ function handleMessage(msg) {
       break;
     case "error":
       showError(msg.message);
+      if (awaitingStart) {
+        // start failed before the stream came up; restore controls
+        awaitingStart = false;
+        setRunning(false);
+      }
       if (!running) setStatus("Ready");
       break;
   }
@@ -239,8 +251,13 @@ function wireEvents() {
     $("banner").classList.add("hidden");
     setStatus("Loading model…");
     send({ type: "start", config: cfg });
+    awaitingStart = true;
+    setRunning(true);
   };
-  $("stop_vc").onclick = () => send({ type: "stop" });
+  $("stop_vc").onclick = () => {
+    $("stop_vc").disabled = true;
+    send({ type: "stop" });
+  };
 
   for (const { id, decimals } of SLIDERS) {
     $(id).oninput = () => {
