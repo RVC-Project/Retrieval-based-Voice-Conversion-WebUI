@@ -24,7 +24,11 @@ RVC (Retrieval-based Voice Conversion) is a voice conversion framework based on 
 
 ## Core Entry Points
 
-1. **Web UI** (`infer-web.py`): Gradio-based web interface for training and voice conversion
+1. **Web UI** (`infer-web.py`): thin launcher for the Gradio interface; the actual UI lives in the `web/` package:
+   - `web/runtime.py`: one-time setup (env, Config/VC/i18n singletons, GPU detection, model+index discovery)
+   - `web/train_ops.py`: training subprocess orchestration and Gradio callbacks
+   - `web/tabs/{inference,uvr5,train,ckpt,onnx,faq}.py`: one module per tab, each exposing `build()`
+   - `web/app.py`: `build_app()` assembles the Blocks (used headlessly by `tests/webui_build.py`)
 2. **GUI** (`gui_v1.py`): FreeSimpleGUI-based desktop interface
 3. **REST APIs**:
    - `api_240604.py`: FastAPI-based API (latest version)
@@ -56,6 +60,13 @@ RVC (Retrieval-based Voice Conversion) is a voice conversion framework based on 
 **Model Definitions** (`infer/lib/infer_pack/`):
 - VITS-based synthesizer models in different configurations (v1: 256k/40k/48k, v2: 48k/32k)
 - Models support both with and without F0 (pitch) information
+- Split across `encoders.py` (TextEncoder, PosteriorEncoder, ResidualCouplingBlock), `generators.py` (Generator, GeneratorNSF, SineGen, SourceModuleHnNSF), `discriminators.py`, and `models.py` (the four `SynthesizerTrn*` classes); `models.py` re-exports everything, so always import from `infer.lib.infer_pack.models`
+- **Never rename the `SynthesizerTrnMs{256,768}NSFsid[_nono]` classes** — checkpoint loading instantiates them by these exact names in `infer/modules/vc/modules.py`, `infer/lib/jit/get_synthesizer.py`, and `infer/modules/train/train.py`
+- `models_onnx.py` / `attentions_onnx.py` are intentionally separate ONNX-traceable variants; do not merge them with the torch versions
+
+**Realtime stack** (`tools/realtime/` + `gui_v1.py`):
+- Shared helpers: `tools/realtime/dsp.py` (phase_vocoder, printt), `tools/realtime/devices.py` (sounddevice queries), `tools/realtime/harvest_worker.py` (Harvest F0 process) — used by both `gui_v1.py` and `tools/realtime/engine.py`
+- `infer/lib/rtrvc.py` is the canonical realtime RVC engine (used by gui_v1 and the Electron server); `tools/rvc_for_realtime.py` is a simplified variant kept for `api_240604.py`/`api_231006.py`
 
 **Hardware Acceleration**:
 - `infer/modules/ipex/`: Intel IPEX optimization (attention, gradients, hijacks)
@@ -83,6 +94,15 @@ black .
 This is enforced via CI/CD on push to `main`/`dev` branches. PRs will be auto-formatted if needed.
 
 ### Running Tests
+
+Fast local verification scripts (plain python, no pytest) live in `tests/`:
+```bash
+.venv/bin/python tests/smoke_imports.py    # imports every refactor-sensitive module
+.venv/bin/python tests/model_construct.py  # state_dict fingerprints of all synthesizers
+.venv/bin/python tests/webui_build.py      # builds the full Gradio app headlessly
+.venv/bin/python tests/pipeline_equiv.py   # silence-search vectorization equivalence
+.venv/bin/python tools/realtime/test_protocol.py  # realtime server end-to-end
+```
 
 Unit tests are in the CI/CD pipeline (`.github/workflows/unitest.yml`). To run locally:
 ```bash
