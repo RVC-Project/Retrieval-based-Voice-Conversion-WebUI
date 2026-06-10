@@ -455,7 +455,8 @@ def initialize_multiprocessing():
     mm = M()
 
 
-if __name__ == '__main__':
-    initialize_multiprocessing()
-    # Real-time VC app initialization would go here
-    print("Real-time voice conversion ready")
+if __name__ == "__main__":
+    print(
+        "tools/rvc_for_realtime.py is a library used by the REST APIs.\n"
+        "For the realtime voice conversion UI, run: ./run-realtime.sh"
+    )
