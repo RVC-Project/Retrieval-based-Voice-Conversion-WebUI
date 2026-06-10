@@ -13,62 +13,9 @@ now_dir = os.getcwd()
 sys.path.append(now_dir)
 import multiprocessing
 
+from tools.realtime.harvest_worker import Harvest
+
 flag_vc = False
-
-
-def printt(strr, *args):
-    if len(args) == 0:
-        print(strr)
-    else:
-        print(strr % args)
-
-
-def phase_vocoder(a, b, fade_out, fade_in):
-    window = torch.sqrt(fade_out * fade_in)
-    fa = torch.fft.rfft(a * window)
-    fb = torch.fft.rfft(b * window)
-    absab = torch.abs(fa) + torch.abs(fb)
-    n = a.shape[0]
-    if n % 2 == 0:
-        absab[1:-1] *= 2
-    else:
-        absab[1:] *= 2
-    phia = torch.angle(fa)
-    phib = torch.angle(fb)
-    deltaphase = phib - phia
-    deltaphase = deltaphase - 2 * np.pi * torch.floor(deltaphase / 2 / np.pi + 0.5)
-    w = 2 * np.pi * torch.arange(n // 2 + 1).to(a) + deltaphase
-    t = torch.arange(n).unsqueeze(-1).to(a) / n
-    result = (
-        a * (fade_out**2)
-        + b * (fade_in**2)
-        + torch.sum(absab * torch.cos(w * t + phia), -1) * window / n
-    )
-    return result
-
-
-class Harvest(multiprocessing.Process):
-    def __init__(self, inp_q, opt_q):
-        multiprocessing.Process.__init__(self)
-        self.inp_q = inp_q
-        self.opt_q = opt_q
-
-    def run(self):
-        import numpy as np
-        import pyworld
-
-        while 1:
-            idx, x, res_f0, n_cpu, ts = self.inp_q.get()
-            f0, t = pyworld.harvest(
-                x.astype(np.double),
-                fs=16000,
-                f0_ceil=1100,
-                f0_floor=50,
-                frame_period=10,
-            )
-            res_f0[idx] = f0
-            if len(res_f0.keys()) >= n_cpu:
-                self.opt_q.put(ts)
 
 
 if __name__ == "__main__":
@@ -93,6 +40,8 @@ if __name__ == "__main__":
     from infer.lib import rtrvc as rvc_for_realtime
     from i18n.i18n import I18nAuto
     from configs.config import Config
+    from tools.realtime import devices
+    from tools.realtime.dsp import phase_vocoder, printt
 
     i18n = I18nAuto()
 
@@ -116,7 +65,7 @@ if __name__ == "__main__":
             self.pth_path: str = ""
             self.index_path: str = ""
             self.pitch: int = 0
-            self.formant=0.0
+            self.formant = 0.0
             self.sr_type: str = "sr_model"
             self.block_time: float = 0.25  # s
             self.threhold: int = -60
@@ -659,7 +608,7 @@ if __name__ == "__main__":
             if len(values["index_path"].strip()) == 0:
                 sg.popup(i18n("请选择index文件"))
                 return False
-            pattern = re.compile("[^\x00-\x7F]+")
+            pattern = re.compile("[^\x00-\x7f]+")
             if pattern.findall(values["pth_path"]):
                 sg.popup(i18n("pth文件路径不可包含中文"))
                 return False
@@ -1011,60 +960,29 @@ if __name__ == "__main__":
             """获取设备列表"""
             global flag_vc
             flag_vc = False
-            sd._terminate()
-            sd._initialize()
-            devices = sd.query_devices()
-            hostapis = sd.query_hostapis()
-            for hostapi in hostapis:
-                for device_idx in hostapi["devices"]:
-                    devices[device_idx]["hostapi_name"] = hostapi["name"]
-            self.hostapis = [hostapi["name"] for hostapi in hostapis]
-            if hostapi_name not in self.hostapis:
-                hostapi_name = self.hostapis[0]
-            self.input_devices = [
-                d["name"]
-                for d in devices
-                if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
-            ]
-            self.output_devices = [
-                d["name"]
-                for d in devices
-                if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
-            ]
-            self.input_devices_indices = [
-                d["index"] if "index" in d else d["name"]
-                for d in devices
-                if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
-            ]
-            self.output_devices_indices = [
-                d["index"] if "index" in d else d["name"]
-                for d in devices
-                if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
-            ]
+            (
+                self.hostapis,
+                self.input_devices,
+                self.output_devices,
+                self.input_devices_indices,
+                self.output_devices_indices,
+            ) = devices.query_devices(hostapi_name)
 
         def set_devices(self, input_device, output_device):
             """设置输出设备"""
-            sd.default.device[0] = self.input_devices_indices[
-                self.input_devices.index(input_device)
-            ]
-            sd.default.device[1] = self.output_devices_indices[
-                self.output_devices.index(output_device)
-            ]
-            printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
-            printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
-
-        def get_device_samplerate(self):
-            return int(
-                sd.query_devices(device=sd.default.device[0])["default_samplerate"]
+            devices.set_devices(
+                self.input_devices,
+                self.input_devices_indices,
+                self.output_devices,
+                self.output_devices_indices,
+                input_device,
+                output_device,
             )
 
+        def get_device_samplerate(self):
+            return devices.get_device_samplerate()
+
         def get_device_channels(self):
-            max_input_channels = sd.query_devices(device=sd.default.device[0])[
-                "max_input_channels"
-            ]
-            max_output_channels = sd.query_devices(device=sd.default.device[1])[
-                "max_output_channels"
-            ]
-            return min(max_input_channels, max_output_channels, 2)
+            return devices.get_device_channels()
 
     gui = GUI()

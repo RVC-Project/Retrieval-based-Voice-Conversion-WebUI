@@ -83,6 +83,9 @@ class RVC:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
                 printt("Index search enabled")
+            else:
+                self.index = None
+                self.big_npy = None
             self.pth_path: str = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
@@ -197,9 +200,12 @@ class RVC:
 
     def change_index_rate(self, new_index_rate):
         if new_index_rate != 0 and self.index_rate == 0:
-            self.index = faiss.read_index(self.index_path)
-            self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-            printt("Index search enabled")
+            # only pay the read+reconstruct cost the first time the index is
+            # enabled; toggling the rate afterwards reuses the loaded index
+            if getattr(self, "index", None) is None:
+                self.index = faiss.read_index(self.index_path)
+                self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
+                printt("Index search enabled")
         self.index_rate = new_index_rate
 
     def get_f0_post(self, f0):
@@ -371,7 +377,7 @@ class RVC:
             feats = torch.cat((feats, feats[:, -1:, :]), 1)
         t2 = ttime()
         try:
-            if hasattr(self, "index") and self.index_rate != 0:
+            if getattr(self, "index", None) is not None and self.index_rate != 0:
                 npy = feats[0][skip_head // 2 :].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
                 if (ix >= 0).all():
@@ -405,7 +411,10 @@ class RVC:
             if f0method == "rmvpe":
                 f0_extractor_frame = 5120 * ((f0_extractor_frame - 1) // 5120 + 1) - 160
             pitch, pitchf = self.get_f0(
-                input_wav[-f0_extractor_frame:], self.f0_up_key - self.formant_shift, self.n_cpu, f0method
+                input_wav[-f0_extractor_frame:],
+                self.f0_up_key - self.formant_shift,
+                self.n_cpu,
+                f0method,
             )
             shift = block_frame_16k // 160
             self.cache_pitch[:-shift] = self.cache_pitch[shift:].clone()
@@ -413,7 +422,9 @@ class RVC:
             self.cache_pitch[4 - pitch.shape[0] :] = pitch[3:-1]
             self.cache_pitchf[4 - pitch.shape[0] :] = pitchf[3:-1]
             cache_pitch = self.cache_pitch[None, -p_len:]
-            cache_pitchf = self.cache_pitchf[None, -p_len:] * return_length2 / return_length
+            cache_pitchf = (
+                self.cache_pitchf[None, -p_len:] * return_length2 / return_length
+            )
         t4 = ttime()
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]

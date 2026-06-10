@@ -23,38 +23,9 @@ if now_dir not in sys.path:
 
 from configs.config import Config
 from infer.lib import rtrvc as rvc_for_realtime
+from tools.realtime import devices
+from tools.realtime.dsp import phase_vocoder, printt
 from tools.torchgate import TorchGate
-
-
-def printt(strr, *args):
-    if len(args) == 0:
-        print(strr)
-    else:
-        print(strr % args)
-
-
-def phase_vocoder(a, b, fade_out, fade_in):
-    window = torch.sqrt(fade_out * fade_in)
-    fa = torch.fft.rfft(a * window)
-    fb = torch.fft.rfft(b * window)
-    absab = torch.abs(fa) + torch.abs(fb)
-    n = a.shape[0]
-    if n % 2 == 0:
-        absab[1:-1] *= 2
-    else:
-        absab[1:] *= 2
-    phia = torch.angle(fa)
-    phib = torch.angle(fb)
-    deltaphase = phib - phia
-    deltaphase = deltaphase - 2 * np.pi * torch.floor(deltaphase / 2 / np.pi + 0.5)
-    w = 2 * np.pi * torch.arange(n // 2 + 1).to(a) + deltaphase
-    t = torch.arange(n).unsqueeze(-1).to(a) / n
-    result = (
-        a * (fade_out**2)
-        + b * (fade_in**2)
-        + torch.sum(absab * torch.cos(w * t + phia), -1) * window / n
-    )
-    return result
 
 
 class EngineConfig:
@@ -122,62 +93,33 @@ class RealtimeVC:
         self.output_devices_indices = None
         self.update_devices()
 
-    # ---- device handling (verbatim from gui_v1.GUI) ----
+    # ---- device handling (shared with gui_v1 via tools.realtime.devices) ----
 
     def update_devices(self, hostapi_name=None):
         self.flag_vc = False
-        sd._terminate()
-        sd._initialize()
-        devices = sd.query_devices()
-        hostapis = sd.query_hostapis()
-        for hostapi in hostapis:
-            for device_idx in hostapi["devices"]:
-                devices[device_idx]["hostapi_name"] = hostapi["name"]
-        self.hostapis = [hostapi["name"] for hostapi in hostapis]
-        if hostapi_name not in self.hostapis:
-            hostapi_name = self.hostapis[0]
-        self.input_devices = [
-            d["name"]
-            for d in devices
-            if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
-        ]
-        self.output_devices = [
-            d["name"]
-            for d in devices
-            if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
-        ]
-        self.input_devices_indices = [
-            d["index"] if "index" in d else d["name"]
-            for d in devices
-            if d["max_input_channels"] > 0 and d["hostapi_name"] == hostapi_name
-        ]
-        self.output_devices_indices = [
-            d["index"] if "index" in d else d["name"]
-            for d in devices
-            if d["max_output_channels"] > 0 and d["hostapi_name"] == hostapi_name
-        ]
+        (
+            self.hostapis,
+            self.input_devices,
+            self.output_devices,
+            self.input_devices_indices,
+            self.output_devices_indices,
+        ) = devices.query_devices(hostapi_name)
 
     def set_devices(self, input_device, output_device):
-        sd.default.device[0] = self.input_devices_indices[
-            self.input_devices.index(input_device)
-        ]
-        sd.default.device[1] = self.output_devices_indices[
-            self.output_devices.index(output_device)
-        ]
-        printt("Input device: %s:%s", str(sd.default.device[0]), input_device)
-        printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
+        devices.set_devices(
+            self.input_devices,
+            self.input_devices_indices,
+            self.output_devices,
+            self.output_devices_indices,
+            input_device,
+            output_device,
+        )
 
     def get_device_samplerate(self):
-        return int(sd.query_devices(device=sd.default.device[0])["default_samplerate"])
+        return devices.get_device_samplerate()
 
     def get_device_channels(self):
-        max_input_channels = sd.query_devices(device=sd.default.device[0])[
-            "max_input_channels"
-        ]
-        max_output_channels = sd.query_devices(device=sd.default.device[1])[
-            "max_output_channels"
-        ]
-        return min(max_input_channels, max_output_channels, 2)
+        return devices.get_device_channels()
 
     # ---- lifecycle ----
 

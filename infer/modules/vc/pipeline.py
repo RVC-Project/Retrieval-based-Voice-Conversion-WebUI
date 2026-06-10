@@ -25,6 +25,10 @@ bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 input_audio_path2wav = {}
 
+# One-entry cache: batch inference calls pipeline() once per file with the same
+# index, and reading + reconstructing a large IVF index costs 100ms-1s per call.
+_cached_index = {"key": None, "index": None, "big_npy": None}
+
 
 @lru_cache
 def cache_harvest_f0(input_audio_path, fs, f0max, f0min, frame_period):
@@ -307,9 +311,16 @@ class Pipeline(object):
             and index_rate != 0
         ):
             try:
-                index = faiss.read_index(file_index)
-                # big_npy = np.load(file_big_npy)
-                big_npy = index.reconstruct_n(0, index.ntotal)
+                key = (file_index, os.path.getmtime(file_index))
+                if _cached_index["key"] != key:
+                    _cached_index["index"] = faiss.read_index(file_index)
+                    # big_npy = np.load(file_big_npy)
+                    _cached_index["big_npy"] = _cached_index["index"].reconstruct_n(
+                        0, _cached_index["index"].ntotal
+                    )
+                    _cached_index["key"] = key
+                index = _cached_index["index"]
+                big_npy = _cached_index["big_npy"]
             except:
                 traceback.print_exc()
                 index = big_npy = None
@@ -319,18 +330,14 @@ class Pipeline(object):
         audio_pad = np.pad(audio, (self.window // 2, self.window // 2), mode="reflect")
         opt_ts = []
         if audio_pad.shape[0] > self.t_max:
-            audio_sum = np.zeros_like(audio)
-            for i in range(self.window):
-                audio_sum += np.abs(audio_pad[i : i - self.window])
+            # windowed |x| sum via cumsum; float64 because float32 accumulation
+            # over minutes of audio can flip the argmin between silent valleys
+            csum = np.zeros(audio_pad.shape[0] + 1, dtype=np.float64)
+            np.cumsum(np.abs(audio_pad), dtype=np.float64, out=csum[1:])
+            audio_sum = (csum[self.window :] - csum[: -self.window])[: audio.shape[0]]
             for t in range(self.t_center, audio.shape[0], self.t_center):
-                opt_ts.append(
-                    t
-                    - self.t_query
-                    + np.where(
-                        audio_sum[t - self.t_query : t + self.t_query]
-                        == audio_sum[t - self.t_query : t + self.t_query].min()
-                    )[0][0]
-                )
+                seg = audio_sum[t - self.t_query : t + self.t_query]
+                opt_ts.append(t - self.t_query + int(np.argmin(seg)))
         s = 0
         audio_opt = []
         t = None
