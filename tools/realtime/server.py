@@ -133,6 +133,7 @@ def main():
             clients.discard(ws)
 
     engine = RealtimeVC(inp_q, opt_q, status_callback=push_status)
+    engine_lock = asyncio.Lock()
 
     def devices_payload():
         return {
@@ -158,14 +159,16 @@ def main():
         if mtype == "start":
             data = msg.get("config", {})
             try:
-                result = await asyncio.to_thread(engine.start, data)
+                async with engine_lock:
+                    result = await asyncio.to_thread(engine.start, data)
             except Exception as exc:
                 traceback.print_exc()
                 return {"type": "error", "message": str(exc)}
             save_config(data)
             return {"type": "started", **result}
         if mtype == "stop":
-            await asyncio.to_thread(engine.stop)
+            async with engine_lock:
+                await asyncio.to_thread(engine.stop)
             return {"type": "stopped"}
         if mtype == "set_param":
             try:
@@ -184,7 +187,13 @@ def main():
         clients.add(ws)
         try:
             while True:
-                msg = json.loads(await ws.receive_text())
+                try:
+                    msg = json.loads(await ws.receive_text())
+                except json.JSONDecodeError as exc:
+                    await ws.send_text(
+                        json.dumps({"type": "error", "message": "Bad JSON: %s" % exc})
+                    )
+                    continue
                 resp = await handle(msg)
                 if resp is not None:
                     await ws.send_text(json.dumps(resp))
