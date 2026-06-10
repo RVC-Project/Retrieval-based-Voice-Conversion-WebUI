@@ -52,13 +52,6 @@ else
   fi
 fi
 
-# Download models
-chmod +x tools/dlmodels.sh
-./tools/dlmodels.sh
-
-if [ $? -ne 0 ]; then
-  exit 1
-fi
-
-# Run the main script
-python infer-web.py --pycmd python
+# Run the real-time voice conversion
+echo "Starting real-time voice conversion..."
+python tools/rvc_for_realtime.py

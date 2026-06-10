@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/usr/local/bin/python3.13 -)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(sh ./run.sh)",
+      "Bash(pkill -f \"python infer-web.py\")",
+      "Bash(pkill -f \"sh ./run.sh\")",
+      "Bash(pkill -9 -f \"infer-web.py\")",
+      "Bash(pkill -9 -f \"run.sh\")",
+      "Bash(pkill -9 -f \"python\")",
+      "Bash(chmod +x /Users/yuhaoli/Documents/rvc-polish/run-realtime.sh)",
+      "Bash(sh ./run-realtime.sh)",
+      "Bash(pkill -9 -f \"sh ./run\")"
+    ]
+  }
+}

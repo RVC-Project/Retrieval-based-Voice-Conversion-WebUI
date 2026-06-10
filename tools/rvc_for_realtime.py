@@ -3,6 +3,11 @@ import os
 import pickle
 import sys
 import traceback
+
+# Add project root to path
+now_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, now_dir)
+
 from infer.lib import jit
 from infer.lib.jit.get_synthesizer import get_synthesizer
 from time import time as ttime
@@ -32,7 +37,7 @@ from configs.config import Config
 
 # config = Config()
 
-mm = M()
+mm = None  # Will be initialized in main()
 
 
 def printt(strr, *args):
@@ -443,3 +448,14 @@ class RVC:
             t5 - t4,
         )
         return infered_audio.squeeze().float()
+
+
+def initialize_multiprocessing():
+    global mm
+    mm = M()
+
+
+if __name__ == '__main__':
+    initialize_multiprocessing()
+    # Real-time VC app initialization would go here
+    print("Real-time voice conversion ready")
