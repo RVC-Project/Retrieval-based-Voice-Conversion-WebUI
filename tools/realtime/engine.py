@@ -97,7 +97,9 @@ class RealtimeVC:
     """Realtime voice conversion engine. No UI imports.
 
     status_callback is called with a dict (e.g. {"type": "stats",
-    "infer_time_ms": 42}) from the PortAudio callback thread.
+    "infer_time_ms": 42}) from the PortAudio realtime callback thread,
+    so it must return without blocking (e.g. hand off with
+    loop.call_soon_threadsafe or Queue.put_nowait, never blocking I/O).
     """
 
     def __init__(self, inp_q, opt_q, status_callback=None):
