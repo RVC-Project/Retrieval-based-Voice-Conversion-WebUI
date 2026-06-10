@@ -54,9 +54,7 @@ def pick_port(host, start_port):
             except OSError:
                 continue
             return port
-    raise RuntimeError(
-        "No free port in range %d-%d" % (start_port, start_port + 9)
-    )
+    raise RuntimeError("No free port in range %d-%d" % (start_port, start_port + 9))
 
 
 def load_saved_config():

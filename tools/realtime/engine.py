@@ -167,9 +167,7 @@ class RealtimeVC:
         printt("Output device: %s:%s", str(sd.default.device[1]), output_device)
 
     def get_device_samplerate(self):
-        return int(
-            sd.query_devices(device=sd.default.device[0])["default_samplerate"]
-        )
+        return int(sd.query_devices(device=sd.default.device[0])["default_samplerate"])
 
     def get_device_channels(self):
         max_input_channels = sd.query_devices(device=sd.default.device[0])[
@@ -237,8 +235,7 @@ class RealtimeVC:
         self.cfg.channels = self.get_device_channels()
         self.zc = self.cfg.samplerate // 100
         self.block_frame = (
-            int(np.round(self.cfg.block_time * self.cfg.samplerate / self.zc))
-            * self.zc
+            int(np.round(self.cfg.block_time * self.cfg.samplerate / self.zc)) * self.zc
         )
         self.block_frame_16k = 160 * self.block_frame // self.zc
         self.crossfade_frame = (
@@ -248,8 +245,7 @@ class RealtimeVC:
         self.sola_buffer_frame = min(self.crossfade_frame, 4 * self.zc)
         self.sola_search_frame = self.zc
         self.extra_frame = (
-            int(np.round(self.cfg.extra_time * self.cfg.samplerate / self.zc))
-            * self.zc
+            int(np.round(self.cfg.extra_time * self.cfg.samplerate / self.zc)) * self.zc
         )
         self.input_wav: torch.Tensor = torch.zeros(
             self.extra_frame
@@ -311,10 +307,7 @@ class RealtimeVC:
     def start_stream(self):
         if not self.flag_vc:
             self.flag_vc = True
-            if (
-                "WASAPI" in self.cfg.sg_hostapi
-                and self.cfg.sg_wasapi_exclusive
-            ):
+            if "WASAPI" in self.cfg.sg_hostapi and self.cfg.sg_wasapi_exclusive:
                 extra_settings = sd.WasapiSettings(exclusive=True)
             else:
                 extra_settings = None
@@ -392,16 +385,12 @@ class RealtimeVC:
             )[:, 2:]
             self.rms_buffer[:] = indata[-4 * self.zc :]
             indata = indata[2 * self.zc - self.zc // 2 :]
-            db_threhold = (
-                librosa.amplitude_to_db(rms, ref=1.0)[0] < self.cfg.threhold
-            )
+            db_threhold = librosa.amplitude_to_db(rms, ref=1.0)[0] < self.cfg.threhold
             for i in range(db_threhold.shape[0]):
                 if db_threhold[i]:
                     indata[i * self.zc : (i + 1) * self.zc] = 0
             indata = indata[self.zc // 2 :]
-        self.input_wav[: -self.block_frame] = self.input_wav[
-            self.block_frame :
-        ].clone()
+        self.input_wav[: -self.block_frame] = self.input_wav[self.block_frame :].clone()
         self.input_wav[-indata.shape[0] :] = torch.from_numpy(indata).to(
             self.config.device
         )
@@ -418,21 +407,15 @@ class RealtimeVC:
                 input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
             ).squeeze(0)
             input_wav[: self.sola_buffer_frame] *= self.fade_in_window
-            input_wav[: self.sola_buffer_frame] += (
-                self.nr_buffer * self.fade_out_window
-            )
-            self.input_wav_denoise[-self.block_frame :] = input_wav[
-                : self.block_frame
-            ]
+            input_wav[: self.sola_buffer_frame] += self.nr_buffer * self.fade_out_window
+            self.input_wav_denoise[-self.block_frame :] = input_wav[: self.block_frame]
             self.nr_buffer[:] = input_wav[self.block_frame :]
             self.input_wav_res[-self.block_frame_16k - 160 :] = self.resampler(
                 self.input_wav_denoise[-self.block_frame - 2 * self.zc :]
             )[160:]
         else:
             self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = (
-                self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[
-                    160:
-                ]
+                self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[160:]
             )
         # infer
         if self.function == "vc":
@@ -489,9 +472,7 @@ class RealtimeVC:
                 align_corners=True,
             )[0, 0, :-1]
             rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-3)
-            infer_wav *= torch.pow(
-                rms1 / rms2, torch.tensor(1 - self.cfg.rms_mix_rate)
-            )
+            infer_wav *= torch.pow(rms1 / rms2, torch.tensor(1 - self.cfg.rms_mix_rate))
         # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
         conv_input = infer_wav[
             None, None, : self.sola_buffer_frame + self.sola_search_frame
@@ -526,11 +507,7 @@ class RealtimeVC:
             self.block_frame : self.block_frame + self.sola_buffer_frame
         ]
         outdata[:] = (
-            infer_wav[: self.block_frame]
-            .repeat(self.cfg.channels, 1)
-            .t()
-            .cpu()
-            .numpy()
+            infer_wav[: self.block_frame].repeat(self.cfg.channels, 1).t().cpu().numpy()
         )
         total_time = time.perf_counter() - start_time
         if self.flag_vc and self.status_callback is not None:
