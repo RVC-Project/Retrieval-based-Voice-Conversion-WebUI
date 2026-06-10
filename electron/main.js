@@ -35,13 +35,17 @@ function startBackend() {
       );
       return;
     }
+    let settled = false;
     backend = spawn(pythonBin, [serverScript], { cwd: repoRoot });
     const timeout = setTimeout(() => {
-      reject(
-        new Error(
-          "Backend did not start within 180s.\n" + stderrTail.join("\n")
-        )
-      );
+      if (!settled) {
+        settled = true;
+        reject(
+          new Error(
+            "Backend did not start within 180s.\n" + stderrTail.join("\n")
+          )
+        );
+      }
     }, 180000);
     let buffer = "";
     backend.stdout.on("data", (chunk) => {
@@ -53,9 +57,12 @@ function startBackend() {
         if (line) console.log("[backend]", line);
         const m = line.match(/^REALTIME_SERVER_PORT=(\d+)$/);
         if (m) {
-          clearTimeout(timeout);
-          backendPort = parseInt(m[1], 10);
-          resolve(backendPort);
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeout);
+            backendPort = parseInt(m[1], 10);
+            resolve(backendPort);
+          }
         }
       }
     });
@@ -96,7 +103,8 @@ app.whenReady().then(async () => {
   }
   ipcMain.handle("get-port", () => backendPort);
   ipcMain.handle("pick-file", async (event, opts) => {
-    const result = await dialog.showOpenDialog(win, {
+    const parent = win && !win.isDestroyed() ? win : undefined;
+    const result = await dialog.showOpenDialog(parent, {
       properties: ["openFile"],
       defaultPath: opts.defaultDir
         ? path.join(repoRoot, opts.defaultDir)
@@ -117,9 +125,22 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on("before-quit", () => {
-  quitting = true;
-  if (backend) backend.kill();
+app.on("before-quit", (event) => {
+  if (backend && !quitting) {
+    quitting = true;
+    // hold the quit until the backend exits, then escalate if it hangs
+    event.preventDefault();
+    const killTimer = setTimeout(() => {
+      if (backend) backend.kill("SIGKILL");
+    }, 3000);
+    backend.once("exit", () => {
+      clearTimeout(killTimer);
+      app.quit();
+    });
+    backend.kill();
+  } else {
+    quitting = true;
+  }
 });
 
 app.on("window-all-closed", () => {
