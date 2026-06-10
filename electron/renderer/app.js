@@ -42,8 +42,9 @@ let ws = null;
 let running = false;
 let awaitingStart = false;
 
-function setStatus(text) {
+function setStatus(text, state) {
   $("conn_status").textContent = text;
+  if (state) $("conn_pill").dataset.state = state;
 }
 
 function showError(text) {
@@ -58,7 +59,13 @@ function send(msg) {
 }
 
 function sliderLabel(id, decimals) {
-  $(id + "_val").textContent = Number($(id).value).toFixed(decimals);
+  const el = $(id);
+  $(id + "_val").textContent = Number(el.value).toFixed(decimals);
+  // drive the gradient fill of the custom track
+  const pct =
+    ((Number(el.value) - Number(el.min)) / (Number(el.max) - Number(el.min))) *
+    100;
+  el.style.setProperty("--p", pct + "%");
 }
 
 function fillSelect(sel, options, selected) {
@@ -149,7 +156,7 @@ function handleMessage(msg) {
         $("n_cpu").value = msg.n_cpu_max;
         sliderLabel("n_cpu", 0);
       }
-      setStatus("Ready");
+      setStatus("Ready", "ready");
       break;
     case "devices":
       fillSelect($("sg_hostapi"), msg.hostapis, $("sg_hostapi").value);
@@ -161,12 +168,12 @@ function handleMessage(msg) {
       setRunning(true);
       $("sr_stream").textContent = msg.samplerate;
       $("delay_time").textContent = msg.delay_ms;
-      setStatus("Converting");
+      setStatus("Converting", "live");
       break;
     case "stopped":
       awaitingStart = false;
       setRunning(false);
-      setStatus("Ready");
+      setStatus("Ready", "ready");
       break;
     case "stats":
       $("infer_time").textContent = msg.infer_time_ms;
@@ -183,7 +190,7 @@ function handleMessage(msg) {
         awaitingStart = false;
         setRunning(false);
       }
-      if (!running) setStatus("Ready");
+      if (!running) setStatus("Ready", "ready");
       break;
   }
 }
@@ -193,7 +200,7 @@ function openSocket(port) {
   let opened = false;
   ws.onopen = () => {
     opened = true;
-    setStatus("Loading saved settings…");
+    setStatus("Loading saved settings…", "busy");
     send({ type: "get_init" });
   };
   ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
@@ -203,14 +210,14 @@ function openSocket(port) {
       setTimeout(() => openSocket(port), 1000);
     } else {
       setRunning(false);
-      setStatus("Backend disconnected");
+      setStatus("Backend disconnected", "error");
       showError("Lost connection to the Python backend.");
     }
   };
 }
 
 async function connect() {
-  setStatus("Starting Python backend… (first start takes a while)");
+  setStatus("Starting Python backend… (first start takes a while)", "busy");
   let port = await window.rvcApi.getPort();
   while (!port) {
     await new Promise((r) => setTimeout(r, 500));
@@ -249,7 +256,7 @@ function wireEvents() {
       return;
     }
     $("banner").classList.add("hidden");
-    setStatus("Loading model…");
+    setStatus("Loading model…", "busy");
     send({ type: "start", config: cfg });
     awaitingStart = true;
     setRunning(true);
@@ -287,4 +294,5 @@ function wireEvents() {
 
 wireEvents();
 setRunning(false);
+for (const { id, decimals } of SLIDERS) sliderLabel(id, decimals);
 connect();

@@ -89,6 +89,7 @@ function createWindow() {
     width: 1100,
     height: 880,
     title: "RVC Realtime Voice Conversion",
+    backgroundColor: "#0f0d18",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
