@@ -68,24 +68,42 @@ class AudioAPI:
         self.delay_time = 0
         self.rvc = None  # Initialize RVC object as None
 
+    def get_default_device(self, devices, device_indices, default_device):
+        if default_device in device_indices:
+            return devices[device_indices.index(default_device)]
+        return devices[0] if devices else ""
+
     def load(self):
-        input_devices, output_devices, _, _ = self.get_devices()
+        (
+            input_devices,
+            output_devices,
+            input_device_indices,
+            output_device_indices,
+        ) = self.get_devices()
         try:
             with open("configs/config.json", "r", encoding='utf-8') as j:
                 data = json.load(j)
                 data["rmvpe"] = True  # Ensure rmvpe is the only f0method
                 if data["sg_input_device"] not in input_devices:
-                    data["sg_input_device"] = input_devices[sd.default.device[0]]
+                    data["sg_input_device"] = self.get_default_device(
+                        input_devices, input_device_indices, sd.default.device[0]
+                    )
                 if data["sg_output_device"] not in output_devices:
-                    data["sg_output_device"] = output_devices[sd.default.device[1]]
+                    data["sg_output_device"] = self.get_default_device(
+                        output_devices, output_device_indices, sd.default.device[1]
+                    )
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             with open("configs/config.json", "w", encoding='utf-8') as j:
                 data = {
                     "pth_path": " ",
                     "index_path": " ",
-                    "sg_input_device": input_devices[sd.default.device[0]],
-                    "sg_output_device": output_devices[sd.default.device[1]],
+                    "sg_input_device": self.get_default_device(
+                        input_devices, input_device_indices, sd.default.device[0]
+                    ),
+                    "sg_output_device": self.get_default_device(
+                        output_devices, output_device_indices, sd.default.device[1]
+                    ),
                     "threhold": "-60",
                     "pitch": "0",
                     "index_rate": "0",

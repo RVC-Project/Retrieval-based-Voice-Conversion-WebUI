@@ -149,6 +149,20 @@ if __name__ == "__main__":
             self.update_devices()
             self.launcher()
 
+        def get_default_input_device(self):
+            if sd.default.device[0] in self.input_devices_indices:
+                return self.input_devices[
+                    self.input_devices_indices.index(sd.default.device[0])
+                ]
+            return self.input_devices[0]
+
+        def get_default_output_device(self):
+            if sd.default.device[1] in self.output_devices_indices:
+                return self.output_devices[
+                    self.output_devices_indices.index(sd.default.device[1])
+                ]
+            return self.output_devices[0]
+
         def load(self):
             try:
                 if not os.path.exists("configs/inuse/config.json"):
@@ -170,20 +184,12 @@ if __name__ == "__main__":
                         ):
                             self.update_devices()
                             data["sg_hostapi"] = self.hostapis[0]
-                            data["sg_input_device"] = self.input_devices[
-                                self.input_devices_indices.index(sd.default.device[0])
-                            ]
-                            data["sg_output_device"] = self.output_devices[
-                                self.output_devices_indices.index(sd.default.device[1])
-                            ]
+                            data["sg_input_device"] = self.get_default_input_device()
+                            data["sg_output_device"] = self.get_default_output_device()
                     else:
                         data["sg_hostapi"] = self.hostapis[0]
-                        data["sg_input_device"] = self.input_devices[
-                            self.input_devices_indices.index(sd.default.device[0])
-                        ]
-                        data["sg_output_device"] = self.output_devices[
-                            self.output_devices_indices.index(sd.default.device[1])
-                        ]
+                        data["sg_input_device"] = self.get_default_input_device()
+                        data["sg_output_device"] = self.get_default_output_device()
             except:
                 with open("configs/inuse/config.json", "w") as j:
                     data = {
@@ -191,12 +197,8 @@ if __name__ == "__main__":
                         "index_path": "",
                         "sg_hostapi": self.hostapis[0],
                         "sg_wasapi_exclusive": False,
-                        "sg_input_device": self.input_devices[
-                            self.input_devices_indices.index(sd.default.device[0])
-                        ],
-                        "sg_output_device": self.output_devices[
-                            self.output_devices_indices.index(sd.default.device[1])
-                        ],
+                        "sg_input_device": self.get_default_input_device(),
+                        "sg_output_device": self.get_default_output_device(),
                         "sr_type": "sr_model",
                         "threhold": -60,
                         "pitch": 0,
