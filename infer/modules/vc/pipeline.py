@@ -24,6 +24,17 @@ sys.path.append(now_dir)
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
 input_audio_path2wav = {}
+index_cache = {}
+
+
+def load_index(file_index):
+    key = (file_index, os.path.getmtime(file_index))
+    if key not in index_cache:
+        index = faiss.read_index(file_index)
+        big_npy = index.reconstruct_n(0, index.ntotal)
+        index_cache.clear()
+        index_cache[key] = (index, big_npy)
+    return index_cache[key]
 
 
 @lru_cache
@@ -116,6 +127,7 @@ class Pipeline(object):
         elif f0_method == "harvest":
             input_audio_path2wav[input_audio_path] = x.astype(np.double)
             f0 = cache_harvest_f0(input_audio_path, self.sr, f0_max, f0_min, 10)
+            input_audio_path2wav.pop(input_audio_path, None)
             if filter_radius > 2:
                 f0 = signal.medfilt(f0, 3)
         elif f0_method == "crepe":
@@ -207,7 +219,7 @@ class Pipeline(object):
             feats = feats.mean(-1)
         assert feats.dim() == 1, feats.dim()
         feats = feats.view(1, -1)
-        padding_mask = torch.BoolTensor(feats.shape).to(self.device).fill_(False)
+        padding_mask = torch.zeros(feats.shape, dtype=torch.bool, device=self.device)
 
         inputs = {
             "source": feats.to(self.device),
@@ -271,8 +283,6 @@ class Pipeline(object):
             audio1 = (net_g.infer(*arg)[0][0, 0]).data.cpu().float().numpy()
             del hasp, arg
         del feats, p_len, padding_mask
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
         t2 = ttime()
         times[0] += t1 - t0
         times[2] += t2 - t1
@@ -307,29 +317,25 @@ class Pipeline(object):
             and index_rate != 0
         ):
             try:
-                index = faiss.read_index(file_index)
-                # big_npy = np.load(file_big_npy)
-                big_npy = index.reconstruct_n(0, index.ntotal)
+                index, big_npy = load_index(file_index)
             except:
                 traceback.print_exc()
                 index = big_npy = None
         else:
             index = big_npy = None
-        audio = signal.filtfilt(bh, ah, audio)
+        audio = signal.filtfilt(bh, ah, audio).astype(np.float32)
         audio_pad = np.pad(audio, (self.window // 2, self.window // 2), mode="reflect")
         opt_ts = []
         if audio_pad.shape[0] > self.t_max:
-            audio_sum = np.zeros_like(audio)
-            for i in range(self.window):
-                audio_sum += np.abs(audio_pad[i : i - self.window])
+            csum = np.concatenate(
+                ([0.0], np.cumsum(np.abs(audio_pad), dtype=np.float64))
+            )
+            audio_sum = (csum[self.window :] - csum[: -self.window])[: audio.shape[0]]
             for t in range(self.t_center, audio.shape[0], self.t_center):
                 opt_ts.append(
                     t
                     - self.t_query
-                    + np.where(
-                        audio_sum[t - self.t_query : t + self.t_query]
-                        == audio_sum[t - self.t_query : t + self.t_query].min()
-                    )[0][0]
+                    + np.argmin(audio_sum[t - self.t_query : t + self.t_query])
                 )
         s = 0
         audio_opt = []
@@ -362,8 +368,7 @@ class Pipeline(object):
             )
             pitch = pitch[:p_len]
             pitchf = pitchf[:p_len]
-            if "mps" not in str(self.device) or "xpu" not in str(self.device):
-                pitchf = pitchf.astype(np.float32)
+            pitchf = pitchf.astype(np.float32)
             pitch = torch.tensor(pitch, device=self.device).unsqueeze(0).long()
             pitchf = torch.tensor(pitchf, device=self.device).unsqueeze(0).float()
         t2 = ttime()
