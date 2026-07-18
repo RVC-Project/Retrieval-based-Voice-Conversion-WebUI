@@ -31,7 +31,19 @@ import traceback
 import threading
 import shutil
 import logging
+import httpx
+from gradio import queueing
 
+
+_queue_start = queueing.Queue.start
+
+
+async def _queue_start_no_timeout(self, *args, **kwargs):
+    await _queue_start(self, *args, **kwargs)
+    self.queue_client = httpx.AsyncClient(timeout=None)
+
+
+queueing.Queue.start = _queue_start_no_timeout
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
