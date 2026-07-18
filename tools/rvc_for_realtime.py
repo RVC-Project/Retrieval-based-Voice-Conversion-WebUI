@@ -358,7 +358,7 @@ class RVC:
                 feats = input_wav.half().view(1, -1)
             else:
                 feats = input_wav.float().view(1, -1)
-            padding_mask = torch.BoolTensor(feats.shape).to(self.device).fill_(False)
+            padding_mask = torch.zeros(feats.shape, dtype=torch.bool, device=self.device)
             inputs = {
                 "source": feats,
                 "padding_mask": padding_mask,
