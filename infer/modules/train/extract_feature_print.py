@@ -23,6 +23,10 @@ import numpy as np
 import soundfile as sf
 import torch
 import torch.nn.functional as F
+from fairseq.data.dictionary import Dictionary
+
+if hasattr(torch.serialization, "add_safe_globals"):
+    torch.serialization.add_safe_globals([Dictionary])
 
 if "privateuseone" not in device:
     device = "cpu"

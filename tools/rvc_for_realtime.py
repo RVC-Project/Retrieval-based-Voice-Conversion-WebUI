@@ -16,6 +16,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchcrepe
+from fairseq.data.dictionary import Dictionary
+
+if hasattr(torch.serialization, "add_safe_globals"):
+    torch.serialization.add_safe_globals([Dictionary])
 
 from infer.lib.infer_pack.models import (
     SynthesizerTrnMs256NSFsid,

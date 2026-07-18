@@ -1,6 +1,11 @@
 import os
 
+import torch
 from fairseq import checkpoint_utils
+from fairseq.data.dictionary import Dictionary
+
+if hasattr(torch.serialization, "add_safe_globals"):
+    torch.serialization.add_safe_globals([Dictionary])
 
 
 def get_index_path_from_model(sid):

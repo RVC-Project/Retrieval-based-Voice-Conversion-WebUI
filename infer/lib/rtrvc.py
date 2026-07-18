@@ -16,6 +16,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchcrepe
 from torchaudio.transforms import Resample
+from fairseq.data.dictionary import Dictionary
+
+if hasattr(torch.serialization, "add_safe_globals"):
+    torch.serialization.add_safe_globals([Dictionary])
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
