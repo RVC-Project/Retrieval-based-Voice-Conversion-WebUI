@@ -120,6 +120,7 @@ class VC:
         del self.net_g.enc_q
 
         self.net_g.load_state_dict(self.cpt["weight"], strict=False)
+        self.net_g.remove_weight_norm()
         self.net_g.eval().to(self.config.device)
         if self.config.is_half:
             self.net_g = self.net_g.half()
