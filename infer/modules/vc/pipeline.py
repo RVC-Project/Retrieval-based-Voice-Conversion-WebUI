@@ -80,6 +80,7 @@ class Pipeline(object):
         self.t_center = self.sr * self.x_center  # 查询切点位置
         self.t_max = self.sr * self.x_max  # 免查询时长阈值
         self.device = config.device
+        self.use_compile = getattr(config, "use_compile", False)
 
     def get_f0(
         self,
@@ -151,6 +152,21 @@ class Pipeline(object):
                     is_half=self.is_half,
                     device=self.device,
                 )
+                if (
+                    self.use_compile
+                    and "cuda" in str(self.device)
+                    and hasattr(torch, "compile")
+                ):
+                    try:
+                        self.model_rmvpe.model = torch.compile(
+                            self.model_rmvpe.model, dynamic=True
+                        )
+                        logger.info("torch.compile enabled for rmvpe")
+                    except Exception:
+                        logger.warning(
+                            "torch.compile failed for rmvpe, fallback to eager",
+                            exc_info=True,
+                        )
             f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
 
             if "privateuseone" in str(self.device):  # clean ortruntime memory

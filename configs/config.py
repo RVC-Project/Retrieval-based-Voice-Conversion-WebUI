@@ -57,6 +57,7 @@ class Config:
             self.noparallel,
             self.noautoopen,
             self.dml,
+            self.use_compile,
         ) = self.arg_parse()
         self.instead = ""
         self.preprocess_per = 3.7
@@ -93,6 +94,11 @@ class Config:
             action="store_true",
             help="torch_dml",
         )
+        parser.add_argument(
+            "--compile",
+            action="store_true",
+            help="Enable torch.compile for inference(CUDA only). pays off for batch jobs and long audio",
+        )
         cmd_opts = parser.parse_args()
 
         cmd_opts.port = cmd_opts.port if 0 <= cmd_opts.port <= 65535 else 7865
@@ -104,6 +110,7 @@ class Config:
             cmd_opts.noparallel,
             cmd_opts.noautoopen,
             cmd_opts.dml,
+            cmd_opts.compile,
         )
 
     # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.

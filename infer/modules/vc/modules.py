@@ -126,6 +126,18 @@ class VC:
         else:
             self.net_g = self.net_g.float()
 
+        if (
+            getattr(self.config, "use_compile", False)
+            and "cuda" in str(self.config.device)
+            and hasattr(torch, "compile")
+        ):
+            try:
+                torch._dynamo.config.capture_scalar_outputs = True
+                self.net_g.infer = torch.compile(self.net_g.infer, dynamic=True)
+                logger.info("torch.compile enabled for synthesizer")
+            except Exception:
+                logger.warning("torch.compile failed, fallback to eager", exc_info=True)
+
         self.pipeline = Pipeline(self.tgt_sr, self.config)
         n_spk = self.cpt["config"][-3]
         index = {"value": get_index_path_from_model(sid), "__type__": "update"}
