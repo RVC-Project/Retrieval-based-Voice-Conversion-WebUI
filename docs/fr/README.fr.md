@@ -1,20 +1,18 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-Un framework simple et facile à utiliser pour la conversion vocale (modificateur de voix) basé sur VITS<br><br>
+Un framework simple et facile à utiliser pour la conversion du timbre vocal / le changement de voix.<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
 )](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
-[![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
+[![Huggingface](https://img.shields.io/badge/🤗%20-Models-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-[![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
-[**Journal de mise à jour**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_CN.md) | [**FAQ**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94) | [**AutoDL·Formation d'un chanteur AI pour 5 centimes**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**Enregistrement des expériences comparatives**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**Démonstration en ligne**](https://huggingface.co/spaces/Ricecake123/RVC-demo)
+[**Journal de mise à jour**](./Changelog_FR.md) | [**FAQ**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94) | [**AutoDL·Formation d'un chanteur AI pour 5 centimes**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**Enregistrement des expériences comparatives**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**Démonstration en ligne**](https://huggingface.co/spaces/Ricecake123/RVC-demo)
 
 </div>
 
@@ -39,118 +37,168 @@ Ce dépôt a les caractéristiques suivantes :
 + Interface web simple et facile à utiliser.
 + Peut appeler le modèle UVR5 pour séparer rapidement la voix et l'accompagnement.
 + Utilise l'algorithme de pitch vocal le plus avancé [InterSpeech2023-RMVPE](#projets-référencés) pour éliminer les problèmes de voix muette. Meilleurs résultats, plus rapide que crepe_full, et moins gourmand en ressources.
-+ Support d'accélération pour les cartes AMD et Intel.
++ Les systèmes AMD/Intel utilisent les dépendances CPU ; Windows peut utiliser DirectML et Linux utilise le CPU.
 
 ## Configuration de l'environnement
-Exécutez les commandes suivantes dans un environnement Python de version 3.8 ou supérieure.
 
-(Windows/Linux)  
-Installez d'abord les dépendances principales via pip :
+Cette branche cible **Python 3.12 x64**. Exécutez toutes les commandes depuis la racine du dépôt. Ubuntu 24.04 x86_64 est recommandé.
+
+### Ubuntu 24.04
+
 ```bash
-# Installez Pytorch et ses dépendances essentielles, sautez si déjà installé.
-# Voir : https://pytorch.org/get-started/locally/
-pip install torch torchvision torchaudio
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev ffmpeg unzip libsndfile1 libportaudio2
 
-# Pour les utilisateurs de Windows avec une architecture Nvidia Ampere (RTX30xx), en se basant sur l'expérience #21, spécifiez la version CUDA correspondante pour Pytorch.
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-
-# Pour Linux + carte AMD, utilisez cette version de Pytorch:
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-Vous pouvez utiliser poetry pour installer les dépendances :
-```bash
-# Installez l'outil de gestion des dépendances Poetry, sautez si déjà installé.
-# Voir : https://python-poetry.org/docs/#installation
-curl -sSL https://install.python-poetry.org | python3 -
+### Windows
 
-# Installez les dépendances avec poetry.
-poetry install
+Installez Python 3.12 x64, puis créez un environnement virtuel :
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-Ou vous pouvez utiliser pip pour installer les dépendances :
+### Choisir les dépendances selon le matériel
+
+| Matériel | Installation |
+| --- | --- |
+| CPU, AMD, Intel | Utiliser `requirments_cpu_py312.txt` ; Windows peut utiliser DirectML, Linux utilise le CPU |
+| NVIDIA RTX série 50 | Installer d'abord Torch CUDA 12.8, puis `requirments_cu128_py312.txt` |
+| NVIDIA antérieure à la série RTX 50 | Installer d'abord Torch CUDA 11.8, puis `requirments_cu118_py312.txt` |
+
+#### CPU, AMD, Intel
+
 ```bash
-# Cartes Nvidia :
-pip install -r requirements.txt
-
-# Cartes AMD/Intel :
-pip install -r requirements-dml.txt
-
-# Cartes AMD sur Linux (ROCm)
-pip install -r requirements-amd.txt
+python -m pip install -r requirments_cpu_py312.txt
 ```
 
-------
-Les utilisateurs de Mac peuvent exécuter `run.sh` pour installer les dépendances :
+#### NVIDIA RTX série 50 : installation en deux étapes
+
 ```bash
-sh ./run.sh
+python -m pip install torch==2.7.1+cu128 torchaudio==2.7.1+cu128 \
+  --index-url https://download.pytorch.org/whl/cu128 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu128_py312.txt
 ```
 
-## Préparation d'autres modèles pré-entraînés
-RVC nécessite d'autres modèles pré-entraînés pour l'inférence et la formation.
+#### NVIDIA antérieure à la série RTX 50 : installation en deux étapes
 
-Vous pouvez télécharger ces modèles depuis notre [espace Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/).
-
-Voici une liste des modèles et autres fichiers requis par RVC :
 ```bash
-./assets/hubert_base
-
-./assets/pretrained 
-
-./assets/uvr5_weights
-
-# Pour tester la version v2 du modèle, téléchargez également :
-
-./assets/pretrained_v2
-
-# Si vous utilisez Windows, vous pourriez avoir besoin de ces fichiers pour ffmpeg et ffprobe, sautez cette étape si vous avez déjà installé ffmpeg et ffprobe. Les utilisateurs d'ubuntu/debian peuvent installer ces deux bibliothèques avec apt install ffmpeg. Les utilisateurs de Mac peuvent les installer avec brew install ffmpeg (prérequis : avoir installé brew).
-
-# ./ffmpeg
-
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe
-
-# ./ffprobe
-
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe
-
-# Si vous souhaitez utiliser le dernier algorithme RMVPE de pitch vocal, téléchargez les paramètres du modèle de pitch et placez-les dans le répertoire racine de RVC.
-
-https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt
-
-    # Les utilisateurs de cartes AMD/Intel nécessitant l'environnement DML doivent télécharger :
-
-    https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx
-
+python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 \
+  --index-url https://download.pytorch.org/whl/cu118 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu118_py312.txt
 ```
-Ensuite, exécutez la commande suivante pour démarrer WebUI :
+
+Vérifiez Torch et CUDA :
+
+```bash
+python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
+```
+
+Le programme vérifie aussi la mémoire et la capacité de calcul NVIDIA. Une carte d'environ moins de 4 Gio ou inférieure à SM 5.3 utilise le CPU.
+
+### Sources de paquets
+
+Les trois fichiers `requirments_*.txt` définissent leurs sources en haut. Pour utiliser les sources officielles, remplacez uniquement `--index-url` et `--extra-index-url`, en conservant les versions, les suffixes CUDA et l'ordre des deux étapes.
+
+| Default mirror | Official source |
+| --- | --- |
+| `https://mirrors.pku.edu.cn/pypi/simple` | `https://pypi.org/simple` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cpu` | `https://download.pytorch.org/whl/cpu` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu118` | `https://download.pytorch.org/whl/cu118` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu128` | `https://download.pytorch.org/whl/cu128` |
+
+## Modèles et répertoires d'exécution
+
+Le WebUI crée automatiquement les répertoires d'exécution. Téléchargez les modèles depuis le [dépôt de modèles Hugging Face](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main) et conservez cette structure :
+
+```text
+assets/
+├── hubert_base/
+│   ├── config.json
+│   ├── preprocessor_config.json
+│   └── pytorch_model.bin
+├── rmvpe/rmvpe.pt
+├── pretrained/
+├── pretrained_v2/
+├── uvr5_weights/
+├── weights/        # user RVC .pth models
+└── indices/        # user .index files
+logs/
+└── mute/           # training silence samples
+
+# Exact paths used by the code
+assets/hubert_base/config.json
+assets/hubert_base/preprocessor_config.json
+assets/hubert_base/pytorch_model.bin
+assets/rmvpe/rmvpe.pt
+assets/pretrained/*.pth
+assets/pretrained_v2/*.pth
+assets/uvr5_weights/*
+assets/weights/*.pth
+assets/indices/*.index
+logs/mute/*
+```
+
+### Télécharger les modèles
+
+```bash
+python -m pip install --upgrade huggingface_hub
+
+# Required for inference and feature extraction
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "hubert_base/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI rmvpe.pt --revision main \
+  --local-dir assets/rmvpe
+
+# Required for v1/v2 training
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "pretrained/*" "pretrained_v2/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
+  --local-dir .model-downloads
+python -m zipfile -e .model-downloads/mute.zip logs
+
+# Required only for UVR5 vocal separation
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "uvr5_weights/*" --local-dir assets
+```
+
+Les environnements Windows AMD/Intel DirectML nécessitent aussi :
+
+```bash
+hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
+  --local-dir assets/rmvpe
+```
+
+L'ancien fichier `hubert_base.pt` n'est pas utilisé ici. Le code actuel utilise le modèle Transformers dans `assets/hubert_base/`. FCPE est inclus dans `torchfcpe`.
+
+### FFmpeg
+
+La commande Ubuntu précédente installe FFmpeg. Sous Windows, placez ces fichiers à la racine du dépôt :
+
+- [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe?download=true)
+- [ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe?download=true)
+
+## Démarrer le WebUI
+
 ```bash
 python webui.py
 ```
 
-Si vous utilisez Windows ou macOS, vous pouvez télécharger et extraire `RVC-beta.7z`. Les utilisateurs de Windows peuvent exécuter `go-webui.bat` pour démarrer WebUI, tandis que les utilisateurs de macOS peuvent exécuter `sh ./run.sh`.
+Serveur Ubuntu sans interface graphique :
 
-## Compatibilité ROCm pour les cartes AMD (seulement Linux)
-Installez tous les pilotes décrits [ici](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html).
-
-Sur Arch utilisez pacman pour installer le pilote:
-````
-pacman -S rocm-hip-sdk rocm-opencl-sdk
-````
-
-Vous devrez peut-être créer ces variables d'environnement (par exemple avec RX6700XT):
-````
-export ROCM_PATH=/opt/rocm
-export HSA_OVERRIDE_GFX_VERSION=10.3.0
-````
-Assurez-vous que votre utilisateur est dans les groupes `render` et `video`:
-````
-sudo usermod -aG render $USERNAME
-sudo usermod -aG video $USERNAME
-````
-Enfin vous pouvez exécuter WebUI:
 ```bash
-python webui.py
+python webui.py --noautoopen
 ```
+
+Le port par défaut est `7865`. Placez les modèles `.pth` dans `assets/weights/` et les fichiers `.index` dans `assets/indices/`.
 
 ## Crédits
 + [ContentVec](https://github.com/auspicious3000/contentvec/)

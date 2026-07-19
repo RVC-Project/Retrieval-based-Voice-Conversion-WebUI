@@ -1,20 +1,18 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-一个基于VITS的简单易用的变声框架<br><br>
+简单易用的 语音音色转换/变声器 框架<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange
 )](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
-[![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
+[![Huggingface](https://img.shields.io/badge/🤗%20-Models-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-[![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
-[**更新日志**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/docs/Changelog_CN.md) | [**常见问题解答**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94) | [**AutoDL·5毛钱训练AI歌手**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**对照实验记录**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95)) | [**在线演示**](https://modelscope.cn/studios/FlowerCry/RVCv2demo)
+[**更新日志**](./docs/cn/Changelog_CN.md) | [**常见问题解答**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94) | [**AutoDL·5毛钱训练AI歌手**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**对照实验记录**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**在线演示**](https://modelscope.cn/studios/FlowerCry/RVCv2demo)
 
 [**English**](./docs/en/README.en.md) | [**中文简体**](./README.md) | [**日本語**](./docs/jp/README.ja.md) | [**한국어**](./docs/kr/README.ko.md) ([**韓國語**](./docs/kr/README.ko.han.md)) | [**Français**](./docs/fr/README.fr.md) | [**Türkçe**](./docs/tr/README.tr.md) | [**Português**](./docs/pt/README.pt.md)
 
@@ -52,140 +50,173 @@
 + 简单易用的网页界面
 + 可调用UVR5模型来快速分离人声和伴奏
 + 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题，速度快、资源占用小
-+ A卡I卡加速支持
++ A卡/I卡使用 CPU 依赖方案；Windows 可使用 DirectML，Linux 使用 CPU
 
 点此查看我们的[演示视频](https://www.bilibili.com/video/BV1pm4y1z7Gm/) !
 
 ## 环境配置
-以下指令需在 Python 版本大于3.8的环境中执行。  
 
-### Windows/Linux/MacOS等平台通用方法
-下列方法任选其一。
-#### 1. 通过 pip 安装依赖
-1. 安装Pytorch及其核心依赖，若已安装则跳过。参考自: https://pytorch.org/get-started/locally/
+本分支面向 **Python 3.12 x64**，请先进入仓库根目录。Ubuntu 推荐使用 Ubuntu 24.04 x86_64。
+
+### Ubuntu 24.04
+
 ```bash
-pip install torch torchvision torchaudio
-```
-2. 如果是 win 系统 + Nvidia Ampere 架构(RTX30xx)，根据 #21 的经验，需要指定 pytorch 对应的 cuda 版本
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-```
-3. 根据自己的显卡安装对应依赖
-- N卡
-```bash
-pip install -r requirements.txt
-```
-- A卡/I卡
-```bash
-pip install -r requirements-dml.txt
-```
-- A卡ROCM(Linux)
-```bash
-pip install -r requirements-amd.txt
-```
-#### 2. 通过 poetry 来安装依赖
-安装 Poetry 依赖管理工具，若已安装则跳过。参考自: https://python-poetry.org/docs/#installation
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev ffmpeg unzip libsndfile1 libportaudio2
+
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-通过 Poetry 安装依赖时，python 建议使用 3.7-3.10 版本，其余版本在安装 llvmlite==0.39.0 时会出现冲突
-```bash
-poetry init -n
-poetry env use "path to your python.exe"
-poetry run pip install -r requirments.txt
+### Windows
+
+安装 Python 3.12 x64 后创建虚拟环境：
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-### MacOS
-可以通过 `run.sh` 来安装依赖
+### 按硬件选择依赖
+
+| 硬件 | 安装方式 |
+| --- | --- |
+| CPU、AMD、Intel | 使用 `requirments_cpu_py312.txt`；Windows 可使用 DirectML，Linux 使用 CPU |
+| NVIDIA RTX 50 系 | 先安装 CUDA 12.8 版 Torch，再安装 `requirments_cu128_py312.txt` |
+| NVIDIA RTX 50 系以前 | 先安装 CUDA 11.8 版 Torch，再安装 `requirments_cu118_py312.txt` |
+
+#### CPU、AMD、Intel
+
 ```bash
-sh ./run.sh
+python -m pip install -r requirments_cpu_py312.txt
 ```
 
-## 其他预模型准备
-RVC需要其他一些预模型来推理和训练。
+#### NVIDIA RTX 50 系：两阶段安装
 
-你可以从我们的[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)下载到这些模型。
-
-### 1. 下载 assets
-以下是一份清单，包括了所有RVC所需的预模型和其他文件的名称。你可以在`tools`文件夹找到下载它们的脚本。
-
-- ./assets/hubert_base
-
-- ./assets/pretrained 
-
-- ./assets/uvr5_weights
-
-想使用v2版本模型的话，需要额外下载
-
-- ./assets/pretrained_v2
-
-### 2. 安装 ffmpeg
-若ffmpeg和ffprobe已安装则跳过。
-
-#### Ubuntu/Debian 用户
 ```bash
-sudo apt install ffmpeg
+python -m pip install torch==2.7.1+cu128 torchaudio==2.7.1+cu128 \
+  --index-url https://download.pytorch.org/whl/cu128 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu128_py312.txt
 ```
-#### MacOS 用户
+
+#### NVIDIA RTX 50 系以前：两阶段安装
+
 ```bash
-brew install ffmpeg
+python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 \
+  --index-url https://download.pytorch.org/whl/cu118 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu118_py312.txt
 ```
-#### Windows 用户
-下载后放置在根目录。
-- 下载[ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
 
-- 下载[ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
+检查 Torch 与 CUDA 状态：
 
-### 3. 下载 rmvpe 人声音高提取算法所需文件
+```bash
+python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
+```
 
-如果你想使用最新的RMVPE人声音高提取算法，则你需要下载音高提取模型参数并放置于RVC根目录。
+项目代码还会检查 NVIDIA GPU 的显存和计算能力。显存约低于 4 GiB 或计算能力低于 SM 5.3 时会使用 CPU。
 
-- 下载[rmvpe.pt](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
+### 修改下载源
 
-#### 下载 rmvpe 的 dml 环境(可选, A卡/I卡用户)
+三个 `requirments_*.txt` 顶部已经包含下载源。中国大陆用户可保留默认镜像；需要使用官方源时，只替换 `--index-url` 和 `--extra-index-url`，保留包版本、CUDA 后缀和两阶段顺序。
 
-- 下载[rmvpe.onnx](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
+| Default mirror | Official source |
+| --- | --- |
+| `https://mirrors.pku.edu.cn/pypi/simple` | `https://pypi.org/simple` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cpu` | `https://download.pytorch.org/whl/cpu` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu118` | `https://download.pytorch.org/whl/cu118` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu128` | `https://download.pytorch.org/whl/cu128` |
 
-### 4. AMD显卡Rocm(可选, 仅Linux)
+## 模型与运行目录
 
-如果你想基于AMD的Rocm技术在Linux系统上运行RVC，请先在[这里](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)安装所需的驱动。
+WebUI 会自动创建运行目录。模型请从 [Hugging Face 模型仓库](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main) 下载，并保持以下路径：
 
-若你使用的是Arch Linux，可以使用pacman来安装所需驱动：
-````
-pacman -S rocm-hip-sdk rocm-opencl-sdk
-````
-对于某些型号的显卡，你可能需要额外配置如下的环境变量（如：RX6700XT）：
-````
-export ROCM_PATH=/opt/rocm
-export HSA_OVERRIDE_GFX_VERSION=10.3.0
-````
-同时确保你的当前用户处于`render`与`video`用户组内：
-````
-sudo usermod -aG render $USERNAME
-sudo usermod -aG video $USERNAME
-````
+```text
+assets/
+├── hubert_base/
+│   ├── config.json
+│   ├── preprocessor_config.json
+│   └── pytorch_model.bin
+├── rmvpe/rmvpe.pt
+├── pretrained/
+├── pretrained_v2/
+├── uvr5_weights/
+├── weights/        # user RVC .pth models
+└── indices/        # user .index files
+logs/
+└── mute/           # training silence samples
+
+# Exact paths used by the code
+assets/hubert_base/config.json
+assets/hubert_base/preprocessor_config.json
+assets/hubert_base/pytorch_model.bin
+assets/rmvpe/rmvpe.pt
+assets/pretrained/*.pth
+assets/pretrained_v2/*.pth
+assets/uvr5_weights/*
+assets/weights/*.pth
+assets/indices/*.index
+logs/mute/*
+```
+
+### 下载模型
+
+```bash
+python -m pip install --upgrade huggingface_hub
+
+# Required for inference and feature extraction
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "hubert_base/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI rmvpe.pt --revision main \
+  --local-dir assets/rmvpe
+
+# Required for v1/v2 training
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "pretrained/*" "pretrained_v2/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
+  --local-dir .model-downloads
+python -m zipfile -e .model-downloads/mute.zip logs
+
+# Required only for UVR5 vocal separation
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "uvr5_weights/*" --local-dir assets
+```
+
+仅 Windows AMD/Intel DirectML 环境还需要：
+
+```bash
+hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
+  --local-dir assets/rmvpe
+```
+
+`hubert_base.pt` 是旧格式；当前代码使用 `assets/hubert_base/` 下的 Transformers 三文件模型。FCPE 模型由 `torchfcpe` 包提供。
+
+### FFmpeg
+
+Ubuntu 已在前面的系统依赖命令中安装 FFmpeg。Windows 用户可把下面两个文件放到项目根目录：
+
+- [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe?download=true)
+- [ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe?download=true)
 
 ## 开始使用
-### 直接启动
-使用以下指令来启动 WebUI
+
+启动 WebUI：
+
 ```bash
 python webui.py
 ```
 
-若先前使用 Poetry 安装依赖，则可以通过以下方式启动WebUI
+无桌面的 Ubuntu 服务器：
+
 ```bash
-poetry run python webui.py
+python webui.py --noautoopen
 ```
 
-### 使用整合包
-下载并解压`RVC-beta.7z`
-#### Windows 用户
-双击`go-webui.bat`
-#### MacOS 用户
-```bash
-sh ./run.sh
-```
+默认服务监听端口为 `7865`。用户自己的 `.pth` 模型放入 `assets/weights/`，`.index` 文件放入 `assets/indices/`。
+
 ## 参考项目
 + [ContentVec](https://github.com/auspicious3000/contentvec/)
 + [VITS](https://github.com/jaywalnut310/vits)

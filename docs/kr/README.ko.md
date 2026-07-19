@@ -1,17 +1,15 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<br><br>
+간단하고 사용하기 쉬운 음색 변환/보이스 체인저 프레임워크.<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
-[![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
+[![Huggingface](https://img.shields.io/badge/🤗%20-Models-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-[![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
 [**업데이트 로그**](./Changelog_KO.md) | [**자주 묻는 질문**](./faq_ko.md) | [**AutoDL·5원으로 AI 가수 훈련**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**대조 실험 기록**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**온라인 데모**](https://modelscope.cn/studios/FlowerCry/RVCv2demo)
 
@@ -63,169 +61,164 @@ VITS 기반의 간단하고 사용하기 쉬운 음성 변환 프레임워크.<b
 
 ## 환경 설정
 
-다음 명령은 Python 버전이 3.8 이상인 환경에서 실행해야 합니다.
+이 브랜치는 **Python 3.12 x64**를 대상으로 합니다. 모든 명령은 저장소 루트에서 실행하세요. Ubuntu 24.04 x86_64를 권장합니다.
 
-### Windows/Linux/MacOS 등 플랫폼 공통 방법
-
-아래 방법 중 하나를 선택하세요.
-
-#### 1. pip를 통한 의존성 설치
-
-1. Pytorch 및 의존성 모듈 설치, 이미 설치되어 있으면 생략. 참조: https://pytorch.org/get-started/locally/
+### Ubuntu 24.04
 
 ```bash
-pip install torch torchvision torchaudio
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev ffmpeg unzip libsndfile1 libportaudio2
+
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-2. win 시스템 + Nvidia Ampere 아키텍처(RTX30xx) 사용 시, #21의 사례에 따라 pytorch에 해당하는 cuda 버전을 지정
+### Windows
+
+Python 3.12 x64를 설치한 다음 가상 환경을 만드세요.
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip setuptools wheel
+```
+
+### 하드웨어별 의존성 선택
+
+| 하드웨어 | 설치 방법 |
+| --- | --- |
+| CPU, AMD, Intel | `requirments_cpu_py312.txt` 사용. Windows는 DirectML, Linux는 CPU 사용 |
+| NVIDIA RTX 50 시리즈 | CUDA 12.8 Torch를 먼저 설치한 뒤 `requirments_cu128_py312.txt` 설치 |
+| RTX 50 시리즈 이전 NVIDIA | CUDA 11.8 Torch를 먼저 설치한 뒤 `requirments_cu118_py312.txt` 설치 |
+
+#### CPU, AMD, Intel
 
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+python -m pip install -r requirments_cpu_py312.txt
 ```
 
-3. 자신의 그래픽 카드에 맞는 의존성 설치
-
-- N카드
+#### NVIDIA RTX 50 시리즈: 2단계 설치
 
 ```bash
-pip install -r requirements.txt
+python -m pip install torch==2.7.1+cu128 torchaudio==2.7.1+cu128 \
+  --index-url https://download.pytorch.org/whl/cu128 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu128_py312.txt
 ```
 
-- A카드/I카드
+#### RTX 50 시리즈 이전 NVIDIA: 2단계 설치
 
 ```bash
-pip install -r requirements-dml.txt
+python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 \
+  --index-url https://download.pytorch.org/whl/cu118 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu118_py312.txt
 ```
 
-- A카드ROCM(Linux)
+Torch와 CUDA 상태를 확인하세요.
 
 ```bash
-pip install -r requirements-amd.txt
+python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-#### 2. poetry를 통한 의존성 설치
+프로그램은 NVIDIA GPU 메모리와 연산 능력도 확인합니다. 약 4 GiB 미만이거나 SM 5.3 미만이면 CPU 경로를 사용합니다.
 
-Poetry 의존성 관리 도구 설치, 이미 설치된 경우 생략. 참조: https://python-poetry.org/docs/#installation
+### 패키지 다운로드 소스
+
+세 개의 `requirments_*.txt` 파일 맨 위에 다운로드 소스가 있습니다. 공식 소스를 사용할 때는 `--index-url`과 `--extra-index-url`만 교체하고 버전, CUDA 접미사, 2단계 순서는 유지하세요.
+
+| Default mirror | Official source |
+| --- | --- |
+| `https://mirrors.pku.edu.cn/pypi/simple` | `https://pypi.org/simple` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cpu` | `https://download.pytorch.org/whl/cpu` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu118` | `https://download.pytorch.org/whl/cu118` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu128` | `https://download.pytorch.org/whl/cu128` |
+
+## 모델 및 실행 디렉터리
+
+WebUI는 실행 디렉터리를 자동 생성합니다. [Hugging Face 모델 저장소](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main)에서 모델을 받고 다음 구조를 유지하세요.
+
+```text
+assets/
+├── hubert_base/
+│   ├── config.json
+│   ├── preprocessor_config.json
+│   └── pytorch_model.bin
+├── rmvpe/rmvpe.pt
+├── pretrained/
+├── pretrained_v2/
+├── uvr5_weights/
+├── weights/        # user RVC .pth models
+└── indices/        # user .index files
+logs/
+└── mute/           # training silence samples
+
+# Exact paths used by the code
+assets/hubert_base/config.json
+assets/hubert_base/preprocessor_config.json
+assets/hubert_base/pytorch_model.bin
+assets/rmvpe/rmvpe.pt
+assets/pretrained/*.pth
+assets/pretrained_v2/*.pth
+assets/uvr5_weights/*
+assets/weights/*.pth
+assets/indices/*.index
+logs/mute/*
+```
+
+### 모델 다운로드
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+python -m pip install --upgrade huggingface_hub
+
+# Required for inference and feature extraction
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "hubert_base/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI rmvpe.pt --revision main \
+  --local-dir assets/rmvpe
+
+# Required for v1/v2 training
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "pretrained/*" "pretrained_v2/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
+  --local-dir .model-downloads
+python -m zipfile -e .model-downloads/mute.zip logs
+
+# Required only for UVR5 vocal separation
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "uvr5_weights/*" --local-dir assets
 ```
 
-poetry를 통한 의존성 설치
+Windows AMD/Intel DirectML 환경에는 다음 파일도 필요합니다.
 
 ```bash
-poetry install
+hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
+  --local-dir assets/rmvpe
 ```
 
-### MacOS
+이전 형식인 `hubert_base.pt`는 이 브랜치에서 사용하지 않습니다. 현재 코드는 `assets/hubert_base/`의 Transformers 모델을 사용합니다. FCPE는 `torchfcpe`에 포함됩니다.
 
-`run.sh`를 통해 의존성 설치 가능
+### FFmpeg
 
-```bash
-sh ./run.sh
-```
+위 Ubuntu 명령은 FFmpeg를 설치합니다. Windows에서는 다음 파일을 저장소 루트에 배치하세요.
 
-## 기타 사전 훈련된 모델 준비
+- [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe?download=true)
+- [ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe?download=true)
 
-RVC는 추론과 훈련을 위해 다른 일부 사전 훈련된 모델이 필요합니다.
-
-이러한 모델은 저희의 [Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)에서 다운로드할 수 있습니다.
-
-### 1. assets 다운로드
-
-다음은 RVC에 필요한 모든 사전 훈련된 모델과 기타 파일의 목록입니다. `tools` 폴더에서 이들을 다운로드하는 스크립트를 찾을 수 있습니다.
-
-- ./assets/hubert_base
-
-- ./assets/pretrained
-
-- ./assets/uvr5_weights
-
-v2 버전 모델을 사용하려면 추가로 다음을 다운로드해야 합니다.
-
-- ./assets/pretrained_v2
-
-### 2. ffmpeg 설치
-
-ffmpeg와 ffprobe가 이미 설치되어 있다면 건너뜁니다.
-
-#### Ubuntu/Debian 사용자
-
-```bash
-sudo apt install ffmpeg
-```
-
-#### MacOS 사용자
-
-```bash
-brew install ffmpeg
-```
-
-#### Windows 사용자
-
-다운로드 후 루트 디렉토리에 배치.
-
-- [ffmpeg.exe 다운로드](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
-
-- [ffprobe.exe 다운로드](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
-
-### 3. RMVPE 인간 음성 피치 추출 알고리즘에 필요한 파일 다운로드
-
-최신 RMVPE 인간 음성 피치 추출 알고리즘을 사용하려면 음피치 추출 모델 매개변수를 다운로드하고 RVC 루트 디렉토리에 배치해야 합니다.
-
-- [rmvpe.pt 다운로드](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
-
-#### dml 환경의 RMVPE 다운로드(선택사항, A카드/I카드 사용자)
-
-- [rmvpe.onnx 다운로드](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
-
-### 4. AMD 그래픽 카드 Rocm(선택사항, Linux만 해당)
-
-Linux 시스템에서 AMD의 Rocm 기술을 기반으로 RVC를 실행하려면 [여기](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)에서 필요한 드라이버를 먼저 설치하세요.
-
-Arch Linux를 사용하는 경우 pacman을 사용하여 필요한 드라이버를 설치할 수 있습니다.
-
-```
-pacman -S rocm-hip-sdk rocm-opencl-sdk
-```
-
-일부 모델의 그래픽 카드(예: RX6700XT)의 경우, 다음과 같은 환경 변수를 추가로 설정해야 할 수 있습니다.
-
-```
-export ROCM_PATH=/opt/rocm
-export HSA_OVERRIDE_GFX_VERSION=10.3.0
-```
-
-동시에 현재 사용자가 `render` 및 `video` 사용자 그룹에 속해 있는지 확인하세요.
-
-```
-sudo usermod -aG render $USERNAME
-sudo usermod -aG video $USERNAME
-```
-
-## 시작하기
-
-### 직접 시작
-
-다음 명령어로 WebUI를 시작하세요
+## WebUI 시작
 
 ```bash
 python webui.py
 ```
 
-### 통합 패키지 사용
-
-`RVC-beta.7z`를 다운로드하고 압축 해제
-
-#### Windows 사용자
-
-`go-webui.bat` 더블 클릭
-
-#### MacOS 사용자
+화면이 없는 Ubuntu 서버:
 
 ```bash
-sh ./run.sh
+python webui.py --noautoopen
 ```
+
+기본 포트는 `7865`입니다. `.pth` 모델은 `assets/weights/`, `.index` 파일은 `assets/indices/`에 배치하세요.
 
 ## 참조 프로젝트
 

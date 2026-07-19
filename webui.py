@@ -116,8 +116,19 @@ def launch_webui_with_port_fallback(app, config):
             )
             next_port = config.listen_port + 1
 
-os.makedirs(os.path.join(now_dir, "logs"), exist_ok=True)
-os.makedirs(os.path.join(now_dir, "assets/weights"), exist_ok=True)
+runtime_dirs = (
+    os.path.join(now_dir, "logs"),
+    os.environ["weight_root"],
+    os.environ["weight_uvr5_root"],
+    os.environ["index_root"],
+    os.environ["outside_index_root"],
+    os.environ["rmvpe_root"],
+    os.path.join(now_dir, "assets", "hubert_base"),
+    os.path.join(now_dir, "assets", "pretrained"),
+    os.path.join(now_dir, "assets", "pretrained_v2"),
+)
+for runtime_dir in runtime_dirs:
+    os.makedirs(runtime_dir, exist_ok=True)
 warnings.filterwarnings("ignore")
 torch.manual_seed(114514)
 

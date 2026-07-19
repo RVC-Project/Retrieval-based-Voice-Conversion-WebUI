@@ -1,17 +1,15 @@
 <div align="center">
 
 <h1>Retrieval-based-Voice-Conversion-WebUI</h1>
-VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
+シンプルで使いやすい声質変換／ボイスチェンジャーフレームワーク。<br><br>
 
 [![madewithlove](https://img.shields.io/badge/made_with-%E2%9D%A4-red?style=for-the-badge&labelColor=orange)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI)
 
 <img src="https://counter.seku.su/cmoe?name=rvc&theme=r34" /><br>
 
-[![Open In Colab](https://img.shields.io/badge/Colab-F9AB00?style=for-the-badge&logo=googlecolab&color=525252)](https://colab.research.google.com/github/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/Retrieval_based_Voice_Conversion_WebUI.ipynb)
 [![Licence](https://img.shields.io/badge/LICENSE-MIT-green.svg?style=for-the-badge)](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/blob/main/LICENSE)
-[![Huggingface](https://img.shields.io/badge/🤗%20-Spaces-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
+[![Huggingface](https://img.shields.io/badge/🤗%20-Models-yellow.svg?style=for-the-badge)](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)
 
-[![Discord](https://img.shields.io/badge/RVC%20Developers-Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/HcsmBBGyVk)
 
 [**更新日誌**](./Changelog_JA.md) | [**よくある質問**](./faq_ja.md) | [**AutoDL·5 円で AI 歌手をトレーニング**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/Autodl%E8%AE%AD%E7%BB%83RVC%C2%B7AI%E6%AD%8C%E6%89%8B%E6%95%99%E7%A8%8B) | [**対照実験記録**](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/wiki/%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C%C2%B7%E5%AE%9E%E9%AA%8C%E8%AE%B0%E5%BD%95) | [**オンラインデモ**](https://modelscope.cn/studios/FlowerCry/RVCv2demo)
 
@@ -63,168 +61,164 @@ VITSに基づく使いやすい音声変換（voice changer）framework<br><br>
 
 ## 環境構築
 
-下記のコマンドは、Python3.8 以上の環境で実行する必要があります:
+このブランチは **Python 3.12 x64** を対象としています。すべてのコマンドはリポジトリのルートで実行してください。Ubuntu 24.04 x86_64 を推奨します。
 
-### Windows/Linux/MacOS などのプラットフォーム共通方法
-
-以下の方法のいずれかを選択してください。
-
-#### 1. pip を通じた依存関係のインストール
-
-1. Pytorch 及びその主要な依存関係のインストール、すでにインストールされている場合はスキップ。参照：https://pytorch.org/get-started/locally/
+### Ubuntu 24.04
 
 ```bash
-pip install torch torchvision torchaudio
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev ffmpeg unzip libsndfile1 libportaudio2
+
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
 ```
 
-2. win システム + Nvidia Ampere アーキテクチャ（RTX30xx）の場合、#21 の経験に基づいて pytorch に対応する cuda バージョンを指定
+### Windows
+
+Python 3.12 x64 をインストールし、仮想環境を作成します。
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip setuptools wheel
+```
+
+### ハードウェア別の依存関係
+
+| ハードウェア | インストール方法 |
+| --- | --- |
+| CPU、AMD、Intel | `requirments_cpu_py312.txt` を使用。Windows は DirectML、Linux は CPU を使用 |
+| NVIDIA RTX 50 シリーズ | CUDA 12.8 版 Torch を先にインストールし、その後 `requirments_cu128_py312.txt` |
+| RTX 50 シリーズより前の NVIDIA | CUDA 11.8 版 Torch を先にインストールし、その後 `requirments_cu118_py312.txt` |
+
+#### CPU、AMD、Intel
 
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+python -m pip install -r requirments_cpu_py312.txt
 ```
 
-3. 自分のグラフィックカードに合わせた依存関係のインストール
-
-- N カード
+#### NVIDIA RTX 50 シリーズ：2 段階
 
 ```bash
-pip install -r requirements.txt
+python -m pip install torch==2.7.1+cu128 torchaudio==2.7.1+cu128 \
+  --index-url https://download.pytorch.org/whl/cu128 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu128_py312.txt
 ```
 
-- A カード/I カード
+#### RTX 50 シリーズより前の NVIDIA：2 段階
 
 ```bash
-pip install -r requirements-dml.txt
+python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 \
+  --index-url https://download.pytorch.org/whl/cu118 \
+  --extra-index-url https://pypi.org/simple
+python -m pip install -r requirments_cu118_py312.txt
 ```
 
-- A カード ROCM(Linux)
+Torch と CUDA を確認します。
 
 ```bash
-pip install -r requirements-amd.txt
+python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-#### 2. poetry を通じた依存関係のインストール
+アプリは NVIDIA GPU のメモリと計算能力も確認します。約 4 GiB 未満、または SM 5.3 未満の場合は CPU を使用します。
 
-Poetry 依存関係管理ツールのインストール、すでにインストールされている場合はスキップ。参照：https://python-poetry.org/docs/#installation
+### パッケージのダウンロード元
+
+3 つの `requirments_*.txt` の先頭にダウンロード元があります。公式の配布元を使用する場合は `--index-url` と `--extra-index-url` だけを置き換え、バージョン、CUDA 接尾辞、2 段階の順序は維持してください。
+
+| Default mirror | Official source |
+| --- | --- |
+| `https://mirrors.pku.edu.cn/pypi/simple` | `https://pypi.org/simple` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cpu` | `https://download.pytorch.org/whl/cpu` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu118` | `https://download.pytorch.org/whl/cu118` |
+| `https://mirrors.nju.edu.cn/pytorch/whl/cu128` | `https://download.pytorch.org/whl/cu128` |
+
+## モデルと実行ディレクトリ
+
+WebUI は実行ディレクトリを自動作成します。[Hugging Face モデルリポジトリ](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main)からモデルをダウンロードし、次の構成を維持してください。
+
+```text
+assets/
+├── hubert_base/
+│   ├── config.json
+│   ├── preprocessor_config.json
+│   └── pytorch_model.bin
+├── rmvpe/rmvpe.pt
+├── pretrained/
+├── pretrained_v2/
+├── uvr5_weights/
+├── weights/        # user RVC .pth models
+└── indices/        # user .index files
+logs/
+└── mute/           # training silence samples
+
+# Exact paths used by the code
+assets/hubert_base/config.json
+assets/hubert_base/preprocessor_config.json
+assets/hubert_base/pytorch_model.bin
+assets/rmvpe/rmvpe.pt
+assets/pretrained/*.pth
+assets/pretrained_v2/*.pth
+assets/uvr5_weights/*
+assets/weights/*.pth
+assets/indices/*.index
+logs/mute/*
+```
+
+### モデルのダウンロード
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+python -m pip install --upgrade huggingface_hub
+
+# Required for inference and feature extraction
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "hubert_base/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI rmvpe.pt --revision main \
+  --local-dir assets/rmvpe
+
+# Required for v1/v2 training
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "pretrained/*" "pretrained_v2/*" --local-dir assets
+hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
+  --local-dir .model-downloads
+python -m zipfile -e .model-downloads/mute.zip logs
+
+# Required only for UVR5 vocal separation
+hf download lj1995/VoiceConversionWebUI --revision main \
+  --include "uvr5_weights/*" --local-dir assets
 ```
 
-poetry を使って依存関係をインストール
+Windows の AMD/Intel DirectML 環境では、さらに次のファイルが必要です。
 
 ```bash
-poetry install
+hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
+  --local-dir assets/rmvpe
 ```
 
-### MacOS
+旧形式の `hubert_base.pt` はこのブランチでは使用しません。現在は `assets/hubert_base/` の Transformers モデルを使用します。FCPE は `torchfcpe` に含まれます。
 
-`run.sh`を使って依存関係をインストールできます
+### FFmpeg
+
+上記の Ubuntu コマンドで FFmpeg がインストールされます。Windows では次のファイルをリポジトリのルートに配置します。
+
+- [ffmpeg.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffmpeg.exe?download=true)
+- [ffprobe.exe](https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/ffprobe.exe?download=true)
+
+## WebUI の起動
 
 ```bash
-sh ./run.sh
-```
-
-## その他の事前訓練されたモデルの準備
-
-RVC は推論とトレーニングのために他のいくつかの事前訓練されたモデルが必要です。
-
-これらのモデルは私たちの[Hugging Face space](https://huggingface.co/lj1995/VoiceConversionWebUI/tree/main/)でダウンロードできます。
-
-### 1. assets のダウンロード
-
-以下は、RVC に必要なすべての事前学習モデルとその他のファイルのリストです。`tools`フォルダーにこれらをダウンロードするスクリプトがあります。
-
-- ./assets/hubert_base
-
-- ./assets/pretrained
-
-- ./assets/uvr5_weights
-
-v2 バージョンのモデルを使用する場合、追加で以下をダウンロードする必要があります。
-
-- ./assets/pretrained_v2
-
-### 2. ffmpeg のインストール
-
-ffmpeg と ffprobe が既にインストールされている場合はスキップします。
-
-#### Ubuntu/Debian ユーザー
-
-```bash
-sudo apt install ffmpeg
-```
-
-#### MacOS ユーザー
-
-```bash
-brew install ffmpeg
-```
-
-#### Windows ユーザー
-
-ダウンロード後、ルートディレクトリに配置してください。
-
-- [ffmpeg.exe をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffmpeg.exe)
-
-- [ffprobe.exe をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/ffprobe.exe)
-
-### 3. RMVPE 人間の声のピッチ抽出アルゴリズムに必要なファイルのダウンロード
-
-最新の RMVPE 人間の声のピッチ抽出アルゴリズムを使用する場合、ピッチ抽出モデルのパラメータをダウンロードして RVC のルートディレクトリに配置する必要があります。
-
-- [rmvpe.pt をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.pt)
-
-#### dml 環境の RMVPE をダウンロード(オプション、A カード/I カードユーザー)
-
-- [rmvpe.onnx をダウンロード](https://huggingface.co/lj1995/VoiceConversionWebUI/blob/main/rmvpe.onnx)
-
-### 4. AMD グラフィックカード Rocm(オプション、Linux のみ)
-
-Linux システムで AMD の Rocm 技術をベースに RVC を実行したい場合、[こちら](https://rocm.docs.amd.com/en/latest/deploy/linux/os-native/install.html)で必要なドライバーを先にインストールしてください。
-
-Arch Linux を使用している場合、pacman を使用して必要なドライバーをインストールできます。
-
-```
-pacman -S rocm-hip-sdk rocm-opencl-sdk
-```
-
-一部のモデルのグラフィックカード（例：RX6700XT）の場合、以下のような環境変数を追加で設定する必要があるかもしれません。
-
-```
-export ROCM_PATH=/opt/rocm
-export HSA_OVERRIDE_GFX_VERSION=10.3.0
-```
-
-同時に、現在のユーザーが`render`および`video`ユーザーグループに属していることを確認してください。
-
-```
-sudo usermod -aG render $USERNAME
-sudo usermod -aG video $USERNAME
-```
-
-## 使用開始
-
-### 直接起動
-
-以下のコマンドで WebUI を起動します
-'''bash
 python webui.py
-'''
+```
 
-### 統合パッケージの使用
+画面のない Ubuntu サーバー：
 
-`RVC-beta.7z`をダウンロードして解凍
+```bash
+python webui.py --noautoopen
+```
 
-#### Windows ユーザー
-
-`go-webui.bat`をダブルクリック
-
-#### MacOS ユーザー
-
-'''bash
-sh ./run.sh
-'''
+既定のポートは `7865` です。`.pth` モデルは `assets/weights/`、`.index` ファイルは `assets/indices/` に配置します。
 
 ## 参考プロジェクト
 

@@ -1,13 +1,14 @@
-# Python 3.12 x64 / Windows / NVIDIA CUDA 11.8
+# Python 3.12 x64 / Windows + Linux / NVIDIA CUDA 11.8
 #
 # Install in two stages from the project root. Torch and Torchaudio are NOT
 # listed below, so the second command cannot replace the verified cu118 pair.
 #
 # Stage 1 - install the matching CUDA 11.8 pair (Torch must stay below 2.8):
-#   runtime\python.exe -I -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 --index-url https://mirrors.nju.edu.cn/pytorch/whl/cu118 --extra-index-url https://mirrors.pku.edu.cn/pypi/simple
+#   python -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 --index-url https://mirrors.nju.edu.cn/pytorch/whl/cu118 --extra-index-url https://mirrors.pku.edu.cn/pypi/simple
 #
 # Stage 2 - install all remaining project dependencies:
-#   runtime\python.exe -I -m pip install -r requirments_cu118_py312.txt
+#   python -m pip install -r requirments_cu118_py312.txt
+# Windows portable runtime users may replace `python` with `runtime\python.exe -I`.
 
 --index-url https://mirrors.pku.edu.cn/pypi/simple
 

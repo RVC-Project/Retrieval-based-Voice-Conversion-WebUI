@@ -1,11 +1,12 @@
-# Python 3.12 x64 / Windows / CPU + DirectML
+# Python 3.12 x64 / Windows + Linux / CPU
 #
 # Install the complete environment in one stage from the project root:
-#   runtime\python.exe -I -m pip install -r requirments_cpu_py312.txt
+#   python -m pip install -r requirments_cpu_py312.txt
+# Windows portable runtime users may replace `python` with `runtime\python.exe -I`.
 #
 # torch-directml 0.2.5 is built against the PyTorch 2.4.1 family.  These exact
-# CPU versions are therefore intentional; they also ensure that no CUDA Torch
-# binaries are introduced into this runtime.
+# CPU versions are therefore intentional. DirectML is installed only on Windows;
+# Linux AMD/Intel systems use the CPU execution path.
 
 --index-url https://mirrors.pku.edu.cn/pypi/simple
 --extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu
@@ -14,7 +15,7 @@
 torch==2.4.1+cpu
 torchaudio==2.4.1+cpu
 torchvision==0.19.1+cpu
-torch-directml==0.2.5.dev240914
+torch-directml==0.2.5.dev240914; platform_system == "Windows"
 
 # Packaging support. Gradio 3.14 still imports pkg_resources, so Setuptools
 # must remain on the last generation that provides it.
@@ -38,9 +39,10 @@ matplotlib>=3.8.2,<4
 networkx>=3.2.0,<4
 numpy>=1.26.4,<2
 
-# DirectML provider for RMVPE and ONNX UVR inference.  ORT variants share the
-# same Python module, so this environment contains only the DirectML package.
-onnxruntime-directml>=1.24.4,<2
+# ONNX Runtime providers are platform-specific because all variants expose the
+# same Python module. Windows uses DirectML; Linux uses the CPU provider.
+onnxruntime-directml>=1.24.4,<2; platform_system == "Windows"
+onnxruntime>=1.24.4,<2; platform_system != "Windows"
 coloredlogs>=15.0,<16
 
 opencv-python-headless>=4.10.0,<5
