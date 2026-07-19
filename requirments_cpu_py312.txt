@@ -1,0 +1,71 @@
+# Python 3.12 x64 / Windows / CPU + DirectML
+#
+# Install the complete environment in one stage from the project root:
+#   runtime\python.exe -I -m pip install -r requirments_cpu_py312.txt
+#
+# torch-directml 0.2.5 is built against the PyTorch 2.4.1 family.  These exact
+# CPU versions are therefore intentional; they also ensure that no CUDA Torch
+# binaries are introduced into this runtime.
+
+--index-url https://mirrors.pku.edu.cn/pypi/simple
+--extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu
+--extra-index-url https://pypi.org/simple
+
+torch==2.4.1+cpu
+torchaudio==2.4.1+cpu
+torchvision==0.19.1+cpu
+torch-directml==0.2.5.dev240914
+
+# Packaging support. Gradio 3.14 still imports pkg_resources, so Setuptools
+# must remain on the last generation that provides it.
+setuptools>=75.0,<81
+wheel>=0.45,<1
+packaging>=24.0
+
+# Direct project dependencies. Upper bounds are used only where a newer major
+# release changes an API/ABI used by this project or breaks NumPy 1.x support.
+av>=15.1.0,<16
+einops>=0.8.0,<1
+faiss-cpu>=1.13.0,<2
+ffmpeg-python>=0.2.0,<1
+FreeSimpleGUI>=5.1.0,<5.2
+librosa>=0.10.2,<0.11
+local-attention>=1.11.0,<2
+# hyper-connections 0.4.3+ requires Torch 2.5+, while DirectML currently pins
+# Torch 2.4.1.  0.4.2 is the newest compatible generation.
+hyper-connections>=0.1.8,<0.4.3
+matplotlib>=3.8.2,<4
+networkx>=3.2.0,<4
+numpy>=1.26.4,<2
+
+# DirectML provider for RMVPE and ONNX UVR inference.  ORT variants share the
+# same Python module, so this environment contains only the DirectML package.
+onnxruntime-directml>=1.24.4,<2
+coloredlogs>=15.0,<16
+
+opencv-python-headless>=4.10.0,<5
+praat-parselmouth>=0.4.5,<1
+PyYAML>=6.0
+scikit-learn>=1.6.0,<2
+scipy>=1.13.1,<2
+sounddevice>=0.5.0,<1
+soundfile>=0.13.0,<1
+tensorboard>=2.19.0
+torchfcpe>=0.0.4,<0.1
+tqdm>=4.67.0,<5
+transformers>=4.49.0,<4.50
+
+# Gradio 3.14 API compatibility. Newer Gradio/FastAPI/Pydantic generations
+# changed component, event, generator, request and launch behavior used here.
+gradio>=3.14.0,<3.15
+altair>=4.2.0,<5
+anyio>=3.6.2,<4
+fastapi>=0.88.0,<0.100
+httpx>=0.23.0,<0.24
+markdown-it-py>=2.2.0,<3
+mdit-py-plugins>=0.3.3,<0.4
+pydantic>=1.10.13,<2
+pyparsing>=3.0.9,<3.1
+starlette>=0.22.0,<0.28
+uvicorn>=0.20.0,<0.23
+websockets>=10.4,<11
