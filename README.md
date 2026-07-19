@@ -117,7 +117,6 @@ python -m pip install -r requirments_cu118_py312.txt
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-项目代码还会检查 NVIDIA GPU 的显存和计算能力。显存约低于 4 GiB 或计算能力低于 SM 5.3 时会使用 CPU。
 
 ### 修改下载源
 
@@ -192,7 +191,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-`hubert_base.pt` 是旧格式；当前代码使用 `assets/hubert_base/` 下的 Transformers 三文件模型。FCPE 模型由 `torchfcpe` 包提供。
 
 ### FFmpeg
 

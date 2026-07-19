@@ -122,7 +122,6 @@ Torch と CUDA を確認します。
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-アプリは NVIDIA GPU のメモリと計算能力も確認します。約 4 GiB 未満、または SM 5.3 未満の場合は CPU を使用します。
 
 ### パッケージのダウンロード元
 
@@ -197,7 +196,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-旧形式の `hubert_base.pt` はこのブランチでは使用しません。現在は `assets/hubert_base/` の Transformers モデルを使用します。FCPE は `torchfcpe` に含まれます。
 
 ### FFmpeg
 

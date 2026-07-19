@@ -104,7 +104,6 @@ Torch ve CUDA durumunu doğrulayın:
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-Program NVIDIA GPU belleğini ve hesaplama yeteneğini de denetler. Yaklaşık 4 GiB altındaki veya SM 5.3 altındaki kartlar CPU yolunu kullanır.
 
 ### Paket kaynakları
 
@@ -179,7 +178,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-Eski `hubert_base.pt` dosyası bu dalda kullanılmaz. Güncel kod `assets/hubert_base/` altındaki Transformers modelini kullanır. FCPE modeli `torchfcpe` paketine dahildir.
 
 ### FFmpeg
 

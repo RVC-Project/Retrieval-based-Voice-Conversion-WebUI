@@ -118,7 +118,6 @@ Verify Torch and CUDA:
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-The application also checks NVIDIA GPU memory and compute capability. GPUs with roughly less than 4 GiB or below SM 5.3 use the CPU path.
 
 ### Package indexes
 
@@ -193,7 +192,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-The legacy `hubert_base.pt` file is not used by this branch. The current code uses the three-file Transformers model under `assets/hubert_base/`. FCPE is bundled with `torchfcpe`.
 
 ### FFmpeg
 

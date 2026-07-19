@@ -102,7 +102,6 @@ Vérifiez Torch et CUDA :
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-Le programme vérifie aussi la mémoire et la capacité de calcul NVIDIA. Une carte d'environ moins de 4 Gio ou inférieure à SM 5.3 utilise le CPU.
 
 ### Sources de paquets
 
@@ -177,7 +176,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-L'ancien fichier `hubert_base.pt` n'est pas utilisé ici. Le code actuel utilise le modèle Transformers dans `assets/hubert_base/`. FCPE est inclus dans `torchfcpe`.
 
 ### FFmpeg
 

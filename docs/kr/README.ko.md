@@ -122,7 +122,6 @@ Torch와 CUDA 상태를 확인하세요.
 python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.version.cuda); print('cuda available:', torch.cuda.is_available())"
 ```
 
-프로그램은 NVIDIA GPU 메모리와 연산 능력도 확인합니다. 약 4 GiB 미만이거나 SM 5.3 미만이면 CPU 경로를 사용합니다.
 
 ### 패키지 다운로드 소스
 
@@ -197,7 +196,6 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
-이전 형식인 `hubert_base.pt`는 이 브랜치에서 사용하지 않습니다. 현재 코드는 `assets/hubert_base/`의 Transformers 모델을 사용합니다. FCPE는 `torchfcpe`에 포함됩니다.
 
 ### FFmpeg
 
