@@ -1,0 +1,68 @@
+# Python 3.12 x64 / Windows / NVIDIA CUDA 11.8
+#
+# Install in two stages from the project root. Torch and Torchaudio are NOT
+# listed below, so the second command cannot replace the verified cu118 pair.
+#
+# Stage 1 - install the matching CUDA 11.8 pair (Torch must stay below 2.8):
+#   runtime\python.exe -I -m pip install torch==2.7.1+cu118 torchaudio==2.7.1+cu118 --index-url https://mirrors.nju.edu.cn/pytorch/whl/cu118 --extra-index-url https://mirrors.pku.edu.cn/pypi/simple
+#
+# Stage 2 - install all remaining project dependencies:
+#   runtime\python.exe -I -m pip install -r requirments_cu118_py312.txt
+
+--index-url https://mirrors.pku.edu.cn/pypi/simple
+
+# Packaging support. Gradio 3.14 still imports pkg_resources, so Setuptools
+# must remain on the last generation that provides it.
+setuptools>=75.0,<81
+wheel>=0.45,<1
+packaging>=24.0
+
+# Direct project dependencies. Upper bounds are used only where a newer major
+# release changes an API/ABI used by this project or breaks NumPy 1.x support.
+av>=15.1.0,<16
+einops>=0.8.0,<1
+faiss-cpu>=1.13.0,<2
+ffmpeg-python>=0.2.0,<1
+FreeSimpleGUI>=5.1.0,<5.2
+librosa>=0.10.2,<0.11
+local-attention>=1.11.0,<2
+matplotlib>=3.8.2,<4
+networkx>=3.2.0,<4
+numpy>=1.26.4,<2
+
+# ONNX Runtime 1.18.x is the CUDA 11 / cuDNN 8 generation with Python 3.12
+# Windows wheels. The CUDA DLL packages are pinned because later cuDNN/CUDA
+# majors are ABI-incompatible with this provider build.
+onnxruntime-gpu>=1.18.0,<1.19
+nvidia-cudnn-cu11==8.9.5.29
+nvidia-cublas-cu11==11.11.3.6
+nvidia-cuda-runtime-cu11==11.8.89
+nvidia-cuda-nvrtc-cu11==11.8.89
+nvidia-cufft-cu11==10.9.0.58
+
+opencv-python-headless>=4.10.0,<5
+praat-parselmouth>=0.4.5,<1
+PyYAML>=6.0
+scikit-learn>=1.6.0,<2
+scipy>=1.13.1,<2
+sounddevice>=0.5.0,<1
+soundfile>=0.13.0,<1
+tensorboard>=2.19.0
+torchfcpe>=0.0.4,<0.1
+tqdm>=4.67.0,<5
+transformers>=4.49.0,<4.50
+
+# Gradio 3.14 API compatibility. Newer Gradio/FastAPI/Pydantic generations
+# changed component, event, generator, request and launch behavior used here.
+gradio>=3.14.0,<3.15
+altair>=4.2.0,<5
+anyio>=3.6.2,<4
+fastapi>=0.88.0,<0.100
+httpx>=0.23.0,<0.24
+markdown-it-py>=2.2.0,<3
+mdit-py-plugins>=0.3.3,<0.4
+pydantic>=1.10.13,<2
+pyparsing>=3.0.9,<3.1
+starlette>=0.22.0,<0.28
+uvicorn>=0.20.0,<0.23
+websockets>=10.4,<11
