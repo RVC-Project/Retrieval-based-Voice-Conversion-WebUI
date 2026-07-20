@@ -257,5 +257,7 @@
     "[索引训练] 外部索引链接已存在：%s": "[Entraînement de l’index] Le lien externe existe déjà : %s",
     "[索引训练][跳过] added索引已存在：%s": "[Entraînement de l’index][Ignoré] L’index added existe déjà : %s",
     "[索引训练][跳过] trained索引已存在：%s": "[Entraînement de l’index][Ignoré] L’index trained existe déjà : %s",
-    "当前设备：%s | 推理精度：%s": "Périphérique actuel : %s | Précision d’inférence : %s"
+    "当前设备：%s | 推理精度：%s": "Périphérique actuel : %s | Précision d’inférence : %s",
+    "正在预热CUDA Graph": "Préchauffage de CUDA Graph",
+    "CUDA Graph预热完成": "Préchauffage de CUDA Graph terminé"
 }

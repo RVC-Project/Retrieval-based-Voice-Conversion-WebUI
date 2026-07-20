@@ -67,8 +67,11 @@ class TextEncoder(nn.Module):
         )
         x = self.encoder(x * x_mask, x_mask)
         if skip_head is not None:
-            assert isinstance(skip_head, torch.Tensor)
-            head = int(skip_head.item())
+            head = (
+                int(skip_head.item())
+                if isinstance(skip_head, torch.Tensor)
+                else int(skip_head)
+            )
             x = x[:, :, head:]
             x_mask = x_mask[:, :, head:]
         stats = self.proj(x) * x_mask
@@ -231,8 +234,7 @@ class Generator(torch.nn.Module):
         n_res = None,
     ):
         if n_res is not None:
-            assert isinstance(n_res, torch.Tensor)
-            n = int(n_res.item())
+            n = int(n_res.item()) if isinstance(n_res, torch.Tensor) else int(n_res)
             if n != x.shape[-1]:
                 x = F.interpolate(x, size=n, mode="linear")
         x = self.conv_pre(x)
@@ -501,8 +503,7 @@ class GeneratorNSF(torch.nn.Module):
         har_source, noi_source, uv = self.m_source(f0, self.upp)
         har_source = har_source.transpose(1, 2)
         if n_res is not None:
-            assert isinstance(n_res, torch.Tensor)
-            n = int(n_res.item())
+            n = int(n_res.item()) if isinstance(n_res, torch.Tensor) else int(n_res)
             if n * self.upp != har_source.shape[-1]:
                 har_source = F.interpolate(har_source, size=n * self.upp, mode="linear")
             if n != x.shape[-1]:
@@ -674,12 +675,14 @@ class SynthesizerTrnMs256NSFsid(nn.Module):
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
-            assert isinstance(skip_head, torch.Tensor)
-            assert isinstance(return_length, torch.Tensor)
-            head = int(skip_head.item())
-            length = int(return_length.item())
-            flow_head = torch.clamp(skip_head - 24, min=0)
-            dec_head = head - int(flow_head.item())
+            head = int(skip_head.item()) if isinstance(skip_head, torch.Tensor) else int(skip_head)
+            length = (
+                int(return_length.item())
+                if isinstance(return_length, torch.Tensor)
+                else int(return_length)
+            )
+            flow_head = max(head - 24, 0)
+            dec_head = head - flow_head
             m_p, logs_p, x_mask = self.enc_p(phone, pitch, phone_lengths, flow_head)
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)
@@ -862,12 +865,14 @@ class SynthesizerTrnMs256NSFsid_nono(nn.Module):
     ):
         g = self.emb_g(sid).unsqueeze(-1)
         if skip_head is not None and return_length is not None:
-            assert isinstance(skip_head, torch.Tensor)
-            assert isinstance(return_length, torch.Tensor)
-            head = int(skip_head.item())
-            length = int(return_length.item())
-            flow_head = torch.clamp(skip_head - 24, min=0)
-            dec_head = head - int(flow_head.item())
+            head = int(skip_head.item()) if isinstance(skip_head, torch.Tensor) else int(skip_head)
+            length = (
+                int(return_length.item())
+                if isinstance(return_length, torch.Tensor)
+                else int(return_length)
+            )
+            flow_head = max(head - 24, 0)
+            dec_head = head - flow_head
             m_p, logs_p, x_mask = self.enc_p(phone, None, phone_lengths, flow_head)
             z_p = (m_p + torch.exp(logs_p) * torch.randn_like(m_p) * 0.66666) * x_mask
             z = self.flow(z_p, x_mask, g=g, reverse=True)

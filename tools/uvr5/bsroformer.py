@@ -9,6 +9,8 @@ import soundfile as sf
 import torch
 import torch.nn as nn
 import yaml
+
+from tools.cuda_graph import run_cuda_graph
 from tqdm import tqdm
 from tools.file_io import read_text
 from i18n.i18n import I18nAuto
@@ -178,7 +180,12 @@ class Roformer_Loader:
                     if len(batch_data) >= batch_size or (i >= mix.shape[1]):
                         arr = torch.stack(batch_data, dim=0)
                         # print(23333333,arr.dtype)
-                        x = model(arr)
+                        x = run_cuda_graph(
+                            model,
+                            "uvr-bsroformer",
+                            lambda audio: model(audio),
+                            arr,
+                        )
 
                         window = window_middle
                         if i - step == 0:  # First audio chunk, no fadein

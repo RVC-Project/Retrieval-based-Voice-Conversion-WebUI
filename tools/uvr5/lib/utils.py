@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from tools.cuda_graph import run_cuda_graph
 from tqdm import tqdm
 
 
@@ -34,7 +35,12 @@ def inference(X_spec, device, model, aggressiveness, data):
                     X_mag_window = X_mag_window.half()
                 X_mag_window = X_mag_window.to(device)
 
-                pred = model.predict(X_mag_window, aggressiveness)
+                pred = run_cuda_graph(
+                    model,
+                    "uvr-vr-%s" % repr(aggressiveness),
+                    lambda window: model.predict(window, aggressiveness),
+                    X_mag_window,
+                )
 
                 pred = pred.detach().cpu().numpy()
                 preds.append(pred[0])

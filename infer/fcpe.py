@@ -1,5 +1,7 @@
 import torch
 
+from tools.cuda_graph import cuda_graph_enabled, run_cuda_graph
+
 
 def _is_directml_device(device):
     """Return whether *device* is the PrivateUse1 device registered by DirectML."""
@@ -35,6 +37,46 @@ class FCPEInfer:
             self.infer_model.model.to(device).eval()
         else:
             self.infer_model = spawn_bundled_infer_model(device)
+            if getattr(device, "type", None) == "cuda" or str(device).startswith(
+                "cuda"
+            ):
+                # torchfcpe creates this tensor on CPU and copies it to CUDA in
+                # every local-argmax decode.  Host-to-device copies are forbidden
+                # during CUDA Graph capture, so keep the immutable offsets on the
+                # target device and use the graph-safe equivalent decoder below.
+                self.local_offsets = torch.arange(
+                    9, device=device, dtype=torch.long
+                ).view(1, 1, 9)
+
+    def _graphable_model_infer(self, mel, decoder_mode, threshold):
+        """Run FCPE network and an exactly equivalent capture-safe decoder."""
+        model = self.infer_model.model
+        latent = model(mel)
+        batch, frames, _ = latent.shape
+        cents = model.cent_table[None, None, :].expand(batch, frames, -1)
+
+        if decoder_mode == "argmax":
+            confidence = torch.max(latent, dim=-1, keepdim=True).values
+            decoded = torch.sum(cents * latent, dim=-1, keepdim=True) / torch.sum(
+                latent, dim=-1, keepdim=True
+            )
+        elif decoder_mode == "local_argmax":
+            confidence, max_index = torch.max(latent, dim=-1, keepdim=True)
+            local_index = self.local_offsets + (max_index - 4)
+            local_index = local_index.clamp(0, model.out_dims - 1)
+            local_cents = torch.gather(cents, -1, local_index)
+            local_latent = torch.gather(latent, -1, local_index)
+            decoded = torch.sum(
+                local_cents * local_latent, dim=-1, keepdim=True
+            ) / torch.sum(local_latent, dim=-1, keepdim=True)
+        else:
+            raise ValueError("Unknown FCPE decoder mode: %s" % decoder_mode)
+
+        # Match torchfcpe's masking and cent-to-Hz formulas operation-for-operation.
+        confidence_mask = torch.ones_like(confidence)
+        confidence_mask.masked_fill_(confidence <= threshold, float("-inf"))
+        decoded = decoded * confidence_mask
+        return 10.0 * torch.pow(2.0, decoded / 1200.0)
 
     def _decode_on_cpu(self, latent, decoder_mode, threshold):
         """Decode DML network logits on CPU with torchfcpe's exact formulas.
@@ -79,11 +121,33 @@ class FCPEInfer:
         threshold=0.006,
     ):
         if not self.is_directml:
-            return self.infer_model.infer(
+            wav = wav.to(self.device)
+            if cuda_graph_enabled(wav.device):
+                # Wav2MelModule contains tensor-dependent Python conditionals and
+                # cannot be captured.  Running it eagerly also creates/caches its
+                # STFT window before the graph.  The much larger FCPE neural net
+                # and decoder form the stable-shape CUDA Graph boundary.
+                mel = self.infer_model.wav2mel(wav, sr)
+                return run_cuda_graph(
+                    self.infer_model.model,
+                    "fcpe-core-%s-%s" % (decoder_mode, threshold),
+                    lambda input_mel: self._graphable_model_infer(
+                        input_mel,
+                        decoder_mode,
+                        threshold,
+                    ),
+                    mel,
+                )
+            return run_cuda_graph(
+                self.infer_model,
+                "fcpe-%s-%s-%s" % (sr, decoder_mode, threshold),
+                lambda input_wav: self.infer_model.infer(
+                    input_wav,
+                    sr=sr,
+                    decoder_mode=decoder_mode,
+                    threshold=threshold,
+                ),
                 wav,
-                sr=sr,
-                decoder_mode=decoder_mode,
-                threshold=threshold,
             )
 
         wav_cpu = wav.detach().to(device="cpu", dtype=torch.float32)

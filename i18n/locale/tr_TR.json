@@ -257,5 +257,7 @@
     "[索引训练] 外部索引链接已存在：%s": "[Dizin eğitimi] Harici dizin bağlantısı zaten var: %s",
     "[索引训练][跳过] added索引已存在：%s": "[Dizin eğitimi][Atlandı] added dizini zaten var: %s",
     "[索引训练][跳过] trained索引已存在：%s": "[Dizin eğitimi][Atlandı] trained dizini zaten var: %s",
-    "当前设备：%s | 推理精度：%s": "Geçerli cihaz: %s | Çıkarım hassasiyeti: %s"
+    "当前设备：%s | 推理精度：%s": "Geçerli cihaz: %s | Çıkarım hassasiyeti: %s",
+    "正在预热CUDA Graph": "CUDA Graph ısınıyor",
+    "CUDA Graph预热完成": "CUDA Graph ısınması tamamlandı"
 }

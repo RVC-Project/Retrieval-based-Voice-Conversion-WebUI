@@ -25,6 +25,7 @@ for name in os.listdir(tmp):
     except Exception as error:
         print(str(error))
 
+from configs.config import Config, GPU_INDEX, GPU_INFOS, GPU_MEMORY, IS_GPU
 from infer.vc.modules import VC
 from tools.uvr5.webui import uvr
 from tools.file_io import read_text
@@ -35,7 +36,6 @@ from train.process_ckpt import (
     show_info,
 )
 from i18n.i18n import I18nAuto
-from configs.config import Config, GPU_INDEX, GPU_INFOS, GPU_MEMORY, IS_GPU
 import torch, platform
 import numpy as np
 import gradio as gr
@@ -143,6 +143,7 @@ print(
     i18n("当前设备：%s | 推理精度：%s") % (config.device, config.dtype),
     flush=True,
 )
+logger.info("RVC_CUDA_GRAPH=%s", os.environ.get("RVC_CUDA_GRAPH", "0"))
 # GPU filtering and precision rules are shared with inference/extraction/training.
 gpu_infos = list(GPU_INFOS)
 gpu_indices = sorted(GPU_INDEX)
@@ -394,6 +395,10 @@ def train_task_stopped(state):
 
 def start_train_process(state, cmd):
     kwargs = {"shell": True, "cwd": now_dir}
+    if "train/train.py" in cmd.replace("\\", "/"):
+        training_env = os.environ.copy()
+        training_env["RVC_CUDA_GRAPH"] = "0"
+        kwargs["env"] = training_env
     if platform.system() == "Windows":
         kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:

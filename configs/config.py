@@ -10,6 +10,8 @@ from tools.file_io import read_text
 import torch
 import logging
 
+from tools.cuda_graph import configure_cuda_graph
+
 logger = logging.getLogger(__name__)
 
 
@@ -126,6 +128,12 @@ if infer_device.type != "cuda":
         )
 
 
+# Run a real capture/replay probe on the selected inference device.  Both
+# application entry points import this module, so downstream inference code
+# receives one consistent 0/1 switch without duplicating device checks.
+CUDA_GRAPH_AVAILABLE = configure_cuda_graph(infer_device)
+
+
 CONFIGS_DIR = Path(__file__).resolve().parent
 MODEL_CONFIG_FILES = (
     "v1/32k.json",
@@ -152,6 +160,7 @@ class Config:
         self.device = str(infer_device)
         self.dtype = infer_dtype
         self.is_half = infer_dtype == torch.float16
+        self.cuda_graph = CUDA_GRAPH_AVAILABLE
         self.n_cpu = 0
         self.gpu_name = None
         self.json_config = self.load_config_json()

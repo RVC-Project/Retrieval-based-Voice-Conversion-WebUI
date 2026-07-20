@@ -8,6 +8,8 @@ import torch.nn.functional as F
 from librosa.util import normalize, pad_center, tiny
 from scipy.signal import get_window
 
+from tools.cuda_graph import run_cuda_graph
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -551,8 +553,28 @@ class RMVPE:
                 )[0]
             else:
                 mel = mel.half() if self.is_half else mel.float()
-                hidden = self.model(mel)
+                hidden = run_cuda_graph(
+                    self.model,
+                    "rmvpe-network",
+                    lambda input_mel: self.model(input_mel),
+                    mel,
+                )
             return hidden[:, :n_frames]
+
+    def extract_mel(self, audio, center=True):
+        if not torch.is_tensor(audio):
+            audio = torch.from_numpy(audio)
+        audio = audio.float().to(self.device)
+        if audio.dim() == 1:
+            audio = audio.unsqueeze(0)
+        if "privateuseone" in str(self.device):
+            return self.mel_extractor(audio, center=center)
+        return run_cuda_graph(
+            self.mel_extractor,
+            "rmvpe-mel-center-%s" % int(bool(center)),
+            lambda input_audio: self.mel_extractor(input_audio, center=center),
+            audio,
+        )
 
     def decode(self, hidden, thred=0.03):
         cents_pred = self.to_local_average_cents(hidden, thred=thred)
@@ -564,11 +586,7 @@ class RMVPE:
     def infer_from_audio(self, audio, thred=0.03):
         # torch.cuda.synchronize()
         # t0 = ttime()
-        if not torch.is_tensor(audio):
-            audio = torch.from_numpy(audio)
-        mel = self.mel_extractor(
-            audio.float().to(self.device).unsqueeze(0), center=True
-        )
+        mel = self.extract_mel(audio, center=True)
         # print(123123123,mel.device.type)
         # torch.cuda.synchronize()
         # t1 = ttime()

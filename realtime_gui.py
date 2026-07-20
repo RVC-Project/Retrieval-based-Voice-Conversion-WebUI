@@ -36,9 +36,10 @@ if __name__ == "__main__":
     import torch.nn.functional as F
     import torchaudio.transforms as tat
 
+    from configs.config import Config
     from infer import rtrvc as rvc_for_realtime
     from i18n.i18n import I18nAuto
-    from configs.config import Config
+    from tools.cuda_graph import cuda_graph_enabled, run_cuda_graph
 
     i18n = I18nAuto()
 
@@ -67,6 +68,7 @@ if __name__ == "__main__":
         def __init__(self) :
             self.gui_config = GUIConfig()
             self.config = Config()
+            printt("RVC_CUDA_GRAPH=%s", os.environ.get("RVC_CUDA_GRAPH", "0"))
             self.function = "vc"
             self.delay_time = 0
             self.hostapis = None
@@ -632,6 +634,13 @@ if __name__ == "__main__":
             self.sola_buffer = torch.zeros(
                 self.sola_buffer_frame, device=self.config.device, dtype=torch.float32
             )
+            self.sola_den_kernel = torch.ones(
+                1,
+                1,
+                self.sola_buffer_frame,
+                device=self.config.device,
+                dtype=torch.float32,
+            )
             self.nr_buffer = self.sola_buffer.clone()
             self.output_buffer = self.input_wav.clone()
             self.skip_head = self.extra_frame // self.zc
@@ -669,7 +678,80 @@ if __name__ == "__main__":
             self.tg = TorchGate(
                 sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
             ).to(self.config.device)
+            self.prewarm_cuda_graph()
             self.start_stream()
+
+        def prewarm_cuda_graph(self):
+            if not cuda_graph_enabled(self.config.device):
+                return
+            try:
+                printt(i18n("正在预热CUDA Graph"))
+                samples = self.input_wav_res.shape[0]
+                phase = torch.arange(
+                    samples, device=self.config.device, dtype=torch.float32
+                )
+                probe = 0.05 * torch.sin(2 * np.pi * 220.0 * phase / 16000.0)
+                self.input_wav_res.copy_(probe)
+
+                if self.gui_config.I_noise_reduce:
+                    short = self.input_wav[
+                        -self.sola_buffer_frame - self.block_frame :
+                    ].unsqueeze(0)
+                    run_cuda_graph(
+                        self.tg,
+                        "realtime-input-noise-reduction",
+                        lambda short_audio, full_audio: self.tg(
+                            short_audio, full_audio
+                        ),
+                        short,
+                        self.input_wav.unsqueeze(0),
+                    )
+
+                resample_input = self.input_wav[-self.block_frame - 2 * self.zc :]
+                run_cuda_graph(
+                    self.resampler,
+                    "realtime-input-resample",
+                    lambda audio: self.resampler(audio),
+                    resample_input,
+                )
+
+                inferred = self.rvc.infer(
+                    self.input_wav_res,
+                    self.block_frame_16k,
+                    self.skip_head,
+                    self.return_length,
+                    self.gui_config.f0method,
+                )
+                if self.resampler2 is not None:
+                    inferred = run_cuda_graph(
+                        self.resampler2,
+                        "realtime-output-resample",
+                        lambda audio: self.resampler2(audio),
+                        inferred,
+                    )
+                if self.gui_config.O_noise_reduce:
+                    run_cuda_graph(
+                        self.tg,
+                        "realtime-output-noise-reduction",
+                        lambda short_audio, full_audio: self.tg(
+                            short_audio, full_audio
+                        ),
+                        inferred.unsqueeze(0),
+                        self.output_buffer.unsqueeze(0),
+                    )
+                torch.cuda.synchronize(self.config.device)
+                printt(i18n("CUDA Graph预热完成"))
+            except Exception:
+                printt(traceback.format_exc())
+            finally:
+                self.input_wav.zero_()
+                self.input_wav_denoise.zero_()
+                self.input_wav_res.zero_()
+                self.output_buffer.zero_()
+                self.sola_buffer.zero_()
+                self.nr_buffer.zero_()
+                self.rvc.cache_pitch.zero_()
+                self.rvc.cache_pitchf.zero_()
 
         def start_stream(self):
             global flag_vc
@@ -739,8 +821,12 @@ if __name__ == "__main__":
                     self.block_frame :
                 ].clone()
                 input_wav = self.input_wav[-self.sola_buffer_frame - self.block_frame :]
-                input_wav = self.tg(
-                    input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
+                input_wav = run_cuda_graph(
+                    self.tg,
+                    "realtime-input-noise-reduction",
+                    lambda short, full: self.tg(short, full),
+                    input_wav.unsqueeze(0),
+                    self.input_wav.unsqueeze(0),
                 ).squeeze(0)
                 input_wav[: self.sola_buffer_frame] *= self.fade_in_window
                 input_wav[: self.sola_buffer_frame] += (
@@ -750,15 +836,23 @@ if __name__ == "__main__":
                     : self.block_frame
                 ]
                 self.nr_buffer[:] = input_wav[self.block_frame :]
-                self.input_wav_res[-self.block_frame_16k - 160 :] = self.resampler(
-                    self.input_wav_denoise[-self.block_frame - 2 * self.zc :]
+                resample_input = self.input_wav_denoise[
+                    -self.block_frame - 2 * self.zc :
+                ]
+                self.input_wav_res[-self.block_frame_16k - 160 :] = run_cuda_graph(
+                    self.resampler,
+                    "realtime-input-resample",
+                    lambda audio: self.resampler(audio),
+                    resample_input,
                 )[160:]
             else:
-                self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = (
-                    self.resampler(self.input_wav[-indata.shape[0] - 2 * self.zc :])[
-                        160:
-                    ]
-                )
+                resample_input = self.input_wav[-indata.shape[0] - 2 * self.zc :]
+                self.input_wav_res[-160 * (indata.shape[0] // self.zc + 1) :] = run_cuda_graph(
+                    self.resampler,
+                    "realtime-input-resample",
+                    lambda audio: self.resampler(audio),
+                    resample_input,
+                )[160:]
             # infer
             if self.function == "vc":
                 infer_wav = self.rvc.infer(
@@ -769,7 +863,12 @@ if __name__ == "__main__":
                     self.gui_config.f0method,
                 )
                 if self.resampler2 is not None:
-                    infer_wav = self.resampler2(infer_wav)
+                    infer_wav = run_cuda_graph(
+                        self.resampler2,
+                        "realtime-output-resample",
+                        lambda audio: self.resampler2(audio),
+                        infer_wav,
+                    )
             elif self.gui_config.I_noise_reduce:
                 infer_wav = self.input_wav_denoise[self.extra_frame :].clone()
             else:
@@ -780,8 +879,12 @@ if __name__ == "__main__":
                     self.block_frame :
                 ].clone()
                 self.output_buffer[-self.block_frame :] = infer_wav[-self.block_frame :]
-                infer_wav = self.tg(
-                    infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)
+                infer_wav = run_cuda_graph(
+                    self.tg,
+                    "realtime-output-noise-reduction",
+                    lambda short, full: self.tg(short, full),
+                    infer_wav.unsqueeze(0),
+                    self.output_buffer.unsqueeze(0),
                 ).squeeze(0)
             # volume envelop mixing
             if self.gui_config.rms_mix_rate < 1 and self.function == "vc":
@@ -815,7 +918,7 @@ if __name__ == "__main__":
                 )[0, 0, :-1]
                 rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-3)
                 infer_wav *= torch.pow(
-                    rms1 / rms2, torch.tensor(1 - self.gui_config.rms_mix_rate)
+                    rms1 / rms2, 1.0 - self.gui_config.rms_mix_rate
                 )
             # SOLA algorithm from https://github.com/yxlllc/DDSP-SVC
             conv_input = infer_wav[
@@ -825,7 +928,7 @@ if __name__ == "__main__":
             cor_den = torch.sqrt(
                 F.conv1d(
                     conv_input**2,
-                    torch.ones(1, 1, self.sola_buffer_frame, device=self.config.device),
+                    self.sola_den_kernel,
                 )
                 + 1e-8
             )

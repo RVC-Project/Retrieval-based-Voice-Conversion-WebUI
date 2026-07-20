@@ -257,5 +257,7 @@
     "[索引训练] 外部索引链接已存在：%s": "[Index training] External index link already exists: %s",
     "[索引训练][跳过] added索引已存在：%s": "[Index training][Skipped] added index already exists: %s",
     "[索引训练][跳过] trained索引已存在：%s": "[Index training][Skipped] trained index already exists: %s",
-    "当前设备：%s | 推理精度：%s": "Current device: %s | Inference precision: %s"
+    "当前设备：%s | 推理精度：%s": "Current device: %s | Inference precision: %s",
+    "正在预热CUDA Graph": "Warming up CUDA Graph",
+    "CUDA Graph预热完成": "CUDA Graph warm-up complete"
 }

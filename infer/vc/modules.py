@@ -19,6 +19,7 @@ from infer.vc.pipeline import Pipeline
 from infer.vc.utils import *
 from i18n.i18n import I18nAuto
 from tools.progress import batch_status, should_report
+from tools.cuda_graph import clear_cuda_graph_cache
 
 
 i18n = I18nAuto()
@@ -68,6 +69,8 @@ class VC:
                 self.hubert_model is not None
             ):  # 考虑到轮询, 需要加个判断看是否 sid 是由有模型切换到无模型的
                 logger.info(i18n("清理模型缓存"))
+                clear_cuda_graph_cache(self.net_g)
+                clear_cuda_graph_cache(self.hubert_model)
                 del (self.net_g, self.n_spk, self.hubert_model, self.tgt_sr)  # ,cpt
                 self.hubert_model = self.net_g = self.n_spk = self.hubert_model = (
                     self.tgt_sr
@@ -111,6 +114,9 @@ class VC:
             )
         person = f'{os.getenv("weight_root")}/{sid}'
         logger.info("%s: %s", i18n("正在加载模型"), person)
+
+        if self.net_g is not None:
+            clear_cuda_graph_cache(self.net_g)
 
         self.cpt = torch.load(person, map_location="cpu")
         self.tgt_sr = self.cpt["config"][-1]

@@ -257,5 +257,7 @@
     "[索引训练] 外部索引链接已存在：%s": "[Treinamento de índice] O link externo já existe: %s",
     "[索引训练][跳过] added索引已存在：%s": "[Treinamento de índice][Ignorado] O índice added já existe: %s",
     "[索引训练][跳过] trained索引已存在：%s": "[Treinamento de índice][Ignorado] O índice trained já existe: %s",
-    "当前设备：%s | 推理精度：%s": "Dispositivo atual: %s | Precisão de inferência: %s"
+    "当前设备：%s | 推理精度：%s": "Dispositivo atual: %s | Precisão de inferência: %s",
+    "正在预热CUDA Graph": "Aquecendo o CUDA Graph",
+    "CUDA Graph预热完成": "Aquecimento do CUDA Graph concluído"
 }

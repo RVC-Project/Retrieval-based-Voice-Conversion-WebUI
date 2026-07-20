@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from scipy import signal
 
 from infer.hubert import extract_hubert_features
+from tools.cuda_graph import cuda_graph_enabled, run_cuda_graph
 
 bh, ah = signal.butter(N=5, Wn=48, btype="high", fs=16000)
 
@@ -217,11 +218,34 @@ class Pipeline(object):
         p_len = torch.tensor([p_len], device=self.device).long()
         with torch.no_grad():
             hasp = pitch is not None and pitchf is not None
-            arg = (feats, p_len, pitch, pitchf, sid) if hasp else (feats, p_len, sid)
-            audio1 = (net_g.infer(*arg)[0][0, 0]).data.cpu().float().numpy()
-            del hasp, arg
+            if hasp:
+                synthesized = run_cuda_graph(
+                    net_g,
+                    "rvc-synth-f0",
+                    lambda phone, lengths, coarse, continuous, speaker: net_g.infer(
+                        phone, lengths, coarse, continuous, speaker
+                    )[0],
+                    feats,
+                    p_len,
+                    pitch,
+                    pitchf,
+                    sid,
+                )
+            else:
+                synthesized = run_cuda_graph(
+                    net_g,
+                    "rvc-synth-no-f0",
+                    lambda phone, lengths, speaker: net_g.infer(
+                        phone, lengths, speaker
+                    )[0],
+                    feats,
+                    p_len,
+                    sid,
+                )
+            audio1 = synthesized[0, 0].data.cpu().float().numpy()
+            del hasp, synthesized
         del feats, p_len, padding_mask
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and not cuda_graph_enabled(self.device):
             torch.cuda.empty_cache()
         t2 = ttime()
         times[0] += t1 - t0
@@ -381,6 +405,6 @@ class Pipeline(object):
             max_int16 /= audio_max
         audio_opt = (audio_opt * max_int16).astype(np.int16)
         del pitch, pitchf, sid
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and not cuda_graph_enabled(self.device):
             torch.cuda.empty_cache()
         return audio_opt

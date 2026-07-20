@@ -10,6 +10,7 @@ from torchaudio.transforms import Resample
 
 from infer.hubert import extract_hubert_features, load_hubert_model
 from i18n.i18n import I18nAuto
+from tools.cuda_graph import run_cuda_graph
 
 
 i18n = I18nAuto()
@@ -93,6 +94,7 @@ class RVC:
             self.cache_pitchf = torch.zeros(
                 1024, device=self.device, dtype=torch.float32
             )
+            self.infer_count = 0
 
             self.resample_kernel = {}
 
@@ -179,11 +181,9 @@ class RVC:
         if len(f0) < p_len:
             f0 = np.pad(f0, (0, p_len - len(f0)))
         f0 = f0[:p_len]
-        try:
-            uv = f0 == 0
+        uv = f0 == 0
+        if np.any(~uv):
             f0[uv] = np.interp(np.where(uv)[0], np.where(~uv)[0], f0[~uv])
-        except Exception:
-            traceback.print_exc()
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 
@@ -198,11 +198,9 @@ class RVC:
                 device=self.device,
             )
         f0 = self.model_rmvpe.infer_from_audio(x, thred=0.03)
-        try:
-            uv = f0 == 0
+        uv = f0 == 0
+        if np.any(~uv):
             f0[uv] = np.interp(np.where(uv)[0], np.where(~uv)[0], f0[~uv])
-        except Exception:
-            traceback.print_exc()
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 
@@ -218,11 +216,9 @@ class RVC:
             decoder_mode="local_argmax",
             threshold=0.006,
         ).squeeze().detach().cpu().numpy()
-        try:
-            uv = f0 == 0
+        uv = f0 == 0
+        if np.any(~uv):
             f0[uv] = np.interp(np.where(uv)[0], np.where(~uv)[0], f0[~uv])
-        except Exception:
-            traceback.print_exc()
         f0 *= pow(2, f0_up_key / 12)
         return self.get_f0_post(f0)
 
@@ -234,6 +230,8 @@ class RVC:
         return_length,
         f0method,
     ) :
+        report_status = self.infer_count < 3 or self.infer_count % 100 == 0
+        self.infer_count += 1
         t1 = ttime()
         with torch.no_grad():
             if self.config.is_half:
@@ -271,7 +269,8 @@ class RVC:
                         i18n("索引无效：必须使用added_xxxx.index，不能使用trained_xxxx.index")
                     )
             else:
-                printt(i18n("索引检索失败或未启用"))
+                if report_status:
+                    printt(i18n("索引检索失败或未启用"))
         except Exception:
             traceback.print_exc()
             printt(i18n("索引检索失败"))
@@ -298,26 +297,49 @@ class RVC:
         t4 = ttime()
         feats = F.interpolate(feats.permute(0, 2, 1), scale_factor=2).permute(0, 2, 1)
         feats = feats[:, :p_len, :]
-        p_len = torch.LongTensor([p_len]).to(self.device)
+        p_len_tensor = torch.LongTensor([p_len]).to(self.device)
         sid = torch.LongTensor([0]).to(self.device)
-        skip_head = torch.LongTensor([skip_head])
-        return_length2 = torch.LongTensor([return_length2])
-        return_length = torch.LongTensor([return_length])
+        skip_head_value = int(skip_head)
+        return_length_value = int(return_length)
+        return_length2_value = int(return_length2)
         with torch.no_grad():
             if self.if_f0 == 1:
-                infered_audio, _, _ = self.net_g.infer(
+                infered_audio = run_cuda_graph(
+                    self.net_g,
+                    "rvc-realtime-f0-%s-%s-%s"
+                    % (skip_head_value, return_length_value, return_length2_value),
+                    lambda phone, lengths, coarse, continuous, speaker: self.net_g.infer(
+                        phone,
+                        lengths,
+                        coarse,
+                        continuous,
+                        speaker,
+                        skip_head_value,
+                        return_length_value,
+                        return_length2_value,
+                    )[0],
                     feats,
-                    p_len,
+                    p_len_tensor,
                     cache_pitch,
                     cache_pitchf,
                     sid,
-                    skip_head,
-                    return_length,
-                    return_length2,
                 )
             else:
-                infered_audio, _, _ = self.net_g.infer(
-                    feats, p_len, sid, skip_head, return_length, return_length2
+                infered_audio = run_cuda_graph(
+                    self.net_g,
+                    "rvc-realtime-no-f0-%s-%s-%s"
+                    % (skip_head_value, return_length_value, return_length2_value),
+                    lambda phone, lengths, speaker: self.net_g.infer(
+                        phone,
+                        lengths,
+                        speaker,
+                        skip_head_value,
+                        return_length_value,
+                        return_length2_value,
+                    )[0],
+                    feats,
+                    p_len_tensor,
+                    sid,
                 )
         infered_audio = infered_audio.squeeze(1).float()
         upp_res = int(np.floor(factor * self.tgt_sr // 100))
@@ -332,11 +354,12 @@ class RVC:
                 infered_audio[:, : return_length * upp_res]
             )
         t5 = ttime()
-        printt(
-            i18n("耗时：特征=%.3f秒，索引=%.3f秒，音高=%.3f秒，模型=%.3f秒"),
-            t2 - t1,
-            t3 - t2,
-            t4 - t3,
-            t5 - t4,
-        )
+        if report_status:
+            printt(
+                i18n("耗时：特征=%.3f秒，索引=%.3f秒，音高=%.3f秒，模型=%.3f秒"),
+                t2 - t1,
+                t3 - t2,
+                t4 - t3,
+                t5 - t4,
+            )
         return infered_audio.squeeze()

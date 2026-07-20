@@ -6,6 +6,8 @@ import torch
 from torch import nn
 from transformers import AutoFeatureExtractor, HubertModel
 
+from tools.cuda_graph import run_cuda_graph
+
 
 logger = logging.getLogger(__name__)
 
@@ -78,19 +80,48 @@ def extract_hubert_features(model, source, version, padding_mask=None):
         attention_mask = (~padding_mask.bool()).long()
 
     if version == "v1":
-        outputs = model(
-            input_values=source,
-            attention_mask=attention_mask,
-            output_hidden_states=True,
-            return_dict=True,
-        )
-        features = outputs.hidden_states[9]
-        return model.final_proj(features)
+        if attention_mask is None:
+            def forward(input_values):
+                outputs = model(
+                    input_values=input_values,
+                    attention_mask=None,
+                    output_hidden_states=True,
+                    return_dict=True,
+                )
+                return model.final_proj(outputs.hidden_states[9])
 
-    outputs = model(
-        input_values=source,
-        attention_mask=attention_mask,
-        output_hidden_states=False,
-        return_dict=True,
-    )
-    return outputs.last_hidden_state
+            return run_cuda_graph(model, "hubert-v1-no-mask", forward, source)
+
+        def forward(input_values, mask):
+            outputs = model(
+                input_values=input_values,
+                attention_mask=mask,
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            return model.final_proj(outputs.hidden_states[9])
+
+        return run_cuda_graph(
+            model, "hubert-v1-mask", forward, source, attention_mask
+        )
+
+    if attention_mask is None:
+        def forward(input_values):
+            return model(
+                input_values=input_values,
+                attention_mask=None,
+                output_hidden_states=False,
+                return_dict=True,
+            ).last_hidden_state
+
+        return run_cuda_graph(model, "hubert-v2-no-mask", forward, source)
+
+    def forward(input_values, mask):
+        return model(
+            input_values=input_values,
+            attention_mask=mask,
+            output_hidden_states=False,
+            return_dict=True,
+        ).last_hidden_state
+
+    return run_cuda_graph(model, "hubert-v2-mask", forward, source, attention_mask)
