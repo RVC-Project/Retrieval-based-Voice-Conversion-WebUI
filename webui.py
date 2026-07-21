@@ -1,6 +1,12 @@
 import os
 import shutil
 
+# Offline WebUI keeps the CUDA Graph implementation available, but remains
+# eager by default. Set RVC_OFFLINE_CUDA_GRAPH=1 to opt in for benchmarking or
+# controlled deployments.
+_offline_cuda_graph = os.environ.get("RVC_OFFLINE_CUDA_GRAPH", "0") == "1"
+os.environ["RVC_CUDA_GRAPH"] = "1" if _offline_cuda_graph else "0"
+
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("no_proxy", "localhost, 127.0.0.1, ::1")
 os.environ.setdefault("weight_root", "assets/weights")
@@ -143,9 +149,6 @@ print(
     i18n("当前设备：%s | 推理精度：%s") % (config.device, config.dtype),
     flush=True,
 )
-cuda_graph_status = os.environ.get("RVC_CUDA_GRAPH", "0")
-print(f"RVC_CUDA_GRAPH={cuda_graph_status}", flush=True)
-logger.info("RVC_CUDA_GRAPH=%s", cuda_graph_status)
 # GPU filtering and precision rules are shared with inference/extraction/training.
 gpu_infos = list(GPU_INFOS)
 gpu_indices = sorted(GPU_INDEX)
