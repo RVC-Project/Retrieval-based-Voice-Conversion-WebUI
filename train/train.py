@@ -145,7 +145,7 @@ def run(rank, n_gpus, hps, logger, use_ddp):
 
     if use_ddp:
         dist.init_process_group(
-            backend="gloo", init_method="env://", world_size=n_gpus, rank=rank
+            backend="gloo", init_method="env://?use_libuv=False", world_size=n_gpus, rank=rank
         )
     torch.manual_seed(hps.train.seed)
     if torch.cuda.is_available():
