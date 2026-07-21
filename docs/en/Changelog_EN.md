@@ -1,3 +1,16 @@
+### 2026-07-18
+- Reduced web UI complexity (no path required for audio inference input, improved real-time frontend logs, automatic model-list refresh after saving a small inference model, automatic detection of the matching index path after selecting a model on the inference home page, etc.).
+- Data feature extraction, model training, and index building can now be interrupted and resumed after restarting.
+- Automatically detects the GPU to determine the inference mode and precision.
+- Fixed dependency issues (including issues with pyworld, fairseq, matplotlib, PyAV, and ONNX Runtime GPU environments).
+- Resolved encoding issues.
+- The web UI now automatically searches for an available port at startup.
+- Single-GPU training no longer uses DDP.
+- The base model remains unchanged. Several issues affecting output quality have been fixed. Updating the bundled package/code and rerunning inference with an existing fine-tuned model, or retraining and then running inference with the new version, may improve results.
+- Added support for the FCPE pitch extraction algorithm.
+- Added support for CUDA Graph inference acceleration.
+- Removed features that were clearly obsolete or no longer useful.
+
 ### 2023-10-06
 - We have created a GUI for real-time voice change: go-realtime_gui.bat/realtime_gui.py (Note that you should choose the same type of input and output device, e.g. MME and MME).
 - We trained a better pitch extract RMVPE model.
