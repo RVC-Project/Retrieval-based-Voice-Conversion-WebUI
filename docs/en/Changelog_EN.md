@@ -8,7 +8,7 @@
 - Single-GPU training no longer uses DDP.
 - The base model remains unchanged. Several issues affecting output quality have been fixed. Updating the bundled package/code and rerunning inference with an existing fine-tuned model, or retraining and then running inference with the new version, may improve results.
 - Added support for the FCPE pitch extraction algorithm.
-- Added support for CUDA Graph inference acceleration.
+- The real-time voice conversion GUI supports CUDA Graph inference acceleration, achieving up to a 4.7× speedup in algorithm inference latency (tested on an RTX 4090D), while GPU utilization remains around 20–30%.
 - Removed features that were clearly obsolete or no longer useful.
 
 ### 2023-10-06
