@@ -1,3 +1,16 @@
+### 2026-07-18
+- Uso simplificado da interface web (não é mais necessário inserir um caminho para o áudio de entrada da inferência, melhoria dos logs em tempo real na interface, atualização automática da lista de modelos após salvar um modelo pequeno de inferência, detecção automática do caminho de índice correspondente após selecionar um modelo na página inicial de inferência etc.).
+- A extração de características dos dados, o treinamento de modelos e a criação de índices agora podem ser interrompidos durante a execução e retomados após a reinicialização.
+- Detecção automática da GPU para determinar o modo e a precisão da inferência.
+- Correção de problemas de dependências (incluindo aqueles relacionados a pyworld, fairseq, matplotlib, PyAV e ambientes GPU do ONNX Runtime).
+- Resolução de problemas de codificação.
+- A interface web agora procura automaticamente uma porta disponível durante a inicialização.
+- O treinamento com uma única GPU não usa mais DDP.
+- O modelo-base permanece inalterado. Diversos problemas que afetavam a qualidade dos resultados foram corrigidos. Atualizar o pacote integrado/o código e executar novamente a inferência com um modelo já ajustado, ou treinar novamente com a nova versão antes de executar a inferência, pode melhorar os resultados.
+- Adição de suporte ao algoritmo de extração de pitch FCPE.
+- A GUI de conversão de voz em tempo real oferece aceleração de inferência com CUDA Graph, alcançando uma aceleração máxima de 4.7× na latência de inferência do algoritmo (resultado medido em uma RTX 4090D), enquanto a utilização da GPU permanece em torno de 20–30%.
+- Remoção de recursos claramente obsoletos ou que não eram mais úteis.
+
 ### 2023-10-06
 - Criamos uma GUI para alteração de voz em tempo real: go-realtime_gui.bat/realtime_gui.py (observe que você deve escolher o mesmo tipo de dispositivo de entrada e saída, por exemplo, MME e MME).
 - Treinamos um modelo RMVPE de extração de pitch melhor.

@@ -1,3 +1,16 @@
+### 2026-07-18
+- Utilisation simplifiée de l’interface Web (il n’est plus nécessaire de saisir un chemin pour l’audio d’entrée de l’inférence, amélioration des journaux en temps réel dans l’interface, actualisation automatique de la liste des modèles après l’enregistrement d’un petit modèle d’inférence, détection automatique du chemin d’index correspondant après la sélection d’un modèle sur la page d’accueil de l’inférence, etc.).
+- L’extraction des caractéristiques des données, l’entraînement des modèles et la création des index peuvent désormais être interrompus en cours d’exécution, puis repris après un redémarrage.
+- Détection automatique du GPU afin de déterminer le mode d’inférence et la précision.
+- Correction de problèmes de dépendances (notamment ceux concernant pyworld, fairseq, matplotlib, PyAV et les environnements GPU d’ONNX Runtime).
+- Résolution des problèmes d’encodage.
+- L’interface Web recherche désormais automatiquement un port disponible au démarrage.
+- L’entraînement sur un seul GPU n’utilise plus DDP.
+- Le modèle de base reste inchangé. Plusieurs problèmes affectant la qualité des résultats ont été corrigés. La mise à jour du package intégré/du code, puis la relance de l’inférence avec un modèle affiné existant, ou le réentraînement avec la nouvelle version avant de relancer l’inférence, peuvent améliorer les résultats.
+- Ajout de la prise en charge de l’algorithme d’extraction de hauteur FCPE.
+- L’interface graphique de conversion vocale en temps réel prend en charge l’accélération de l’inférence par CUDA Graph, avec une accélération maximale de 4.7× de la latence d’inférence de l’algorithme (résultat mesuré sur une RTX 4090D), tandis que l’utilisation du GPU reste d’environ 20–30%.
+- Suppression des fonctionnalités manifestement obsolètes ou devenues inutiles.
+
 ### 2023-08-13
 1-Corrections régulières de bugs
 - Modification du nombre total d'époques minimum à 1 et changement du nombre total d'époques minimum à 2

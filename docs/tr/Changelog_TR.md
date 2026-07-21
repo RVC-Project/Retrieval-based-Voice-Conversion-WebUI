@@ -1,3 +1,15 @@
+### 2026-07-18
+- Web arayüzünün kullanım karmaşıklığı azaltıldı (ses çıkarımı girişi için artık dosya yolu gerekmiyor, ön uçtaki gerçek zamanlı günlükler iyileştirildi, çıkarım için küçük model kaydedildikten sonra model listesi otomatik olarak yenileniyor, çıkarım ana sayfasında model seçildikten sonra eşleşen index yolu otomatik olarak algılanıyor vb.).
+- Veri özelliği çıkarımı, model eğitimi ve indeks oluşturma aşamaları artık yarıda durdurulabilir ve yeniden başlatmanın ardından kaldığı yerden sürdürülebilir.
+- Çıkarım modu ve hassasiyeti belirlemek için GPU otomatik olarak algılanır.
+- Bağımlılık sorunları giderildi (pyworld, fairseq, matplotlib, PyAV ve ONNX Runtime GPU ortamlarıyla ilgili sorunlar dahil).
+- Kodlama sorunları çözüldü.
+- Web arayüzü artık başlangıçta kullanılabilir bir bağlantı noktasını otomatik olarak arar.
+- Tek GPU ile eğitim artık DDP kullanmıyor.
+- Temel model değişmedi. Çıktı kalitesini etkileyen çeşitli sorunlar giderildi. Paketlenmiş paketi/kodu güncelleyip mevcut ince ayarlı modelle çıkarımı yeniden çalıştırmak veya yeni sürümle yeniden eğitim yapıp ardından çıkarım çalıştırmak sonuçları iyileştirebilir.
+- FCPE perde çıkarma algoritması desteği eklendi.
+- Gerçek zamanlı ses dönüştürme GUI'si CUDA Graph çıkarım hızlandırmasını destekler; algoritma çıkarım gecikmesinde 4.7×'e kadar hızlanma sağlar (RTX 4090D üzerinde test edilmiştir), GPU kullanımı ise yaklaşık 20–30% düzeyinde kalır.
+- Açıkça eski veya artık yararlı olmayan özellikler kaldırıldı.
 
 ### 2023-08-13
 1- Düzenli hata düzeltmeleri
