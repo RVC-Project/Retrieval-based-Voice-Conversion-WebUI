@@ -2,10 +2,9 @@ import logging
 import os
 import traceback
 
-import ffmpeg
 import torch
 
-from configs.config import Config, IS_GPU
+from configs.config import Config
 from tools.uvr5.bsroformer import Roformer_Loader
 from tools.uvr5.mdxnet import MDXNetDereverb
 from tools.uvr5.vr import AudioPre, AudioPreDeEcho
@@ -35,11 +34,16 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
         if model_name == "onnx_dereverb_By_FoxJoy":
             if config.dml:
                 providers = ["DmlExecutionProvider", "CPUExecutionProvider"]
-            elif IS_GPU:
-                providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+            elif torch.device(config.device).type == "cuda":
+                cuda_device = torch.device(config.device)
+                device_id = cuda_device.index if cuda_device.index is not None else 0
+                providers = [
+                    ("CUDAExecutionProvider", {"device_id": str(device_id)}),
+                    "CPUExecutionProvider",
+                ]
             else:
                 providers = ["CPUExecutionProvider"]
-            pre_fun = MDXNetDereverb(15, providers)
+            pre_fun = MDXNetDereverb(15, providers, config.device)
         elif "roformer" in model_name.lower():
             pre_fun = Roformer_Loader(
                 model_path=os.path.join(weight_uvr5_root, model_name + ".ckpt"),
@@ -68,44 +72,18 @@ def uvr(model_name, inp_root, save_root_vocal, paths, save_root_ins, agg, format
             inp_path = os.path.join(inp_root, path)
             if not os.path.isfile(inp_path):
                 continue
-            need_reformat = True
-            done = False
             try:
-                info = ffmpeg.probe(inp_path, cmd="ffprobe")
-                if (
-                    info["streams"][0]["channels"] == 2
-                    and info["streams"][0]["sample_rate"] == "44100"
-                ):
-                    need_reformat = False
-                    pre_fun._path_audio_(
-                        inp_path,
-                        save_root_ins,
-                        save_root_vocal,
-                        format0,
-                        is_hp3,
-                    )
-                    done = True
-            except:
-                traceback.print_exc()
-            if need_reformat:
-                tmp_path = "%s/%s.reformatted.wav" % (
-                    os.environ["TEMP"],
-                    os.path.basename(inp_path),
+                # Let each model loader decode the original file.  Its
+                # torchaudio path can then perform any required 44.1 kHz
+                # conversion on the selected CUDA device instead of hiding it
+                # behind a CPU FFmpeg pre-conversion.
+                pre_fun._path_audio_(
+                    inp_path,
+                    save_root_ins,
+                    save_root_vocal,
+                    format0,
+                    is_hp3,
                 )
-                os.system(
-                    'ffmpeg -i "%s" -vn -acodec pcm_s16le -ac 2 -ar 44100 "%s" -y'
-                    % (inp_path, tmp_path)
-                )
-                inp_path = tmp_path
-            try:
-                if not done:
-                    pre_fun._path_audio_(
-                        inp_path,
-                        save_root_ins,
-                        save_root_vocal,
-                        format0,
-                        is_hp3,
-                    )
                 infos.append(i18n("%s → 成功") % os.path.basename(inp_path))
                 yield "\n".join(infos)
             except Exception:

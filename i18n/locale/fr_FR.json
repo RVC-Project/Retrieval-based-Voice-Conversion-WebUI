@@ -259,5 +259,7 @@
     "[索引训练][跳过] trained索引已存在：%s": "[Entraînement de l’index][Ignoré] L’index trained existe déjà : %s",
     "当前设备：%s | 推理精度：%s": "Périphérique actuel : %s | Précision d’inférence : %s",
     "正在预热CUDA Graph": "Préchauffage de CUDA Graph",
-    "CUDA Graph预热完成": "Préchauffage de CUDA Graph terminé"
+    "CUDA Graph预热完成": "Préchauffage de CUDA Graph terminé",
+    "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Extraction des données démarrée : start_time=%.6f, parallélisme demandé=%s, limite réelle=%s",
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extraction des données terminée : end_time=%.6f, durée totale=%.3f secondes"
 }

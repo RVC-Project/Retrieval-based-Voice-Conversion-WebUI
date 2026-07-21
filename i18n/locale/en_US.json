@@ -259,5 +259,7 @@
     "[索引训练][跳过] trained索引已存在：%s": "[Index training][Skipped] trained index already exists: %s",
     "当前设备：%s | 推理精度：%s": "Current device: %s | Inference precision: %s",
     "正在预热CUDA Graph": "Warming up CUDA Graph",
-    "CUDA Graph预热完成": "CUDA Graph warm-up complete"
+    "CUDA Graph预热完成": "CUDA Graph warm-up complete",
+    "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Data extraction started: start_time=%.6f, requested concurrency=%s, actual concurrency limit=%s",
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Data extraction finished: end_time=%.6f, total elapsed=%.3f seconds"
 }

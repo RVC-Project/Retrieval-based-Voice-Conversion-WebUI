@@ -3,14 +3,13 @@ import os
 import warnings
 from contextlib import nullcontext
 
-import librosa
 import numpy as np
 import soundfile as sf
 import torch
 import torch.nn as nn
 import yaml
 
-from tools.cuda_graph import run_cuda_graph
+from infer.audio import TORCHAUDIO_GPU_ENABLED, load_audio, load_audio_tensor
 from tqdm import tqdm
 from tools.file_io import read_text
 from i18n.i18n import I18nAuto
@@ -120,27 +119,67 @@ class Roformer_Loader:
         batch_size = self.config["inference"]["batch_size"]
 
         length_init = mix.shape[-1]
-        progress_bar = tqdm(total=length_init // step + 1, desc="Processing", leave=False)
 
         # Do pad from the beginning and end to account floating window results better
         if length_init > 2 * border and (border > 0):
             mix = nn.functional.pad(mix, (border, border), mode="reflect")
+        total_windows = (mix.shape[-1] + step - 1) // step
+        progress_bar = tqdm(total=total_windows, desc="Processing", leave=False)
 
-        # Prepare windows arrays (do 1 time for speed up). This trick repairs click problems on the edges of segment
-        window_size = C
-        fadein = torch.linspace(0, 1, fade_size)
-        fadeout = torch.linspace(1, 0, fade_size)
-        window_start = torch.ones(window_size)
-        window_middle = torch.ones(window_size)
-        window_finish = torch.ones(window_size)
-        window_start[-fade_size:] *= fadeout  # First audio chunk, no fadein
-        window_finish[:fade_size] *= fadein  # Last audio chunk, no fadeout
+        parsed_device = device if isinstance(device, torch.device) else torch.device(device)
+        device_type = parsed_device.type
+        if self.config["training"]["target_instrument"] is None:
+            source_count = len(self.config["training"]["instruments"])
+        else:
+            source_count = 1
+        req_shape = (source_count,) + tuple(mix.shape)
+
+        accumulation_device = torch.device("cpu")
+        if device_type == "cuda":
+            required_bytes = int(np.prod(req_shape)) * 4 + mix.shape[-1] * 4
+            free_bytes, _ = torch.cuda.mem_get_info(parsed_device)
+            limit = min(1024**3, int(free_bytes * 0.22))
+            if required_bytes <= limit:
+                accumulation_device = parsed_device
+
+        try:
+            result = torch.zeros(
+                req_shape,
+                dtype=torch.float32,
+                device=accumulation_device,
+            )
+            counter = torch.zeros(
+                mix.shape[-1],
+                dtype=torch.float32,
+                device=accumulation_device,
+            )
+        except torch.cuda.OutOfMemoryError:
+            torch.cuda.empty_cache()
+            accumulation_device = torch.device("cpu")
+            result = torch.zeros(req_shape, dtype=torch.float32)
+            counter = torch.zeros(mix.shape[-1], dtype=torch.float32)
+
+        # The overlap-add window lives beside the accumulator.  A short file
+        # with one window uses the all-ones window to avoid a zero denominator.
+        fadein = torch.linspace(
+            0, 1, fade_size, device=accumulation_device, dtype=torch.float32
+        )
+        fadeout = torch.linspace(
+            1, 0, fade_size, device=accumulation_device, dtype=torch.float32
+        )
+        window_full = torch.ones(C, device=accumulation_device)
+        window_start = window_full.clone()
+        window_middle = window_full.clone()
+        window_finish = window_full.clone()
+        window_start[-fade_size:] *= fadeout
+        window_finish[:fade_size] *= fadein
         window_middle[-fade_size:] *= fadeout
         window_middle[:fade_size] *= fadein
 
-        device_type = device.type if isinstance(device, torch.device) else torch.device(device).type
         amp_context = (
-            torch.amp.autocast("cuda") if device_type == "cuda" else nullcontext()
+            torch.amp.autocast("cuda", enabled=self.is_half)
+            if device_type == "cuda"
+            else nullcontext()
         )
         grad_context = (
             torch.no_grad()
@@ -152,62 +191,62 @@ class Roformer_Loader:
             # therefore needs no_grad rather than inference_mode. CUDA and CPU
             # retain the existing inference-mode path.
             with grad_context:
-                if self.config["training"]["target_instrument"] is None:
-                    req_shape = (len(self.config["training"]["instruments"]),) + tuple(mix.shape)
-                else:
-                    req_shape = (1,) + tuple(mix.shape)
-
-                result = torch.zeros(req_shape, dtype=torch.float32)
-                counter = torch.zeros(req_shape, dtype=torch.float32)
+                model_dtype = next(model.parameters()).dtype
                 i = 0
                 batch_data = []
                 batch_locations = []
                 while i < mix.shape[1]:
-                    part = mix[:, i : i + C].to(device)
+                    part = mix[:, i : i + C]
                     length = part.shape[-1]
                     if length < C:
                         if length > C // 2 + 1:
                             part = nn.functional.pad(input=part, pad=(0, C - length), mode="reflect")
                         else:
                             part = nn.functional.pad(input=part, pad=(0, C - length, 0, 0), mode="constant", value=0)
-                    if self.is_half:
-                        part = part.half()
                     batch_data.append(part)
                     batch_locations.append((i, length))
                     i += step
                     progress_bar.update(1)
 
                     if len(batch_data) >= batch_size or (i >= mix.shape[1]):
-                        arr = torch.stack(batch_data, dim=0)
-                        # print(23333333,arr.dtype)
-                        x = run_cuda_graph(
-                            model,
-                            "uvr-bsroformer",
-                            lambda audio: model(audio),
-                            arr,
+                        arr = torch.stack(batch_data, dim=0).to(
+                            device=parsed_device,
+                            dtype=model_dtype,
                         )
-
-                        window = window_middle
-                        if i - step == 0:  # First audio chunk, no fadein
-                            window = window_start
-                        elif i >= mix.shape[1]:  # Last audio chunk, no fadeout
-                            window = window_finish
-
+                        # Torch STFT/ISTFT cannot be captured reliably by a
+                        # CUDA Graph on the supported runtime, so keep this
+                        # model call eager while all tensors remain on CUDA.
+                        x = model(arr)
+                        x_for_accumulation = (
+                            x.float()
+                            if accumulation_device.type == "cuda"
+                            else x.float().cpu()
+                        )
                         for j in range(len(batch_locations)):
                             start, l = batch_locations[j]
-                            result[..., start : start + l] += x[j][..., :l].cpu() * window[..., :l]
-                            counter[..., start : start + l] += window[..., :l]
+                            is_first = start == 0
+                            is_last = start + l >= mix.shape[1]
+                            if is_first and is_last:
+                                window = window_full
+                            elif is_first:
+                                window = window_start
+                            elif is_last:
+                                window = window_finish
+                            else:
+                                window = window_middle
+                            result[..., start : start + l].add_(
+                                x_for_accumulation[j][..., :l] * window[:l]
+                            )
+                            counter[start : start + l].add_(window[:l])
 
                         batch_data = []
                         batch_locations = []
 
-                estimated_sources = result / counter
-                estimated_sources = estimated_sources.cpu().numpy()
-                np.nan_to_num(estimated_sources, copy=False, nan=0.0)
-
+                result.div_(counter.clamp_min(1e-8))
+                torch.nan_to_num_(result)
                 if length_init > 2 * border and (border > 0):
-                    # Remove pad
-                    estimated_sources = estimated_sources[..., border:-border]
+                    result = result[..., border:-border]
+                estimated_sources = result.cpu().numpy()
 
         progress_bar.close()
 
@@ -227,22 +266,63 @@ class Roformer_Loader:
         if "sample_rate" in self.config["audio"]:
             sample_rate = self.config["audio"]["sample_rate"]
 
+        isstereo = self.config["model"].get("stereo", True)
+        device_type = (
+            self.device.type
+            if isinstance(self.device, torch.device)
+            else torch.device(self.device).type
+        )
         try:
-            mix, sr = librosa.load(path, sr=sample_rate, mono=False)
+            if device_type == "cuda" and TORCHAUDIO_GPU_ENABLED:
+                mix = load_audio_tensor(
+                    path, sample_rate, force_mono=not isstereo
+                )
+            else:
+                mix = load_audio(path, sample_rate, force_mono=not isstereo)
+            sr = sample_rate
         except Exception as e:
             print(i18n("无法读取音频：%s") % path)
             print(i18n("错误信息：%s") % str(e))
             return
 
-        # in case if model only supports mono tracks
-        isstereo = self.config["model"].get("stereo", True)
-        if not isstereo and len(mix.shape) != 1:
-            mix = np.mean(mix, axis=0)  # if more than 2 channels, take mean
-            print(i18n("音频包含多个声道，但模型仅支持单声道，将对所有声道取平均值"))
+        if isstereo:
+            if mix.ndim == 1:
+                mix = mix.unsqueeze(0) if torch.is_tensor(mix) else mix[np.newaxis, :]
+            if mix.shape[0] == 1:
+                mix = mix.repeat(2, 1) if torch.is_tensor(mix) else np.repeat(mix, 2, axis=0)
+            elif mix.shape[0] > 2:
+                mix = mix[:2].contiguous() if torch.is_tensor(mix) else np.ascontiguousarray(mix[:2])
+        else:
+            if mix.ndim == 1:
+                mix = mix.unsqueeze(0) if torch.is_tensor(mix) else mix[np.newaxis, :]
+            elif mix.shape[0] > 1:
+                mix = (
+                    mix.mean(dim=0, keepdim=True)
+                    if torch.is_tensor(mix)
+                    else np.mean(mix, axis=0, keepdims=True)
+                )
+                print(i18n("音频包含多个声道，但模型仅支持单声道，将对所有声道取平均值"))
 
-        mix_orig = mix.copy()
-
-        mixture = torch.tensor(mix, dtype=torch.float32)
+        if torch.is_tensor(mix):
+            keep_on_gpu = mix.device.type == "cuda"
+            if keep_on_gpu:
+                free_bytes, _ = torch.cuda.mem_get_info(mix.device)
+                input_bytes = mix.numel() * mix.element_size()
+                keep_on_gpu = input_bytes <= min(
+                    512 * 1024 * 1024,
+                    int(free_bytes * 0.10),
+                )
+            if keep_on_gpu:
+                mixture = mix
+                mix_orig = mix.detach().float().cpu().numpy()
+            else:
+                mixture = mix.detach().float().cpu()
+                mix_orig = mixture.numpy()
+                del mix
+        else:
+            mix = np.ascontiguousarray(mix, dtype=np.float32)
+            mix_orig = mix
+            mixture = torch.from_numpy(mix)
         res = self.demix_track(self.model, mixture, self.device)
 
         if self.config["training"]["target_instrument"] is not None:
@@ -250,7 +330,8 @@ class Roformer_Loader:
             # other instruments are caculated by subtracting target instrument from mixture
             target_instrument = self.config["training"]["target_instrument"]
             other_instruments = [i for i in self.config["training"]["instruments"] if i != target_instrument]
-            other = mix_orig - res[target_instrument]  # caculate other instruments
+            np.subtract(mix_orig, res[target_instrument], out=mix_orig)
+            other = mix_orig
 
             path_vocal = "{}/{}_{}.wav".format(vocal_root, file_base_name, target_instrument)
             path_other = "{}/{}_{}.wav".format(others_root, file_base_name, other_instruments[0])

@@ -186,6 +186,7 @@ class BSRoformer(Module):
         self.final_norm = RMSNorm(dim)
         self.stft_kwargs = dict(n_fft=stft_n_fft, hop_length=stft_hop_length, win_length=stft_win_length, normalized=stft_normalized)
         self.stft_window_fn = partial(default(stft_window_fn, torch.hann_window), stft_win_length)
+        self._stft_windows = {}
         freqs = torch.stft(torch.randn(1, 4096), **self.stft_kwargs, window=torch.ones(stft_win_length), return_complex=True).shape[1]
         assert len(freqs_per_bands) > 1
         assert sum(freqs_per_bands) == freqs, f'the number of freqs in the bands must equal {freqs} based on the STFT settings, but got {sum(freqs_per_bands)}'
@@ -200,6 +201,14 @@ class BSRoformer(Module):
         self.multi_stft_n_fft = stft_n_fft
         self.multi_stft_window_fn = multi_stft_window_fn
         self.multi_stft_kwargs = dict(hop_length=multi_stft_hop_size, normalized=multi_stft_normalized)
+
+    def _get_stft_window(self, device):
+        key = str(device)
+        window = self._stft_windows.get(key)
+        if window is None:
+            window = self.stft_window_fn(device=device, dtype=torch.float32)
+            self._stft_windows[key] = window
+        return window
 
     def forward(self, raw_audio, target=None, return_loss_breakdown=False):
         """
@@ -224,7 +233,7 @@ class BSRoformer(Module):
         if x_is_dml:
             # DirectML has no complex/STFT kernels.  Keep only the spectral
             # boundary on CPU and move its real representation to DirectML.
-            stft_window = self.stft_window_fn(device='cpu')
+            stft_window = self._get_stft_window('cpu')
             stft_complex = torch.stft(
                 raw_audio.cpu(),
                 **self.stft_kwargs,
@@ -240,7 +249,7 @@ class BSRoformer(Module):
             )
             stft_repr = stft_repr_cpu.to(device)
         else:
-            stft_window = self.stft_window_fn(device=device)
+            stft_window = self._get_stft_window(device)
             try:
                 stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
             except:

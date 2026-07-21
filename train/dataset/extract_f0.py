@@ -8,7 +8,6 @@ import logging
 
 import numpy as np
 
-from infer.audio import load_audio
 from i18n.i18n import I18nAuto
 from tools.progress import should_report
 
@@ -43,6 +42,9 @@ elif mode in ("dml", "directml"):
     device = torch_directml.device(torch_directml.default_device())
 else:
     raise ValueError("Unsupported F0 extraction mode: %s" % mode)
+
+# CUDA_VISIBLE_DEVICES must be set before infer.audio imports torch/configs.
+from infer.audio import load_audio
 
 f = open("%s/extract_f0_feature.log" % exp_dir, "a", encoding="utf8")
 

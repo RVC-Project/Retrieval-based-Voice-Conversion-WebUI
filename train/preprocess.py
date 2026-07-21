@@ -10,13 +10,13 @@ n_p = int(sys.argv[3])
 exp_dir = sys.argv[4]
 noparallel = sys.argv[5] == "True"
 per = float(sys.argv[6])
-import os
 import traceback
 
 import librosa
 import numpy as np
 from scipy.io import wavfile
 
+os.environ["RVC_AUDIO_FORCE_CPU"] = "1"
 from infer.audio import load_audio
 from train.dataset.slicer2 import Slicer
 from i18n.i18n import I18nAuto
@@ -73,13 +73,13 @@ class PreProcess:
             self.sr,
             tmp_audio.astype(np.float32),
         )
-        tmp_audio = librosa.resample(
+        audio_16k = librosa.resample(
             tmp_audio, orig_sr=self.sr, target_sr=16000
-        )  # , res_type="soxr_vhq"
+        ).astype(np.float32)
         wavfile.write(
             "%s/%s_%s.wav" % (self.wavs16k_dir, idx0, idx1),
             16000,
-            tmp_audio.astype(np.float32),
+            audio_16k,
         )
         return True
 
@@ -140,19 +140,24 @@ class PreProcess:
                 ("%s/%s" % (inp_root, name), idx, total)
                 for idx, name in enumerate(names)
             ]
-            println(i18n("[数据切分] 待处理：%s | 进程数：%s") % (total, n_p))
+            worker_count = max(n_p, 1)
+            worker_count = min(worker_count, max(total, 1))
+            println(
+                i18n("[数据切分] 待处理：%s | 进程数：%s")
+                % (total, worker_count)
+            )
             if noparallel:
-                for i in range(n_p):
-                    self.pipeline_mp(infos[i::n_p])
+                for i in range(worker_count):
+                    self.pipeline_mp(infos[i::worker_count])
             else:
                 ps = []
-                for i in range(n_p):
+                for i in range(worker_count):
                     p = multiprocessing.Process(
-                        target=self.pipeline_mp, args=(infos[i::n_p],)
+                        target=self.pipeline_mp, args=(infos[i::worker_count],)
                     )
                     ps.append(p)
                     p.start()
-                for i in range(n_p):
+                for i in range(worker_count):
                     ps[i].join()
         except Exception:
             println(i18n("[数据切分][失败] %s") % traceback.format_exc())

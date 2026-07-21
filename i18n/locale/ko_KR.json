@@ -259,5 +259,7 @@
     "[索引训练][跳过] trained索引已存在：%s": "[인덱스 학습][건너뜀] trained 인덱스가 이미 있습니다: %s",
     "当前设备：%s | 推理精度：%s": "현재 장치: %s | 추론 정밀도: %s",
     "正在预热CUDA Graph": "CUDA Graph 워밍업 중",
-    "CUDA Graph预热完成": "CUDA Graph 워밍업 완료"
+    "CUDA Graph预热完成": "CUDA Graph 워밍업 완료",
+    "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "데이터 추출 시작: start_time=%.6f, 요청 병렬 수=%s, 실제 병렬 상한=%s",
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "데이터 추출 완료: end_time=%.6f, 총 소요 시간=%.3f초"
 }

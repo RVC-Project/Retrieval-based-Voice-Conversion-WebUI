@@ -487,10 +487,28 @@ def run_preprocess_dataset(trainset_dir, exp_dir, sr, n_p, state, format_output=
         config.noparallel,
         config.preprocess_per,
     )
-    process = start_train_process(state, cmd)
-    yield from wait_train_processes(
-        state, [process], log_path, "数据切分", format_output
+    extract_start_time = time.time()
+    requested_workers = max(int(n_p), 1)
+    actual_workers = 1 if config.noparallel else requested_workers
+    print(
+        i18n(
+            "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s"
+        )
+        % (extract_start_time, requested_workers, actual_workers),
+        flush=True,
     )
+    try:
+        process = start_train_process(state, cmd)
+        yield from wait_train_processes(
+            state, [process], log_path, "数据切分", format_output
+        )
+    finally:
+        extract_end_time = time.time()
+        print(
+            i18n("数据提取结束：end_time=%.6f，总耗时=%.3f秒")
+            % (extract_end_time, extract_end_time - extract_start_time),
+            flush=True,
+        )
     if not train_task_stopped(state):
         validate_preprocess_outputs(exp_dir)
 

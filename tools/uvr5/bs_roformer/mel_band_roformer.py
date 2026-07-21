@@ -189,6 +189,7 @@ class MelBandRoformer(Module):
             tran_modules.append(Transformer(depth=freq_transformer_depth, rotary_embed=freq_rotary_embed, **transformer_kwargs))
             self.layers.append(nn.ModuleList(tran_modules))
         self.stft_window_fn = partial(default(stft_window_fn, torch.hann_window), stft_win_length)
+        self._stft_windows = {}
         self.stft_kwargs = dict(n_fft=stft_n_fft, hop_length=stft_hop_length, win_length=stft_win_length, normalized=stft_normalized)
         freqs = torch.stft(torch.randn(1, 4096), **self.stft_kwargs, window=torch.ones(stft_n_fft), return_complex=True).shape[1]
         mel_filter_bank_numpy = filters.mel(sr=sample_rate, n_fft=stft_n_fft, n_mels=num_bands)
@@ -222,6 +223,14 @@ class MelBandRoformer(Module):
         self.multi_stft_kwargs = dict(hop_length=multi_stft_hop_size, normalized=multi_stft_normalized)
         self.match_input_audio_length = match_input_audio_length
 
+    def _get_stft_window(self, device):
+        key = str(device)
+        window = self._stft_windows.get(key)
+        if window is None:
+            window = self.stft_window_fn(device=device, dtype=torch.float32)
+            self._stft_windows[key] = window
+        return window
+
     def forward(self, raw_audio, target=None, return_loss_breakdown=False):
         """
         einops
@@ -245,7 +254,7 @@ class MelBandRoformer(Module):
         if x_is_dml:
             # DirectML has no STFT or complex tensor support.  Build the real
             # spectral features on CPU, then run the learned network on DML.
-            stft_window = self.stft_window_fn(device='cpu')
+            stft_window = self._get_stft_window('cpu')
             stft_complex = torch.stft(
                 raw_audio.cpu(),
                 **self.stft_kwargs,
@@ -257,16 +266,14 @@ class MelBandRoformer(Module):
                 stft_repr, batch_audio_channel_packed_shape, '* f t c'
             )
             stft_repr = rearrange(stft_repr, 'b s f t c -> b (f s) t c')
-            batch_arange = torch.arange(batch)[..., None]
-            x = stft_repr[batch_arange, self.freq_indices.cpu()].to(device)
+            x = stft_repr[:, self.freq_indices.cpu()].to(device)
         else:
-            stft_window = self.stft_window_fn(device=device)
+            stft_window = self._get_stft_window(device)
             stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
             stft_repr = torch.view_as_real(stft_repr)
             stft_repr = unpack_one(stft_repr, batch_audio_channel_packed_shape, '* f t c')
             stft_repr = rearrange(stft_repr, 'b s f t c -> b (f s) t c')
-            batch_arange = torch.arange(batch, device=device)[..., None]
-            x = stft_repr[batch_arange, self.freq_indices]
+            x = stft_repr[:, self.freq_indices]
         x = rearrange(x, 'b f t c -> b t (f c)')
         if self.use_torch_checkpoint:
             x = checkpoint(self.band_split, x, use_reentrant=False)
@@ -316,9 +323,9 @@ class MelBandRoformer(Module):
         masks = torch.view_as_complex(masks.contiguous())
         masks = masks.type(stft_repr.dtype)
         freq_indices = self.freq_indices.cpu() if x_is_dml else self.freq_indices
-        scatter_indices = repeat(freq_indices, 'f -> b n f t', b=batch, n=num_stems, t=stft_repr.shape[-1])
         stft_repr_expanded_stems = repeat(stft_repr, 'b 1 ... -> b n ...', n=num_stems)
-        masks_summed = torch.zeros_like(stft_repr_expanded_stems).scatter_add_(2, scatter_indices, masks)
+        masks_summed = torch.zeros_like(stft_repr_expanded_stems)
+        masks_summed.index_add_(2, freq_indices, masks)
         num_bands_per_freq = self.num_bands_per_freq.cpu() if x_is_dml else self.num_bands_per_freq
         denom = repeat(num_bands_per_freq, 'f -> (f r) 1', r=channels)
         masks_averaged = masks_summed / denom.clamp(min=1e-08)

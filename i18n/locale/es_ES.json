@@ -259,5 +259,7 @@
     "[索引训练][跳过] trained索引已存在：%s": "[Entrenamiento de índice][Omitido] El índice trained ya existe: %s",
     "当前设备：%s | 推理精度：%s": "Dispositivo actual: %s | Precisión de inferencia: %s",
     "正在预热CUDA Graph": "Preparando CUDA Graph",
-    "CUDA Graph预热完成": "Preparación de CUDA Graph completada"
+    "CUDA Graph预热完成": "Preparación de CUDA Graph completada",
+    "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Extracción de datos iniciada: start_time=%.6f, concurrencia solicitada=%s, límite real=%s",
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extracción de datos finalizada: end_time=%.6f, tiempo total=%.3f segundos"
 }

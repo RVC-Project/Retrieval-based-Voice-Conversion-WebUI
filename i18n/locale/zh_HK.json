@@ -259,5 +259,7 @@
     "[索引训练][跳过] trained索引已存在：%s": "[索引訓練][跳過] trained索引已存在：%s",
     "当前设备：%s | 推理精度：%s": "目前裝置：%s | 推理精度：%s",
     "正在预热CUDA Graph": "正在預熱 CUDA Graph",
-    "CUDA Graph预热完成": "CUDA Graph 預熱完成"
+    "CUDA Graph预热完成": "CUDA Graph 預熱完成",
+    "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "資料擷取開始：start_time=%.6f，請求並行數=%s，實際並行數上限=%s",
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "資料擷取結束：end_time=%.6f，總耗時=%.3f秒"
 }

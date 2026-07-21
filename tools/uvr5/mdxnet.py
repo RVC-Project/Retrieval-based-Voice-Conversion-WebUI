@@ -4,11 +4,11 @@ import sysconfig
 
 logger = logging.getLogger(__name__)
 
-import librosa
 import numpy as np
 import soundfile as sf
 import torch
 from tqdm import tqdm
+from infer.audio import load_audio, load_audio_tensor
 
 
 _ORT_CUDA_DLL_HANDLES = []
@@ -61,9 +61,7 @@ cpu = torch.device("cpu")
 
 
 class ConvTDFNetTrim:
-    def __init__(self, device, model_name, target_name, L, dim_f, dim_t, n_fft, hop=1024):
-        super(ConvTDFNetTrim, self).__init__()
-
+    def __init__(self, device, dim_f, dim_t, n_fft, hop=1024):
         self.dim_f = dim_f
         self.dim_t = 2**dim_t
         self.n_fft = n_fft
@@ -71,14 +69,11 @@ class ConvTDFNetTrim:
         self.n_bins = self.n_fft // 2 + 1
         self.chunk_size = hop * (self.dim_t - 1)
         self.window = torch.hann_window(window_length=self.n_fft, periodic=True).to(device)
-        self.target_name = target_name
-        self.blender = "blender" in model_name
-
         self.dim_c = 4
-        out_c = self.dim_c * 4 if target_name == "*" else self.dim_c
-        self.freq_pad = torch.zeros([1, out_c, self.n_bins - self.dim_f, self.dim_t]).to(device)
-
-        self.n = L // 2
+        self.freq_pad = torch.zeros(
+            [1, self.dim_c, self.n_bins - self.dim_f, self.dim_t],
+            device=device,
+        )
 
     def stft(self, x):
         x = x.reshape([-1, self.chunk_size])
@@ -95,10 +90,10 @@ class ConvTDFNetTrim:
         x = x.reshape([-1, 2, 2, self.n_bins, self.dim_t]).reshape([-1, self.dim_c, self.n_bins, self.dim_t])
         return x[:, :, : self.dim_f]
 
-    def istft(self, x, freq_pad=None):
-        freq_pad = self.freq_pad.repeat([x.shape[0], 1, 1, 1]) if freq_pad is None else freq_pad
+    def istft(self, x):
+        freq_pad = self.freq_pad.expand(x.shape[0], -1, -1, -1)
         x = torch.cat([x, freq_pad], -2)
-        c = 4 * 2 if self.target_name == "*" else 2
+        c = 2
         x = x.reshape([-1, c, 2, self.n_bins, self.dim_t]).reshape([-1, 2, self.n_bins, self.dim_t])
         x = x.permute([0, 2, 3, 1])
         x = x.contiguous()
@@ -110,9 +105,6 @@ class ConvTDFNetTrim:
 def get_models(device, dim_f, dim_t, n_fft):
     return ConvTDFNetTrim(
         device=device,
-        model_name="Conv-TDF",
-        target_name="vocals",
-        L=11,
         dim_f=dim_f,
         dim_t=dim_t,
         n_fft=n_fft,
@@ -124,9 +116,13 @@ class Predictor:
         import onnxruntime as ort
 
         available_providers = ort.get_available_providers()
+        requested_providers = [
+            provider[0] if isinstance(provider, (tuple, list)) else provider
+            for provider in args.providers
+        ]
         logger.info("ONNX Runtime available providers: %s", available_providers)
         if (
-            "CUDAExecutionProvider" in args.providers
+            "CUDAExecutionProvider" in requested_providers
             and "CUDAExecutionProvider" not in available_providers
         ):
             raise RuntimeError(
@@ -136,7 +132,7 @@ class Predictor:
                 "project's runtime Python."
             )
         if (
-            "DmlExecutionProvider" in args.providers
+            "DmlExecutionProvider" in requested_providers
             and "DmlExecutionProvider" not in available_providers
         ):
             raise RuntimeError(
@@ -145,15 +141,30 @@ class Predictor:
                 "requirments_cpu_py312.txt with this project's runtime Python."
             )
         self.args = args
-        self.model_ = get_models(device=cpu, dim_f=args.dim_f, dim_t=args.dim_t, n_fft=args.n_fft)
+        try:
+            requested_torch_device = torch.device(args.device)
+        except Exception:
+            requested_torch_device = cpu
+        if requested_torch_device.type == "cuda" and requested_torch_device.index is None:
+            requested_torch_device = torch.device("cuda:0")
+        # DirectML and CPU keep the established NumPy/CPU STFT path.  The
+        # Torch CUDA path is enabled only after the ORT session confirms that
+        # its CUDA provider really became the primary provider.
+        model_device = requested_torch_device if requested_torch_device.type == "cuda" else cpu
+        self.model_ = get_models(
+            device=model_device,
+            dim_f=args.dim_f,
+            dim_t=args.dim_t,
+            n_fft=args.n_fft,
+        )
         self.model = ort.InferenceSession(
-            os.path.join(args.onnx, self.model_.target_name + ".onnx"),
+            os.path.join(args.onnx, "vocals.onnx"),
             providers=args.providers,
         )
         active_providers = self.model.get_providers()
         logger.info("ONNX Runtime active providers: %s", active_providers)
         if (
-            "CUDAExecutionProvider" in args.providers
+            "CUDAExecutionProvider" in requested_providers
             and (
                 not active_providers
                 or active_providers[0] != "CUDAExecutionProvider"
@@ -164,7 +175,7 @@ class Predictor:
                 "check the CUDA 11/cuDNN 8 DLL installation."
             )
         if (
-            "DmlExecutionProvider" in args.providers
+            "DmlExecutionProvider" in requested_providers
             and (
                 not active_providers
                 or active_providers[0] != "DmlExecutionProvider"
@@ -174,7 +185,67 @@ class Predictor:
                 "The FoxJoy ONNX model did not activate DmlExecutionProvider; "
                 "check the ONNX Runtime DirectML installation."
             )
-        logger.info("ONNX load done")
+        self.cuda_pipeline = bool(
+            requested_torch_device.type == "cuda"
+            and active_providers
+            and active_providers[0] == "CUDAExecutionProvider"
+        )
+        self.torch_device = requested_torch_device if self.cuda_pipeline else cpu
+        logger.info(
+            "ONNX load done; FoxJoy tensor pipeline=%s, torch device=%s",
+            "cuda" if self.cuda_pipeline else "cpu-compatible",
+            self.torch_device,
+        )
+
+    def _run_ort_cuda(self, input_tensor, output_tensor):
+        input_tensor = input_tensor.contiguous()
+        if input_tensor.dtype != torch.float32:
+            input_tensor = input_tensor.float()
+        if not output_tensor.is_contiguous() or output_tensor.dtype != torch.float32:
+            raise RuntimeError("FoxJoy CUDA output buffer must be contiguous float32")
+
+        device_id = self.torch_device.index
+        io_binding = self.model.io_binding()
+        io_binding.bind_input(
+            name=self.model.get_inputs()[0].name,
+            device_type="cuda",
+            device_id=device_id,
+            element_type=np.float32,
+            shape=tuple(input_tensor.shape),
+            buffer_ptr=input_tensor.data_ptr(),
+        )
+        io_binding.bind_output(
+            name=self.model.get_outputs()[0].name,
+            device_type="cuda",
+            device_id=device_id,
+            element_type=np.float32,
+            shape=tuple(output_tensor.shape),
+            buffer_ptr=output_tensor.data_ptr(),
+        )
+        # ORT owns a separate CUDA stream by default.  Explicit boundaries
+        # guarantee that it sees the completed Torch STFT and that Torch sees
+        # the completed output without staging either tensor through NumPy.
+        torch.cuda.synchronize(self.torch_device)
+        self.model.run_with_iobinding(io_binding)
+        torch.cuda.synchronize(self.torch_device)
+        return input_tensor
+
+    def _infer_cuda(self, spek):
+        spek = spek.contiguous().float()
+        output = torch.empty_like(spek)
+        if self.args.denoise:
+            # Reuse both the ORT output allocation and the input allocation
+            # for the negative/positive passes.  Only the accumulator is
+            # separate because the second ORT run overwrites its output.
+            spek.neg_()
+            spek = self._run_ort_cuda(spek, output)
+            prediction = output * -0.5
+            spek.neg_()
+            spek = self._run_ort_cuda(spek, output)
+            prediction.add_(output, alpha=0.5)
+            return prediction
+        self._run_ort_cuda(spek, output)
+        return output
 
     def demix(self, mix):
         samples = mix.shape[-1]
@@ -198,7 +269,10 @@ class Predictor:
 
             start = skip - s_margin
 
-            segmented_mix[skip] = mix[:, start:end].copy()
+            segment = mix[:, start:end]
+            # CUDA segments are views of the already resident decoded audio;
+            # copying every segment would almost double long-file VRAM use.
+            segmented_mix[skip] = segment if torch.is_tensor(segment) else segment.copy()
             if end == samples:
                 break
 
@@ -222,31 +296,78 @@ class Predictor:
             trim = model.n_fft // 2
             gen_size = model.chunk_size - 2 * trim
             pad = gen_size - n_sample % gen_size
-            mix_p = np.concatenate((np.zeros((2, trim)), cmix, np.zeros((2, pad)), np.zeros((2, trim))), 1)
+            if self.cuda_pipeline and torch.is_tensor(cmix):
+                cmix = cmix.to(self.torch_device, dtype=torch.float32)
+                mix_p = torch.cat(
+                    (
+                        cmix.new_zeros((2, trim)),
+                        cmix,
+                        cmix.new_zeros((2, pad)),
+                        cmix.new_zeros((2, trim)),
+                    ),
+                    1,
+                )
+            else:
+                mix_p = np.concatenate(
+                    (
+                        np.zeros((2, trim)),
+                        cmix,
+                        np.zeros((2, pad)),
+                        np.zeros((2, trim)),
+                    ),
+                    1,
+                )
             mix_waves = []
             i = 0
             while i < n_sample + pad:
-                waves = np.array(mix_p[:, i : i + model.chunk_size])
+                waves = mix_p[:, i : i + model.chunk_size]
+                if not torch.is_tensor(waves):
+                    waves = np.array(waves)
                 mix_waves.append(waves)
                 i += gen_size
-            mix_waves = torch.tensor(mix_waves, dtype=torch.float32).to(cpu)
+            if torch.is_tensor(mix_waves[0]):
+                mix_waves = torch.stack(mix_waves).float()
+            else:
+                mix_waves = torch.from_numpy(np.asarray(mix_waves, dtype=np.float32))
             with torch.no_grad():
                 _ort = self.model
-                spek = model.stft(mix_waves)
-                if self.args.denoise:
-                    spec_pred = (
-                        -_ort.run(None, {"input": -spek.cpu().numpy()})[0] * 0.5
-                        + _ort.run(None, {"input": spek.cpu().numpy()})[0] * 0.5
+                if self.cuda_pipeline:
+                    # One H2D for all windows in this outer segment. STFT,
+                    # both denoise passes and ISTFT remain on the selected
+                    # CUDA device; only the finished waveform returns to CPU.
+                    if mix_waves.device != self.torch_device:
+                        mix_waves = mix_waves.to(self.torch_device, non_blocking=True)
+                    spek = model.stft(mix_waves)
+                    spec_pred = self._infer_cuda(spek)
+                    tar_waves = model.istft(spec_pred)
+                    tar_signal = (
+                        tar_waves[:, :, trim:-trim]
+                        .transpose(0, 1)
+                        .reshape(2, -1)[:, :-pad]
+                        .cpu()
+                        .numpy()
                     )
-                    tar_waves = model.istft(torch.tensor(spec_pred))
                 else:
-                    tar_waves = model.istft(torch.tensor(_ort.run(None, {"input": spek.cpu().numpy()})[0]))
-                tar_signal = tar_waves[:, :, trim:-trim].transpose(0, 1).reshape(2, -1).numpy()[:, :-pad]
+                    spek = model.stft(mix_waves)
+                    if self.args.denoise:
+                        spek_numpy = spek.numpy()
+                        spec_pred = (
+                            -_ort.run(None, {"input": -spek_numpy})[0] * 0.5
+                            + _ort.run(None, {"input": spek_numpy})[0] * 0.5
+                        )
+                        tar_waves = model.istft(torch.from_numpy(spec_pred))
+                    else:
+                        spec_pred = _ort.run(None, {"input": spek.numpy()})[0]
+                        tar_waves = model.istft(torch.from_numpy(spec_pred))
+                    tar_signal = (
+                        tar_waves[:, :, trim:-trim]
+                        .transpose(0, 1)
+                        .reshape(2, -1)
+                        .numpy()[:, :-pad]
+                    )
 
                 start = 0 if mix == 0 else margin_size
                 end = None if mix == list(mixes.keys())[::-1][0] else -margin_size
-                if margin_size == 0:
-                    end = None
                 sources.append(tar_signal[:, start:end])
 
                 progress_bar.update(1)
@@ -261,12 +382,24 @@ class Predictor:
         os.makedirs(vocal_root, exist_ok=True)
         os.makedirs(others_root, exist_ok=True)
         basename = os.path.basename(m)
-        mix, rate = librosa.load(m, mono=False, sr=44100)
+        if self.cuda_pipeline:
+            mix = load_audio_tensor(m, 44100, force_mono=False)
+            mix = mix.to(self.torch_device)
+        else:
+            mix = load_audio(m, 44100, force_mono=False)
+        rate = 44100
         if mix.ndim == 1:
-            mix = np.asfortranarray([mix, mix])
-        mix = mix.T
-        sources = self.demix(mix.T)
+            mix = mix.unsqueeze(0) if torch.is_tensor(mix) else mix[np.newaxis, :]
+        if mix.shape[0] == 1:
+            mix = mix.repeat(2, 1) if torch.is_tensor(mix) else np.repeat(mix, 2, axis=0)
+        elif mix.shape[0] > 2:
+            mix = mix[:2].contiguous() if torch.is_tensor(mix) else np.ascontiguousarray(mix[:2])
+        sources = self.demix(mix)
         opt = sources[0].T
+        if torch.is_tensor(mix):
+            mix = mix.transpose(0, 1).float().cpu().numpy()
+        else:
+            mix = mix.T
         if format in ["wav", "flac"]:
             sf.write("%s/%s_main_vocal.%s" % (vocal_root, basename, format), mix - opt, rate)
             sf.write("%s/%s_others.%s" % (others_root, basename, format), opt, rate)
@@ -294,22 +427,20 @@ class Predictor:
 
 
 class MDXNetDereverb:
-    def __init__(self, chunks, providers):
+    def __init__(self, chunks, providers, device="cpu"):
         self.onnx = os.path.join(
             os.getenv("weight_uvr5_root", "assets/uvr5_weights"),
             "onnx_dereverb_By_FoxJoy",
         )
-        self.shifts = 10  # 'Predict with randomised equivariant stabilisation'
-        self.mixing = "min_mag"  # ['default','min_mag','max_mag']
         self.chunks = chunks
         self.providers = providers
+        self.device = device
         self.margin = 44100
         self.dim_t = 9
         self.dim_f = 3072
         self.n_fft = 6144
         self.denoise = True
         self.pred = Predictor(self)
-        self.device = cpu
 
     def _path_audio_(self, input, others_root, vocal_root, format, is_hp3=False):
         self.pred.prediction(input, vocal_root, others_root, format)
