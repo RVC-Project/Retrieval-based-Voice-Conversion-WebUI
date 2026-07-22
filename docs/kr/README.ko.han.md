@@ -34,7 +34,7 @@
 + 적은量의 데이터로 訓練해도 좋은 結果를 얻을 수 있음 (最小10分以上의 低雜음音聲데이터를 使用하는 것을 勸獎);
 + 모델融合을通한 音色의 變調可能 (ckpt處理탭->ckpt混合選擇);
 + 使用하기 쉬운 WebUI (웹 使用者인터페이스);
-+ UVR5 모델을 利用하여 목소리와 背景音樂의 빠른 分離;
++ pymss/MSST 모델을 利用하여 목소리와 背景音樂의 빠른 分離;
 
 ## 環境의 準備
 
@@ -117,7 +117,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -130,7 +130,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -154,9 +154,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 Windows AMD/Intel DirectML 환경에는 다음 파일도 필요합니다.
@@ -195,6 +195,7 @@ python webui.py --noautoopen
 + [Gradio](https://github.com/gradio-app/gradio)
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [pymss-project/pymss](https://github.com/pymss-project/pymss)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 ## 모든寄與者분들의勞力에感謝드립니다
 

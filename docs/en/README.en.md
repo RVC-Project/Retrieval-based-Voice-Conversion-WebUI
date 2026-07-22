@@ -51,7 +51,7 @@ A simple, easy-to-use voice timbre conversion / voice changer framework.<br><br>
 + Training with a small amounts of data (>=10min low noise speech recommended);
 + Model fusion to change timbres (using ckpt processing tab->ckpt merge);
 + Easy-to-use WebUI;
-+ UVR5 model to quickly separate vocals and instruments;
++ pymss/MSST model to quickly separate vocals and instruments;
 + High-pitch Voice Extraction Algorithm [InterSpeech2023-RMVPE](#Credits) to prevent a muted sound problem. Provides the best results (significantly) and is faster with lower resource consumption than Crepe_full;
 + AMD/Intel systems use the CPU dependency set; Windows may use DirectML and Linux uses CPU;
 
@@ -143,7 +143,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -156,7 +156,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -180,9 +180,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 Windows AMD/Intel DirectML environments additionally need:
@@ -221,6 +221,7 @@ The default port is `7865`. Put personal `.pth` models in `assets/weights/` and 
 + [Gradio](https://github.com/gradio-app/gradio)
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [pymss-project/pymss](https://github.com/pymss-project/pymss)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 + [Vocal pitch extraction:RMVPE](https://github.com/Dream-High/RMVPE)
   + The pretrained model is trained and tested by [yxlllc](https://github.com/yxlllc/RMVPE) and [RVC-Boss](https://github.com/RVC-Boss).

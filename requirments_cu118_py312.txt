@@ -31,6 +31,11 @@ matplotlib>=3.8.2,<4
 networkx>=3.2.0,<4
 numpy>=1.26.4,<2
 
+# Five-model MSST inference backend. Install both packages from the index;
+# local wheel paths are intentionally not used by this requirements file.
+pymss==2.0.14
+pymss-core==0.1.4
+
 # ONNX Runtime 1.18.x is the CUDA 11 / cuDNN 8 generation with Python 3.12
 # Windows wheels. The CUDA DLL packages are pinned because later cuDNN/CUDA
 # majors are ABI-incompatible with this provider build.
@@ -43,7 +48,7 @@ nvidia-cufft-cu11==10.9.0.58
 
 opencv-python-headless>=4.10.0,<5
 praat-parselmouth>=0.4.5,<1
-PyYAML>=6.0
+PyYAML>=6.0.1
 scikit-learn>=1.6.0,<2
 scipy>=1.13.1,<2
 sounddevice>=0.5.0,<1

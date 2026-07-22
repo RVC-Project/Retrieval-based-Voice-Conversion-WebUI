@@ -10,7 +10,7 @@ os.environ["RVC_CUDA_GRAPH"] = "1" if _offline_cuda_graph else "0"
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("no_proxy", "localhost, 127.0.0.1, ::1")
 os.environ.setdefault("weight_root", "assets/weights")
-os.environ.setdefault("weight_uvr5_root", "assets/uvr5_weights")
+os.environ.setdefault("weight_pymss_root", "assets/pymss_weights")
 os.environ.setdefault("index_root", "logs")
 os.environ.setdefault("outside_index_root", "assets/indices")
 os.environ.setdefault("rmvpe_root", "assets/rmvpe")
@@ -33,7 +33,7 @@ for name in os.listdir(tmp):
 
 from configs.config import Config, GPU_INDEX, GPU_INFOS, GPU_MEMORY, IS_GPU
 from infer.vc.modules import VC
-from tools.uvr5.webui import uvr
+from tools.pymss_webui import PYMSS_MODEL_CHOICES, get_model_info, pymss_separate
 from tools.file_io import read_text
 from train.process_ckpt import (
     change_info,
@@ -125,7 +125,7 @@ def launch_webui_with_port_fallback(app, config):
 runtime_dirs = (
     os.path.join(now_dir, "logs"),
     os.environ["weight_root"],
-    os.environ["weight_uvr5_root"],
+    os.environ["weight_pymss_root"],
     os.environ["index_root"],
     os.environ["outside_index_root"],
     os.environ["rmvpe_root"],
@@ -173,7 +173,7 @@ class ToolButton(gr.Button, gr.components.FormComponent):
 
 
 weight_root = os.getenv("weight_root")
-weight_uvr5_root = os.getenv("weight_uvr5_root")
+weight_pymss_root = os.getenv("weight_pymss_root")
 outside_index_root = os.getenv("outside_index_root")
 
 def weight_names():
@@ -190,11 +190,7 @@ def refresh_weight_choices(previous_names=None, force=False):
 
 
 names = weight_names()
-uvr5_names = []
-for name in os.listdir(weight_uvr5_root):
-    if name.endswith((".pth", ".ckpt")) or "onnx" in name:
-        uvr5_names.append(name.replace(".pth", "").replace(".ckpt", ""))
-uvr5_names.sort()
+pymss_names = PYMSS_MODEL_CHOICES
 
 
 def change_choices():
@@ -1514,11 +1510,11 @@ with gr.Blocks(title="RVC WebUI") as app:
                     outputs=[spk_item, protect0, protect1, file_index1, file_index3],
                     api_name="infer_change_voice",
                 )
-        with gr.TabItem(i18n("伴奏人声分离&去混响&去回声")):
+        with gr.TabItem(i18n("人声伴奏分离&去混响")):
             with gr.Group():
                 gr.Markdown(
                     value=i18n(
-                        "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。"
+                        "人声、伴奏与混响批量处理，使用pymss/MSST模型。"
                     )
                 )
                 with gr.Row():
@@ -1533,22 +1529,27 @@ with gr.Blocks(title="RVC WebUI") as app:
                         )
                     with gr.Column():
                         model_choose = gr.Dropdown(
-                            label=i18n("模型"), choices=uvr5_names
-                        )
-                        agg = gr.Slider(
-                            minimum=0,
-                            maximum=20,
-                            step=1,
-                            label=i18n("人声提取激进程度"),
-                            value=10,
+                            label=i18n("处理方式"),
+                            choices=pymss_names,
+                            value=pymss_names[0],
                             interactive=True,
-                            visible=False,  # 先不开放调整
+                        )
+                        model_info = gr.Textbox(
+                            label=i18n("底层模型"),
+                            value=get_model_info(pymss_names[0]),
+                            interactive=False,
+                        )
+                        model_choose.change(
+                            get_model_info,
+                            [model_choose],
+                            [model_info],
+                            queue=False,
                         )
                         opt_vocal_root = gr.Textbox(
-                            label=i18n("指定输出主人声文件夹"), value="opt"
+                            label=i18n("主结果文件夹"), value="opt"
                         )
                         opt_ins_root = gr.Textbox(
-                            label=i18n("指定输出非主人声文件夹"), value="opt"
+                            label=i18n("分离残余文件夹"), value="opt"
                         )
                         format0 = gr.Radio(
                             label=i18n("导出文件格式"),
@@ -1559,14 +1560,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                     but2 = gr.Button(i18n("转换"), variant="primary")
                     vc_output4 = gr.Textbox(label=i18n("输出信息"))
                     but2.click(
-                        uvr,
+                        pymss_separate,
                         [
                             model_choose,
                             dir_wav_input,
                             opt_vocal_root,
                             wav_inputs,
                             opt_ins_root,
-                            agg,
                             format0,
                         ],
                         [vc_output4],

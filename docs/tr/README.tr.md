@@ -37,7 +37,7 @@ Bu depo aşağıdaki özelliklere sahiptir:
 + Az miktarda veriyle bile nispeten iyi sonuçlar alın (>=10 dakika düşük gürültülü konuşma önerilir);
 + Timbraları değiştirmek için model birleştirmeyi destekleme (ckpt işleme sekmesi-> ckpt birleştir);
 + Kullanımı kolay Web arayüzü;
-+ UVR5 modelini kullanarak hızla vokalleri ve enstrümanları ayırma.
++ pymss/MSST modelini kullanarak hızla vokalleri ve enstrümanları ayırma.
 + En güçlü Yüksek tiz Ses Çıkarma Algoritması [InterSpeech2023-RMVPE](#Krediler) sessiz ses sorununu önlemek için kullanılır. En iyi sonuçları (önemli ölçüde) sağlar ve Crepe_full'den daha hızlı çalışır, hatta daha düşük kaynak tüketimi sağlar.
 + AMD/Intel sistemleri CPU bağımlılıklarını kullanır; Windows DirectML, Linux CPU kullanabilir.
 
@@ -129,7 +129,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -142,7 +142,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -166,9 +166,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 Windows AMD/Intel DirectML ortamlarında ayrıca şu dosya gerekir:
@@ -207,6 +207,7 @@ Varsayılan bağlantı noktası `7865`'tir. `.pth` modellerini `assets/weights/`
 + [Gradio](https://github.com/gradio-app/gradio)
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [pymss-project/pymss](https://github.com/pymss-project/pymss)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 + [Vokal ton çıkarma:RMVPE](https://github.com/Dream-High/RMVPE)
   + Ön eğitimli model [yxlllc](https://github.com/yxlllc/RMVPE) ve [RVC-Boss](https://github.com/RVC-Boss) tarafından eğitilip test edilmiştir.

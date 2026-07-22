@@ -53,7 +53,7 @@
 - 少量のデータセットからでも、比較的良い結果を得ることができます。（10 分以上のノイズの少ない音声を推奨します。）
 - モデルを融合することで、音声を混ぜることができます。（ckpt processing タブの、ckpt merge を使用します。）
 - 使いやすい WebUI。
-- UVR5 Model も含んでいるため、人の声と BGM を素早く分離できます。
+- pymss/MSST Model も含んでいるため、人の声と BGM を素早く分離できます。
 - 最先端の[人間の声のピッチ抽出アルゴリズム InterSpeech2023-RMVPE](#参照プロジェクト)を使用して無声音問題を解決します。効果は最高（著しく）で、crepe_full よりも速く、リソース使用が少ないです。
 - A カードと I カードの加速サポート
 
@@ -147,7 +147,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -160,7 +160,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -184,9 +184,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 Windows の AMD/Intel DirectML 環境では、さらに次のファイルが必要です。
@@ -226,6 +226,7 @@ python webui.py --noautoopen
 - [Gradio](https://github.com/gradio-app/gradio)
 - [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 - [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
+- [pymss-project/pymss](https://github.com/pymss-project/pymss)
 - [audio-slicer](https://github.com/openvpi/audio-slicer)
 - [Vocal pitch extraction:RMVPE](https://github.com/Dream-High/RMVPE)
   - 事前訓練されたモデルは[yxlllc](https://github.com/yxlllc/RMVPE)と[RVC-Boss](https://github.com/RVC-Boss)によって訓練され、テストされました。

@@ -1,0 +1,76 @@
+audio:
+  chunk_size: 352800
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 441
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.000
+
+model:
+  dim: 384
+  depth: 6
+  stereo: true
+  num_stems: 1
+  time_transformer_depth: 1
+  freq_transformer_depth: 1
+  num_bands: 60
+  dim_head: 64
+  heads: 8
+  attn_dropout: 0
+  ff_dropout: 0
+  flash_attn: True
+  dim_freqs_in: 1025
+  sample_rate: 44100  # needed for mel filter bank from librosa
+  stft_n_fft: 2048
+  stft_hop_length: 441
+  stft_win_length: 2048
+  stft_normalized: False
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+  - 4096
+  - 2048
+  - 1024
+  - 512
+  - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+
+training:
+  batch_size: 3
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+  - noreverb
+  - reverb
+  lr: 5.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: noreverb
+  num_epochs: 1000
+  num_steps: 4000
+  q: 0.95
+  coarse_loss_clip: false
+  ema_momentum: 0.999
+  optimizer: adamw
+  other_fix: true # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.1
+  loudness_max: 1.0
+  mixup: false # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+inference:
+  batch_size: 1
+  dim_t: 801
+  num_overlap: 2

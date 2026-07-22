@@ -1,0 +1,133 @@
+audio:
+  chunk_size: 352800
+  dim_f: 1024
+  dim_t: 801 # don't work (use in model)
+  hop_length: 441 # don't work (use in model)
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  dim: 512
+  depth: 12
+  stereo: true
+  num_stems: 1
+  time_transformer_depth: 1
+  freq_transformer_depth: 1
+  freqs_per_bands: !!python/tuple
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 128
+    - 129
+  dim_head: 64
+  heads: 8
+  attn_dropout: 0.1
+  ff_dropout: 0.1
+  flash_attn: true
+  dim_freqs_in: 1025
+  stft_n_fft: 2048
+  stft_hop_length: 441
+  stft_win_length: 2048
+  stft_normalized: false
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+  - 4096
+  - 2048
+  - 1024
+  - 512
+  - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+
+training:
+  batch_size: 16
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+  - vocals
+  - instrumental
+  lr: 5.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: vocals
+  num_epochs: 1000
+  num_steps: 1000
+  augmentation: false # enable augmentations by audiomentations and pedalboard
+  augmentation_type: simple1
+  use_mp3_compress: false # Deprecated
+  augmentation_mix: true # Mix several stems of the same type with some probability
+  augmentation_loudness: true # randomly change loudness of each stem
+  augmentation_loudness_type: 1 # Type 1 or 2
+  augmentation_loudness_min: 0.5
+  augmentation_loudness_max: 1.5
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+inference:
+  batch_size: 1
+  dim_t: 901
+  num_overlap: 4

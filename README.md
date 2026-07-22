@@ -48,7 +48,7 @@
 + 使用少量数据进行训练也能得到较好结果(推荐至少收集10分钟低底噪语音数据)
 + 可以通过模型融合来改变音色(借助ckpt处理选项卡中的ckpt-merge)
 + 简单易用的网页界面
-+ 可调用UVR5模型来快速分离人声和伴奏
++ 可调用pymss/MSST模型来快速分离人声和伴奏
 + 使用最先进的[人声音高提取算法InterSpeech2023-RMVPE](#参考项目)根绝哑音问题，速度快、资源占用小
 + A卡/I卡使用 CPU 依赖方案；Windows 可使用 DirectML，Linux 使用 CPU
 
@@ -142,7 +142,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -155,7 +155,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -179,9 +179,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 仅 Windows AMD/Intel DirectML 环境还需要：
@@ -222,6 +222,7 @@ python webui.py --noautoopen
 + [Gradio](https://github.com/gradio-app/gradio)
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [pymss-project/pymss](https://github.com/pymss-project/pymss)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 + [Vocal pitch extraction:RMVPE](https://github.com/Dream-High/RMVPE)
   + The pretrained model is trained and tested by [yxlllc](https://github.com/yxlllc/RMVPE) and [RVC-Boss](https://github.com/RVC-Boss).

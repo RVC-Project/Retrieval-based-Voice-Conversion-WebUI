@@ -44,25 +44,56 @@ AUDIO_DTYPE = _AUDIO_DTYPE
 
 def wav2(i, o, format):
     inp = av.open(i, "r")
-    if format == "m4a":
-        format = "mp4"
-    out = av.open(o, "w", format=format)
-    if format == "ogg":
-        format = "libvorbis"
-    if format == "mp4":
-        format = "aac"
+    try:
+        if format == "m4a":
+            format = "mp4"
+        out = av.open(o, "w", format=format)
+        try:
+            if format == "ogg":
+                format = "libvorbis"
+            if format == "mp4":
+                format = "aac"
 
-    ostream = out.add_stream(format)
+            if not inp.streams.audio:
+                raise ValueError("Input contains no audio stream")
+            input_stream = inp.streams.audio[0]
+            source_rate = input_stream.codec_context.sample_rate
+            ostream = (
+                out.add_stream(format, rate=source_rate)
+                if source_rate
+                else out.add_stream(format)
+            )
+            source_channels = input_stream.codec_context.channels
+            if source_channels == 1:
+                ostream.layout = "mono"
+            elif source_channels == 2:
+                ostream.layout = "stereo"
 
-    for frame in inp.decode(audio=0):
-        for p in ostream.encode(frame):
-            out.mux(p)
+            for frame in inp.decode(input_stream):
+                for p in ostream.encode(frame):
+                    out.mux(p)
 
-    for p in ostream.encode(None):
-        out.mux(p)
+            for p in ostream.encode(None):
+                out.mux(p)
+        finally:
+            out.close()
+    finally:
+        inp.close()
 
-    out.close()
-    inp.close()
+
+def transcode_audio_file(input_path, output_path, format):
+    """Transcode a WAV path and remove partial compressed output on failure."""
+    output_path = os.fspath(output_path)
+    if os.path.exists(output_path):
+        os.remove(output_path)
+    try:
+        wav2(input_path, output_path, format)
+        if not os.path.isfile(output_path) or os.path.getsize(output_path) == 0:
+            raise RuntimeError("Audio transcoding produced no output: %s" % output_path)
+    except Exception:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        raise
 
 
 def _probe_audio(file):

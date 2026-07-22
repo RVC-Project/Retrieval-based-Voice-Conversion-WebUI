@@ -35,7 +35,7 @@ Ce dépôt a les caractéristiques suivantes :
 + Obtient de bons résultats même avec peu de données pour la formation (il est recommandé de collecter au moins 10 minutes de données vocales avec un faible bruit de fond).
 + Peut changer le timbre vocal en fusionnant des modèles (avec l'aide de l'onglet ckpt-merge).
 + Interface web simple et facile à utiliser.
-+ Peut appeler le modèle UVR5 pour séparer rapidement la voix et l'accompagnement.
++ Peut appeler le modèle pymss/MSST pour séparer rapidement la voix et l'accompagnement.
 + Utilise l'algorithme de pitch vocal le plus avancé [InterSpeech2023-RMVPE](#projets-référencés) pour éliminer les problèmes de voix muette. Meilleurs résultats, plus rapide que crepe_full, et moins gourmand en ressources.
 + Les systèmes AMD/Intel utilisent les dépendances CPU ; Windows peut utiliser DirectML et Linux utilise le CPU.
 
@@ -127,7 +127,7 @@ assets/
 ├── rmvpe/rmvpe.pt
 ├── pretrained/
 ├── pretrained_v2/
-├── uvr5_weights/
+├── pymss_weights/
 ├── weights/        # user RVC .pth models
 └── indices/        # user .index files
 logs/
@@ -140,7 +140,7 @@ assets/hubert_base/pytorch_model.bin
 assets/rmvpe/rmvpe.pt
 assets/pretrained/*.pth
 assets/pretrained_v2/*.pth
-assets/uvr5_weights/*
+assets/pymss_weights/*
 assets/weights/*.pth
 assets/indices/*.index
 logs/mute/*
@@ -164,9 +164,9 @@ hf download lj1995/VoiceConversionWebUI mute.zip --revision main \
   --local-dir .model-downloads
 python -m zipfile -e .model-downloads/mute.zip logs
 
-# Required only for UVR5 vocal separation
+# Required only for pymss/MSST vocal separation
 hf download lj1995/VoiceConversionWebUI --revision main \
-  --include "uvr5_weights/*" --local-dir assets
+  --include "pymss_weights/*" --local-dir assets
 ```
 
 Les environnements Windows AMD/Intel DirectML nécessitent aussi :
@@ -205,6 +205,7 @@ Le port par défaut est `7865`. Placez les modèles `.pth` dans `assets/weights/
 + [Gradio](https://github.com/gradio-app/gradio)
 + [FFmpeg](https://github.com/FFmpeg/FFmpeg)
 + [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui)
++ [pymss-project/pymss](https://github.com/pymss-project/pymss)
 + [audio-slicer](https://github.com/openvpi/audio-slicer)
 + [Extraction de la hauteur vocale : RMVPE](https://github.com/Dream-High/RMVPE)
   + Le modèle pré-entraîné a été formé et testé par [yxlllc](https://github.com/yxlllc/RMVPE) et [RVC-Boss](https://github.com/RVC-Boss).

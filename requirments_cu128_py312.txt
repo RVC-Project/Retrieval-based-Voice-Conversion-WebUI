@@ -31,16 +31,19 @@ matplotlib>=3.8.2,<4
 networkx>=3.2.0,<4
 numpy>=1.26.4,<2
 
+# Five-model MSST inference backend. Install both packages from the index;
+# local wheel paths are intentionally not used by this requirements file.
+pymss==2.0.14
+pymss-core==0.1.4
+
 # ONNX Runtime 1.19.x uses the CUDA 12 / cuDNN 9 provider ABI. Later current
 # releases have moved to CUDA 13, so this compatibility window is intentional.
-# The Torch cu128 library directory is added to the Windows DLL search path by
-# tools/uvr5/mdxnet.py before the FoxJoy ONNX model is loaded.
 onnxruntime-gpu>=1.19.2,<1.20
 coloredlogs>=15.0,<16
 
 opencv-python-headless>=4.10.0,<5
 praat-parselmouth>=0.4.5,<1
-PyYAML>=6.0
+PyYAML>=6.0.1
 scikit-learn>=1.6.0,<2
 scipy>=1.13.1,<2
 sounddevice>=0.5.0,<1

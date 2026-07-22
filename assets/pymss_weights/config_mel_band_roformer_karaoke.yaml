@@ -1,0 +1,71 @@
+audio:
+  chunk_size: 352800
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 441
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 000
+
+model:
+  dim: 384
+  depth: 6
+  stereo: true
+  num_stems: 1
+  time_transformer_depth: 1
+  freq_transformer_depth: 1
+  num_bands: 60
+  dim_head: 64
+  heads: 8
+  attn_dropout: 0
+  ff_dropout: 0
+  flash_attn: True
+  dim_freqs_in: 1025
+  sample_rate: 44100  # needed for mel filter bank from librosa
+  stft_n_fft: 2048
+  stft_hop_length: 441
+  stft_win_length: 2048
+  stft_normalized: False
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+  - 4096
+  - 2048
+  - 1024
+  - 512
+  - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+  - karaoke
+  - other
+  lr: 1.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: karaoke
+  num_epochs: 1000
+  num_steps: 2000
+  augmentation: false # enable augmentations by audiomentations and pedalboard
+  augmentation_type: null
+  use_mp3_compress: false # Deprecated
+  augmentation_mix: false # Mix several stems of the same type with some probability
+  augmentation_loudness: false # randomly change loudness of each stem
+  augmentation_loudness_type: 1 # Type 1 or 2
+  augmentation_loudness_min: 0
+  augmentation_loudness_max: 0
+  q: 0.95
+  coarse_loss_clip: false
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+
+inference:
+  batch_size: 1
+  dim_t: 256
+  num_overlap: 4
