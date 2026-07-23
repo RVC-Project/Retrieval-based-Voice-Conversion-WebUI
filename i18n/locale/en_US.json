@@ -64,12 +64,10 @@
     "……已省略前%s行，仅显示最新状态": "…Omitted the first %s lines; showing the latest status only",
     "一键训练": "One-click training",
     "也可批量输入音频文件, 二选一, 优先读文件夹": "Multiple audio files can also be imported. If a folder path exists, this input is ignored.",
-    "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。": "Batch vocal/accompaniment separation using UVR5 models.<br>You can choose a vocal-preserving model, or use DeEcho/DeReverb models to remove echo and reverb.",
     "仅支持pm和rmvpe音高提取算法": "Only the pm and rmvpe pitch extraction methods are supported",
     "从训练检查点提取的模型": "Model extracted from a training checkpoint",
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Enter the GPU index(es) separated by '-', e.g., 0-1-2 to use GPU 0, 1, and 2:",
     "任务": "Task",
-    "伴奏人声分离&去混响&去回声": "Vocals/Accompaniment Separation & Reverberation Removal",
     "使用显卡：%s": "GPUs in use: %s",
     "使用模型采样率": "Use model sample rate",
     "使用设备采样率": "Use device sample rate",
@@ -261,5 +259,12 @@
     "正在预热CUDA Graph": "Warming up CUDA Graph",
     "CUDA Graph预热完成": "CUDA Graph warm-up complete",
     "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Data extraction started: start_time=%.6f, requested concurrency=%s, actual concurrency limit=%s",
-    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Data extraction finished: end_time=%.6f, total elapsed=%.3f seconds"
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Data extraction finished: end_time=%.6f, total elapsed=%.3f seconds",
+    "人声伴奏分离&去混响": "Vocals/Accompaniment Separation & Dereverberation",
+    "人声、伴奏与混响批量处理，使用pymss/MSST模型。": "Batch processing of vocals, accompaniment, and reverb using pymss/MSST models.",
+    "处理方式": "Processing mode",
+    "底层模型": "Underlying model",
+    "主结果文件夹": "Primary output folder",
+    "分离残余文件夹": "Residual output folder",
+    "停止分离": "Stop separation"
 }

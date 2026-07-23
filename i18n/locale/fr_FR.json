@@ -64,12 +64,10 @@
     "……已省略前%s行，仅显示最新状态": "…Les %s premières lignes ont été omises ; seul l'état récent est affiché",
     "一键训练": "Entraînement en un clic",
     "也可批量输入音频文件, 二选一, 优先读文件夹": "Il est également possible d'importer plusieurs fichiers audio. Si un chemin de dossier existe, cette entrée est ignorée.",
-    "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。": "Séparation par lot des voix et de l’accompagnement à l’aide de modèles UVR5.<br>Vous pouvez choisir un modèle qui conserve les voix, ou utiliser les modèles DeEcho/DeReverb pour supprimer l’écho et la réverbération.",
     "仅支持pm和rmvpe音高提取算法": "Seules les méthodes d'extraction de hauteur pm et rmvpe sont prises en charge",
     "从训练检查点提取的模型": "Modèle extrait d'un point de contrôle d'entraînement",
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Entrez le(s) index GPU séparé(s) par '-', par exemple, 0-1-2 pour utiliser les GPU 0, 1 et 2 :",
     "任务": "Tâche",
-    "伴奏人声分离&去混响&去回声": "Séparation des voix/accompagnement et suppression de la réverbération",
     "使用显卡：%s": "GPU utilisés : %s",
     "使用模型采样率": "Utiliser la fréquence du modèle",
     "使用设备采样率": "Utiliser la fréquence du périphérique",
@@ -261,5 +259,12 @@
     "正在预热CUDA Graph": "Préchauffage de CUDA Graph",
     "CUDA Graph预热完成": "Préchauffage de CUDA Graph terminé",
     "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Extraction des données démarrée : start_time=%.6f, parallélisme demandé=%s, limite réelle=%s",
-    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extraction des données terminée : end_time=%.6f, durée totale=%.3f secondes"
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extraction des données terminée : end_time=%.6f, durée totale=%.3f secondes",
+    "人声伴奏分离&去混响": "Séparation voix/accompagnement et suppression de la réverbération",
+    "人声、伴奏与混响批量处理，使用pymss/MSST模型。": "Traitement par lots des voix, de l’accompagnement et de la réverbération avec les modèles pymss/MSST.",
+    "处理方式": "Mode de traitement",
+    "底层模型": "Modèle sous-jacent",
+    "主结果文件夹": "Dossier de sortie principal",
+    "分离残余文件夹": "Dossier de sortie résiduel",
+    "停止分离": "Arrêter la séparation"
 }

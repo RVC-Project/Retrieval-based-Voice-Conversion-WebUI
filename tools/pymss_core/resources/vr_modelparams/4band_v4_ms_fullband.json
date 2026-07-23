@@ -1,0 +1,58 @@
+{
+    "n_bins": 896,
+    "unstable_bins": 9,
+    "stable_bins": 530,
+    "band": {
+        "1": {
+            "sr": 7350,
+            "hl": 96,
+            "n_fft": 768,
+            "crop_start": 0,
+            "crop_stop": 102,
+            "lpf_start": 30,
+            "lpf_stop": 62,
+            "res_type": "polyphase",
+            "convert_channels": "mid_side"
+        },
+        "2": {
+            "sr": 7350,
+            "hl": 96,
+            "n_fft": 384,
+            "crop_start": 5,
+            "crop_stop": 104,
+            "hpf_start": 30,
+            "hpf_stop": 14,
+            "lpf_start": 37,
+            "lpf_stop": 73,
+            "res_type": "polyphase",
+			"convert_channels": "mid_side"
+        },
+        "3": {
+            "sr": 14700,
+            "hl": 192,
+            "n_fft": 640,
+            "crop_start": 20,
+            "crop_stop": 259,
+            "hpf_start": 58,
+            "hpf_stop": 29,
+            "lpf_start": 191,
+            "lpf_stop": 262,
+            "res_type": "polyphase",
+			"convert_channels": "mid_side"
+        },
+        "4": {
+            "sr": 44100,
+            "hl": 576,
+            "n_fft": 1152,
+            "crop_start": 119,
+            "crop_stop": 575,
+            "hpf_start": 157,
+            "hpf_stop": 110,
+            "res_type": "kaiser_fast",
+			"convert_channels": "mid_side"
+        }
+    },
+    "sr": 44100,
+    "pre_filter_start": -1,
+    "pre_filter_stop": -1
+}

@@ -191,6 +191,28 @@ hf download lj1995/VoiceConversionWebUI rmvpe.onnx --revision main \
   --local-dir assets/rmvpe
 ```
 
+### PyMSS DirectML 精度
+
+PyMSS 的 DirectML 模型参数精度默认为 `auto`：BS-Roformer 与
+Mel-Band-Roformer 会先在独立子进程中尝试原生 FP16 权重；若当前显卡、
+驱动或算子路径不兼容，当前子进程会先退出，再用全新的 FP32 子进程重试。
+该设置只影响 PyMSS 分离，不会改变 RVC 推理的全局精度。
+
+可在启动 WebUI 前设置 `PYMSS_DML_MODEL_DTYPE`：
+
+```bat
+rem 默认：FP16 优先，不兼容时回退 FP32
+set PYMSS_DML_MODEL_DTYPE=auto
+
+rem 始终使用 FP32，兼容性优先
+set PYMSS_DML_MODEL_DTYPE=float32
+
+rem 始终使用 FP16，不执行自动回退
+set PYMSS_DML_MODEL_DTYPE=float16
+```
+
+FP16 显存不足时不会自动改用占用更高的 FP32；界面会直接报告该错误。
+
 
 ### FFmpeg
 

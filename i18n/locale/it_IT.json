@@ -64,12 +64,10 @@
     "……已省略前%s行，仅显示最新状态": "…Omesse le prime %s righe; viene mostrato solo lo stato più recente",
     "一键训练": "Addestramento con un clic",
     "也可批量输入音频文件, 二选一, 优先读文件夹": "È anche possibile scegliere più file audio; la cartella ha la priorità",
-    "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。": "Separazione in batch di voce e accompagnamento tramite modelli UVR5.<br>È possibile scegliere un modello che preserva la voce oppure usare i modelli DeEcho/DeReverb per rimuovere eco e riverbero.",
     "仅支持pm和rmvpe音高提取算法": "Sono supportati solo i metodi di estrazione dell'intonazione pm e rmvpe",
     "从训练检查点提取的模型": "Modellolo estratto da un checkpoint di addestramento",
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Inserisci gli indici GPU separati da '-', ad esempio 0-1-2 per utilizzare GPU 0, 1 e 2:",
     "任务": "Attività",
-    "伴奏人声分离&去混响&去回声": "Separazione voce/accompagnamento",
     "使用显卡：%s": "GPU in uso: %s",
     "使用模型采样率": "Usa frequenza del modello",
     "使用设备采样率": "Usa frequenza del dispositivo",
@@ -261,5 +259,12 @@
     "正在预热CUDA Graph": "Riscaldamento di CUDA Graph",
     "CUDA Graph预热完成": "Riscaldamento di CUDA Graph completato",
     "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Estrazione dati avviata: start_time=%.6f, concorrenza richiesta=%s, limite effettivo=%s",
-    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Estrazione dati completata: end_time=%.6f, tempo totale=%.3f secondi"
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Estrazione dati completata: end_time=%.6f, tempo totale=%.3f secondi",
+    "人声伴奏分离&去混响": "Separazione voce/accompagnamento e rimozione del riverbero",
+    "人声、伴奏与混响批量处理，使用pymss/MSST模型。": "Elaborazione batch di voce, accompagnamento e riverbero con i modelli pymss/MSST.",
+    "处理方式": "Modalità di elaborazione",
+    "底层模型": "Modello sottostante",
+    "主结果文件夹": "Cartella di output principale",
+    "分离残余文件夹": "Cartella di output residuo",
+    "停止分离": "Interrompi separazione"
 }

@@ -64,12 +64,10 @@
     "……已省略前%s行，仅显示最新状态": "…İlk %s satır atlandı; yalnızca en son durum gösteriliyor",
     "一键训练": "Tek Tuşla Eğit",
     "也可批量输入音频文件, 二选一, 优先读文件夹": "Ses dosyaları ayrıca toplu olarak, iki seçimle, öncelikli okuma klasörüyle içe aktarılabilir",
-    "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。": "UVR5 modelleriyle vokal ve eşliği toplu olarak ayırır.<br>Vokali koruyan bir model seçebilir veya yankı ve reverbi kaldırmak için DeEcho/DeReverb modellerini kullanabilirsiniz.",
     "仅支持pm和rmvpe音高提取算法": "Yalnızca pm ve rmvpe perde çıkarma yöntemleri desteklenir",
     "从训练检查点提取的模型": "Eğitim kontrol noktasından çıkarılan model",
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "GPU indekslerini '-' ile ayırarak girin, örneğin 0-1-2, GPU 0, 1 ve 2'yi kullanmak için:",
     "任务": "Görev",
-    "伴奏人声分离&去混响&去回声": "Vokal/Müzik Ayrıştırma ve Yankı Giderme",
     "使用显卡：%s": "Kullanılan GPU: %s",
     "使用模型采样率": "Model örnekleme hızını kullan",
     "使用设备采样率": "Cihaz örnekleme hızını kullan",
@@ -261,5 +259,12 @@
     "正在预热CUDA Graph": "CUDA Graph ısınıyor",
     "CUDA Graph预热完成": "CUDA Graph ısınması tamamlandı",
     "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Veri çıkarma başladı: start_time=%.6f, istenen eşzamanlılık=%s, gerçek üst sınır=%s",
-    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Veri çıkarma tamamlandı: end_time=%.6f, toplam süre=%.3f saniye"
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Veri çıkarma tamamlandı: end_time=%.6f, toplam süre=%.3f saniye",
+    "人声伴奏分离&去混响": "Vokal/altyapı ayırma ve yankı giderme",
+    "人声、伴奏与混响批量处理，使用pymss/MSST模型。": "pymss/MSST modelleriyle vokal, altyapı ve yankıyı toplu olarak işler.",
+    "处理方式": "İşleme modu",
+    "底层模型": "Temel model",
+    "主结果文件夹": "Ana çıktı klasörü",
+    "分离残余文件夹": "Artık çıktı klasörü",
+    "停止分离": "Ayırmayı durdur"
 }

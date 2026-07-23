@@ -1,5 +1,6 @@
 import os
 import shutil
+import html
 
 # Offline WebUI keeps the CUDA Graph implementation available, but remains
 # eager by default. Set RVC_OFFLINE_CUDA_GRAPH=1 to opt in for benchmarking or
@@ -33,8 +34,14 @@ for name in os.listdir(tmp):
 
 from configs.config import Config, GPU_INDEX, GPU_INFOS, GPU_MEMORY, IS_GPU
 from infer.vc.modules import VC
-from tools.pymss_webui import PYMSS_MODEL_CHOICES, get_model_info, pymss_separate
+from tools.pymss_webui import (
+    PYMSS_MODEL_CHOICES,
+    get_model_info,
+    pymss_separate as _pymss_separate_core,
+    stop_pymss_separation as _stop_pymss_separation_core,
+)
 from tools.file_io import read_text
+from tools.process_utils import kill_process_tree
 from train.process_ckpt import (
     change_info,
     extract_small_model,
@@ -54,7 +61,6 @@ import warnings
 import traceback
 import threading
 import logging
-import signal
 import socket
 import subprocess
 import time
@@ -223,6 +229,152 @@ def button_update(value=None, variant=None, visible=None):
     return update
 
 
+def render_pymss_progress(percent=0, label="等待开始", state="idle"):
+    percent = max(0.0, min(100.0, float(percent or 0)))
+    colors = {
+        "idle": "#64748b",
+        "running": "#2563eb",
+        "done": "#15803d",
+        "stopped": "#b45309",
+        "failed": "#b91c1c",
+    }
+    color = colors.get(state, colors["running"])
+    safe_label = html.escape(str(label or ""))
+    return (
+        '<div style="min-height:52px;padding:6px 0;">'
+        '<div style="display:flex;justify-content:space-between;gap:12px;'
+        'align-items:center;margin-bottom:7px;font-size:14px;line-height:20px;">'
+        '<span style="overflow-wrap:anywhere;">%s</span>'
+        '<strong style="flex:0 0 auto;color:%s;">%.1f%%</strong>'
+        "</div>"
+        '<div role="progressbar" aria-valuemin="0" aria-valuemax="100" '
+        'aria-valuenow="%.1f" style="height:10px;width:100%%;overflow:hidden;'
+        'border-radius:4px;background:#e2e8f0;">'
+        '<div style="height:100%%;width:%.3f%%;background:%s;"></div>'
+        "</div></div>"
+    ) % (safe_label, color, percent, percent, percent, color)
+
+
+def run_pymss_separation(
+    model_name,
+    inp_root,
+    save_root_vocal,
+    paths,
+    save_root_ins,
+    format0,
+):
+    progress_state = {
+        "percent": 0.0,
+        "label": "正在准备 PyMSS 分离任务",
+        "state": "running",
+    }
+    busy = False
+
+    def update_progress(event):
+        nonlocal busy
+        event_type = event.get("event")
+        file_count = max(1, int(event.get("file_count") or 1))
+        file_index = max(1, int(event.get("file_index") or 1))
+        message = str(event.get("message") or "")
+
+        if event_type == "progress":
+            done = max(0.0, float(event.get("done") or 0))
+            total = max(1.0, float(event.get("total") or 1))
+            file_fraction = min(1.0, done / total)
+            progress_state["percent"] = (
+                (file_index - 1 + file_fraction) / file_count * 100
+            )
+            progress_state["label"] = "文件 %s/%s · %s · %.0f/%.0f 秒" % (
+                file_index,
+                file_count,
+                message or "正在处理音频",
+                done,
+                total,
+            )
+            progress_state["state"] = "running"
+        elif event_type == "file_start":
+            progress_state["percent"] = (file_index - 1) / file_count * 100
+            progress_state["label"] = message
+            progress_state["state"] = "running"
+        elif event_type == "file":
+            progress_state["percent"] = file_index / file_count * 100
+            progress_state["label"] = (
+                message.splitlines()[0] if message else "文件处理结束"
+            )
+            progress_state["state"] = "running" if event.get("ok") else "failed"
+        elif event_type == "done":
+            successful = int(event.get("successful") or 0)
+            failed = int(event.get("failed") or 0)
+            progress_state["percent"] = 100.0
+            progress_state["label"] = "分离完成：成功 %s，失败 %s" % (
+                successful,
+                failed,
+            )
+            progress_state["state"] = "done" if failed == 0 else "failed"
+        elif event_type == "retry_fp32":
+            progress_state["percent"] = 0.0
+            progress_state["label"] = message
+            progress_state["state"] = "running"
+        elif event_type == "cancelled":
+            progress_state["label"] = message or "PyMSS 分离任务已停止"
+            progress_state["state"] = "stopped"
+        elif event_type in {"fatal", "busy"}:
+            progress_state["label"] = (
+                message.splitlines()[0] if message else "PyMSS 分离任务失败"
+            )
+            progress_state["state"] = "failed"
+            busy = event_type == "busy"
+        elif event_type in {"preparing", "precision_attempt", "status"}:
+            progress_state["label"] = message
+            progress_state["state"] = "running"
+
+    last_info = ""
+    try:
+        for info in _pymss_separate_core(
+            model_name,
+            inp_root,
+            save_root_vocal,
+            paths,
+            save_root_ins,
+            format0,
+            event_callback=update_progress,
+        ):
+            last_info = info
+            start_button = button_update()
+            stop_button = button_update()
+            if not busy:
+                start_button = button_update(visible=False)
+                stop_button = button_update(visible=True)
+            yield (
+                info,
+                render_pymss_progress(**progress_state),
+                start_button,
+                stop_button,
+            )
+    except Exception:
+        last_info = "失败\n%s" % traceback.format_exc()
+        progress_state.update(
+            {"label": "PyMSS 分离任务失败", "state": "failed"}
+        )
+        logger.exception("PyMSS WebUI task failed")
+
+    start_button = button_update()
+    stop_button = button_update()
+    if not busy:
+        start_button = button_update(visible=True)
+        stop_button = button_update(visible=False)
+    yield (last_info, render_pymss_progress(**progress_state), start_button, stop_button)
+
+
+def stop_pymss_webui():
+    return (
+        _stop_pymss_separation_core(),
+        render_pymss_progress(0, "PyMSS 分离任务已停止", "stopped"),
+        button_update(visible=True),
+        button_update(visible=False),
+    )
+
+
 def format_status(title, state, detail=""):
     lines = ["【%s】" % i18n(title), "%s：%s" % (i18n("状态"), i18n(state))]
     if detail:
@@ -307,37 +459,6 @@ def validate_feature_outputs(exp_dir, version, if_f0):
     return matched
 
 
-def kill_process(process, process_name=""):
-    if process is None or process.poll() is not None:
-        return
-    pid = process.pid
-    if platform.system() == "Windows":
-        subprocess.run(
-            "taskkill /t /f /pid %s" % pid,
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    else:
-        try:
-            os.killpg(os.getpgid(pid), signal.SIGTERM)
-        except (OSError, ProcessLookupError):
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except OSError:
-                pass
-        for _ in range(10):
-            if process.poll() is not None:
-                break
-            time.sleep(0.1)
-        if process.poll() is None:
-            try:
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
-            except (OSError, ProcessLookupError):
-                pass
-    logger.info(i18n("%s进程已终止") % i18n(process_name))
-
-
 def begin_train_task(name):
     global TRAIN_TASK
     with TRAIN_TASK_LOCK:
@@ -374,7 +495,7 @@ def stop_train_task(name):
         state["stop_requested"] = True
         processes = list(state["processes"])
     for process in processes:
-        kill_process(process, name)
+        kill_process_tree(process, name, logger)
     return (
         format_status(name, "已停止"),
         button_update(visible=True),
@@ -410,7 +531,7 @@ def start_train_process(state, cmd):
         state["processes"].append(process)
         stopped = state["stop_requested"]
     if stopped:
-        kill_process(process, state["name"])
+        kill_process_tree(process, state["name"], logger)
     return process
 
 
@@ -428,7 +549,7 @@ def wait_train_processes(
     while any(process.poll() is None for process in processes):
         if train_task_stopped(state):
             for process in processes:
-                kill_process(process, state["name"])
+                kill_process_tree(process, state["name"], logger)
             break
         if log_path:
             snapshot = read_log(log_path)
@@ -1557,10 +1678,17 @@ with gr.Blocks(title="RVC WebUI") as app:
                             value="flac",
                             interactive=True,
                         )
-                    but2 = gr.Button(i18n("转换"), variant="primary")
+                    with gr.Row():
+                        but2 = gr.Button(i18n("转换"), variant="primary")
+                        stop_pymss_button = gr.Button(
+                            i18n("停止分离"), variant="stop", visible=False
+                        )
+                    pymss_progress = gr.HTML(
+                        value=render_pymss_progress(0, "等待开始", "idle")
+                    )
                     vc_output4 = gr.Textbox(label=i18n("输出信息"))
                     but2.click(
-                        pymss_separate,
+                        run_pymss_separation,
                         [
                             model_choose,
                             dir_wav_input,
@@ -1569,8 +1697,14 @@ with gr.Blocks(title="RVC WebUI") as app:
                             opt_ins_root,
                             format0,
                         ],
-                        [vc_output4],
-                        api_name="uvr_convert",
+                        [vc_output4, pymss_progress, but2, stop_pymss_button],
+                        api_name="pymss_separate",
+                    )
+                    stop_pymss_button.click(
+                        stop_pymss_webui,
+                        [],
+                        [vc_output4, pymss_progress, but2, stop_pymss_button],
+                        queue=False,
                     )
         with gr.TabItem(i18n("训练")):
             gr.Markdown(

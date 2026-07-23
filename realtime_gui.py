@@ -675,6 +675,8 @@ if __name__ == "__main__":
                 ).to(self.config.device)
             else:
                 self.resampler2 = None
+            # Bundled torch.istft is not CUDA Graph-capturable, so TorchGate
+            # stays eager while resampling and RVC inference still use graphs.
             self.tg = TorchGate(
                 sr=self.gui_config.samplerate, n_fft=4 * self.zc, prop_decrease=0.9
             ).to(self.config.device)
@@ -697,15 +699,7 @@ if __name__ == "__main__":
                     short = self.input_wav[
                         -self.sola_buffer_frame - self.block_frame :
                     ].unsqueeze(0)
-                    run_cuda_graph(
-                        self.tg,
-                        "realtime-input-noise-reduction",
-                        lambda short_audio, full_audio: self.tg(
-                            short_audio, full_audio
-                        ),
-                        short,
-                        self.input_wav.unsqueeze(0),
-                    )
+                    self.tg(short, self.input_wav.unsqueeze(0))
 
                 resample_input = self.input_wav[-self.block_frame - 2 * self.zc :]
                 run_cuda_graph(
@@ -730,15 +724,7 @@ if __name__ == "__main__":
                         inferred,
                     )
                 if self.gui_config.O_noise_reduce:
-                    run_cuda_graph(
-                        self.tg,
-                        "realtime-output-noise-reduction",
-                        lambda short_audio, full_audio: self.tg(
-                            short_audio, full_audio
-                        ),
-                        inferred.unsqueeze(0),
-                        self.output_buffer.unsqueeze(0),
-                    )
+                    self.tg(inferred.unsqueeze(0), self.output_buffer.unsqueeze(0))
                 torch.cuda.synchronize(self.config.device)
                 printt(i18n("CUDA Graph预热完成"))
             except Exception:
@@ -821,12 +807,8 @@ if __name__ == "__main__":
                     self.block_frame :
                 ].clone()
                 input_wav = self.input_wav[-self.sola_buffer_frame - self.block_frame :]
-                input_wav = run_cuda_graph(
-                    self.tg,
-                    "realtime-input-noise-reduction",
-                    lambda short, full: self.tg(short, full),
-                    input_wav.unsqueeze(0),
-                    self.input_wav.unsqueeze(0),
+                input_wav = self.tg(
+                    input_wav.unsqueeze(0), self.input_wav.unsqueeze(0)
                 ).squeeze(0)
                 input_wav[: self.sola_buffer_frame] *= self.fade_in_window
                 input_wav[: self.sola_buffer_frame] += (
@@ -879,12 +861,8 @@ if __name__ == "__main__":
                     self.block_frame :
                 ].clone()
                 self.output_buffer[-self.block_frame :] = infer_wav[-self.block_frame :]
-                infer_wav = run_cuda_graph(
-                    self.tg,
-                    "realtime-output-noise-reduction",
-                    lambda short, full: self.tg(short, full),
-                    infer_wav.unsqueeze(0),
-                    self.output_buffer.unsqueeze(0),
+                infer_wav = self.tg(
+                    infer_wav.unsqueeze(0), self.output_buffer.unsqueeze(0)
                 ).squeeze(0)
             # volume envelop mixing
             if self.gui_config.rms_mix_rate < 1 and self.function == "vc":

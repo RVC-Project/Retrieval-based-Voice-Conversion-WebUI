@@ -64,12 +64,10 @@
     "……已省略前%s行，仅显示最新状态": "…Se omitieron las primeras %s líneas; se muestra solo el estado más reciente",
     "一键训练": "Entrenamiento con un clic",
     "也可批量输入音频文件, 二选一, 优先读文件夹": "También se pueden importar varios archivos de audio. Si existe una ruta de carpeta, esta entrada se ignora.",
-    "人声伴奏分离批量处理，使用UVR5模型。<br>可选择保留人声模型，或使用DeEcho、DeReverb模型去除延迟和混响。": "Procesamiento por lotes para separar voces y acompañamiento mediante modelos UVR5.<br>Puede elegir un modelo que conserve las voces o usar modelos DeEcho/DeReverb para eliminar el eco y la reverberación.",
     "仅支持pm和rmvpe音高提取算法": "Solo se admiten los métodos de extracción de tono pm y rmvpe",
     "从训练检查点提取的模型": "Modeloo extraído de un punto de control de entrenamiento",
     "以-分隔输入使用的卡号, 例如   0-1-2   使用卡0和卡1和卡2": "Separe los números de identificación de la GPU con '-' al ingresarlos. Por ejemplo, '0-1-2' significa usar GPU 0, GPU 1 y GPU 2.",
     "任务": "Tarea",
-    "伴奏人声分离&去混响&去回声": "Separación de voz acompañante & eliminación de reverberación & eco",
     "使用显卡：%s": "GPU en uso: %s",
     "使用模型采样率": "Usar la frecuencia del modelo",
     "使用设备采样率": "Usar la frecuencia del dispositivo",
@@ -261,5 +259,12 @@
     "正在预热CUDA Graph": "Preparando CUDA Graph",
     "CUDA Graph预热完成": "Preparación de CUDA Graph completada",
     "数据提取开始：start_time=%.6f，请求并行数=%s，实际并行数上限=%s": "Extracción de datos iniciada: start_time=%.6f, concurrencia solicitada=%s, límite real=%s",
-    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extracción de datos finalizada: end_time=%.6f, tiempo total=%.3f segundos"
+    "数据提取结束：end_time=%.6f，总耗时=%.3f秒": "Extracción de datos finalizada: end_time=%.6f, tiempo total=%.3f segundos",
+    "人声伴奏分离&去混响": "Separación de voz/acompañamiento y eliminación de reverberación",
+    "人声、伴奏与混响批量处理，使用pymss/MSST模型。": "Procesamiento por lotes de voz, acompañamiento y reverberación con modelos pymss/MSST.",
+    "处理方式": "Modo de procesamiento",
+    "底层模型": "Modelo subyacente",
+    "主结果文件夹": "Carpeta de salida principal",
+    "分离残余文件夹": "Carpeta de salida residual",
+    "停止分离": "Detener separación"
 }

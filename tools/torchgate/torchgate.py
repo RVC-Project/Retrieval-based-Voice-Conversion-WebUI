@@ -57,6 +57,11 @@ class TorchGate(torch.nn.Module):
         self.n_fft = n_fft
         self.win_length = self.n_fft if win_length is None else win_length
         self.hop_length = self.win_length // 4 if hop_length is None else hop_length
+        self.register_buffer(
+            "stft_window",
+            torch.hann_window(self.win_length),
+            persistent=False,
+        )
 
         # Stationary Params
         self.n_std_thresh_stationary = n_std_thresh_stationary
@@ -158,7 +163,7 @@ class TorchGate(torch.nn.Module):
                     return_complex=True,
                     pad_mode="constant",
                     center=True,
-                    window=torch.hann_window(self.win_length).to(xn.device),
+                    window=self.stft_window,
                 )
             XN_db = amp_to_db(XN).to(dtype=X_db.dtype)
         else:
@@ -241,7 +246,7 @@ class TorchGate(torch.nn.Module):
                 return_complex=True,
                 pad_mode="constant",
                 center=True,
-                window=torch.hann_window(self.win_length).to(x.device),
+                window=self.stft_window,
             )
 
         # Compute signal mask based on stationary or nonstationary assumptions
@@ -274,7 +279,7 @@ class TorchGate(torch.nn.Module):
                 hop_length=self.hop_length,
                 win_length=self.win_length,
                 center=True,
-                window=torch.hann_window(self.win_length).to(Y.device),
+                window=self.stft_window,
             )
 
         return y.to(dtype=x.dtype)
