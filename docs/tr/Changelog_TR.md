@@ -1,3 +1,9 @@
+### 2026-07-23
+- Vokal ve eşlik ayırma arka ucu UVR5'ten PyMSS'ye geçirildi ve çıkarım sırasında ayırma işleminin kesilmesi desteklendi.
+- Giriş sesinin okunması ve yeniden örneklenmesi, mümkün olduğunda GPU üzerinde işlenecek şekilde optimize edildi; böylece çıkarım verimliliği artırıldı ve CPU kullanımı azaltıldı.
+- Gerçek zamanlı ses dönüştürmede giriş veya çıkış gürültü azaltma etkinleştirildiğinde oluşan CUDA Graph hatası düzeltildi.
+- Windows ortamındaki eğitim süreçleri için libuv uyumluluk sorunu giderildi.
+
 ### 2026-07-18
 - Web arayüzünün kullanım karmaşıklığı azaltıldı (ses çıkarımı girişi için artık dosya yolu gerekmiyor, ön uçtaki gerçek zamanlı günlükler iyileştirildi, çıkarım için küçük model kaydedildikten sonra model listesi otomatik olarak yenileniyor, çıkarım ana sayfasında model seçildikten sonra eşleşen index yolu otomatik olarak algılanıyor vb.).
 - Veri özelliği çıkarımı, model eğitimi ve indeks oluşturma aşamaları artık yarıda durdurulabilir ve yeniden başlatmanın ardından kaldığı yerden sürdürülebilir.

@@ -1,3 +1,9 @@
+### 2026-07-23
+- Replaced the vocal and accompaniment separation backend from UVR5 with PyMSS, with support for interrupting separation during inference.
+- Optimized input audio loading and resampling to use GPU processing when possible, improving inference efficiency and reducing CPU usage.
+- Fixed a CUDA Graph error triggered when input or output noise reduction was enabled during real-time voice conversion.
+- Fixed libuv compatibility for training processes on Windows.
+
 ### 2026-07-18
 - Reduced web UI complexity (no path required for audio inference input, improved real-time frontend logs, automatic model-list refresh after saving a small inference model, automatic detection of the matching index path after selecting a model on the inference home page, etc.).
 - Data feature extraction, model training, and index building can now be interrupted and resumed after restarting.

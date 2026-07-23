@@ -1,3 +1,9 @@
+### 2026-07-23
+- Remplacement du moteur de séparation des voix et de l’accompagnement UVR5 par PyMSS, avec possibilité d’interrompre la séparation pendant l’inférence.
+- Optimisation du chargement et du rééchantillonnage de l’audio d’entrée afin d’utiliser le GPU lorsque cela est possible, pour améliorer l’efficacité de l’inférence et réduire l’utilisation du processeur.
+- Correction d’une erreur CUDA Graph déclenchée lorsque la réduction du bruit d’entrée ou de sortie était activée pendant la conversion vocale en temps réel.
+- Correction d’un problème de compatibilité avec libuv pour les processus d’entraînement sous Windows.
+
 ### 2026-07-18
 - Utilisation simplifiée de l’interface Web (il n’est plus nécessaire de saisir un chemin pour l’audio d’entrée de l’inférence, amélioration des journaux en temps réel dans l’interface, actualisation automatique de la liste des modèles après l’enregistrement d’un petit modèle d’inférence, détection automatique du chemin d’index correspondant après la sélection d’un modèle sur la page d’accueil de l’inférence, etc.).
 - L’extraction des caractéristiques des données, l’entraînement des modèles et la création des index peuvent désormais être interrompus en cours d’exécution, puis repris après un redémarrage.
