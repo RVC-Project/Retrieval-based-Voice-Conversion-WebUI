@@ -1,5 +1,5 @@
 ### 2026-07-23
-- Vokal ve eşlik ayırma arka ucu UVR5'ten PyMSS'ye geçirildi ve çıkarım sırasında ayırma işleminin kesilmesi desteklendi.
+- Vokal ve eşlik ayırma arka ucu UVR5'ten PyMSS'ye geçirildi ve çıkarım sırasında ayırma işleminin kesilmesi desteklendi (daha iyi bir vokal ayırma algoritması çıkarım kalitesini önemli ölçüde iyileştirebilir).
 - Giriş sesinin okunması ve yeniden örneklenmesi, mümkün olduğunda GPU üzerinde işlenecek şekilde optimize edildi; böylece çıkarım verimliliği artırıldı ve CPU kullanımı azaltıldı.
 - Gerçek zamanlı ses dönüştürmede giriş veya çıkış gürültü azaltma etkinleştirildiğinde oluşan CUDA Graph hatası düzeltildi.
 - Windows ortamındaki eğitim süreçleri için libuv uyumluluk sorunu giderildi.

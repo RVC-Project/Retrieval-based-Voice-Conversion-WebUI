@@ -1,5 +1,5 @@
 ### 2026-07-23
-- Remplacement du moteur de séparation des voix et de l’accompagnement UVR5 par PyMSS, avec possibilité d’interrompre la séparation pendant l’inférence.
+- Remplacement du moteur de séparation des voix et de l’accompagnement UVR5 par PyMSS, avec possibilité d’interrompre la séparation pendant l’inférence (un meilleur algorithme de séparation vocale peut améliorer considérablement la qualité de l’inférence).
 - Optimisation du chargement et du rééchantillonnage de l’audio d’entrée afin d’utiliser le GPU lorsque cela est possible, pour améliorer l’efficacité de l’inférence et réduire l’utilisation du processeur.
 - Correction d’une erreur CUDA Graph déclenchée lorsque la réduction du bruit d’entrée ou de sortie était activée pendant la conversion vocale en temps réel.
 - Correction d’un problème de compatibilité avec libuv pour les processus d’entraînement sous Windows.

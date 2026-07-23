@@ -1,5 +1,5 @@
 ### 2026-07-23
-- Substituído o backend de separação de vocais e acompanhamento de UVR5 por PyMSS, com suporte à interrupção da separação durante a inferência.
+- Substituído o backend de separação de vocais e acompanhamento de UVR5 por PyMSS, com suporte à interrupção da separação durante a inferência (um algoritmo melhor de separação vocal pode melhorar significativamente a qualidade da inferência).
 - Otimizado o carregamento e a reamostragem do áudio de entrada para usar processamento por GPU quando possível, melhorando a eficiência da inferência e reduzindo o uso da CPU.
 - Corrigido um erro do CUDA Graph acionado ao habilitar a redução de ruído de entrada ou de saída durante a conversão de voz em tempo real.
 - Corrigida a compatibilidade com libuv dos processos de treinamento no Windows.
