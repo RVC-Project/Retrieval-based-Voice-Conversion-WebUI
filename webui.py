@@ -1390,6 +1390,18 @@ def change_info_(ckpt_path):
 
 F0GPUVisible = IS_GPU
 
+TRAINING_INFO_CSS = """
+#training-info-step2a textarea,
+#training-info-step2b textarea,
+#training-info-step3 textarea {
+    height: 12rem !important;
+    min-height: 12rem !important;
+    max-height: 12rem !important;
+    overflow-y: auto !important;
+    resize: none !important;
+}
+"""
+
 
 def change_f0_method(f0method8):
     if f0method8 == "rmvpe":
@@ -1399,7 +1411,7 @@ def change_f0_method(f0method8):
     return {"visible": visible, "__type__": "update"}
 
 
-with gr.Blocks(title="RVC WebUI") as app:
+with gr.Blocks(title="RVC WebUI", css=TRAINING_INFO_CSS) as app:
     gr.Markdown("## RVC WebUI")
     gr.Markdown(
         value=i18n(
@@ -1764,7 +1776,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                     stop_but1 = gr.Button(
                         i18n("停止处理数据"), variant="stop", visible=False
                     )
-                    info1 = gr.Textbox(label=i18n("输出信息"), value="")
+                    info1 = gr.Textbox(
+                        label=i18n("输出信息"),
+                        value="",
+                        lines=8,
+                        max_lines=8,
+                        elem_id="training-info-step2a",
+                    )
                     but1.click(
                         preprocess_dataset,
                         [trainset_dir4, exp_dir1, sr2, np7],
@@ -1816,7 +1834,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                     stop_but2 = gr.Button(
                         i18n("停止特征提取"), variant="stop", visible=False
                     )
-                info2 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=8)
+                info2 = gr.Textbox(
+                    label=i18n("输出信息"),
+                    value="",
+                    lines=8,
+                    max_lines=8,
+                    elem_id="training-info-step2b",
+                )
                 f0method8.change(
                     fn=change_f0_method,
                     inputs=[f0method8],
@@ -1936,7 +1960,13 @@ with gr.Blocks(title="RVC WebUI") as app:
                     stop_but5 = gr.Button(
                         i18n("停止一键训练"), variant="stop", visible=False
                     )
-                    info3 = gr.Textbox(label=i18n("输出信息"), value="", max_lines=10)
+                    info3 = gr.Textbox(
+                        label=i18n("输出信息"),
+                        value="",
+                        lines=8,
+                        max_lines=8,
+                        elem_id="training-info-step3",
+                    )
                     but3.click(
                         click_train,
                         [
